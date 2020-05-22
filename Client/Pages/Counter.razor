@@ -1,10 +1,43 @@
 ﻿@page "/counter"
 
-<h1>Counter</h1>
+<style>
+    span.highlightedItem {
+        background-color: yellow;
+        border-width: 0px;
+        padding: 0px;
+    }
 
-<p>Current count: @currentCount</p>
+    span.standardItem {
+        border-width: 0px;
+        padding: 0px;
+    }
+</style>
 
-<button class="btn btn-primary" @onclick="IncrementCount">Click me</button>
+<h1>Find grocery items</h1>
+
+@*<p>Current count: @currentCount</p>*@
+
+@*<button class="btn btn-primary" @onclick="IncrementCount">Click me</button>*@
+
+<input value="@model.Filter" @oninput="@(e=>UpdateFilter((string)e.Value))" />
+<br/>
+@if (model.HighlightedItems.Any())
+{
+    foreach (var i in model.HighlightedItems)
+    {
+        <p>
+            @foreach (var s in i.TitleMatches)
+            {
+                var (part, isMatch) = s;
+                var style = isMatch ? "highlightedItem" : "standardItem";
+<span class="@style">@part</span>}
+        </p>
+    }
+}
+else
+{
+    <p>Nothing found!</p>
+}
 
 @code {
     private int currentCount = 0;
@@ -12,5 +45,18 @@
     private void IncrementCount()
     {
         currentCount++;
+    }
+
+    protected void UpdateFilter(string filter)
+    {
+        model = FindViewModel.updateSearch(model, filter);
+    }
+
+    private FindViewModel.ViewModel model;
+
+    protected override void OnInitialized()
+    {
+        base.OnInitialized();
+        model = FindViewModel.initialize(Test.sampleItems);
     }
 }

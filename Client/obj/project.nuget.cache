@@ -1,8 +1,10 @@
 {
   "version": 2,
-  "dgSpecHash": "mP3jFip5MfUXS7PUncRN1lBADD07OIUlE4kj9gRPTOHt0hOQLGdqZidIa4NLY6uokxS0BI9mc7FdQIICqhmWAw==",
+  "dgSpecHash": "Wwn3EBapUqS0p23GvQ0Ri2Mky0iKlZgcrubQxidiZNLq51e5u2mDldB17nohnhsC0akYQ7rIfkJ86nqCswrEUg==",
   "success": true,
   "projectFilePath": "C:\\Users\\justi\\source\\repos\\Groceries\\Client\\Client.csproj",
-  "expectedPackageFiles": [],
+  "expectedPackageFiles": [
+    "C:\\Users\\justi\\.nuget\\packages\\fsharp.core\\4.7.1\\fsharp.core.4.7.1.nupkg.sha512"
+  ],
   "logs": []
 }
