@@ -1,0 +1,10 @@
+﻿@using Microsoft.FSharp.Core
+@using Client.Shared
+<p><span style="font-weight:bold">@Item.Title.Item</span>@if (Item.Quantity.IsSome())
+{<span> * @Item.Quantity.Value.Item</span>}@if (Item.Note.IsSome())
+{<br/><span>@Item.Note.Value.Item</span>}</p>
+
+@code {
+    [Parameter]
+    public DomainTypes.Item Item { get; set; }
+}

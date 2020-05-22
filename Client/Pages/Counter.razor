@@ -12,7 +12,12 @@
         padding: 0px;
     }
 </style>
+<h1>All items</h1>
 
+@foreach (var i in model.Items)
+{
+    <ItemListItem Item="@i"></ItemListItem>
+}
 <h1>Find grocery items</h1>
 
 @*<p>Current count: @currentCount</p>*@
@@ -20,7 +25,7 @@
 @*<button class="btn btn-primary" @onclick="IncrementCount">Click me</button>*@
 
 <input value="@model.Filter" @oninput="@(e=>UpdateFilter((string)e.Value))" />
-<br/>
+<br />
 @if (model.HighlightedItems.Any())
 {
     foreach (var i in model.HighlightedItems)

@@ -8,4 +8,8 @@
     <ProjectReference Include="..\State\State.fsproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="TagHelpers\" />
+  </ItemGroup>
+
 </Project>
