@@ -4,21 +4,16 @@ open System
 open Xunit
 open FsUnit
 
-let areSequencesIdentical a b =
-    let aArray = a |> Seq.toArray
-    let bArray = b |> Seq.toArray
-    Assert.Equal(aArray.Length, bArray.Length)
-    Assert.True(
-        aArray 
-        |> Seq.zip bArray 
-        |> Seq.forall(fun (x, y) -> x = y))
-
 [<Theory>]
-[<InlineData("Find once at beginning", "123xyz","123", "|123|_xyz_")>]
-[<InlineData("Find once at end", "123xyz","xyz", "_123_|xyz|")>]
-[<InlineData("Find twice", "123xyz123","123", "|123|_xyz_|123|")>]
-[<InlineData("Find case insensitive", "abcxyz","XYZ", "_abc_|xyz|")>]
-let ``Can find text`` (comment : string, source : string, query : string, expectedResult : string) =
+[<InlineData("Once at beginning", "123xyz","123", "|123|_xyz_")>]
+[<InlineData("Once at end", "123xyz","xyz", "_123_|xyz|")>]
+[<InlineData("At beginning and end", "123xyz123","123", "|123|_xyz_|123|")>]
+[<InlineData("Case insensitive", "abcxyz","XYZ", "_abc_|xyz|")>]
+[<InlineData("Overlapping matches", "aaaaaa","aa", "|aa||aa||aa|")>]
+[<InlineData("An empty query is never found", "xyz","", "_xyz_")>]
+[<InlineData("A whitespace query is sometimes found", "a  a  a  a"," ", "_a_| || |_a_| || |_a_| || |_a_")>]
+[<InlineData("Complex case 1", "apple pleasant plum","pl", "_ap_|pl|_e _|pl|_easant _|pl|_um_")>]
+let ``Can find all matching text within a string`` (comment:string, source:string, query:string, expectedResult:string) =
     let rec parseExpectedResult (r:string) =
         seq {
             if r.Length > 0 then
@@ -31,13 +26,12 @@ let ``Can find text`` (comment : string, source : string, query : string, expect
         }
     let expected = expectedResult |> parseExpectedResult
     let actual = source |> String.find query |> List.ofSeq
-    areSequencesIdentical actual expected
-    actual |> should equal expected
+    actual |> should equivalent expected
 
-[<Fact>]
-let ``trying out fsunit``() =
-    let a = seq { yield 1; yield 2; }
-    let b = seq { yield 1; yield 2; }
-    a |> should equal b
-    a |> should equivalent b
-
+[<Theory>]
+[<InlineData("abc")>]
+[<InlineData("")>]
+let ``When search for something in empty string return empty`` (query:string) =
+    let expected = Seq.empty
+    let actual = "" |> String.find query
+    actual |> should equivalent expected
