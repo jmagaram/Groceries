@@ -47,6 +47,11 @@
               "version": "[4.7.1, )",
               "generatePathProperty": true
             },
+            "FsUnit": {
+              "target": "Package",
+              "version": "[3.8.1, )",
+              "generatePathProperty": true
+            },
             "Microsoft.NET.Test.Sdk": {
               "target": "Package",
               "version": "[16.5.0, )",

@@ -2,6 +2,7 @@ module Tests
 
 open System
 open Xunit
+open FsUnit
 
 let areSequencesIdentical a b =
     let aArray = a |> Seq.toArray
@@ -31,3 +32,12 @@ let ``Can find text`` (comment : string, source : string, query : string, expect
     let expected = expectedResult |> parseExpectedResult
     let actual = source |> String.find query |> List.ofSeq
     areSequencesIdentical actual expected
+    actual |> should equal expected
+
+[<Fact>]
+let ``trying out fsunit``() =
+    let a = seq { yield 1; yield 2; }
+    let b = seq { yield 1; yield 2; }
+    a |> should equal b
+    a |> should equivalent b
+
