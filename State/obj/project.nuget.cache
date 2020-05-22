@@ -1,0 +1,10 @@
+{
+  "version": 2,
+  "dgSpecHash": "Mnj0+pR9h7UwJy/U+AGtEDIWYqLySuueHryemukg4jj0Jhuy2cxR3z0aCZMBcRnoNiA7qCxF0k8gvs/P+nsCvg==",
+  "success": true,
+  "projectFilePath": "C:\\Users\\justi\\source\\repos\\Groceries\\State\\State.fsproj",
+  "expectedPackageFiles": [
+    "C:\\Users\\justi\\.nuget\\packages\\fsharp.core\\4.7.1\\fsharp.core.4.7.1.nupkg.sha512"
+  ],
+  "logs": []
+}

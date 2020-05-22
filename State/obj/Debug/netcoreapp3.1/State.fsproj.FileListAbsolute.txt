@@ -1,0 +1,8 @@
+C:\Users\justi\source\repos\Groceries\State\bin\Debug\netcoreapp3.1\State.deps.json
+C:\Users\justi\source\repos\Groceries\State\bin\Debug\netcoreapp3.1\State.dll
+C:\Users\justi\source\repos\Groceries\State\bin\Debug\netcoreapp3.1\State.pdb
+C:\Users\justi\source\repos\Groceries\State\obj\Debug\netcoreapp3.1\State.AssemblyInfoInputs.cache
+C:\Users\justi\source\repos\Groceries\State\obj\Debug\netcoreapp3.1\State.AssemblyInfo.fs
+C:\Users\justi\source\repos\Groceries\State\obj\Debug\netcoreapp3.1\State.dll
+C:\Users\justi\source\repos\Groceries\State\obj\Debug\netcoreapp3.1\State.pdb
+C:\Users\justi\source\repos\Groceries\State\obj\Debug\netcoreapp3.1\State.fsprojAssemblyReference.cache

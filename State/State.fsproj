@@ -1,0 +1,14 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netcoreapp3.1</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="String.fs" />
+    <Compile Include="DomainTypes.fs" />
+    <Compile Include="Duration.fs" />
+    <Compile Include="Test.fs" />
+  </ItemGroup>
+
+</Project>
