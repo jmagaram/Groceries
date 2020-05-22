@@ -1,0 +1,20 @@
+﻿@page "/shoppinglist"
+
+<style>
+</style>
+<h1>Shopping list</h1>
+
+@foreach (var i in model.Items)
+{
+    <ItemListItem Item="@i"></ItemListItem>
+}
+
+@code {
+    private FindViewModel.ViewModel model;
+
+    protected override void OnInitialized()
+    {
+        base.OnInitialized();
+        model = FindViewModel.initialize(Test.sampleItems);
+    }
+}
