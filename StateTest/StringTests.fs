@@ -1,4 +1,4 @@
-module Tests
+module StringTests
 
 open System
 open Xunit
