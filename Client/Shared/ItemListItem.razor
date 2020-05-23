@@ -1,10 +1,64 @@
 ﻿@using Microsoft.FSharp.Core
 @using Client.Shared
-<p><span style="font-weight:bold">@Item.Title.Item</span>@if (Item.Quantity.IsSome())
-{<span> * @Item.Quantity.Value.Item</span>}@if (Item.Note.IsSome())
-{<br/><span>@Item.Note.Value.Item</span>}</p>
+<p>
+    <span style="font-weight:bold">@Item.Title.Item</span>@if (Item.Quantity.IsSome())
+    {<span> * @Item.Quantity.Value.Item</span>}&nbsp;<span style="background-color:lightgray">&nbsp;@ScheduleText()&nbsp;</span>@if (Item.Note.IsSome())
+    {<br /><span>@Item.Note.Value.Item</span>}
+</p>
 
 @code {
     [Parameter]
     public DomainTypes.Item Item { get; set; }
+
+    private int DaysUntil(DateTime now, DateTime later)
+    {
+        var totalDays = (later - now).TotalDays;
+        return Convert.ToInt32(Math.Round(totalDays));
+    }
+
+    private string PostponeDateToString(DateTime now, DateTime later)
+    {
+        var daysAway = DaysUntil(now, later);
+        if (daysAway == 0)
+        {
+            return "Due Today";
+        }
+        else if (daysAway < 0)
+        {
+            return "Overdue";
+        }
+        else
+        {
+            return $"+ {daysAway} days";
+        }
+    }
+
+    public string ScheduleText()
+    {
+        var now = DateTime.Now;
+        if (Item.Schedule.IsComplete)
+        {
+            return "Complete";
+        }
+        else if (Item.Schedule.IsIncomplete)
+        {
+            return "Incomplete";
+        }
+        else if (Item.Schedule is DomainTypes.Schedule.Postponed p)
+        {
+            return PostponeDateToString(now, p.Item);
+        }
+        else if (Item.Schedule is DomainTypes.Schedule.Repeat r)
+        {
+            if (r.Item.PostponedUntil.IsNone())
+            {
+                return "Active";
+            }
+            else
+            {
+                return PostponeDateToString(now, r.Item.PostponedUntil.Value);
+            }
+        }
+        else throw new NotImplementedException();
+    }
 }
