@@ -1,23 +1,36 @@
 ﻿@page "/shoppinglist"
 @using Client.Data
+ 
 @inject ApplicationStateService ApplicationState
 
 <style>
 </style>
 <h1>Shopping list</h1>
-
-@foreach (var i in items)
+<button @onclick="ToggleViewOfFutureItems">@(model.ShowFutureItems ? "Hide future items" : "Show future items")</button>
+@foreach (var i in model.Items)
 {
     <ItemListItem Item="@i"></ItemListItem>
 }
 
 @code {
-    private IEnumerable<ViewModelTypes.ListItemViewModel> items;
+    private ViewModelTypes.ShoppingListViewModel model;
 
     protected override void OnInitialized()
     {
         base.OnInitialized();
-        items =
-            ApplicationState.State.Items.Select(i => ViewModelTypes.createListItemViewModel(i.Value));
+        var items = ApplicationState.State.Items.Select(i => ViewModelTypes.createListItemViewModel(i.Value));
+        model = new ViewModelTypes.ShoppingListViewModel(items, false);
+    }
+
+    protected void ToggleViewOfFutureItems()
+    {
+        if (model.ShowFutureItems)
+        {
+            model = ViewModelTypes.hideFutureItems(ApplicationState.State, DateTime.Now, model);
+        }
+        else
+        {
+            model = ViewModelTypes.showFutureItems(ApplicationState.State);
+        }
     }
 }

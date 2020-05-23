@@ -38,3 +38,30 @@ let createListItemViewModel (i:DomainTypes.Item) =
         | Repeat r -> Some r.Frequency
         | _ -> None
     }
+
+type ShoppingListViewModel =
+    { Items : ListItemViewModel seq 
+      ShowFutureItems : bool }
+
+// maybe this is what it should be
+type ShowFutureItems = ShoppingListViewModel -> ShoppingListViewModel
+type HideFutureItems = ShoppingListViewModel -> ShoppingListViewModel
+
+let showFutureItems (state:State) = 
+    { ShowFutureItems = true
+      Items = 
+        state.Items
+        |> Seq.map(fun i -> i.Value)
+        |> Seq.map(fun i -> createListItemViewModel i)
+    }
+
+let hideFutureItems (state:State) now model = 
+    { model with
+        ShowFutureItems = false
+        Items = 
+            model.Items
+            |> Seq.filter(fun i ->
+                match i.PostponedUntil with
+                | None -> true
+                | Some dt -> dt <= now)
+    }
