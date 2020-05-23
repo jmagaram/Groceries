@@ -85,3 +85,12 @@ let sampleItems =
     |> Seq.map (fun (title, qty, note, freq) -> createItem title qty note freq)
     |> Seq.map (fun i -> if random.Next(0,10) = 0 then { i with Schedule = Schedule.Complete } else i)
     |> Seq.toList
+
+let initialState = 
+    { State.Stores = Map.empty
+      State.ItemIsUnavailableInStore = Set.empty
+      State.Items = 
+        sampleItems 
+        |> Seq.map (fun i -> (i.Id, i))
+        |> Map.ofSeq
+    }

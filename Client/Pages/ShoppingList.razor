@@ -1,4 +1,6 @@
 ﻿@page "/shoppinglist"
+@using Client.Data
+@inject ApplicationStateService ApplicationState
 
 <style>
 </style>
@@ -16,6 +18,6 @@
     {
         base.OnInitialized();
         items =
-            Test.sampleItems.Select(i => ViewModelTypes.createListItemViewModel(i));
+            ApplicationState.State.Items.Select(i => ViewModelTypes.createListItemViewModel(i.Value));
     }
 }

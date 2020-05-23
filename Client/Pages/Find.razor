@@ -1,4 +1,6 @@
 ﻿@page "/find"
+@using Client.Data
+@inject ApplicationStateService ApplicationState
 
 <style>
     span.highlightedItem {
@@ -45,6 +47,6 @@ else
     protected override void OnInitialized()
     {
         base.OnInitialized();
-        model = FindViewModel.initialize(Test.sampleItems);
+        model = FindViewModel.initialize(ApplicationState.State.Items.Select(i => i.Value));
     }
 }
