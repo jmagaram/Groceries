@@ -1,7 +1,18 @@
 ﻿module DomainTypes
 open System
 
-type Duration = D1 | D3 | W1 | W2 | W3 | M1 | M2 | M3 | M4 | M6 | M9
+type Duration = 
+    | D1 
+    | D3 
+    | W1 
+    | W2 
+    | W3 
+    | M1 
+    | M2 
+    | M3 
+    | M4 
+    | M6 
+    | M9
 
 type Title = | Title of string
 

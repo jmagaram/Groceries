@@ -4,17 +4,18 @@
 </style>
 <h1>Shopping list</h1>
 
-@foreach (var i in model.Items)
+@foreach (var i in items)
 {
     <ItemListItem Item="@i"></ItemListItem>
 }
 
 @code {
-    private FindViewModel.ViewModel model;
+    private IEnumerable<ViewModelTypes.ListItemViewModel> items;
 
     protected override void OnInitialized()
     {
         base.OnInitialized();
-        model = FindViewModel.initialize(Test.sampleItems);
+        items =
+            Test.sampleItems.Select(i => ViewModelTypes.createListItemViewModel(i));
     }
 }

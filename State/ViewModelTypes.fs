@@ -1,40 +1,40 @@
 ﻿module ViewModelTypes
-
+open DomainTypes
 open System
 
-type Duration = D1 | D3 | W1 | W2 | W3 | M1 | M2 | M3 | M4 | M6 | M9
+type ListItemViewModel =
+    { Title : string
+      Quantity : string option
+      Note : string option
+      IsComplete : bool
+      PostponedUntil : DateTime option
+      Repeats : Duration option
+    }
 
-//type Title = | Title of string
-
-//type Note = | Note of string
-
-//type Quantity = | Quantity of string
-
-//type ItemId = | ItemId of Guid
-
-//type Repeat =
-//    { Frequency : Duration
-//      PostponedUntil : DateTime option }
-
-//type Schedule =
-//    | Complete
-//    | Incomplete
-//    | Postponed of DateTime
-//    | Repeat of Repeat
-
-//type Item = 
-//    { Id : Guid
-//      Title : string
-//      Note : string option
-//      Quantity : string option
-//      Schedule : Schedule }
-
-//type StoreId = | StoreId of Guid
-
-//type StoreName = | StoreName of string
-
-//type State = 
-//    { Stores : Map<StoreId, StoreName> 
-//      Items : Map<ItemId, Item> 
-//      ItemIsUnavailableInStore : Set<StoreId * ItemId> }
-
+let createListItemViewModel (i:DomainTypes.Item) =
+    { ListItemViewModel.Title = match i.Title with | Title t -> t
+      Quantity = 
+        match i.Quantity with 
+        | Some (Quantity q) -> Some q
+        | None -> None
+      Note = 
+        match i.Note with 
+        | Some (Note n) -> Some n
+        | None -> None
+      IsComplete = 
+        match i.Schedule with 
+        | Schedule.Complete -> true 
+        | _ -> false
+      PostponedUntil = 
+        match i.Schedule with
+        | Postponed dt -> Some dt
+        | Repeat r ->
+            match r.PostponedUntil with
+            | Some dt -> Some dt
+            | None -> None
+        | _ -> None
+      Repeats = 
+        match i.Schedule with
+        | Repeat r -> Some r.Frequency
+        | _ -> None
+    }
