@@ -35,6 +35,14 @@ type ViewModel =
             | None -> true
             | _ -> false
         | _ -> false
+        member x.CanRemovePostponement =
+          match x.Schedule with
+          | Postponed _ -> true
+          | Schedule.Repeat r -> 
+              match r.PostponedUntil with
+              | Some dt -> true
+              | _ -> false
+          | _ -> false
       member x.IsPostponed = 
         match x.Schedule with
         | Schedule.Repeat r ->
@@ -50,6 +58,19 @@ type ViewModel =
         match x.Schedule with
         | Repeat r when r.Frequency = d -> true
         | _ -> false
+      member x.PostponedUntil =
+        match x.Schedule with
+        | Repeat r -> r.PostponedUntil
+        | Postponed dt -> Some dt
+        | _ -> None
+      member x.CanComplete =
+        match x.Schedule with
+        | Complete -> false
+        | _ -> x.CanSubmit
+      member x.CanUncomplete =
+        match x.Schedule with
+        | Complete -> true
+        | _ -> false
 
 let createNew = 
     { ViewModel.Title = ""
@@ -60,11 +81,23 @@ let createNew =
 let updateTitle title model  = { model with ViewModel.Title = title }
 let updateNote note model = { model with ViewModel.Note = note }
 let updateQuantity quantity model = { model with ViewModel.Quantity = quantity }
-let complete model = { model with ViewModel.Schedule = Schedule.Complete }
+let complete (model:ViewModel) = 
+    match model.Schedule with
+    | Incomplete 
+    | Complete
+    | Postponed -> { model with Schedule = Schedule.Complete }
+    | Repeat r ->
+        let newPostponeDate = DateTime.Now.AddDays(r.Frequency |> Duration.asDays |> float)
+        { model with Schedule = Schedule.Repeat { Repeat.Frequency = r.Frequency; Repeat.PostponedUntil = Some newPostponeDate } }
 let incomplete model = { model with ViewModel.Schedule = Schedule.Incomplete }
 let addRecurrence (model:ViewModel) = 
     { model with 
-        Schedule = Repeat { Repeat.Frequency = Duration.W1; PostponedUntil = None }}
+        Schedule = Repeat { 
+            Repeat.Frequency = Duration.W1; 
+            PostponedUntil = 
+                match model.Schedule with
+                | Postponed dt -> Some dt
+                | _ -> None } }
 let removeRecurrence (model:ViewModel) = 
     match model.Schedule with
     | Repeat r ->
@@ -72,6 +105,12 @@ let removeRecurrence (model:ViewModel) =
         | Some dt -> { model with Schedule = Postponed dt }
         | None -> { model with Schedule = Incomplete }
     | _ -> model
+let removePostponement (model:ViewModel) = 
+    match model.Schedule with
+    | Repeat r -> { model with Schedule = Repeat { r with PostponedUntil = None }}
+    | Postponed dt -> { model with Schedule = Schedule.Incomplete }
+    | Complete -> model
+    | Incomplete -> model
 let changeRecurrence duration (model:ViewModel) =
     let repeat = 
         match model.Schedule with

@@ -2,17 +2,34 @@
 @using static DomainTypes.Duration
 
 <style>
-    validationError {
-        color: red
+    .validationError {
+        color: red;
+    }
+
+    .completedTitle {
+        text-decoration: line-through;
+        font-weight: bold;
     }
 </style>
 <h3>EditItem</h3>
 <form>
     <div>
-        <label>
-            Name: <input @oninput="OnTitleChange" placeholder="Apples, Canned Tuna, ..." value="@model.Title" />@if (model.TitleError.IsSome())
-            {<span class="validationError">@model.TitleError.Value</span>}
-        </label>
+        @if (model.Schedule.IsComplete)
+        {
+            <p class="completedTitle">@model.Title</p>
+            @if (model.CanUncomplete)
+            {
+                <button type="button" @onclick="MarkUncomplete">Add to shopping list again</button>
+            }
+            <br />
+        }
+        else
+        {
+            <label>
+                Name: <input @oninput="OnTitleChange" placeholder="Apples, Canned Tuna, ..." value="@model.Title" />@if (model.TitleError.IsSome())
+                {<span class="validationError">@model.TitleError.Value</span>}
+            </label>
+        }
     </div>
     <div><label>Quantity: <input placeholder="3 large, 1 can, lots, ..." value="@model.Quantity" /></label></div>
     <div><label>Note: <textarea rows="3" placeholder="Favorite brand, organic-only, ...">@model.Note</textarea></label></div>
@@ -58,17 +75,18 @@
             </label>
         </div>
     }
-    <div>
-        <label>
-            Status: <select>
-                <option value="1">Purchased</option>
-                <option value="2">Active</option>
-                <option value="3">Postponed</option>
-            </select>
-        </label>
-    </div>
-    <div><label>Postponed until: <input type="date" /></label></div>
-    <br />
+    @if (model.IsPostponed)
+    {
+        string dt = model.PostponedUntil.Value.ToString("yyyy-MM-dd");
+        <div>
+            <label>Postponed until: <input type="date" value="@dt" @onchange="SelectPostponeDate" /></label>        @if (model.CanRemovePostponement)
+            {<button type="button" @onclick="RemovePostponement">Add to shopping list now</button>}
+        </div>
+    }
+    @if (model.CanComplete)
+    {
+        <button type="button" @onclick="MarkComplete">Purchased!</button>
+    }
     @if (model.CanSubmit)
     {
         <button>Save</button>
@@ -104,8 +122,33 @@
 
     protected void OnPostpone()
     {
-        var newModel = ItemEditor.postpone(model,DateTime.Now);
+        var newModel = ItemEditor.postpone(model, DateTime.Now);
         model = newModel;
+    }
+
+    protected void RemovePostponement()
+    {
+        var newModel = ItemEditor.removePostponement(model);
+        model = newModel;
+    }
+
+    protected void MarkComplete()
+    {
+        var newModel = ItemEditor.complete(model);
+        model = newModel;
+    }
+
+    protected void MarkUncomplete()
+    {
+        var newModel = ItemEditor.incomplete(model);
+        model = newModel;
+    }
+
+    protected void SelectPostponeDate(ChangeEventArgs c)
+    {
+        string dt = (string)c.Value;
+        DateTime when = DateTime.ParseExact(dt, "yyyy-MM-dd", null);
+        model = ItemEditor.postponeUntil(when, model);
     }
 
     protected void OnRemoveRecurrence() => model = ItemEditor.removeRecurrence(model);
