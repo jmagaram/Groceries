@@ -11,7 +11,7 @@
         font-weight: bold;
     }
 </style>
-<h3>EditItem</h3>
+<h3>Add/Edit item</h3>
 <form>
     <div>
         @if (model.Schedule.IsComplete)
@@ -89,14 +89,14 @@
     }
     @if (model.CanSubmit)
     {
-        <button>Save</button>
+        <button type="button">Save</button>
     }
     else
     {
         <button disabled>Save</button>
     }
-    <button>Cancel</button>
-    <button>Delete</button>
+    <button type="button">Cancel</button>
+    <button type="button">Delete</button>
 </form>
 
 @code {
