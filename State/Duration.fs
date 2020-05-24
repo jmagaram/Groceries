@@ -3,7 +3,6 @@ open DomainTypes
 
 let asDays (d:DomainTypes.Duration) = 
     match d with
-    | D1 -> 1
     | D3 -> 3
     | W1 -> 7*1
     | W2 -> 7*2

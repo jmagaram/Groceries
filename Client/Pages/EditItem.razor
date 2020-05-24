@@ -1,5 +1,136 @@
-﻿<h3>EditItem</h3>
+﻿@page "/edititem"
+@using static DomainTypes.Duration
+
+<style>
+    validationError {
+        color: red
+    }
+</style>
+<h3>EditItem</h3>
+<form>
+    <div>
+        <label>
+            Name: <input @oninput="OnTitleChange" placeholder="Apples, Canned Tuna, ..." value="@model.Title" />@if (model.TitleError.IsSome())
+            {<span class="validationError">@model.TitleError.Value</span>}
+        </label>
+    </div>
+    <div><label>Quantity: <input placeholder="3 large, 1 can, lots, ..." value="@model.Quantity" /></label></div>
+    <div><label>Note: <textarea rows="3" placeholder="Favorite brand, organic-only, ...">@model.Note</textarea></label></div>
+    @if (model.Schedule.IsRepeat)
+    {
+        <div>
+            <label>
+                Repeat: <select @onchange="OnRecurrenceChange">
+                    @foreach (var i in durationChoices)
+                    {
+                        var d = durationChoices[i.Key].Item2;
+                        var selected = model.IsRepeatOn(d) ? "selected" : "";
+                        if (model.IsRepeatOn(i.Value.Item2))
+                        {
+                            <option value="@i.Key" selected>@i.Value.Item1</option>
+                        }
+                        else
+                        {
+                            <option value="@i.Key">@i.Value.Item1</option>
+                        }
+                    }
+                </select>
+                @if (model.CanRemoveRecurrence)
+                {<button type="button" @onclick="OnRemoveRecurrence">Remove recurrence</button>}
+            </label>
+        </div>
+    }
+    else
+    {
+        <div>
+            <label>
+                Repeat: <input disabled value="No; one-time purchase" />@if (model.CanAddRecurrence)
+                {<button type="button" @onclick="OnMakeRecurring">Make repeating</button>}
+            </label>
+        </div>
+    }
+    @if (model.CanPostpone)
+    {
+        <div>
+            <label>
+                Postpone until later?
+                <button type="button" @onclick="OnPostpone">Postpone</button>
+            </label>
+        </div>
+    }
+    <div>
+        <label>
+            Status: <select>
+                <option value="1">Purchased</option>
+                <option value="2">Active</option>
+                <option value="3">Postponed</option>
+            </select>
+        </label>
+    </div>
+    <div><label>Postponed until: <input type="date" /></label></div>
+    <br />
+    @if (model.CanSubmit)
+    {
+        <button>Save</button>
+    }
+    else
+    {
+        <button disabled>Save</button>
+    }
+    <button>Cancel</button>
+    <button>Delete</button>
+</form>
 
 @code {
+    protected ItemEditor.ViewModel model;
+    protected EditContext ctx;
 
+    Dictionary<int, Tuple<string, DomainTypes.Duration>> durationChoices;
+
+    public void a()
+    {
+    }
+
+    protected void OnTitleChange(ChangeEventArgs c)
+    {
+        model = ItemEditor.updateTitle((string)c.Value, model);
+    }
+
+    protected void OnMakeRecurring()
+    {
+        var newModel = ItemEditor.addRecurrence(model);
+        model = newModel;
+    }
+
+    protected void OnPostpone()
+    {
+        var newModel = ItemEditor.postpone(model,DateTime.Now);
+        model = newModel;
+    }
+
+    protected void OnRemoveRecurrence() => model = ItemEditor.removeRecurrence(model);
+
+    protected void OnRecurrenceChange(ChangeEventArgs c)
+    {
+        int keyOfChosenItem = int.Parse((string)c.Value);
+        var chosen = durationChoices[keyOfChosenItem].Item2;
+        model = ItemEditor.changeRecurrence(chosen, model);
+    }
+
+    protected override void OnInitialized()
+    {
+        base.OnInitialized();
+        durationChoices = new Dictionary<int, Tuple<string, DomainTypes.Duration>>();
+        durationChoices.Add(1, Tuple.Create("Every 3 days", D3));
+        durationChoices.Add(2, Tuple.Create("Weekly", W1));
+        durationChoices.Add(3, Tuple.Create("Every 2 weeks", W2));
+        durationChoices.Add(4, Tuple.Create("Every 3 weeks", W3));
+        durationChoices.Add(5, Tuple.Create("Monthly", M1));
+        durationChoices.Add(6, Tuple.Create("Every 2 months", M2));
+        durationChoices.Add(7, Tuple.Create("Every 3 months", M3));
+        durationChoices.Add(8, Tuple.Create("Every 4 months", M4));
+        durationChoices.Add(9, Tuple.Create("Every 6 months", M6));
+        durationChoices.Add(10, Tuple.Create("Every 9 months", M9));
+        model = ItemEditor.createNew;
+    }
 }

@@ -2,7 +2,6 @@
 open System
 
 type Duration = 
-    | D1 
     | D3 
     | W1 
     | W2 

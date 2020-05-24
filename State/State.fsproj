@@ -10,6 +10,7 @@
     <Compile Include="Duration.fs" />
     <Compile Include="Test.fs" />
     <Compile Include="ViewModelTypes.fs" />
+    <Compile Include="ItemEditor.fs" />
     <Compile Include="FindViewModel.fs" />
   </ItemGroup>
 
