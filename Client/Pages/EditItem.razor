@@ -1,5 +1,7 @@
 ﻿@page "/edititem"
 @using static DomainTypes.Duration
+@using static ItemBuilder
+@using Unit = Microsoft.FSharp.Core.Unit
 
 <style>
     .validationError {
@@ -17,32 +19,50 @@
         @if (model.Schedule.IsComplete)
         {
             <p class="completedTitle">@model.Title</p>
-            @if (model.CanUncomplete)
+            @if (activate(model).IsSome())
             {
-                <button type="button" @onclick="MarkUncomplete">Add to shopping list again</button>
+                <button type="button" @onclick="Activate">Add to shopping list again</button>
             }
             <br />
         }
         else
         {
             <label>
-                Name: <input @oninput="OnTitleChange" placeholder="Apples, Canned Tuna, ..." value="@model.Title" />@if (model.TitleError.IsSome())
-                {<span class="validationError">@model.TitleError.Value</span>}
+                Name: <input @oninput="OnTitleChange" placeholder="Apples, Canned Tuna, ..." value="@model.Title.Value" />@if (model.Title.Error.IsSome())
+                {<span class="validationError">@model.Title.Error.Value</span>}
             </label>
         }
     </div>
-    <div><label>Quantity: <input placeholder="3 large, 1 can, lots, ..." value="@model.Quantity" /></label></div>
-    <div><label>Note: <textarea rows="3" placeholder="Favorite brand, organic-only, ...">@model.Note</textarea></label></div>
+    <div>
+        <label>
+            Quantity: <input placeholder="3 large, 1 can, lots, ..." value="@model.Quantity" @oninput="SetQty" />
+            @if (decreaseQty(model).IsSome())
+            {<button type="button" @onclick="DecreaseQuantity">-</button>}
+            @if (increaseQty(model).IsSome())
+            {<button type="button" @onclick="IncreaseQuantity">+</button>}
+        </label>
+    </div>
+    <div><label>Note: <textarea @oninput="OnNoteChange" rows="3" placeholder="Favorite brand, organic-only, ...">@model.Note</textarea></label></div>
+    @if (model.Schedule.IsIncomplete)
+    {
+        <div>
+            <label>
+                Repeat: <input disabled value="No; one-time purchase" />@if (repeat(model).IsSome())
+                {<button type="button" @onclick="OnMakeRecurring">Make repeating</button>}
+            </label>
+        </div>
+    }
     @if (model.Schedule.IsRepeat)
     {
+        var repeat = model.Schedule.TryRepeat.Value;
         <div>
             <label>
                 Repeat: <select @onchange="OnRecurrenceChange">
                     @foreach (var i in durationChoices)
                     {
                         var d = durationChoices[i.Key].Item2;
-                        var selected = model.IsRepeatOn(d) ? "selected" : "";
-                        if (model.IsRepeatOn(i.Value.Item2))
+                        var isSelected = repeat.Frequency == d;
+                        if (isSelected)
                         {
                             <option value="@i.Key" selected>@i.Value.Item1</option>
                         }
@@ -52,42 +72,58 @@
                         }
                     }
                 </select>
-                @if (model.CanRemoveRecurrence)
+                @if (removeRepeat(model).IsSome())
                 {<button type="button" @onclick="OnRemoveRecurrence">Remove recurrence</button>}
             </label>
         </div>
-    }
-    else
-    {
         <div>
             <label>
-                Repeat: <input disabled value="No; one-time purchase" />@if (model.CanAddRecurrence)
-                {<button type="button" @onclick="OnMakeRecurring">Make repeating</button>}
+                When:@{
+                    void RenderPostponePicker(int? currentDays)
+                    {
+                        List<Tuple<int, string>> defaultChoices = new List<Tuple<int, string>> {
+                Tuple.Create(-1,"On shopping list now"),
+                Tuple.Create(0,"Overdue"),
+                Tuple.Create(1,"Tomorrow"),
+                Tuple.Create(3,"+3 days"),
+                Tuple.Create(7,"+1 week"),
+                Tuple.Create(14,"+2 weeks"),
+                Tuple.Create(21,"+3 weeks"),
+                Tuple.Create(30,"+1 month"),
+                Tuple.Create(60,"+2 months"),
+                Tuple.Create(90,"+3 months")
+            };
+                        if (!defaultChoices.Any(j => j.Item1 == currentDays) && currentDays.HasValue)
+                        {
+                            defaultChoices.Add(Tuple.Create(currentDays.Value, $"+{currentDays.Value} days"));
+                        }
+                        <select @onchange="Postpone">
+                            @foreach (var i in defaultChoices.OrderBy(j => j.Item1))
+                            {
+                                if ((!currentDays.HasValue && i.Item1 == -1) || (currentDays == i.Item1))
+                                {
+                                    <option selected value="@i.Item1">@i.Item2</option>
+                                }
+                                else
+                                {
+                                    <option value="@i.Item1">@i.Item2</option>
+                                }
+                            }
+                        </select>
+                    }
+                    if (repeat.DueDays.IsSome())
+                    {
+                        RenderPostponePicker(repeat.DueDays.Value);
+                    }
+                    else
+                    {
+                        RenderPostponePicker(null);
+                    }
+                }
             </label>
         </div>
     }
-    @if (model.CanPostpone)
-    {
-        <div>
-            <label>
-                Postpone until later?
-                <button type="button" @onclick="OnPostpone">Postpone</button>
-            </label>
-        </div>
-    }
-    @if (model.IsPostponed)
-    {
-        string dt = model.PostponedUntil.Value.ToString("yyyy-MM-dd");
-        <div>
-            <label>Postponed until: <input type="date" value="@dt" @onchange="SelectPostponeDate" /></label>        @if (model.CanRemovePostponement)
-            {<button type="button" @onclick="RemovePostponement">Add to shopping list now</button>}
-        </div>
-    }
-    @if (model.CanComplete)
-    {
-        <button type="button" @onclick="MarkComplete">Purchased!</button>
-    }
-    @if (model.CanSubmit)
+    @if (canSubmit(model))
     {
         <button type="button">Save</button>
     }
@@ -98,66 +134,50 @@
     <button type="button">Cancel</button>
     <button type="button">Delete</button>
 </form>
-
 @code {
-    protected ItemEditor.ViewModel model;
-    protected EditContext ctx;
+
+    protected ItemBuilder.Builder model;
 
     Dictionary<int, Tuple<string, DomainTypes.Duration>> durationChoices;
 
-    public void a()
+    protected void Activate() => model = activate(model).Value;
+
+    protected void OnTitleChange(ChangeEventArgs c) => model = setTitle((string)c.Value, model);
+
+    protected void OnNoteChange(ChangeEventArgs c) => model = setNote((string)c.Value, model);
+
+    protected void SetQty(ChangeEventArgs c)
     {
+        string qty = (string)c.Value;
+        model = ItemBuilder.setQuantity(qty, model);
     }
 
-    protected void OnTitleChange(ChangeEventArgs c)
-    {
-        model = ItemEditor.updateTitle((string)c.Value, model);
-    }
+    protected void IncreaseQuantity() => model = increaseQty(model).Value;
 
-    protected void OnMakeRecurring()
-    {
-        var newModel = ItemEditor.addRecurrence(model);
-        model = newModel;
-    }
+    protected void DecreaseQuantity() => model = decreaseQty(model).Value;
 
-    protected void OnPostpone()
-    {
-        var newModel = ItemEditor.postpone(model, DateTime.Now);
-        model = newModel;
-    }
+    protected void OnMakeRecurring() => model = repeat(model).Value;
 
-    protected void RemovePostponement()
-    {
-        var newModel = ItemEditor.removePostponement(model);
-        model = newModel;
-    }
-
-    protected void MarkComplete()
-    {
-        var newModel = ItemEditor.complete(model);
-        model = newModel;
-    }
-
-    protected void MarkUncomplete()
-    {
-        var newModel = ItemEditor.incomplete(model);
-        model = newModel;
-    }
-
-    protected void SelectPostponeDate(ChangeEventArgs c)
-    {
-        string dt = (string)c.Value;
-        DateTime when = DateTime.ParseExact(dt, "yyyy-MM-dd", null);
-        model = ItemEditor.postponeUntil(when, model);
-    }
-
-    protected void OnRemoveRecurrence() => model = ItemEditor.removeRecurrence(model);
+    protected void OnRemoveRecurrence() => model = removeRepeat(model).Value;
 
     protected void OnRecurrenceChange(ChangeEventArgs c)
     {
         int keyOfChosenItem = int.Parse((string)c.Value);
         var chosen = durationChoices[keyOfChosenItem].Item2;
-        model = ItemEditor.changeRecurrence(chosen, model);
+        model = setFrequency(model).Value.Invoke(chosen);
+    }
+
+    protected void Postpone(ChangeEventArgs c)
+    {
+        int daysChosen = int.Parse((string)c.Value);
+        if (daysChosen == -1)
+        {
+            model = activate(model).Value;
+        }
+        else
+        {
+            model = postpone(model).Value.Invoke(daysChosen);
+        }
     }
 
     protected override void OnInitialized()
@@ -174,6 +194,6 @@
         durationChoices.Add(8, Tuple.Create("Every 4 months", M4));
         durationChoices.Add(9, Tuple.Create("Every 6 months", M6));
         durationChoices.Add(10, Tuple.Create("Every 9 months", M9));
-        model = ItemEditor.createNew;
+        model = ItemBuilder.create;
     }
 }

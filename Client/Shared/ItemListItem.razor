@@ -11,10 +11,11 @@
     @{
         string titleStyle = Item.IsComplete ? "completeTitle" : "incompleteTitle";
     }
-    @if (Item.PostponedUntil.IsSome())
+    @if (Item.Repeats.AsEnumerable().Select(i=>i.Due.IsSome()).Any())
     {
+        var due = Item.Repeats.Value.Due.Value;
         DateTime now = DateTime.Now;
-        int daysUntil = Convert.ToInt32((Item.PostponedUntil.Value - now).TotalDays);
+        int daysUntil = Convert.ToInt32((due - now).TotalDays);
         (string daysUntilText,string styleName) =
             (daysUntil < 0) ? ("Due","overdue") :
             (daysUntil == 0) ? ("Today","today") :

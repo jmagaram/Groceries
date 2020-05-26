@@ -23,12 +23,11 @@ type ItemId = | ItemId of Guid
 
 type Repeat =
     { Frequency : Duration
-      PostponedUntil : DateTime option }
+      Due : DateTime option }
 
 type Schedule =
     | Complete
     | Incomplete
-    | Postponed of DateTime
     | Repeat of Repeat
 
 type Item = 
@@ -47,3 +46,6 @@ type State =
       Items : Map<ItemId, Item> 
       ItemIsUnavailableInStore : Set<StoreId * ItemId> }
 
+type UpDown<'v> = 
+    { Increase : 'v -> 'v option
+      Decrease : 'v -> 'v option }

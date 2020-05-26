@@ -7,9 +7,7 @@ type ListItemViewModel =
       Quantity : string option
       Note : string option
       IsComplete : bool
-      PostponedUntil : DateTime option
-      Repeats : Duration option
-    }
+      Repeats : Repeat option }
 
 let createListItemViewModel (i:DomainTypes.Item) =
     { ListItemViewModel.Title = match i.Title with | Title t -> t
@@ -25,17 +23,9 @@ let createListItemViewModel (i:DomainTypes.Item) =
         match i.Schedule with 
         | Schedule.Complete -> true 
         | _ -> false
-      PostponedUntil = 
-        match i.Schedule with
-        | Postponed dt -> Some dt
-        | Repeat r ->
-            match r.PostponedUntil with
-            | Some dt -> Some dt
-            | None -> None
-        | _ -> None
       Repeats = 
         match i.Schedule with
-        | Repeat r -> Some r.Frequency
+        | Repeat r -> Some r
         | _ -> None
     }
 
@@ -61,8 +51,10 @@ let hideFutureItems (state:State) now model =
         Items = 
             model.Items
             |> Seq.filter(fun i ->
-                match i.PostponedUntil with
-                | None -> true
-                | Some dt -> dt <= now)
+                match i.Repeats with
+                | Some r -> 
+                    match r.Due with
+                    | Some dt -> dt > now
+                    | None -> false
+                | None -> false)
     }
-

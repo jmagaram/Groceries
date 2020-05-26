@@ -73,7 +73,7 @@ let sampleItems =
         | None -> Schedule.Incomplete
         | Some fq ->              
             { Repeat.Frequency = fq
-              PostponedUntil = fq |> postponeUntilRandom }
+              Due = fq |> postponeUntilRandom }
             |> Schedule.Repeat
     let createItem title qty note freq = 
         { Item.Id = Guid.NewGuid() |> ItemId
