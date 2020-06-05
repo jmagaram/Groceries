@@ -16,5 +16,17 @@ namespace Client
 
         public static T GetOr<T>(this FSharpOption<T> o, T ifNone) =>
             o.IsSome() ? o.Value : ifNone;
+
+        public static T? AsNullable<T>(this FSharpOption<T> o) where T : struct
+        {
+            if (o.IsSome())
+            {
+                return new T?(o.Value);
+            }
+            else
+            {
+                return null;
+            }
+        }
     }
 }

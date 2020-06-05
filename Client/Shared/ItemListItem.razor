@@ -9,13 +9,12 @@
         span.incompleteTitle { font-weight:bold }
     </style>
     @{
-        string titleStyle = Item.IsComplete ? "completeTitle" : "incompleteTitle";
+        string titleStyle = Item.Status.IsComplete ? "completeTitle" : "incompleteTitle";
     }
-    @if (Item.Repeats.AsEnumerable().Select(i=>i.Due.IsSome()).Any())
+    @if (Item.Status is DomainTypes.Status.Postponed p)
     {
-        var due = Item.Repeats.Value.Due.Value;
         DateTime now = DateTime.Now;
-        int daysUntil = Convert.ToInt32((due - now).TotalDays);
+        int daysUntil = Convert.ToInt32((p.Item - now).TotalDays);
         (string daysUntilText,string styleName) =
             (daysUntil < 0) ? ("Due","overdue") :
             (daysUntil == 0) ? ("Today","today") :

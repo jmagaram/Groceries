@@ -4,8 +4,6 @@ open System.Text.RegularExpressions
 
 type UpDown = DomainTypes.UpDown<string>
 
-let private isNullOrWhiteSpace s = String.IsNullOrWhiteSpace(s)
-
 type KnownUnit =
     { OneOf : string 
       ManyOf : string }

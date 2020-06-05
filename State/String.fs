@@ -1,4 +1,12 @@
-﻿module String
+﻿[<AutoOpen>]
+module String
+
+let isNullOrWhiteSpace s = System.String.IsNullOrWhiteSpace(s)
+
+let trim (s:string) = 
+    match s |> isNullOrWhiteSpace with
+    | true -> ""
+    | false -> s.Trim()
 
 let rec find (query:string) (source:string)  =
     seq {
@@ -20,3 +28,13 @@ let rec find (query:string) (source:string)  =
                     yield (matchInMiddle, true)
                     yield! find query afterMatch 
     }
+
+let tryParseWith (tryParseFunc: string -> bool * _) = tryParseFunc >> function
+    | true, v    -> Some v
+    | false, _   -> None
+
+let tryParseDate = tryParseWith System.DateTime.TryParse
+
+let tryParseInt = tryParseWith System.Int32.TryParse
+
+let tryParseGuid = tryParseWith System.Guid.TryParse

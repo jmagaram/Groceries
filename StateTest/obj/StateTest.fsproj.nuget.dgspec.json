@@ -44,7 +44,7 @@
           "dependencies": {
             "FSharp.Core": {
               "target": "Package",
-              "version": "[4.7.1, )",
+              "version": "[4.7.2, )",
               "generatePathProperty": true
             },
             "FsUnit": {
@@ -54,22 +54,26 @@
             },
             "Microsoft.NET.Test.Sdk": {
               "target": "Package",
-              "version": "[16.5.0, )",
+              "version": "[16.6.1, )",
               "generatePathProperty": true
             },
             "coverlet.collector": {
+              "include": "Runtime, Build, Native, ContentFiles, Analyzers, BuildTransitive",
+              "suppressParent": "All",
               "target": "Package",
-              "version": "[1.2.0, )",
+              "version": "[1.2.1, )",
               "generatePathProperty": true
             },
             "xunit": {
               "target": "Package",
-              "version": "[2.4.0, )",
+              "version": "[2.4.1, )",
               "generatePathProperty": true
             },
             "xunit.runner.visualstudio": {
+              "include": "Runtime, Build, Native, ContentFiles, Analyzers, BuildTransitive",
+              "suppressParent": "All",
               "target": "Package",
-              "version": "[2.4.0, )",
+              "version": "[2.4.1, )",
               "generatePathProperty": true
             }
           },
@@ -128,7 +132,7 @@
           "dependencies": {
             "FSharp.Core": {
               "target": "Package",
-              "version": "[4.7.1, )",
+              "version": "[4.7.2, )",
               "generatePathProperty": true
             }
           },

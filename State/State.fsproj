@@ -5,14 +5,26 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Include="Result.fs" />
+    <Compile Include="Seq.fs" />
     <Compile Include="String.fs" />
+    <Compile Include="Utilities.fs" />
     <Compile Include="DomainTypes.fs" />
-    <Compile Include="Duration.fs" />
+    <Compile Include="Repeat.fs" />
+    <Compile Include="Frequency.fs" />
+    <Compile Include="Selector.fs" />
+    <Compile Include="PickOne.fs" />
     <Compile Include="Test.fs" />
+    <Compile Include="TextBox.fs" />
     <Compile Include="QuantityUpDown.fs" />
     <Compile Include="ViewModelTypes.fs" />
+    <Compile Include="RepeatSelector.fs" />
     <Compile Include="ItemBuilder.fs" />
     <Compile Include="FindViewModel.fs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Update="FSharp.Core" Version="4.7.2" />
   </ItemGroup>
 
 </Project>

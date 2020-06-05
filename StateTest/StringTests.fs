@@ -35,3 +35,29 @@ let ``When search for something in empty string return empty`` (query:string) =
     let expected = Seq.empty
     let actual = "" |> String.find query
     actual |> should equivalent expected
+
+[<Theory>]
+[<InlineData("1", 1)>]
+[<InlineData("2", 2)>]
+[<InlineData(" 3  ", 3)>]
+[<InlineData("+5", 5)>]
+[<InlineData("-7", -7)>]
+[<InlineData("0", 0)>]
+[<InlineData("+0", 0)>]
+[<InlineData("-0", 0)>]
+let ``tryParseInt when is an int `` (s:string) (expected:int) =
+    s 
+    |> String.tryParseInt
+    |> should equal (Some expected)
+
+[<Theory>]
+[<InlineData("banana")>]
+[<InlineData("")>]
+[<InlineData("1 apple")>]
+[<InlineData("2.4")>]
+[<InlineData("+2.4")>]
+[<InlineData("-2.4")>]
+let ``tryParseInt when is not an int should return none`` (s:string) =
+    s 
+    |> String.tryParseInt
+    |> should equal None

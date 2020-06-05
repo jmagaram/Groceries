@@ -1,5 +1,5 @@
 ﻿@page "/edititem"
-@using static DomainTypes.Duration
+@using static DomainTypes.Frequency
 @using static ItemBuilder
 @using Unit = Microsoft.FSharp.Core.Unit
 
@@ -13,187 +13,62 @@
         font-weight: bold;
     }
 </style>
+
 <h3>Add/Edit item</h3>
+<input value="@tb.Text" @onfocus="tbonfocus" @onblur="tbonblur" @oninput="tbchange" />
+<p>Normalized: @tb.NormalizedText</p>
+<p>Error: @(tb.Error.GetOr("- no error -"))</p>
 <form>
     <div>
-        @if (model.Schedule.IsComplete)
-        {
-            <p class="completedTitle">@model.Title</p>
-            @if (activate(model).IsSome())
-            {
-                <button type="button" @onclick="Activate">Add to shopping list again</button>
-            }
-            <br />
-        }
-        else
-        {
-            <label>
-                Name: <input @oninput="OnTitleChange" placeholder="Apples, Canned Tuna, ..." value="@model.Title.Value" />@if (model.Title.Error.IsSome())
-                {<span class="validationError">@model.Title.Error.Value</span>}
-            </label>
-        }
+        <label>
+            Status:
+            <select @onchange="ChangeStatus">
+                @{
+                    foreach (var i in model.Status.Choices)
+                    {
+                        <option selected="@(i.Equals(model.Status.SelectedItem))" value="@i.Description">@i.Description</option>
+                    }
+                }
+            </select>
+        </label>
+    </div>
+    <div>
+        <label>
+            Name: <input @oninput="OnTitleChange" placeholder="Apples, Canned Tuna, ..." value="@model.Title.Value" />@if (model.Title.Error.IsSome())
+            {<span class="validationError">@model.Title.Error.Value</span>}
+        </label>
     </div>
     <div>
         <label>
             Quantity: <input placeholder="3 large, 1 can, lots, ..." value="@model.Quantity" @oninput="SetQty" />
-            @if (decreaseQty(model).IsSome())
-            {<button type="button" @onclick="DecreaseQuantity">-</button>}
-            @if (increaseQty(model).IsSome())
-            {<button type="button" @onclick="IncreaseQuantity">+</button>}
+            <button disabled="@(!CanDecreaseQuantity())" type="button" @onclick="DecreaseQuantity">-</button>
+            <button disabled="@(!CanIncreaseQuantity())" type="button" @onclick="IncreaseQuantity">+</button>
         </label>
     </div>
     <div><label>Note: <textarea @oninput="OnNoteChange" rows="3" placeholder="Favorite brand, organic-only, ...">@model.Note</textarea></label></div>
-    @if (model.Schedule.IsIncomplete)
-    {
-        <div>
-            <label>
-                Repeat: <input disabled value="No; one-time purchase" />@if (repeat(model).IsSome())
-                {<button type="button" @onclick="OnMakeRecurring">Make repeating</button>}
-            </label>
-        </div>
-    }
-    @if (model.Schedule.IsRepeat)
-    {
-        var repeat = model.Schedule.TryRepeat.Value;
-        <div>
-            <label>
-                Repeat: <select @onchange="OnRecurrenceChange">
-                    @foreach (var i in durationChoices)
+    <div>
+        <label>
+            Repeat:
+            <select @onchange="OnRecurrenceChange">
+                @{
+                    @foreach (var i in model.Repeat.Choices)
                     {
-                        var d = durationChoices[i.Key].Item2;
-                        var isSelected = repeat.Frequency == d;
-                        if (isSelected)
-                        {
-                            <option value="@i.Key" selected>@i.Value.Item1</option>
-                        }
-                        else
-                        {
-                            <option value="@i.Key">@i.Value.Item1</option>
-                        }
-                    }
-                </select>
-                @if (removeRepeat(model).IsSome())
-                {<button type="button" @onclick="OnRemoveRecurrence">Remove recurrence</button>}
-            </label>
-        </div>
-        <div>
-            <label>
-                When:@{
-                    void RenderPostponePicker(int? currentDays)
-                    {
-                        List<Tuple<int, string>> defaultChoices = new List<Tuple<int, string>> {
-                Tuple.Create(-1,"On shopping list now"),
-                Tuple.Create(0,"Overdue"),
-                Tuple.Create(1,"Tomorrow"),
-                Tuple.Create(3,"+3 days"),
-                Tuple.Create(7,"+1 week"),
-                Tuple.Create(14,"+2 weeks"),
-                Tuple.Create(21,"+3 weeks"),
-                Tuple.Create(30,"+1 month"),
-                Tuple.Create(60,"+2 months"),
-                Tuple.Create(90,"+3 months")
-            };
-                        if (!defaultChoices.Any(j => j.Item1 == currentDays) && currentDays.HasValue)
-                        {
-                            defaultChoices.Add(Tuple.Create(currentDays.Value, $"+{currentDays.Value} days"));
-                        }
-                        <select @onchange="Postpone">
-                            @foreach (var i in defaultChoices.OrderBy(j => j.Item1))
-                            {
-                                if ((!currentDays.HasValue && i.Item1 == -1) || (currentDays == i.Item1))
-                                {
-                                    <option selected value="@i.Item1">@i.Item2</option>
-                                }
-                                else
-                                {
-                                    <option value="@i.Item1">@i.Item2</option>
-                                }
-                            }
-                        </select>
-                    }
-                    if (repeat.DueDays.IsSome())
-                    {
-                        RenderPostponePicker(repeat.DueDays.Value);
-                    }
-                    else
-                    {
-                        RenderPostponePicker(null);
+                        <option selected="@(i.Equals(model.Repeat.SelectedItem))" value="@(SerializeRepeatInterval(i.AsNullable()))">@RepeatText(i)</option>
                     }
                 }
-            </label>
-        </div>
-    }
-    @if (canSubmit(model))
-    {
-        <button type="button">Save</button>
-    }
-    else
-    {
-        <button disabled>Save</button>
-    }
-    <button type="button">Cancel</button>
-    <button type="button">Delete</button>
-</form>
-@code {
+            </select>
+        </label>
+    </div>
+    <button type="button" disabled="@(ItemBuilder.hasErrors(model))">Save</button>
 
-    protected ItemBuilder.Builder model;
-
-    Dictionary<int, Tuple<string, DomainTypes.Duration>> durationChoices;
-
-    protected void Activate() => model = activate(model).Value;
-
-    protected void OnTitleChange(ChangeEventArgs c) => model = setTitle((string)c.Value, model);
-
-    protected void OnNoteChange(ChangeEventArgs c) => model = setNote((string)c.Value, model);
-
-    protected void SetQty(ChangeEventArgs c)
-    {
-        string qty = (string)c.Value;
-        model = ItemBuilder.setQuantity(qty, model);
-    }
-
-    protected void IncreaseQuantity() => model = increaseQty(model).Value;
-
-    protected void DecreaseQuantity() => model = decreaseQty(model).Value;
-
-    protected void OnMakeRecurring() => model = repeat(model).Value;
-
-    protected void OnRemoveRecurrence() => model = removeRepeat(model).Value;
-
-    protected void OnRecurrenceChange(ChangeEventArgs c)
-    {
-        int keyOfChosenItem = int.Parse((string)c.Value);
-        var chosen = durationChoices[keyOfChosenItem].Item2;
-        model = setFrequency(model).Value.Invoke(chosen);
-    }
-
-    protected void Postpone(ChangeEventArgs c)
-    {
-        int daysChosen = int.Parse((string)c.Value);
-        if (daysChosen == -1)
+    @*
+        @if (!hasErrors(model))
         {
-            model = activate(model).Value;
         }
         else
         {
-            model = postpone(model).Value.Invoke(daysChosen);
+            <button disabled>Save</button>
         }
-    }
-
-    protected override void OnInitialized()
-    {
-        base.OnInitialized();
-        durationChoices = new Dictionary<int, Tuple<string, DomainTypes.Duration>>();
-        durationChoices.Add(1, Tuple.Create("Every 3 days", D3));
-        durationChoices.Add(2, Tuple.Create("Weekly", W1));
-        durationChoices.Add(3, Tuple.Create("Every 2 weeks", W2));
-        durationChoices.Add(4, Tuple.Create("Every 3 weeks", W3));
-        durationChoices.Add(5, Tuple.Create("Monthly", M1));
-        durationChoices.Add(6, Tuple.Create("Every 2 months", M2));
-        durationChoices.Add(7, Tuple.Create("Every 3 months", M3));
-        durationChoices.Add(8, Tuple.Create("Every 4 months", M4));
-        durationChoices.Add(9, Tuple.Create("Every 6 months", M6));
-        durationChoices.Add(10, Tuple.Create("Every 9 months", M9));
-        model = ItemBuilder.create;
-    }
-}
+        <button type="button" disabled>Cancel</button>
+        <button type="button" disabled>Delete</button>*@
+</form>

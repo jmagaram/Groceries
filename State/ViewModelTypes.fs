@@ -6,8 +6,8 @@ type ListItemViewModel =
     { Title : string
       Quantity : string option
       Note : string option
-      IsComplete : bool
-      Repeats : Repeat option }
+      Status : Status
+      Repeat : Frequency option }
 
 let createListItemViewModel (i:DomainTypes.Item) =
     { ListItemViewModel.Title = match i.Title with | Title t -> t
@@ -19,15 +19,8 @@ let createListItemViewModel (i:DomainTypes.Item) =
         match i.Note with 
         | Some (Note n) -> Some n
         | None -> None
-      IsComplete = 
-        match i.Schedule with 
-        | Schedule.Complete -> true 
-        | _ -> false
-      Repeats = 
-        match i.Schedule with
-        | Repeat r -> Some r
-        | _ -> None
-    }
+      Repeat = i.Repeat
+      Status = i.Status }
 
 type ShoppingListViewModel =
     { Items : ListItemViewModel seq 
@@ -37,24 +30,22 @@ type ShoppingListViewModel =
 type ShowFutureItems = ShoppingListViewModel -> ShoppingListViewModel
 type HideFutureItems = ShoppingListViewModel -> ShoppingListViewModel
 
-let showFutureItems (state:State) = 
-    { ShowFutureItems = true
-      Items = 
-        state.Items
-        |> Seq.map(fun i -> i.Value)
-        |> Seq.map(fun i -> createListItemViewModel i)
-    }
+//let showFutureItems (state:Result) = 
+//    { ShowFutureItems = true
+//      Items = 
+//        state.Items
+//        |> Seq.map(fun i -> i.Value)
+//        |> Seq.map(fun i -> createListItemViewModel i)
+//    }
 
-let hideFutureItems (state:State) now model = 
-    { model with
-        ShowFutureItems = false
-        Items = 
-            model.Items
-            |> Seq.filter(fun i ->
-                match i.Repeats with
-                | Some r -> 
-                    match r.Due with
-                    | Some dt -> dt > now
-                    | None -> false
-                | None -> false)
-    }
+let isFutureItem now model  =
+    match model.Status with
+    | Status.Postponed dt -> dt > now
+    | _ -> false
+
+//let hideFutureItems (state:Result) now model = 
+//    { model with
+//        ShowFutureItems = false
+//        Items = 
+//            model.Items
+//            |> Seq.filter(fun i -> i |> isFutureItem now) }

@@ -111,3 +111,4 @@ C:\Users\justi\source\repos\Groceries\StateTest\obj\Debug\netcoreapp3.1\StateTes
 C:\Users\justi\source\repos\Groceries\StateTest\obj\Debug\netcoreapp3.1\StateTest.genruntimeconfig.cache
 C:\Users\justi\source\repos\Groceries\StateTest\bin\Debug\netcoreapp3.1\FsUnit.NUnit.dll
 C:\Users\justi\source\repos\Groceries\StateTest\bin\Debug\netcoreapp3.1\nunit.framework.dll
+C:\Users\justi\source\repos\Groceries\StateTest\bin\Debug\netcoreapp3.1\testhost.exe
