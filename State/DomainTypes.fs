@@ -56,7 +56,6 @@ type PickOneMessage<'T> =
     | PickOneByPredicate of ('T -> bool)
     | PickOneByItem of 'T
 
-
 type Selector<'T, 'Error> when 'T : comparison =
     { Choices : Set<'T>
       SelectedItem : 'T option 

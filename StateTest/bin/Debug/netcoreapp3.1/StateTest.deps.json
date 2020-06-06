@@ -776,7 +776,10 @@
       },
       "State/1.0.0": {
         "dependencies": {
-          "FSharp.Core": "4.7.2"
+          "FSharp.Core": "4.7.2",
+          "FsUnit": "3.8.1",
+          "Microsoft.NET.Test.Sdk": "16.6.1",
+          "xunit": "2.4.1"
         },
         "runtime": {
           "State.dll": {}
