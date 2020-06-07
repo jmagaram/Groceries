@@ -21,20 +21,7 @@ let select i p =
     | false -> failwith "That item does not exist in the set of possible choices."
     | true -> { p with SelectedItem = i }
 
-
-//module RepeatPickOne =
-
-//    let standardRepeatOptions = 
-
-//    let ssss current =
-//        [ -1; 1; 3; 7; 14; 21; 30; 60; 90; 180 ]
-//        |> Seq.map (fun i ->
-//            match i with )
-
-    
-//module RepeatPickOne =
-
-//    type T = PickOne<Repeat>
-
-//    let 
-//    let create = PickOne.cr
+let update msg p =
+    match msg with
+    | PickOneByItem i -> p |> select i
+    | PickOneByPredicate f -> p |> selectIf f

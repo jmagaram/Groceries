@@ -6,8 +6,7 @@ type ListItemViewModel =
     { Title : string
       Quantity : string option
       Note : string option
-      Status : Status
-      Repeat : Frequency option }
+      Status : Status } // had the repeat here
 
 let createListItemViewModel (i:DomainTypes.Item) =
     { ListItemViewModel.Title = match i.Title with | Title t -> t
@@ -19,7 +18,6 @@ let createListItemViewModel (i:DomainTypes.Item) =
         match i.Note with 
         | Some (Note n) -> Some n
         | None -> None
-      Repeat = i.Repeat
       Status = i.Status }
 
 type ShoppingListViewModel =

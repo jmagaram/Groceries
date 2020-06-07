@@ -1,0 +1,165 @@
+﻿@using static DomainTypes
+@using Microsoft.FSharp.Core
+
+<h3>ItemEdit Component</h3>
+
+<form>
+    <div>
+        <label>
+            Name: <input @oninput="OnTitleChange" @onfocusout="OnTitleFocusOut" @onfocusin="OnTitleFocusIn" placeholder="Apples, Canned Tuna, ..." value="@Model.Title.Text" />
+            @if (Model.Title.Error.IsSome())
+            {
+                <span>Error: @Model.Title.Error.Value</span>
+            }
+        </label>
+    </div>
+    <div>
+        <label>
+            Quantity: <input @oninput="OnQuantityChange" @onfocusout="OnQuantityFocusOut" @onfocusin="OnQuantityFocusIn" placeholder="1 jar, 3 lb, lots!" value="@Model.Quantity.Text" />
+            @if (Model.Quantity.Error.IsSome())
+            {
+                <span>Error: @Model.Quantity.Error.Value</span>
+            }
+            <button disabled="@(!Model.QuantitySpinner.CanDecrease)" type="button" @onclick="DecreaseQuantity">-</button>
+            <button disabled="@(!Model.QuantitySpinner.CanIncrease)" type="button" @onclick="IncreaseQuantity">+</button>
+        </label>
+    </div>
+    <div>
+        <label>
+            Note: <textarea rows="3" @oninput="OnNoteChange" @onfocusout="OnNoteFocusOut" @onfocusin="OnNoteFocusIn" placeholder="Favorite brand, organic-only, not too ripe, .." value="@Model.Note.Text" />
+            @if (Model.Note.Error.IsSome())
+            {
+                <span>Error: @Model.Note.Error.Value</span>
+            }
+        </label>
+    </div>
+    <div>
+        <label>
+            Repeat:
+            <select @onchange="OnRepeatChange">
+                @foreach (var i in Model.Repeat.Choices.OrderBy(global::Repeat.orderBy))
+                {
+                    string key = global::Repeat.serialize(i);
+                    string selectedKey = global::Repeat.serialize(Model.Repeat.SelectedItem);
+                    bool isSelected = key == selectedKey;
+                    string description = RepeatAsText(i);
+                    <option selected="@isSelected" value="@key">@description</option>
+                }
+            </select>
+        </label>
+    </div>
+</form>
+
+@code {
+    [Parameter]
+    public DomainTypes.ItemEditorModel Model { get; set; }
+
+    class TextBoxHandler<TModel, TMessage>
+    {
+        Func<TModel> _getModel;
+        Action<TModel> _setModel;
+        Func<TextBoxMessage, TMessage> _msg;
+        Func<TMessage, TModel, TModel> _update;
+
+        public TextBoxHandler(Func<TModel> getModel, Action<TModel> setModel, Func<TextBoxMessage, TMessage> msg, Func<TMessage, TModel, TModel> update)
+        {
+            _getModel = getModel;
+            _setModel = setModel;
+            _msg = msg;
+            _update = update;
+        }
+
+        public void OnTextChange(ChangeEventArgs e) => ProcessMessage(global::DomainTypes.TextBoxMessage.NewSetText(e.Value.ToString()));
+
+        public void OnFocusIn(FocusEventArgs e) => ProcessMessage(global::DomainTypes.TextBoxMessage.GetFocus);
+
+        public void OnFocusOut(FocusEventArgs e) => ProcessMessage(global::DomainTypes.TextBoxMessage.LoseFocus);
+
+        protected void ProcessMessage(TextBoxMessage msg)
+        {
+            var modelMessage = _msg(msg);
+            var model = _getModel();
+            var updatedModel = _update(modelMessage, model);
+            _setModel(updatedModel);
+        }
+    }
+
+    //TextBoxHandler<ItemEditorModel, ItemEditorMessage> _titleManager;
+
+    //protected void ss()
+    //{
+    //    _titleManager = new TextBoxHandler<ItemEditorModel, ItemEditorMessage>(() => Model, m => Model = m, ItemEditorMessage.NewTitleMessage, global::ItemEditorModel.update);
+    //}
+
+    protected void OnTitleChange(ChangeEventArgs e)
+    {
+        var titleMessage = ItemEditorMessage.TitleMessage.NewTitleMessage(TextBoxMessage.NewSetText(e.Value.ToString()));
+        Model = global::ItemEditorModel.update(titleMessage, Model);
+    }
+
+    protected void OnTitleFocusIn(FocusEventArgs e)
+    {
+        var titleMessage = ItemEditorMessage.TitleMessage.NewTitleMessage(TextBoxMessage.GetFocus);
+        Model = global::ItemEditorModel.update(titleMessage, Model);
+    }
+
+    protected void OnTitleFocusOut(FocusEventArgs e)
+    {
+        var titleMessage = ItemEditorMessage.TitleMessage.NewTitleMessage(TextBoxMessage.LoseFocus);
+        Model = global::ItemEditorModel.update(titleMessage, Model);
+    }
+
+    protected void OnNoteChange(ChangeEventArgs e)
+    {
+        var NoteMessage = ItemEditorMessage.NoteMessage.NewNoteMessage(TextBoxMessage.NewSetText(e.Value.ToString()));
+        Model = global::ItemEditorModel.update(NoteMessage, Model);
+    }
+
+    protected void OnNoteFocusIn(FocusEventArgs e)
+    {
+        var NoteMessage = ItemEditorMessage.NoteMessage.NewNoteMessage(TextBoxMessage.GetFocus);
+        Model = global::ItemEditorModel.update(NoteMessage, Model);
+    }
+
+    protected void OnNoteFocusOut(FocusEventArgs e)
+    {
+        var NoteMessage = ItemEditorMessage.NoteMessage.NewNoteMessage(TextBoxMessage.LoseFocus);
+        Model = global::ItemEditorModel.update(NoteMessage, Model);
+    }
+
+
+    protected void OnQuantityChange(ChangeEventArgs e)
+    {
+        var QuantityMessage = ItemEditorMessage.QuantityMessage.NewQuantityMessage(TextBoxMessage.NewSetText(e.Value.ToString()));
+        Model = global::ItemEditorModel.update(QuantityMessage, Model);
+    }
+
+    protected void OnQuantityFocusIn(FocusEventArgs e)
+    {
+        var QuantityMessage = ItemEditorMessage.QuantityMessage.NewQuantityMessage(TextBoxMessage.GetFocus);
+        Model = global::ItemEditorModel.update(QuantityMessage, Model);
+    }
+
+    protected void OnQuantityFocusOut(FocusEventArgs e)
+    {
+        var QuantityMessage = ItemEditorMessage.QuantityMessage.NewQuantityMessage(TextBoxMessage.LoseFocus);
+        Model = global::ItemEditorModel.update(QuantityMessage, Model);
+    }
+
+    protected void OnRepeatChange(ChangeEventArgs e)
+    {
+        var selectedKey = (string)(e.Value);
+        var selected = global::Repeat.deserialize(selectedKey).ResultValue;
+        var msg = DomainTypes.ItemEditorMessage.NewRepeatMessage(selected);
+        Model = global::ItemEditorModel.update(msg, Model);
+    }
+
+    protected string RepeatAsText(Repeat r) => global::Repeat.formatEnglish.Invoke(r);
+
+    protected void IncreaseQuantity() =>
+        Model = global::ItemEditorModel.update(ItemEditorMessage.NewQuantitySpinner(SpinnerMessage.Increase), Model);
+
+    protected void DecreaseQuantity() =>
+        Model = global::ItemEditorModel.update(ItemEditorMessage.NewQuantitySpinner(SpinnerMessage.Decrease), Model);
+}
+

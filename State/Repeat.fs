@@ -32,6 +32,52 @@ let deserialize s =
         |> Option.map repeatEvery
         |> Option.defaultValue (Error (sprintf "Could not deserialize %s" s))
 
+let orderBy r = 
+    match r with
+    | DoesNotRepeat -> 0
+    | DailyInterval d -> d
+
+type FormatRules =
+    { NoRepeatText : string
+      EveryDayText : string
+      EveryWeekText : string
+      EveryMonthText : string
+      EveryNDaysText : int -> string
+      EveryNWeeksText : int -> string
+      EveryNMonthsText : int -> string }
+
+let format (rules:FormatRules) r =
+    match r with
+    | DoesNotRepeat -> rules.NoRepeatText
+    | DailyInterval d ->
+        if (d % 30 = 0) then
+            if d = 30 
+            then rules.EveryMonthText 
+            else rules.EveryNMonthsText (d / 30)
+        elif (d % 7 = 0) then
+            if d = 7
+            then rules.EveryWeekText
+            else rules.EveryNWeeksText (d / 7)
+        else
+            if d = 1
+            then rules.EveryDayText
+            else rules.EveryNDaysText d
+
+let englishFormatRules =
+    { FormatRules.NoRepeatText = "Does not repeat"
+      EveryDayText = "Daily"
+      EveryWeekText = "Weekly"
+      EveryMonthText = "Monthly"
+      EveryNDaysText = sprintf "Every %i days"
+      EveryNWeeksText = sprintf "Every %i weeks"
+      EveryNMonthsText = sprintf "Every %i months" }
+
+let formatEnglish = format englishFormatRules
+
+let standardRepeatIntervals =
+    [1; 3; 7; 14; 21; 30; 60; 90; 180]
+    |> Seq.map Repeat.DailyInterval
+
 module Tests = 
 
     type RepeatResult = Result<Repeat, string>

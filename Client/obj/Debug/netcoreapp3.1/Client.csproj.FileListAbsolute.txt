@@ -65,8 +65,6 @@ C:\Users\justi\source\repos\Groceries\Client\obj\Debug\netcoreapp3.1\RazorDeclar
 C:\Users\justi\source\repos\Groceries\Client\obj\Debug\netcoreapp3.1\Razor\Pages\Find.razor.g.cs
 C:\Users\justi\source\repos\Groceries\Client\obj\Debug\netcoreapp3.1\RazorDeclaration\Pages\ShoppingList.razor.g.cs
 C:\Users\justi\source\repos\Groceries\Client\obj\Debug\netcoreapp3.1\Razor\Pages\ShoppingList.razor.g.cs
-C:\Users\justi\source\repos\Groceries\Client\obj\Debug\netcoreapp3.1\RazorDeclaration\Pages\EditItem.razor.g.cs
-C:\Users\justi\source\repos\Groceries\Client\obj\Debug\netcoreapp3.1\Razor\Pages\EditItem.razor.g.cs
 C:\Users\justi\source\repos\Groceries\Client\bin\Debug\netcoreapp3.1\FsUnit.NUnit.dll
 C:\Users\justi\source\repos\Groceries\Client\bin\Debug\netcoreapp3.1\nunit.framework.dll
 C:\Users\justi\source\repos\Groceries\Client\bin\Debug\netcoreapp3.1\xunit.abstractions.dll
@@ -153,3 +151,7 @@ C:\Users\justi\source\repos\Groceries\Client\bin\Debug\netcoreapp3.1\zh-Hans\Mic
 C:\Users\justi\source\repos\Groceries\Client\bin\Debug\netcoreapp3.1\zh-Hant\Microsoft.TestPlatform.CommunicationUtilities.resources.dll
 C:\Users\justi\source\repos\Groceries\Client\bin\Debug\netcoreapp3.1\zh-Hant\Microsoft.TestPlatform.CrossPlatEngine.resources.dll
 C:\Users\justi\source\repos\Groceries\Client\bin\Debug\netcoreapp3.1\zh-Hant\Microsoft.VisualStudio.TestPlatform.Common.resources.dll
+C:\Users\justi\source\repos\Groceries\Client\obj\Debug\netcoreapp3.1\RazorDeclaration\Pages\ItemEdit.razor.g.cs
+C:\Users\justi\source\repos\Groceries\Client\obj\Debug\netcoreapp3.1\RazorDeclaration\Shared\ItemEditor.razor.g.cs
+C:\Users\justi\source\repos\Groceries\Client\obj\Debug\netcoreapp3.1\Razor\Pages\ItemEdit.razor.g.cs
+C:\Users\justi\source\repos\Groceries\Client\obj\Debug\netcoreapp3.1\Razor\Shared\ItemEditor.razor.g.cs

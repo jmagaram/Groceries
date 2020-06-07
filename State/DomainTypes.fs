@@ -1,15 +1,6 @@
 ﻿module DomainTypes
 open System
 
-type Frequency = 
-    | Daily
-    | Weekly
-    | Every2Weeks 
-    | Every3Weeks 
-    | Monthly 
-    | Every2Months 
-    | Every3Months 
-
 type Repeat = 
     | DoesNotRepeat
     | DailyInterval of int
@@ -32,7 +23,7 @@ type Item =
       Title : Title
       Note : Note option
       Quantity : Quantity option
-      Repeat : Frequency option
+      Repeat : Repeat
       Status : Status }
 
 type StoreId = | StoreId of Guid
@@ -44,10 +35,6 @@ type State =
       Items : Map<ItemId, Item> 
       ItemIsUnavailableInStore : Set<StoreId * ItemId> }
 
-type UpDown<'v> = 
-    { Increase : 'v -> 'v option
-      Decrease : 'v -> 'v option }
-
 type PickOne<'T> when 'T : comparison =
     { Choices : Set<'T>
       SelectedItem : 'T }
@@ -56,20 +43,26 @@ type PickOneMessage<'T> =
     | PickOneByPredicate of ('T -> bool)
     | PickOneByItem of 'T
 
+type PickRepeat = PickOne<Repeat>
+
+type PickRepeatMessage = Repeat
+
 type Selector<'T, 'Error> when 'T : comparison =
     { Choices : Set<'T>
       SelectedItem : 'T option 
       Error : 'Error option }
-
-type Validated<'t,'error> =
-    { Value : 't 
-      Error : 'error option }
 
 type TextBox<'Error> =
     { Text : string
       NormalizedText : string
       Error : 'Error option 
       HasFocus : bool }
+
+type TitleTextBox = TextBox<string>
+
+type QuantityTextBox = TextBox<string>
+
+type NoteTextBox = TextBox<string>
 
 type TextBoxMessage = 
     | SetText of string
@@ -99,12 +92,24 @@ type RepeatError =
 
 type DailyInterval = int
 
-type RepeatSelector = Selector<DailyInterval option, RepeatError>
+type Spinner = 
+    { CanIncrease : bool
+      CanDecrease : bool }
 
-type Model =
-    { Title : Validated<string, string>
-      Quantity : string 
-      Note : string
-      Status : Selector<RelativeStatusChoice,string>
-      PostponedDays : int
-      Repeat : RepeatSelector }
+type SpinnerMessage = 
+    | Increase
+    | Decrease
+
+type ItemEditorMessage =
+    | TitleMessage of TextBoxMessage
+    | QuantityMessage of TextBoxMessage
+    | NoteMessage of TextBoxMessage
+    | RepeatMessage of PickRepeatMessage
+    | QuantitySpinner of SpinnerMessage
+
+type ItemEditorModel =
+    { Title : TitleTextBox
+      Quantity : QuantityTextBox
+      QuantitySpinner : Spinner
+      Note : NoteTextBox
+      Repeat : PickRepeat }

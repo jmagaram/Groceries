@@ -1,8 +1,6 @@
-﻿module QuantityUpDown
+﻿module QuantitySpinner
 open System
 open System.Text.RegularExpressions
-
-type UpDown = DomainTypes.UpDown<string>
 
 type KnownUnit =
     { OneOf : string 
@@ -60,7 +58,7 @@ let private parse s =
         let units = m.Groups.[2].Value
         Some { Quantity = qty; Units = units }
 
-let private increase qty = 
+let increase qty = 
     match isNullOrWhiteSpace qty with
     | true -> Some "2" 
     | false ->
@@ -74,7 +72,7 @@ let private increase qty =
                 |> format
             Some result
 
-let private decrease qty = 
+let decrease qty = 
     match parse qty with
     | None -> None
     | Some i ->
@@ -90,10 +88,6 @@ let private decrease qty =
                     | _ -> i.Units |> manyOf }
                 |> format
             Some result
-
-let instance =
-    { UpDown.Increase = increase
-      UpDown.Decrease = decrease }
 
 module Tests = 
 
@@ -140,7 +134,7 @@ module Tests =
     [<Theory>]
     [<ClassData(typeof<QuantityAdjustmentTests>)>]
     let ``can adjust quantities`` (start:string) (expectedResult:Expectation) =
-        let target = instance  
+        let target = {| Increase = increase; Decrease = decrease |}  
         match expectedResult with
         | CanNotDecrease -> target.Decrease start |> should equal None
         | CanNotIncrease -> target.Increase start |> should equal None

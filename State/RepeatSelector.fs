@@ -54,31 +54,3 @@ let noFrequency s =
 let display s =
     s.Choices
     |> Seq.map (fun c -> {| Key = serializeInterval c; Value = c; IsSelected = (Some c = s.SelectedItem) |})
-
-
-//let selectKey key s =
-//    s
-//    |> Selector.select (fun i -> (i |> serializeInterval) = key)
-//    |> validate
-
-//to display on screen...
-//for each item...
-//	is selected or not?
-//    serialized value
-//    text
-
-//to process the change...
-//deserialize the value
-//if some value chosen, set repeat to it
-//else remove repeat
-
-
-//type SelectOption<'T> = 
-//    { Key : string 
-//      IsSelected : bool
-//      Value : 'T // may not be simple text 
-//    }
-
-//let setByKey key selector =
-//    let v = 
-

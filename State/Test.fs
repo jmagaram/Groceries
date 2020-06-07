@@ -11,41 +11,41 @@ let randomFrom items =
 let sampleItems =
     let itemsToParse = 
         [ 
-            ("Chocolate bars", "5", "Very dark, Alter Eco preferred", Some Frequency.Every2Weeks)
-            ("Dried cannellini or white beans", "Plenty", "", Some Frequency.Monthly)
-            ("Dried chickpeas", "", "Check the bulk section if no cans available",None)
-            ("Flour - White All Purpose", "2 large bags", "" ,None)
-            ("Flour - White Bread", "2 large bags", "" ,None)
-            ("Gluten (for baking)", "", "" ,None)
-            ("Chocolate chips", "", "Prefer Ghiradelli brand", Some Frequency.Monthly)
-            ("Peanut butter", "Several jars", "CB, Adams, or Santa Cruz", Some Frequency.Monthly)
-            ("Coconut milk (unsweetened)", "4 cans", "", None)
-            ("Olive oil (medium quality)", "1 jar", "", Some Frequency.Every2Months)
-            ("Fish sauce", "2 bottles", "Prefer a specialty brand rather than Thai Kitchen", Some Frequency.Every3Months)
-            ("Mamma's lil' peppers", "1 jar", "", None)
-            ("Heritage Flakes cereal", "2 bags", "", Some Frequency.Every3Weeks)
-            ("Limes", "4", "", Some Frequency.Weekly)
-            ("Lemon", "3", "", Some Frequency.Weekly)
-            ("Oranges", "6", "Cara Cara preferred, maybe Sumo", Some Frequency.Weekly)
-            ("Apples", "8", "Like the semi-sweet varieties like Pink Lady and Envy. Avoid Granny Smith and Fuji.", Some Frequency.Weekly)
-            ("Blueberries", "2 large tubs", "Organic preferred", Some Frequency.Weekly)
-            ("Bananas", "1 bunch", "", Some Frequency.Weekly)
-            ("Tomatoes (cherry)", "1 pint", "Like the on-the-vine kind", Some Frequency.Weekly)
-            ("Avocados", "3 firm and 2 ripe", "", Some Frequency.Weekly)
-            ("Broccoli or broccolini", "", "", Some Frequency.Weekly)
-            ("Ginger", "", "", Some Frequency.Every2Weeks)
-            ("Lemongrass", "", "", None)
-            ("Onions (Yellow)", "3", "", Some Frequency.Weekly)
-            ("Butter (salted)", "", "Lurpak brand only", Some Frequency.Monthly)
-            ("Feta cheese", "", "",None)
-            ("Siggi's yogurt", "6 or so assorted flavors", "", Some Frequency.Every2Weeks)
-            ("Milk (low-fat)", "1 half gallon", "", Some Frequency.Every2Weeks)
-            ("Kombucha", "4 jars", "Assorted flavors", Some Frequency.Every3Weeks)
-            ("Nancy's yogurt", "2 tubs", "", Some Frequency.Every3Weeks)
-            ("Eggs", "2 dozen", "Free-range and happy birds please!", Some Frequency.Every2Weeks)
-            ("Mochi", "3 pints, at least one vegan", "", Some Frequency.Weekly)
-            ("Deli meat (turkey or roast beef)", "Couple packages", "", None)
-            ("Salmon filet", "32 oz", "Only if never previously frozen", None)
+            ("Chocolate bars", "5", "Very dark, Alter Eco preferred",  Repeat.DailyInterval 14)
+            ("Dried cannellini or white beans", "Plenty", "", Repeat.DailyInterval 30)
+            ("Dried chickpeas", "", "Check the bulk section if no cans available", DoesNotRepeat)
+            ("Flour - White All Purpose", "2 large bags", "" ,DoesNotRepeat)
+            ("Flour - White Bread", "2 large bags", "" ,DoesNotRepeat)
+            ("Gluten (for baking)", "", "" ,DoesNotRepeat)
+            ("Chocolate chips", "", "Prefer Ghiradelli brand", Repeat.DailyInterval 30)
+            ("Peanut butter", "Several jars", "CB, Adams, or Santa Cruz", Repeat.DailyInterval 30)
+            ("Coconut milk (unsweetened)", "4 cans", "", DoesNotRepeat)
+            ("Olive oil (medium quality)", "1 jar", "", Repeat.DailyInterval 60)
+            ("Fish sauce", "2 bottles", "Prefer a specialty brand rather than Thai Kitchen", Repeat.DailyInterval 90)
+            ("Mamma's lil' peppers", "1 jar", "", DoesNotRepeat)
+            ("Heritage Flakes cereal", "2 bags", "", Repeat.DailyInterval 21)
+            ("Limes", "4", "", Repeat.DailyInterval 7)
+            ("Lemon", "3", "", Repeat.DailyInterval 7)
+            ("Oranges", "6", "Cara Cara preferred, maybe Sumo", Repeat.DailyInterval 7)
+            ("Apples", "8", "Like the semi-sweet varieties like Pink Lady and Envy. Avoid Granny Smith and Fuji.", Repeat.DailyInterval 7)
+            ("Blueberries", "2 large tubs", "Organic preferred", Repeat.DailyInterval 7)
+            ("Bananas", "1 bunch", "", Repeat.DailyInterval 7)
+            ("Tomatoes (cherry)", "1 pint", "Like the on-the-vine kind", Repeat.DailyInterval 7)
+            ("Avocados", "3 firm and 2 ripe", "", Repeat.DailyInterval 7)
+            ("Broccoli or broccolini", "", "", Repeat.DailyInterval 7)
+            ("Ginger", "", "", Repeat.DailyInterval 14)
+            ("Lemongrass", "", "", DoesNotRepeat)
+            ("Onions (Yellow)", "3", "", Repeat.DailyInterval 7)
+            ("Butter (salted)", "", "Lurpak brand only", Repeat.DailyInterval 30)
+            ("Feta cheese", "", "",DoesNotRepeat)
+            ("Siggi's yogurt", "6 or so assorted flavors", "", Repeat.DailyInterval 14)
+            ("Milk (low-fat)", "1 half gallon", "", Repeat.DailyInterval 14)
+            ("Kombucha", "4 jars", "Assorted flavors", Repeat.DailyInterval 21)
+            ("Nancy's yogurt", "2 tubs", "", Repeat.DailyInterval 21)
+            ("Eggs", "2 dozen", "Free-range and happy birds please!", Repeat.DailyInterval 14)
+            ("Mochi", "3 pints, at least one vegan", "", Repeat.DailyInterval 7)
+            ("Deli meat (turkey or roast beef)", "Couple packages", "", DoesNotRepeat)
+            ("Salmon filet", "32 oz", "Only if never previously frozen", DoesNotRepeat)
         ]
     let parseQuantity qty = 
         match qty |> isNullOrWhiteSpace with
@@ -60,19 +60,19 @@ let sampleItems =
         |> Seq.map (fun c -> c = 'p')
         |> randomFrom
     let today = DateTime.Now
-    let postponeUntilRandom fqy =
-        let rangeMax = fqy |> Frequency.asDays
+    let postponeUntilRandom d =
+        let rangeMax = d
         let rangeMin = -10
         match shouldPostponeRandom() with
         | false -> None
         | true -> 
             let daysFromToday = rangeMin + random.Next(rangeMin, rangeMax + 20)
             today.AddDays(daysFromToday |> float) |> Some
-    let createStatus freq =
-        match freq with
-        | None -> Status.Active
-        | Some freq ->              
-            let postpone = freq |> postponeUntilRandom
+    let createStatus r =
+        match r with
+        | DoesNotRepeat -> Status.Active
+        | DailyInterval i ->              
+            let postpone = i |> postponeUntilRandom
             match postpone with
             | Some dt -> Status.Postponed dt
             | None -> Status.Active

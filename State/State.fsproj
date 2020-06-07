@@ -11,15 +11,19 @@
     <Compile Include="Utilities.fs" />
     <Compile Include="DomainTypes.fs" />
     <Compile Include="Repeat.fs" />
-    <Compile Include="Frequency.fs" />
     <Compile Include="Selector.fs" />
     <Compile Include="PickOne.fs" />
+    <Compile Include="PickRepeat.fs" />
     <Compile Include="Test.fs" />
     <Compile Include="TextBox.fs" />
-    <Compile Include="QuantityUpDown.fs" />
+    <Compile Include="Spinner.fs" />
+    <Compile Include="TitleTextBox.fs" />
+    <Compile Include="QuantityTextBox.fs" />
+    <Compile Include="NoteTextBox.fs" />
+    <Compile Include="QuantitySpinner.fs" />
     <Compile Include="ViewModelTypes.fs" />
+    <Compile Include="ItemEditorModel.fs" />
     <Compile Include="RepeatSelector.fs" />
-    <Compile Include="ItemBuilder.fs" />
     <Compile Include="FindViewModel.fs" />
   </ItemGroup>
 

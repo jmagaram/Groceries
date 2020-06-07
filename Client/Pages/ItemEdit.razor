@@ -1,0 +1,19 @@
+﻿@page "/itemedit"
+@using Client.Data
+
+@inject ApplicationStateService ApplicationState
+
+<h1>Item edit page</h1>
+
+<ItemEditor Model="@itemEditorModel"></ItemEditor>
+
+@code {
+
+    protected DomainTypes.ItemEditorModel itemEditorModel;
+
+    protected override void OnInitialized()
+    {
+        base.OnInitialized();
+        itemEditorModel = ItemEditorModel.create;
+    }
+}
