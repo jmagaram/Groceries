@@ -6,7 +6,7 @@
 <form>
     <div>
         <label>
-            Name: <input @oninput="OnTitleChange" @onfocusout="OnTitleFocusOut" @onfocusin="OnTitleFocusIn" placeholder="Apples, Canned Tuna, ..." value="@Model.Title.Text" />
+            Name: <input @oninput="_title.OnTextChange" @onfocusout="_title.OnFocusOut" @onfocusin="_title.OnFocusIn" placeholder="Apples, Canned Tuna, ..." value="@Model.Title.Text" />
             @if (Model.Title.Error.IsSome())
             {
                 <span>Error: @Model.Title.Error.Value</span>
@@ -15,7 +15,7 @@
     </div>
     <div>
         <label>
-            Quantity: <input @oninput="OnQuantityChange" @onfocusout="OnQuantityFocusOut" @onfocusin="OnQuantityFocusIn" placeholder="1 jar, 3 lb, lots!" value="@Model.Quantity.Text" />
+            Quantity: <input @oninput="_quantity.OnTextChange" @onfocusout="_quantity.OnFocusOut" @onfocusin="_quantity.OnFocusIn" placeholder="1 jar, 3 lb, lots!" value="@Model.Quantity.Text" />
             @if (Model.Quantity.Error.IsSome())
             {
                 <span>Error: @Model.Quantity.Error.Value</span>
@@ -26,7 +26,7 @@
     </div>
     <div>
         <label>
-            Note: <textarea rows="3" @oninput="OnNoteChange" @onfocusout="OnNoteFocusOut" @onfocusin="OnNoteFocusIn" placeholder="Favorite brand, organic-only, not too ripe, .." value="@Model.Note.Text" />
+            Note: <textarea rows="3" @oninput="_note.OnTextChange" @onfocusout="_note.OnFocusOut" @onfocusin="_note.OnFocusIn" placeholder="Favorite brand, organic-only, not too ripe, .." value="@Model.Note.Text" />
             @if (Model.Note.Error.IsSome())
             {
                 <span>Error: @Model.Note.Error.Value</span>
@@ -54,7 +54,11 @@
     [Parameter]
     public DomainTypes.ItemEditorModel Model { get; set; }
 
-    class TextBoxHandler<TModel, TMessage>
+    protected TextBoxHandler<ItemEditorModel, ItemEditorMessage> _title;
+    protected TextBoxHandler<ItemEditorModel, ItemEditorMessage> _quantity;
+    protected TextBoxHandler<ItemEditorModel, ItemEditorMessage> _note;
+
+    protected class TextBoxHandler<TModel, TMessage>
     {
         Func<TModel> _getModel;
         Action<TModel> _setModel;
@@ -84,66 +88,20 @@
         }
     }
 
-    //TextBoxHandler<ItemEditorModel, ItemEditorMessage> _titleManager;
-
-    //protected void ss()
-    //{
-    //    _titleManager = new TextBoxHandler<ItemEditorModel, ItemEditorMessage>(() => Model, m => Model = m, ItemEditorMessage.NewTitleMessage, global::ItemEditorModel.update);
-    //}
-
-    protected void OnTitleChange(ChangeEventArgs e)
+    protected override void OnInitialized()
     {
-        var titleMessage = ItemEditorMessage.TitleMessage.NewTitleMessage(TextBoxMessage.NewSetText(e.Value.ToString()));
-        Model = global::ItemEditorModel.update(titleMessage, Model);
-    }
+        base.OnInitialized();
 
-    protected void OnTitleFocusIn(FocusEventArgs e)
-    {
-        var titleMessage = ItemEditorMessage.TitleMessage.NewTitleMessage(TextBoxMessage.GetFocus);
-        Model = global::ItemEditorModel.update(titleMessage, Model);
-    }
+        TextBoxHandler<ItemEditorModel, ItemEditorMessage> createHandler(Func<TextBoxMessage, ItemEditorMessage> msg) =>
+            new TextBoxHandler<ItemEditorModel, ItemEditorMessage>(
+                () => Model,
+                m => Model = m,
+                msg,
+                global::ItemEditorModel.update);
 
-    protected void OnTitleFocusOut(FocusEventArgs e)
-    {
-        var titleMessage = ItemEditorMessage.TitleMessage.NewTitleMessage(TextBoxMessage.LoseFocus);
-        Model = global::ItemEditorModel.update(titleMessage, Model);
-    }
-
-    protected void OnNoteChange(ChangeEventArgs e)
-    {
-        var NoteMessage = ItemEditorMessage.NoteMessage.NewNoteMessage(TextBoxMessage.NewSetText(e.Value.ToString()));
-        Model = global::ItemEditorModel.update(NoteMessage, Model);
-    }
-
-    protected void OnNoteFocusIn(FocusEventArgs e)
-    {
-        var NoteMessage = ItemEditorMessage.NoteMessage.NewNoteMessage(TextBoxMessage.GetFocus);
-        Model = global::ItemEditorModel.update(NoteMessage, Model);
-    }
-
-    protected void OnNoteFocusOut(FocusEventArgs e)
-    {
-        var NoteMessage = ItemEditorMessage.NoteMessage.NewNoteMessage(TextBoxMessage.LoseFocus);
-        Model = global::ItemEditorModel.update(NoteMessage, Model);
-    }
-
-
-    protected void OnQuantityChange(ChangeEventArgs e)
-    {
-        var QuantityMessage = ItemEditorMessage.QuantityMessage.NewQuantityMessage(TextBoxMessage.NewSetText(e.Value.ToString()));
-        Model = global::ItemEditorModel.update(QuantityMessage, Model);
-    }
-
-    protected void OnQuantityFocusIn(FocusEventArgs e)
-    {
-        var QuantityMessage = ItemEditorMessage.QuantityMessage.NewQuantityMessage(TextBoxMessage.GetFocus);
-        Model = global::ItemEditorModel.update(QuantityMessage, Model);
-    }
-
-    protected void OnQuantityFocusOut(FocusEventArgs e)
-    {
-        var QuantityMessage = ItemEditorMessage.QuantityMessage.NewQuantityMessage(TextBoxMessage.LoseFocus);
-        Model = global::ItemEditorModel.update(QuantityMessage, Model);
+        _title = createHandler(global::DomainTypes.ItemEditorMessage.NewTitleMessage);
+        _note = createHandler(global::DomainTypes.ItemEditorMessage.NewNoteMessage);
+        _quantity = createHandler(global::DomainTypes.ItemEditorMessage.NewQuantityMessage);
     }
 
     protected void OnRepeatChange(ChangeEventArgs e)
