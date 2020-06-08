@@ -13,6 +13,11 @@ let outOfRangeError =
     sprintf "The daily interval must be in the range %i..%i" minInterval maxInterval
     |> Error
 
+let isDoesNotRepeat r =
+    match r with 
+    | Repeat.DoesNotRepeat -> true
+    | _ -> false
+
 let repeatEvery d =
     if d < minInterval || d > maxInterval
     then outOfRangeError

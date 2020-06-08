@@ -5,7 +5,7 @@
 
 <h1>Item edit page</h1>
 
-<ItemEditor Model="@itemEditorModel"></ItemEditor>
+<ItemEditor OnSave="@OnSave" Model="@itemEditorModel"></ItemEditor>
 
 @code {
 
@@ -15,5 +15,11 @@
     {
         base.OnInitialized();
         itemEditorModel = ItemEditorModel.create;
+    }
+
+    protected void OnSave(DomainTypes.ItemEditorModel msg)
+    {
+        var stateMsg = DomainTypes.StateMessage.NewInsertItem(msg);
+        ApplicationState.State = global::State.update(stateMsg, ApplicationState.State);
     }
 }

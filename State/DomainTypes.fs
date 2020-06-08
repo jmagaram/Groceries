@@ -30,11 +30,6 @@ type StoreId = | StoreId of Guid
 
 type StoreName = | StoreName of string
 
-type State = 
-    { Stores : Map<StoreId, StoreName> 
-      Items : Map<ItemId, Item> 
-      ItemIsUnavailableInStore : Set<StoreId * ItemId> }
-
 type PickOne<'T> when 'T : comparison =
     { Choices : Set<'T>
       SelectedItem : 'T }
@@ -103,3 +98,11 @@ type ItemEditorModel =
       Note : NoteTextBox
       Repeat : RepeatSelector 
       Status : RelativeStatusSelector }
+
+type State = 
+    { Stores : Map<StoreId, StoreName> 
+      Items : Map<ItemId, Item> 
+      ItemIsUnavailableInStore : Set<StoreId * ItemId> }
+
+type StateMessage =
+    | InsertItem of ItemEditorModel

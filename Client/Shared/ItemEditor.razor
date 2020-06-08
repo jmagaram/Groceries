@@ -1,5 +1,6 @@
 ﻿@using static DomainTypes
 @using Microsoft.FSharp.Core
+
 <h3>ItemEdit Component</h3>
 <form>
     <div>
@@ -61,5 +62,8 @@
             </select>
         </label>
     </div>
+    <button type="button" disabled="@HasErrors" @onclick="e=>OnSave.InvokeAsync(Model)">Save</button>
+    <button type="button" @onclick="e=>OnCancel.InvokeAsync(null)">Cancel</button>
+    <button type="button" @onclick="e=>OnDelete.InvokeAsync(null)">Delete</button>
 </form>
 

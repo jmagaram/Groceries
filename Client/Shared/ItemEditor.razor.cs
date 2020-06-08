@@ -34,6 +34,19 @@ namespace Client.Shared
             _quantity = createHandler(ItemEditorMessage.NewQuantityMessage);
         }
 
+        [Parameter]
+        public EventCallback<DomainTypes.ItemEditorModel> OnSave { get; set; }
+
+        [Parameter]
+        public EventCallback OnDelete { get; set; }
+
+        [Parameter]
+        public EventCallback OnCancel { get; set; }
+
+        // calculate on the fly or put into model?
+        // should all errors be calculated on the fly?
+        protected bool HasErrors => ItemEditorModel.hasErrors(Model);
+
         protected void OnRepeatChange(ChangeEventArgs e)
         {
             var selectedKey = (string)(e.Value);

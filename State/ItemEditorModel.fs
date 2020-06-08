@@ -2,12 +2,13 @@
 open DomainTypes
 
 let create = 
-    { Title = TitleTextBox.create
-      Repeat = RepeatSelector.create 
-      Quantity = QuantityTextBox.create 
-      QuantitySpinner = { CanIncrease = true; CanDecrease = true }
-      Note = NoteTextBox.create
-      Status = RelativeStatusSelector.create }
+    let initialQuantity = ""
+    { Title = TitleTextBox.create |> TitleTextBox.update (TextBoxMessage.SetText "")
+      Repeat = RepeatSelector.create |> (PickOne.selectIf Repeat.isDoesNotRepeat)
+      Quantity = QuantityTextBox.create |> QuantityTextBox.update (TextBoxMessage.SetText initialQuantity)
+      QuantitySpinner = QuantitySpinner.create initialQuantity
+      Note = NoteTextBox.create |> NoteTextBox.update (TextBoxMessage.SetText "")
+      Status = RelativeStatusSelector.create |> PickOne.select RelativeStatus.active }
 
 let update msg model =
     match msg with
@@ -19,7 +20,7 @@ let update msg model =
             { model.QuantitySpinner with 
                 CanIncrease = txtBox.NormalizedText |> QuantitySpinner.increase |> Option.isSome
                 CanDecrease = txtBox.NormalizedText |> QuantitySpinner.decrease |> Option.isSome }
-        { model with
+        { model with 
             Quantity = txtBox
             QuantitySpinner = spin }
     | RepeatMessage r -> { model with ItemEditorModel.Repeat = model.Repeat |> PickOne.update (PickOneMessage.PickOneByItem r) }
@@ -41,3 +42,18 @@ let update msg model =
                 QuantitySpinner = spin }
     | RelativeStatusSelectorMessage msg -> 
         { model with Status = model.Status |> PickOne.update (PickOneMessage.PickOneByItem msg) }
+
+let hasErrors (m:ItemEditorModel) =
+    m.Note.Error.IsSome || m.Title.Error.IsSome || m.Quantity.Error.IsSome
+
+let toNewItem (now:System.DateTime) (m:ItemEditorModel) =
+    { Id = ItemId newGuid
+      Title = Title m.Title.NormalizedText
+      Note = Note m.Note.NormalizedText |> Some
+      Quantity = Quantity m.Quantity.NormalizedText |> Some
+      Repeat = m.Repeat.SelectedItem
+      Status = 
+        match m.Status.SelectedItem with
+        | DomainTypes.RelativeStatus.Active -> DomainTypes.Status.Active
+        | DomainTypes.RelativeStatus.Complete -> DomainTypes.Status.Complete
+        | DomainTypes.RelativeStatus.PostponedDays d -> DomainTypes.Status.Postponed (now.AddDays(d |> float)) }

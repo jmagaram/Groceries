@@ -25,6 +25,7 @@
     <Compile Include="RepeatSelector.fs" />
     <Compile Include="ItemEditorModel.fs" />
     <Compile Include="FindViewModel.fs" />
+    <Compile Include="State.fs" />
   </ItemGroup>
 
   <ItemGroup>

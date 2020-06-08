@@ -1,6 +1,7 @@
 ﻿module QuantitySpinner
 open System
 open System.Text.RegularExpressions
+open DomainTypes
 
 type KnownUnit =
     { OneOf : string 
@@ -88,6 +89,10 @@ let decrease qty =
                     | _ -> i.Units |> manyOf }
                 |> format
             Some result
+
+let create qty =
+    { CanIncrease = qty |> increase |> Option.isSome 
+      CanDecrease = qty |> decrease |> Option.isSome }
 
 module Tests = 
 
