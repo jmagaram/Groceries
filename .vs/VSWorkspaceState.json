@@ -1,6 +1,8 @@
 {
   "ExpandedNodes": [
-    ""
+    "",
+    "\\State"
   ],
+  "SelectedNode": "\\State\\RepeatSelector.fs",
   "PreviewInSolutionExplorer": false
 }

@@ -8,13 +8,17 @@
     <Compile Include="Result.fs" />
     <Compile Include="Seq.fs" />
     <Compile Include="String.fs" />
-    <Compile Include="Utilities.fs" />
     <Compile Include="DomainTypes.fs" />
+    <Compile Include="Utilities.fs" />
+    <Compile Include="Id.fs" />
+    <Compile Include="Status.fs" />
+    <Compile Include="Title.fs" />
+    <Compile Include="Quantity.fs" />
+    <Compile Include="Note.fs" />
     <Compile Include="Repeat.fs" />
     <Compile Include="RelativeStatus.fs" />
     <Compile Include="PickOne.fs" />
     <Compile Include="RelativeStatusSelector.fs" />
-    <Compile Include="Test.fs" />
     <Compile Include="TextBox.fs" />
     <Compile Include="Spinner.fs" />
     <Compile Include="TitleTextBox.fs" />
@@ -25,6 +29,9 @@
     <Compile Include="RepeatSelector.fs" />
     <Compile Include="ItemEditorModel.fs" />
     <Compile Include="FindViewModel.fs" />
+    <Compile Include="ItemSummary.fs" />
+    <Compile Include="ItemListView.fs" />
+    <Compile Include="Test.fs" />
     <Compile Include="State.fs" />
   </ItemGroup>
 

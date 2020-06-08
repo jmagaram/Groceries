@@ -46,7 +46,8 @@ let update msg model =
 let hasErrors (m:ItemEditorModel) =
     m.Note.Error.IsSome || m.Title.Error.IsSome || m.Quantity.Error.IsSome
 
-let toNewItem (now:System.DateTime) (m:ItemEditorModel) =
+type ToNewItem = System.DateTime -> ItemEditorModel -> Item
+let toNewItem : ToNewItem = fun now m ->
     { Id = ItemId newGuid
       Title = Title m.Title.NormalizedText
       Note = Note m.Note.NormalizedText |> Some

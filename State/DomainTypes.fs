@@ -1,15 +1,29 @@
 ﻿module DomainTypes
 open System
 
+type NowUtc = unit -> DateTime
+
 type Repeat = 
     | DoesNotRepeat
     | DailyInterval of int
 
+type NormalizeString = string -> string
+
 type Title = | Title of string
+
+type TitleError =
+    | TitleIsRequired
+    | TitleIsOverMaxLength of int
 
 type Note = | Note of string
 
+type NoteError =
+    | NoteIsOverMaxLength of int
+
 type Quantity = | Quantity of string
+
+type QuantityError =
+    | QuantityIsOverMaxLength of int
 
 type ItemId = | ItemId of Guid
 
@@ -99,10 +113,28 @@ type ItemEditorModel =
       Repeat : RepeatSelector 
       Status : RelativeStatusSelector }
 
+type ItemSummary =
+    { Id : ItemId
+      Title : string
+      Quantity : string 
+      Note : string
+      Repeat : Repeat
+      Status : Status }
+
+type ItemListView =
+    { Items : ItemSummary seq
+      FutureHorizon : TimeSpan option }
+
+type ItemListViewMessage = 
+    | HideFutureItems
+    | ShowFutureItems of TimeSpan
+
 type State = 
     { Stores : Map<StoreId, StoreName> 
       Items : Map<ItemId, Item> 
-      ItemIsUnavailableInStore : Set<StoreId * ItemId> }
+      ItemIsUnavailableInStore : Set<StoreId * ItemId> 
+      ItemListView : ItemListView }
 
 type StateMessage =
     | InsertItem of ItemEditorModel
+    | ItemListViewMessage of ItemListViewMessage

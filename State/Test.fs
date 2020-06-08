@@ -95,4 +95,5 @@ let initialState =
         sampleItems 
         |> Seq.map (fun i -> (i.Id, i))
         |> Map.ofSeq
+      State.ItemListView = ItemListView.create Seq.empty None
     }
