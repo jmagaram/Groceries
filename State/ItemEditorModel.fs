@@ -7,7 +7,7 @@ let create =
       Quantity = QuantityTextBox.create 
       QuantitySpinner = { CanIncrease = true; CanDecrease = true }
       Note = NoteTextBox.create
-    }
+      Status = RelativeStatusSelector.create }
 
 let update msg model =
     match msg with
@@ -39,3 +39,5 @@ let update msg model =
             { model with
                 Quantity = txtBox
                 QuantitySpinner = spin }
+    | RelativeStatusSelectorMessage msg -> 
+        { model with Status = model.Status |> PickOne.update (PickOneMessage.PickOneByItem msg) }

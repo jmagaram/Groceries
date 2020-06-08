@@ -11,9 +11,11 @@
     <Compile Include="Utilities.fs" />
     <Compile Include="DomainTypes.fs" />
     <Compile Include="Repeat.fs" />
+    <Compile Include="RelativeStatus.fs" />
     <Compile Include="Selector.fs" />
     <Compile Include="PickOne.fs" />
     <Compile Include="PickRepeat.fs" />
+    <Compile Include="RelativeStatusSelector.fs" />
     <Compile Include="Test.fs" />
     <Compile Include="TextBox.fs" />
     <Compile Include="Spinner.fs" />

@@ -42,7 +42,42 @@ namespace Client.Shared
             Model = global::ItemEditorModel.update(msg, Model);
         }
 
+        protected void OnStatusChange(ChangeEventArgs e)
+        {
+            var selectedKey = (string)(e.Value);
+            var selected = global::RelativeStatus.deserialize(selectedKey).ResultValue;
+            var msg = DomainTypes.ItemEditorMessage.NewRelativeStatusSelectorMessage(selected);
+            Model = global::ItemEditorModel.update(msg, Model);
+        }
+
         protected string RepeatAsText(DomainTypes.Repeat r) => global::Repeat.formatEnglish.Invoke(r);
+
+        protected string RelativeStatusAsText(DomainTypes.RelativeStatus r)
+        {
+            if (r.IsComplete)
+                return "Complete";
+            else if (r.IsActive)
+                return "Active";
+            else
+            {
+                (int, string) units(int days) =>
+                    (days % 30 == 0)
+                    ? (days / 30, days == 30 ? "month" : "months")
+                    : (days % 7 == 0)
+                    ? (days / 7, days == 7 ? "week" : "weeks")
+                    : (days, days == 1 ? "day" : "days");
+                var d = (r as DomainTypes.RelativeStatus.PostponedDays).Item;
+                var (count, unitType) = units(d);
+                if (d == 1)
+                    return $"Postponed until tomorrow";
+                else if (d == 0)
+                    return $"Due today";
+                else if (d > 0)
+                    return $"Postponed for {count} {unitType}";
+                else
+                    return $"Overdue {-count} {unitType}";
+            }
+        }
 
         protected void IncreaseQuantity() =>
             Model = global::ItemEditorModel.update(ItemEditorMessage.NewQuantitySpinner(SpinnerMessage.Increase), Model);

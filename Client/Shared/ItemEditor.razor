@@ -46,5 +46,20 @@
             </select>
         </label>
     </div>
+    <div>
+        <label>
+            Status:
+            <select @onchange="OnStatusChange">
+                @foreach (var i in Model.Status.Choices.OrderBy(global::RelativeStatus.orderBy))
+                {
+                    string key = global::RelativeStatus.serialize(i);
+                    string selectedKey = global::RelativeStatus.serialize(Model.Status.SelectedItem);
+                    bool isSelected = key == selectedKey;
+                    string description = RelativeStatusAsText(i);
+                    <option selected="@isSelected" value="@key">@description</option>
+                }
+            </select>
+        </label>
+    </div>
 </form>
 

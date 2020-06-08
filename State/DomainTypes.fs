@@ -47,6 +47,15 @@ type PickRepeat = PickOne<Repeat>
 
 type PickRepeatMessage = Repeat
 
+type RelativeStatus =
+    | Active
+    | Complete
+    | PostponedDays of int
+
+type RelativeStatusSelector = PickOne<RelativeStatus>
+
+type StatusSelectorMessage = RelativeStatus
+
 type Selector<'T, 'Error> when 'T : comparison =
     { Choices : Set<'T>
       SelectedItem : 'T option 
@@ -106,10 +115,12 @@ type ItemEditorMessage =
     | NoteMessage of TextBoxMessage
     | RepeatMessage of PickRepeatMessage
     | QuantitySpinner of SpinnerMessage
+    | RelativeStatusSelectorMessage of StatusSelectorMessage
 
 type ItemEditorModel =
     { Title : TitleTextBox
       Quantity : QuantityTextBox
       QuantitySpinner : Spinner
       Note : NoteTextBox
-      Repeat : PickRepeat }
+      Repeat : PickRepeat 
+      Status : RelativeStatusSelector }
