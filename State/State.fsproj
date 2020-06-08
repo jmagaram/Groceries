@@ -12,9 +12,7 @@
     <Compile Include="DomainTypes.fs" />
     <Compile Include="Repeat.fs" />
     <Compile Include="RelativeStatus.fs" />
-    <Compile Include="Selector.fs" />
     <Compile Include="PickOne.fs" />
-    <Compile Include="PickRepeat.fs" />
     <Compile Include="RelativeStatusSelector.fs" />
     <Compile Include="Test.fs" />
     <Compile Include="TextBox.fs" />
@@ -24,8 +22,8 @@
     <Compile Include="NoteTextBox.fs" />
     <Compile Include="QuantitySpinner.fs" />
     <Compile Include="ViewModelTypes.fs" />
-    <Compile Include="ItemEditorModel.fs" />
     <Compile Include="RepeatSelector.fs" />
+    <Compile Include="ItemEditorModel.fs" />
     <Compile Include="FindViewModel.fs" />
   </ItemGroup>
 

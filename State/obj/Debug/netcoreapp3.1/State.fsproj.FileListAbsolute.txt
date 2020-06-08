@@ -109,4 +109,3 @@ C:\Users\justi\source\repos\Groceries\State\obj\Debug\netcoreapp3.1\State.fsproj
 C:\Users\justi\source\repos\Groceries\State\obj\Debug\netcoreapp3.1\State.dll
 C:\Users\justi\source\repos\Groceries\State\obj\Debug\netcoreapp3.1\State.pdb
 C:\Users\justi\source\repos\Groceries\State\obj\Debug\netcoreapp3.1\State.genruntimeconfig.cache
-C:\Users\justi\source\repos\Groceries\State\obj\Debug\netcoreapp3.1\State.fsprojAssemblyReference.cache

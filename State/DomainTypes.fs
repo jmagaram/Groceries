@@ -43,7 +43,7 @@ type PickOneMessage<'T> =
     | PickOneByPredicate of ('T -> bool)
     | PickOneByItem of 'T
 
-type PickRepeat = PickOne<Repeat>
+type RepeatSelector = PickOne<Repeat>
 
 type PickRepeatMessage = Repeat
 
@@ -55,11 +55,6 @@ type RelativeStatus =
 type RelativeStatusSelector = PickOne<RelativeStatus>
 
 type StatusSelectorMessage = RelativeStatus
-
-type Selector<'T, 'Error> when 'T : comparison =
-    { Choices : Set<'T>
-      SelectedItem : 'T option 
-      Error : 'Error option }
 
 type TextBox<'Error> =
     { Text : string
@@ -106,5 +101,5 @@ type ItemEditorModel =
       Quantity : QuantityTextBox
       QuantitySpinner : Spinner
       Note : NoteTextBox
-      Repeat : PickRepeat 
+      Repeat : RepeatSelector 
       Status : RelativeStatusSelector }

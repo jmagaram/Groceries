@@ -3,7 +3,7 @@ open DomainTypes
 
 let create = 
     { Title = TitleTextBox.create
-      Repeat = PickRepeat.create 
+      Repeat = RepeatSelector.create 
       Quantity = QuantityTextBox.create 
       QuantitySpinner = { CanIncrease = true; CanDecrease = true }
       Note = NoteTextBox.create
