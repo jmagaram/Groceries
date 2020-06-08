@@ -78,22 +78,6 @@ type TextBoxMessage =
     | LoseFocus
     | GetFocus
 
-type StatusKind =
-    | Active
-    | Complete
-    | Postponed
-
-type TimespanComponents =
-    { Days : int
-      Weeks : int
-      Months : int }
-
-type RelativeStatusChoice =
-    { Kind : StatusKind 
-      Description : string }
-
-type PostponeDaysChoice = int
-
 type RepeatError = 
     | RepeatIntervalIsTooSmall
     | RepeatIntervalIsTooBig
