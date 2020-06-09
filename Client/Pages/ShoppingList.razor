@@ -6,31 +6,17 @@
 <style>
 </style>
 <h1>Shopping list</h1>
-<button @onclick="ToggleViewOfFutureItems">@(model.ShowFutureItems ? "Hide future items" : "Show future items")</button>
-@foreach (var i in model.Items)
+@foreach (var i in View.Items)
 {
     <ItemListItem Item="@i"></ItemListItem>
 }
 
 @code {
-    private ViewModelTypes.ShoppingListViewModel model;
-
     protected override void OnInitialized()
     {
         base.OnInitialized();
-        var items = ApplicationState.State.Items.Select(i => ViewModelTypes.createListItemViewModel(i.Value));
-        model = new ViewModelTypes.ShoppingListViewModel(items, false);
+        View = ApplicationState.State.ItemListView;
     }
 
-    protected void ToggleViewOfFutureItems()
-    {
-        //if (model.ShowFutureItems)
-        //{
-        //    model = ViewModelTypes.hideFutureItems(ApplicationState.State, DateTime.Now, model);
-        //}
-        //else
-        //{
-        //    model = ViewModelTypes.showFutureItems(ApplicationState.State);
-        //}
-    }
+    protected DomainTypes.ItemListView View { get; set; }
 }

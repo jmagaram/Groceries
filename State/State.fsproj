@@ -5,6 +5,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Include="Map.fs" />
     <Compile Include="Result.fs" />
     <Compile Include="Seq.fs" />
     <Compile Include="String.fs" />
@@ -31,7 +32,6 @@
     <Compile Include="FindViewModel.fs" />
     <Compile Include="ItemSummary.fs" />
     <Compile Include="ItemListView.fs" />
-    <Compile Include="Test.fs" />
     <Compile Include="State.fs" />
   </ItemGroup>
 

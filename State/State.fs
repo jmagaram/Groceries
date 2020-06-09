@@ -76,7 +76,7 @@ let private sampleItems =
             | Some dt -> Status.Postponed dt
             | None -> Status.Active
     let createItem title qty note freq = 
-        { Item.Id = newGuid |> ItemId
+        { Item.Id = Id.create ItemId
           Title = title |> Title
           Quantity = qty |> parseQuantity
           Repeat = freq
@@ -92,7 +92,7 @@ let create : Create = fun () ->
     { Stores = Map.empty
       ItemIsUnavailableInStore = Set.empty
       Items = 
-        Test.sampleItems 
+        sampleItems 
         |> Seq.map (fun i -> (i.Id, i))
         |> Map.ofSeq 
       ItemListView = ItemListView.create Seq.empty None
@@ -106,8 +106,44 @@ let update : Update = fun msg s ->
         { s with Items = s.Items |> Map.add ni.Id ni }
     | ItemListViewMessage m -> s
 
+let private addItem state (item:Item) = 
+    { state with State.Items = state.Items |> Map.add item.Id item }
+
 type AddSampleItems = State -> State
 let addSampleItems : AddSampleItems = fun s ->
-    let fold s (i:Item) = { s with State.Items = s.Items |> Map.add i.Id i }
-    sampleItems
-    |> Seq.fold fold s
+    let state = 
+        sampleItems
+        |> Seq.fold addItem s
+    let view = 
+        let filter = System.TimeSpan.FromDays(1 |> float) |> Some
+        let items = state.Items |> Map.values
+        ItemListView.create items filter
+    { s with ItemListView = view }
+
+let stateWithSampleItems = create() |> addSampleItems
+
+module Tests =
+
+    open Xunit
+    open FsUnit
+
+    [<Fact>]
+    let ``Sample items has lots of stuff in it`` () =
+        sampleItems
+        |> List.length
+        |> should greaterThan 10
+
+    [<Fact>]
+    let ``Sample items have many unique ids`` () =
+        sampleItems
+        |> Seq.map (fun i -> i.Id)
+        |> Set.ofSeq
+        |> Set.count
+        |> should greaterThan 10
+
+    [<Fact>]
+    let ``Create with sample items - has stuff in it`` () =
+        let actual = stateWithSampleItems
+        actual.ItemListView.Items
+        |> Seq.length
+        |> should greaterThan 10

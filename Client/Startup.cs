@@ -29,7 +29,8 @@ namespace Client
             services.AddRazorPages();
             services.AddServerSideBlazor();
             services.AddSingleton<WeatherForecastService>();
-            services.AddSingleton<ApplicationStateService>(new ApplicationStateService { State = Test.initialState });
+            var state = new ApplicationStateService { State = State.stateWithSampleItems };
+            services.AddSingleton<ApplicationStateService>(state);
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.

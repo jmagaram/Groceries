@@ -21,12 +21,12 @@
             ($"+{daysUntil} days","later");
         <span class="@styleName">@daysUntilText</span>
     }
-    <span class="@titleStyle">@Item.Title</span>@if (Item.Quantity.IsSome())
-    {<span> * @Item.Quantity.Value</span>}@if (Item.Note.IsSome())
-    {<br /><span>@Item.Note.Value</span>}
+    <span class="@titleStyle">@Item.Title</span>@if (Item.Quantity!="")
+    {<span> * @Item.Quantity</span>}@if (Item.Note!="")
+    {<br /><span>@Item.Note</span>}
 </p>
 
 @code {
     [Parameter]
-    public ViewModelTypes.ListItemViewModel Item { get; set; }
+    public DomainTypes.ItemSummary Item { get; set; }
 }

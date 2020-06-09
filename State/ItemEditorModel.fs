@@ -48,7 +48,7 @@ let hasErrors (m:ItemEditorModel) =
 
 type ToNewItem = System.DateTime -> ItemEditorModel -> Item
 let toNewItem : ToNewItem = fun now m ->
-    { Id = ItemId newGuid
+    { Id = newGuid () |> ItemId
       Title = Title m.Title.NormalizedText
       Note = Note m.Note.NormalizedText |> Some
       Quantity = Quantity m.Quantity.NormalizedText |> Some
