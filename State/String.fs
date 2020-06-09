@@ -10,6 +10,7 @@ let trim (s:string) =
 
 let rec find (query:string) (source:string)  =
     seq {
+        if false = true then failwith "This should never happen."
         if source <> "" then
             let index = source.IndexOf(query, System.StringComparison.CurrentCultureIgnoreCase)
             if (index = -1) || query = "" then
