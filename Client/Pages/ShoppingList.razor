@@ -1,11 +1,21 @@
 ﻿@page "/shoppinglist"
 @using Client.Data
- 
+
 @inject ApplicationStateService ApplicationState
 
 <style>
 </style>
 <h1>Shopping list</h1>
+<select @onchange="OnFilterChange">
+    @foreach (var i in FilterSelector.Choices)
+    {
+        string key = global::ItemListView.serialize(i);
+        string selectedKey = global::ItemListView.serialize(FilterSelector.SelectedItem);
+        bool isSelected = key == selectedKey;
+        string description = global::ItemListView.description(i);
+        <option selected="@isSelected" value="@key">@description</option>
+    }
+</select>
 @foreach (var i in View.Items)
 {
     <ItemListItem Item="@i"></ItemListItem>
@@ -16,7 +26,26 @@
     {
         base.OnInitialized();
         View = ApplicationState.State.ItemListView;
+        FilterSelector = ItemListView.filterSelector;
+    }
+
+    protected void OnFilterChange(ChangeEventArgs e)
+    {
+        var selectedKey = (string)(e.Value);
+        var selected = global::ItemListView.deserialize(selectedKey);
+
+        // ugh, painful below
+        var msg = DomainTypes.StateMessage.NewItemListViewMessage(DomainTypes.ItemListViewMessage.NewSetFilter(new DomainTypes.ItemFilter(selected)));
+
+        var state = State.update(msg, ApplicationState.State);
+        ApplicationState.State = state;
+        View = ApplicationState.State.ItemListView; // why is this needed?
+       
+        //Model = global::ItemEditorModel.update(msg, Model);
     }
 
     protected DomainTypes.ItemListView View { get; set; }
+
+    // Annoying that I have to prepend with DomainTypes.
+    protected DomainTypes.PickOne<DomainTypes.PostponedItemFilter> FilterSelector { get; private set; }
 }

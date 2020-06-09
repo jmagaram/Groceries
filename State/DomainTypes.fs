@@ -121,13 +121,21 @@ type ItemSummary =
       Repeat : Repeat
       Status : Status }
 
+type PostponedItemFilter =
+    | ExcludePostponedItems
+    | IncludeOverdueOnly
+    | IncludeOverdueAndFutureItems of TimeSpan
+    | AllPostponedItems
+
+type ItemFilter =
+    { PostponedItemFilter : PostponedItemFilter }
+
 type ItemListView =
     { Items : ItemSummary seq
-      FutureHorizon : TimeSpan option }
+      Filter : ItemFilter }
 
 type ItemListViewMessage = 
-    | HideFutureItems
-    | ShowFutureItems of TimeSpan
+    | SetFilter of ItemFilter
 
 type State = 
     { Stores : Map<StoreId, StoreName> 

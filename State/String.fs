@@ -39,6 +39,8 @@ let tryParseInt = tryParseWith System.Int32.TryParse
 
 let tryParseGuid = tryParseWith System.Guid.TryParse
 
+let tryParseTimeSpan = tryParseWith System.TimeSpan.TryParse
+
 module Tests = 
 
     open System

@@ -95,7 +95,7 @@ let create : Create = fun () ->
         sampleItems 
         |> Seq.map (fun i -> (i.Id, i))
         |> Map.ofSeq 
-      ItemListView = ItemListView.create Seq.empty None
+      ItemListView = ItemListView.create Seq.empty
     }
 
 type Update = StateMessage -> State -> State
@@ -104,7 +104,11 @@ let update : Update = fun msg s ->
     | InsertItem i ->
         let ni = i |> ItemEditorModel.toNewItem System.DateTime.Now
         { s with Items = s.Items |> Map.add ni.Id ni }
-    | ItemListViewMessage m -> s
+    | ItemListViewMessage m -> 
+        let items = s.Items
+        // this isn't really an update; more of a create
+        let view = ItemListView.update (items |> Map.values) nowUtc m
+        { s with ItemListView = view }
 
 let private addItem state (item:Item) = 
     { state with State.Items = state.Items |> Map.add item.Id item }
@@ -117,7 +121,7 @@ let addSampleItems : AddSampleItems = fun s ->
     let view = 
         let filter = System.TimeSpan.FromDays(1 |> float) |> Some
         let items = state.Items |> Map.values
-        ItemListView.create items filter
+        ItemListView.create items
     { s with ItemListView = view }
 
 let stateWithSampleItems = create() |> addSampleItems
