@@ -8,6 +8,8 @@ let trim (s:string) =
     | true -> ""
     | false -> s.Trim()
 
+let test = false
+
 let rec find (query:string) (source:string)  =
     seq {
         if false = true then failwith "This should never happen."
