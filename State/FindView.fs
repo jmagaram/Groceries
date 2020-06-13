@@ -50,35 +50,34 @@ let createRegexPatternFromQuery s =
     then sprintf "(%s)+%s" a b
     else sprintf "(%s)+" s
 
-let findText (CaseInsensitive q) =
-    let q = 
-        Regex.Escape(q)
+let findText (CaseInsensitive query) (s:string) =
+    let regex = 
+        Regex.Escape(query)
         |> createRegexPatternFromQuery
-    let regex = new Regex(q, RegexOptions.IgnoreCase) // compile?
-    fun (s:string) ->
-        seq {
-            let matches = regex.Matches(s)
-            if matches.Count = 0
-            then yield s |> Span.regular
-            else
-                for i = 0 to (matches.Count-1) do
-                    if i = 0 && matches.[0].Index > 0 then
-                        yield (s.Substring(0, matches.[0].Index) |> Span.regular)
-                    if i <> 0 then
-                        let previousMatchEnded = 
-                            let m = matches.[i-1]
-                            m.Index + m.Length
-                        let currentMatchStarts = matches.[i].Index
-                        let length = currentMatchStarts - previousMatchEnded
-                        let nonMatch = s.Substring(previousMatchEnded, length)
-                        yield nonMatch |> Span.regular
-                    yield (matches.[i].Value |> Span.highlight)
-                let lastMatch = matches.[matches.Count-1]
-                let lastMatchEnded = lastMatch.Index + lastMatch.Length
-                if lastMatchEnded < s.Length then
-                    let r = s.Substring(lastMatchEnded, s.Length - lastMatchEnded)
-                    yield r |> Span.regular
-        }
+        |> fun pattern -> new Regex(pattern, RegexOptions.IgnoreCase)
+    seq {
+        let matches = regex.Matches(s)
+        if matches.Count = 0
+        then yield s |> Span.regular
+        else
+            for i = 0 to (matches.Count-1) do
+                if i = 0 && matches.[0].Index > 0 then
+                    yield (s.Substring(0, matches.[0].Index) |> Span.regular)
+                if i <> 0 then
+                    let previousMatchEnded = 
+                        let m = matches.[i-1]
+                        m.Index + m.Length
+                    let currentMatchStarts = matches.[i].Index
+                    let length = currentMatchStarts - previousMatchEnded
+                    let nonMatch = s.Substring(previousMatchEnded, length)
+                    yield nonMatch |> Span.regular
+                yield (matches.[i].Value |> Span.highlight)
+            let lastMatch = matches.[matches.Count-1]
+            let lastMatchEnded = lastMatch.Index + lastMatch.Length
+            if lastMatchEnded < s.Length then
+                let r = s.Substring(lastMatchEnded, s.Length - lastMatchEnded)
+                yield r |> Span.regular
+    }
 
 type ItemSummary =
     { Id : ItemId
@@ -142,6 +141,7 @@ module Tests =
     [<InlineData("Complex case 1", "apple pleasant plum","pl", "ap,!pl,e ,!pl,easant ,!pl,um")>]
     [<InlineData("Not found at all", "abc","x","abc")>]
     [<InlineData("Query is same as entire source", "abc","abc","!abc")>]
+    [<InlineData("Search for regex characters", "abc^$()abc","^$()", "abc,!^$(),abc")>]
     let ``findText`` (comment:string) (source:string) (query:string) (expected:string) =
         let format (s:Span) = 
             match s.Format with
