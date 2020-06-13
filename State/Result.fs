@@ -6,6 +6,11 @@ let okValue r =
     | Ok v -> Some v
     | Error _ -> None
 
+let okValueOrThrow r =
+    r
+    |> okValue
+    |> Option.get
+
 let errorValue r =
     match r with
     | Ok _ -> None
