@@ -6,18 +6,25 @@ type HighlightedItem =
       TitleMatches : (string * bool) list }
 
 let tryFilter filter (item:Item) =
-    let titleMatches = 
-        match item.Title with | Title t -> t
-        |> String.find filter 
-        |> Seq.toList
-    let doesMatch =
-        titleMatches
-        |> Seq.exists (fun (s, isMatch) -> isMatch)
+    let highlighter = 
+        filter
+        |> FindView.Query.create
+        |> Result.map FindView.FormattedText.highlightMatches
+        |> Result.okValueOrThrow
+    let (Title t) = item.Title
+    let titleMatches = highlighter t
+    let doesMatch = 
+        titleMatches 
+        |> Seq.exists FindView.Span.isHighlight
     match doesMatch with
     | false -> None
     | true ->
         { Item = item
-          TitleMatches = titleMatches } |> Some
+          TitleMatches = 
+            titleMatches 
+            |> Seq.map (fun i -> (i.Text, i |> FindView.Span.isHighlight)) 
+            |> List.ofSeq
+        } |> Some
 
 type ViewModel = 
     { Items : Item seq

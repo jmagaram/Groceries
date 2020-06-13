@@ -41,6 +41,11 @@ module Span =
     
     let regular s = s |> create Regular
 
+    let isHighlight s = 
+        match s.Format with 
+        | Highlight _ -> true 
+        | _ -> false
+
 module Query =
 
     type private Create = string -> Result<Query, QueryError>
