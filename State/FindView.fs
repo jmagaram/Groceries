@@ -2,6 +2,7 @@
 open System
 open DomainTypes
 open System.Text.RegularExpressions
+open System.Linq
 
 type Format =
     | Highlight
@@ -50,33 +51,35 @@ let createRegexPatternFromQuery s =
     then sprintf "(%s)+%s" a b
     else sprintf "(%s)+" s
 
+type Position =
+    { IsFirst : bool 
+      IsLast : bool 
+      Text : string }
+
 let findText (CaseInsensitive query) (s:string) =
     let regex = 
         Regex.Escape(query)
         |> createRegexPatternFromQuery
         |> fun pattern -> new Regex(pattern, RegexOptions.IgnoreCase)
+    let endIndex (m:Match) = m.Index + m.Length
     seq {
-        let matches = regex.Matches(s)
-        if matches.Count = 0
-        then yield s |> Span.regular
+        let ms = regex.Matches(s)
+        if ms.Count = 0
+        then yield Span.regular s
         else
-            for i = 0 to (matches.Count-1) do
-                if i = 0 && matches.[0].Index > 0 then
-                    yield (s.Substring(0, matches.[0].Index) |> Span.regular)
-                if i <> 0 then
-                    let previousMatchEnded = 
-                        let m = matches.[i-1]
-                        m.Index + m.Length
-                    let currentMatchStarts = matches.[i].Index
-                    let length = currentMatchStarts - previousMatchEnded
-                    let nonMatch = s.Substring(previousMatchEnded, length)
-                    yield nonMatch |> Span.regular
-                yield (matches.[i].Value |> Span.highlight)
-            let lastMatch = matches.[matches.Count-1]
-            let lastMatchEnded = lastMatch.Index + lastMatch.Length
-            if lastMatchEnded < s.Length then
-                let r = s.Substring(lastMatchEnded, s.Length - lastMatchEnded)
-                yield r |> Span.regular
+            for i = 0 to (ms.Count-1) do
+                let curr = ms.[i]
+                if i = 0 then
+                    if curr.Index > 0 then
+                        yield Span.regular (s.Substring(0, curr.Index))
+                else
+                    let prevEnd = ms.[i-1] |> endIndex
+                    let currStart = ms.[i].Index
+                    yield Span.regular (s.Substring(prevEnd, currStart - prevEnd))
+                yield Span.highlight (curr.Value)
+            let lastEnd = ms.[ms.Count-1] |> endIndex
+            if lastEnd < s.Length then
+                yield Span.regular (s.Substring(lastEnd, s.Length - lastEnd))
     }
 
 type ItemSummary =
