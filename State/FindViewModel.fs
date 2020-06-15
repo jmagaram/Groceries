@@ -8,8 +8,8 @@ type HighlightedItem =
 let tryFilter filter (item:Item) =
     let highlighter = 
         filter
-        |> FindView.Query.create
-        |> Result.map FindView.FormattedText.highlightMatches
+        |> FindView.TextFilter.create
+        |> Result.map FindView.HighlightedText.applyFilter
         |> Result.okValueOrThrow
     let (Title t) = item.Title
     let titleMatches = highlighter t

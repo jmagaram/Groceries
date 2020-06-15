@@ -12,11 +12,11 @@ type Span =
     { Format : Format 
       Text : string }
 
-type FormattedText = Span seq
+type HighlightedText = Span seq
 
-type Query = | CaseInsensitive of string
+type TextFilter = | CaseInsensitive of string
 
-type QueryError = | QueryIsOnlyWhitespace
+type TextFilterError = | FilterIsEmptyOrWhitespace
 
 type ItemSummary =
     { Id : ItemId
@@ -46,17 +46,15 @@ module Span =
         | Highlight _ -> true 
         | _ -> false
 
-module Query =
+module TextFilter =
 
-    type private Create = string -> Result<Query, QueryError>
+    type private Create = string -> Result<TextFilter, TextFilterError>
     let create : Create = fun s -> 
         match s |> isNullOrWhiteSpace with
-        | true -> Error QueryIsOnlyWhitespace
-        | false -> Ok (Query.CaseInsensitive s)
+        | true -> Error FilterIsEmptyOrWhitespace
+        | false -> Ok (TextFilter.CaseInsensitive s)
 
-module FormattedText =
-
-    let createRegexPatternFromQuery s =
+    let toRegexPattern s =
         let len = s |> String.length
         let div = len/2 + (len%2)
         let a = s.Substring(0, div)
@@ -65,12 +63,14 @@ module FormattedText =
         then sprintf "(%s)+%s" a b
         else sprintf "(%s)+" s
 
-    type private HighlightMatches = Query -> string -> FormattedText
-    let highlightMatches : HighlightMatches = fun q s ->
-        let (Query.CaseInsensitive query) = q
+module HighlightedText =
+
+    type private ApplyTextFilter = TextFilter -> string -> HighlightedText
+    let applyFilter : ApplyTextFilter = fun q s ->
+        let (TextFilter.CaseInsensitive filter) = q
         let regex = 
-            Regex.Escape(query)
-            |> createRegexPatternFromQuery
+            Regex.Escape(filter)
+            |> TextFilter.toRegexPattern
             |> fun pattern -> new Regex(pattern, RegexOptions.IgnoreCase)
         let endIndex (m:Match) = m.Index + m.Length
         seq {
@@ -112,16 +112,16 @@ module Tests =
             (Span.highlight whitespace).Text |> should equal whitespace
             (Span.regular whitespace).Text |> should equal whitespace
 
-    module QueryTests =
+    module TextFilterTests =
 
         [<Theory>]
         [<InlineData("")>]
         [<InlineData("    ")>]
         let ``create - if only whitespace return error`` (s:string) =
             s
-            |> Query.create
+            |> TextFilter.create
             |> Result.errorValue
-            |> should equal (Some QueryIsOnlyWhitespace)
+            |> should equal (Some FilterIsEmptyOrWhitespace)
 
         [<Theory>]
         [<InlineData("a")>]
@@ -130,19 +130,9 @@ module Tests =
         [<InlineData("  abcd  ")>]
         let ``create - store text exactly as specified without trimming`` (s:string) =
             s
-            |> Query.create
+            |> TextFilter.create
             |> Result.okValue
-            |> should equal (Some (Query.CaseInsensitive s))
-
-    module FormattedTextTests =
-
-        let parseSpan (s:String) =
-            if s.[0] = '!' then (s.Substring(1) |> Span.highlight)
-            else s |> Span.regular
-
-        let parseFormattedText (s:String) = 
-            s.Split(',',System.StringSplitOptions.RemoveEmptyEntries)
-            |> Seq.map parseSpan
+            |> should equal (Some (TextFilter.CaseInsensitive s))
 
         [<Theory>]
         [<InlineData("a", "(a)+")>]
@@ -152,15 +142,25 @@ module Tests =
         [<InlineData("aba", "(ab)+a")>] 
         [<InlineData("abcabc", "(abc)+abc")>]
         [<InlineData("aaa", "(aa)+a")>]
-        let ``createRegexPatternFromQuery`` (query:string) (expected:string) =
-            let result = query |> FormattedText.createRegexPatternFromQuery
-            result
+        let ``toRegexPattern`` (filter:string) (expected:string) =
+            filter 
+            |> TextFilter.toRegexPattern
             |> should equal expected
 
+    module HighlightedTextTests =
+
+        let private parseSpan (s:String) =
+            if s.[0] = '!' then (s.Substring(1) |> Span.highlight)
+            else s |> Span.regular
+
+        let private parseFormattedText (s:String) = 
+            s.Split(',',System.StringSplitOptions.RemoveEmptyEntries)
+            |> Seq.map parseSpan
+
         [<Fact>]
-        let ``highlightMatches - when search in empty string find nothing``() =
-            let query = Query.create "abc" |> Result.okValueOrThrow
-            let highlighter = FormattedText.highlightMatches query
+        let ``applyFilter - when search an empty string find nothing``() =
+            let filter = TextFilter.create "abc" |> Result.okValueOrThrow
+            let highlighter = HighlightedText.applyFilter filter
             let source = ""
             let actual = highlighter source
             actual |> Seq.isEmpty |> should equal true
@@ -177,7 +177,7 @@ module Tests =
         [<InlineData("Not found at all", "abc","x","abc")>]
         [<InlineData("Query is same as entire source", "abc","abc","!abc")>]
         [<InlineData("Search for regex characters", "abc^$()abc","^$()", "abc,!^$(),abc")>]
-        let ``highlightMatches`` (comment:string) (source:string) (query:string) (expected:string) =
+        let ``applyFilter`` (comment:string) (source:string) (filter:string) (expected:string) =
             let format (s:Span) = 
                 match s.Format with
                 | Highlight -> sprintf "!%s" s.Text
@@ -187,9 +187,9 @@ module Tests =
                 |> parseFormattedText
                 |> Seq.map format
             let actual =
-                query
-                |> Query.create
-                |> Result.map FormattedText.highlightMatches
+                filter
+                |> TextFilter.create
+                |> Result.map HighlightedText.applyFilter
                 |> Result.map (fun h -> h source)
                 |> Result.map (fun r -> r |> Seq.map format)
                 |> Result.okValueOrThrow
