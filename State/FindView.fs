@@ -12,9 +12,11 @@ type Span =
     { Format : Format 
       Text : string }
 
+type SpanError = | SpanHasNoCharacters
+
 type HighlightedText = Span seq
 
-type TextFilter = | CaseInsensitive of string
+type TextFilter = | CaseInsensitiveTextFilter of string
 
 type TextFilterError = | FilterIsEmptyOrWhitespace
 
@@ -34,12 +36,12 @@ module Span =
 
     let private create f s =
         match s |> String.length with
-        | 0 -> failwith "A span must have at least 1 character."
-        | _ -> { Text = s; Format = f }
+        | 0 -> Error SpanHasNoCharacters
+        | _ -> Ok { Text = s; Format = f }
 
-    let highlight s = s |> create Highlight
+    let highlight s = s |> create Highlight |> Result.okValueOrThrow
     
-    let regular s = s |> create Regular
+    let regular s = s |> create Regular |> Result.okValueOrThrow
 
     let isHighlight s = 
         match s.Format with 
@@ -52,7 +54,7 @@ module TextFilter =
     let create : Create = fun s -> 
         match s |> isNullOrWhiteSpace with
         | true -> Error FilterIsEmptyOrWhitespace
-        | false -> Ok (TextFilter.CaseInsensitive s)
+        | false -> Ok (TextFilter.CaseInsensitiveTextFilter s)
 
     let toRegexPattern s =
         let len = s |> String.length
@@ -67,7 +69,7 @@ module HighlightedText =
 
     type private ApplyTextFilter = TextFilter -> string -> HighlightedText
     let applyFilter : ApplyTextFilter = fun q s ->
-        let (TextFilter.CaseInsensitive filter) = q
+        let (CaseInsensitiveTextFilter filter) = q
         let regex = 
             Regex.Escape(filter)
             |> TextFilter.toRegexPattern
@@ -112,6 +114,14 @@ module Tests =
             (Span.highlight whitespace).Text |> should equal whitespace
             (Span.regular whitespace).Text |> should equal whitespace
 
+        [<Theory>]
+        [<InlineData("abc", true)>]
+        [<InlineData("abc", false)>]
+        let ``create - can include not whitespace characters`` () =
+            let whitespace = "   "
+            (Span.highlight whitespace).Text |> should equal whitespace
+            (Span.regular whitespace).Text |> should equal whitespace
+
     module TextFilterTests =
 
         [<Theory>]
@@ -132,7 +142,7 @@ module Tests =
             s
             |> TextFilter.create
             |> Result.okValue
-            |> should equal (Some (TextFilter.CaseInsensitive s))
+            |> should equal (Some (TextFilter.CaseInsensitiveTextFilter s))
 
         [<Theory>]
         [<InlineData("a", "(a)+")>]
@@ -176,7 +186,7 @@ module Tests =
         [<InlineData("Complex case 1", "apple pleasant plum","pl", "ap,!pl,e ,!pl,easant ,!pl,um")>]
         [<InlineData("Not found at all", "abc","x","abc")>]
         [<InlineData("Query is same as entire source", "abc","abc","!abc")>]
-        [<InlineData("Search for regex characters", "abc^$()abc","^$()", "abc,!^$(),abc")>]
+        [<InlineData("Search for regex characters", "abc^$()[]\/?.+*abc", "^$()[]\/?.+*", "abc,!^$()[]\/?.+*,abc")>]
         let ``applyFilter`` (comment:string) (source:string) (filter:string) (expected:string) =
             let format (s:Span) = 
                 match s.Format with
