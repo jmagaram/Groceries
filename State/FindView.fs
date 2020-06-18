@@ -194,9 +194,9 @@ module Tests =
     module SpanTests = 
 
         [<Fact>]
-        let ``create - if empty string throw`` () =
-            (fun () -> Span.highlight "" |> ignore) |> should throw typeof<Exception>
-            (fun () -> Span.regular "" |> ignore) |> should throw typeof<Exception>
+        let ``create - if empty string return error`` () =
+            "" |> Span.highlight |> Result.isError |> should equal true
+            "" |> Span.regular |> Result.isError |> should equal true
 
         [<Fact>]
         let ``create - can include a bunch of whitespace`` () =
