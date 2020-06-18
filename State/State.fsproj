@@ -30,7 +30,6 @@
     <Compile Include="RepeatSelector.fs" />
     <Compile Include="ItemEditorModel.fs" />
     <Compile Include="FindView.fs" />
-    <Compile Include="FindViewModel.fs" />
     <Compile Include="ItemFilter.fs" />
     <Compile Include="ItemSummary.fs" />
     <Compile Include="ItemListView.fs" />
