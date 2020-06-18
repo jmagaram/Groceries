@@ -22,15 +22,18 @@ type TextFilterError = | FilterIsEmptyOrWhitespace
 
 type ItemSummary =
     { Id : ItemId
-      Title : Title
-      Quantity : Quantity
-      Note : Note
+      Title : HighlightedText
+      Quantity : HighlightedText
+      Note : HighlightedText
       Repeat : Repeat
       Status : Status }
 
-type Model =
-    { TitleFilter : string
-    }
+type View =
+    { TextFilterBox : TextBox<TextFilterError>
+      Items : ItemSummary seq }
+
+type ViewMessage =
+    | ChangeTextFilter of TextBoxMessage
 
 module Span = 
 
@@ -39,14 +42,20 @@ module Span =
         | 0 -> Error SpanHasNoCharacters
         | _ -> Ok { Text = s; Format = f }
 
-    let highlight s = s |> create Highlight |> Result.okValueOrThrow
+    let highlight s = s |> create Highlight
+
+    let highlightUnsafe s = s |> highlight |> Result.okValueOrThrow
     
-    let regular s = s |> create Regular |> Result.okValueOrThrow
+    let regular s = s |> create Regular
+
+    let regularUnsafe s = s |> regular |> Result.okValueOrThrow
 
     let isHighlight s = 
         match s.Format with 
         | Highlight _ -> true 
         | _ -> false
+
+    let asString s = s.Text
 
 module TextFilter =
 
@@ -95,6 +104,87 @@ module HighlightedText =
                 if lastEnd < s.Length then
                     yield Span.regular (s.Substring(lastEnd, s.Length - lastEnd))
         }
+        |> Seq.map Result.okValueOrThrow
+
+    let empty = Seq.empty
+
+    let regular s = 
+        let result = s |> Span.regular
+        match result with
+        | Error (SpanError.SpanHasNoCharacters) -> empty
+        | Ok s -> s |> Seq.singleton
+
+    let hasHighlights h =
+        h
+        |> Seq.exists (fun i -> i |> Span.isHighlight)
+
+module ItemSummary =
+
+    type Create = TextFilter option -> DomainTypes.Item -> ItemSummary
+    let create : Create = fun f i ->
+        let applyFilter =
+            match f with
+            | Some f -> fun s -> s |> HighlightedText.applyFilter f
+            | None -> fun s -> HighlightedText.regular s
+        { Id = i.Id
+          Title = 
+            i.Title 
+            |> Title.asString 
+            |> applyFilter
+          Quantity = 
+                i.Quantity 
+                |> Option.map Quantity.asString 
+                |> Option.map applyFilter
+                |> Option.defaultValue HighlightedText.empty
+          Note = 
+            i.Note
+            |> Option.map Note.asString
+            |> Option.map applyFilter
+            |> Option.defaultValue HighlightedText.empty
+          Status = i.Status
+          Repeat = i.Repeat }
+
+module FilterTextBox =
+
+    let normalize = trim
+
+    let validate t = 
+        t 
+        |> TextFilter.create
+        |> Result.errorValue
+
+    let create = TextBox.create validate normalize
+
+    let update = TextBox.update validate normalize
+
+module View =
+
+    type Create = View
+    let create : Create = 
+        { View.Items = Seq.empty
+          View.TextFilterBox = FilterTextBox.create }
+
+    type Update = ViewMessage -> DomainTypes.Item seq -> View -> View
+    let update : Update = fun msg items view ->
+        let textBox' =
+            match msg with
+            | ChangeTextFilter msg -> view.TextFilterBox |> FilterTextBox.update msg
+        let items =
+            if (textBox'.NormalizedText = view.TextFilterBox.NormalizedText) // didn't really change anything
+            then view.Items
+            else 
+                let filter = TextFilter.create textBox'.NormalizedText
+                match filter with
+                | Error FilterIsEmptyOrWhitespace -> Seq.empty
+                | Ok filter ->
+                    items
+                    |> Seq.map (fun i -> (i.Title, i |> ItemSummary.create (Some filter)))
+                    |> Seq.filter (fun (_,s) -> s.Title |> HighlightedText.hasHighlights )
+                    |> Seq.sortBy (fun (a, _) -> a)
+                    |> Seq.map (fun (_, b) -> b)
+        { view with 
+            TextFilterBox = textBox'
+            Items = items }
 
 module Tests = 
 
@@ -110,17 +200,16 @@ module Tests =
 
         [<Fact>]
         let ``create - can include a bunch of whitespace`` () =
-            let whitespace = "   "
-            (Span.highlight whitespace).Text |> should equal whitespace
-            (Span.regular whitespace).Text |> should equal whitespace
+            let ws = "   "
+            ws |> Span.highlightUnsafe |> Span.asString |> should equal ws
+            ws |> Span.regularUnsafe |> Span.asString |> should equal ws
 
         [<Theory>]
-        [<InlineData("abc", true)>]
-        [<InlineData("abc", false)>]
-        let ``create - can include not whitespace characters`` () =
-            let whitespace = "   "
-            (Span.highlight whitespace).Text |> should equal whitespace
-            (Span.regular whitespace).Text |> should equal whitespace
+        [<InlineData("abc")>]
+        [<InlineData("abc")>]
+        let ``create - can include many characters`` (s:string) =
+            s |> Span.highlightUnsafe |> Span.asString |> should equal s
+            s |> Span.regularUnsafe |> Span.asString |> should equal s
 
     module TextFilterTests =
 
@@ -160,8 +249,8 @@ module Tests =
     module HighlightedTextTests =
 
         let private parseSpan (s:String) =
-            if s.[0] = '!' then (s.Substring(1) |> Span.highlight)
-            else s |> Span.regular
+            if s.[0] = '!' then (s.Substring(1) |> Span.highlightUnsafe)
+            else s |> Span.regularUnsafe
 
         let private parseFormattedText (s:String) = 
             s.Split(',',System.StringSplitOptions.RemoveEmptyEntries)

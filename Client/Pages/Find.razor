@@ -16,37 +16,50 @@
 </style>
 <h1>Find</h1>
 
-<input value="@model.Filter" @oninput="@(e=>UpdateFilter((string)e.Value))" />
+<input value="@viewModel.TextFilterBox.Text" @oninput="@(e => UpdateFilter((string)e.Value))" />
 <br />
-@if (model.HighlightedItems.Any())
-{
-    foreach (var i in model.HighlightedItems)
+@{
+    void RenderSpans(IEnumerable<FindView.Span> spans)
     {
-        <p>
-            @foreach (var s in i.TitleMatches)
+        foreach (var s in spans)
+        {
+            if (s.Format.IsHighlight)
             {
-                var (part, isMatch) = s;
-                var style = isMatch ? "highlightedItem" : "standardItem";
-<span class="@style">@part</span>}
-        </p>
+                <span class="highlightedItem">@s.Text</span>
+            }
+            else
+            {
+                <span class="standardItem">@s.Text</span>
+            }
+        }
     }
-}
-else
-{
-    <p>Nothing found!</p>
-}
-
-@code {
-    protected void UpdateFilter(string filter)
+    @if (viewModel.Items.Any())
     {
-        model = FindViewModel.updateSearch(model, filter);
+        foreach (var i in viewModel.Items)
+        {
+            <p>
+                @{ RenderSpans(i.Title); }
+            </p>
+        }
     }
-
-    private FindViewModel.ViewModel model;
-
-    protected override void OnInitialized()
+    else
     {
-        base.OnInitialized();
-        model = FindViewModel.initialize(ApplicationState.State.Items.Select(i => i.Value));
+        <p>Nothing found!</p>
+    }
+    @code {
+        private FindView.View viewModel;
+
+        protected void UpdateFilter(string filter)
+        {
+            var viewMessage = FindView.ViewMessage.NewChangeTextFilter(DomainTypes.TextBoxMessage.NewSetText(filter));
+            var items = ApplicationState.State.Items.Select(i => i.Value);
+            viewModel = FindView.ViewModule.update(viewMessage, items, viewModel);
+        }
+
+        protected override void OnInitialized()
+        {
+            base.OnInitialized();
+            viewModel = FindView.ViewModule.create;
+        }
     }
 }
