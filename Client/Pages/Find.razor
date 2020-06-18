@@ -24,13 +24,9 @@
         foreach (var s in spans)
         {
             if (s.Format.IsHighlight)
-            {
-                <span class="highlightedItem">@s.Text</span>
-            }
+            {<span class="highlightedItem">@s.Text</span>}
             else
-            {
-                <span class="standardItem">@s.Text</span>
-            }
+            {<span class="standardItem">@s.Text</span>}
         }
     }
     @if (viewModel.Items.Any())
