@@ -18,7 +18,7 @@
 </select>
 @foreach (var i in View.Items)
 {
-    <ItemListItem Item="@i"></ItemListItem>
+    <ItemListItem OnDelete="e=>OnDelete(e)" Item="@i"></ItemListItem>
 }
 
 @code {
@@ -27,6 +27,15 @@
         base.OnInitialized();
         View = ApplicationState.State.ItemListView;
         FilterSelector = ItemListView.filterSelector;
+    }
+
+    protected void OnDelete(DomainTypes.ItemId id)
+    {
+        var message = DomainTypes.StateMessage.DeleteItem.NewDeleteItem(id);
+        var state = ApplicationState.State;
+        var newState = State.update(message, state);
+        ApplicationState.State = newState;
+        View = ApplicationState.State.ItemListView; // why is this needed?
     }
 
     protected void OnFilterChange(ChangeEventArgs e)
@@ -40,8 +49,6 @@
         var state = State.update(msg, ApplicationState.State);
         ApplicationState.State = state;
         View = ApplicationState.State.ItemListView; // why is this needed?
-       
-        //Model = global::ItemEditorModel.update(msg, Model);
     }
 
     protected DomainTypes.ItemListView View { get; set; }

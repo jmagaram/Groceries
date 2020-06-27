@@ -109,6 +109,14 @@ let update : Update = fun msg s ->
         // this isn't really an update; more of a create
         let view = ItemListView.update (items |> Map.values) nowUtc m
         { s with ItemListView = view }
+    | DeleteItem i ->
+        // Should there be an action on the listview for delete? Seems ugly. Should be a global update. Maybe a function though.
+        let items = s.Items |> Map.remove i
+        let listView = { s.ItemListView with Items = s.ItemListView.Items |> Seq.filter (fun p -> p.Id <> i) }
+        { s with
+            Items = items
+            ItemListView = listView
+        }
 
 let private addItem state (item:Item) = 
     { state with State.Items = state.Items |> Map.add item.Id item }

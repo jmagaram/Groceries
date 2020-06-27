@@ -145,4 +145,5 @@ type State =
 
 type StateMessage =
     | InsertItem of ItemEditorModel
+    | DeleteItem of ItemId
     | ItemListViewMessage of ItemListViewMessage

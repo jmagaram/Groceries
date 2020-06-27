@@ -24,9 +24,13 @@
     <span class="@titleStyle">@Item.Title</span>@if (Item.Quantity!="")
     {<span> * @Item.Quantity</span>}@if (Item.Note!="")
     {<br /><span>@Item.Note</span>}
+    <button @onclick="e=>OnDelete.InvokeAsync(Item.Id)">Delete</button>
 </p>
 
 @code {
     [Parameter]
     public DomainTypes.ItemSummary Item { get; set; }
+
+    [Parameter]
+    public EventCallback<DomainTypes.ItemId> OnDelete { get; set; }
 }
