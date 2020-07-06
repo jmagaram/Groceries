@@ -241,6 +241,8 @@ module Tests =
         [<InlineData("aba", "(ab)+a")>] 
         [<InlineData("abcabc", "(abc)+abc")>]
         [<InlineData("aaa", "(aa)+a")>]
+        [<InlineData("abbbbba", "(abbbbb)+a")>]
+        [<InlineData("abxxxxxxxxxab", "(abxxxxxxxxx)+ab")>]
         let ``toRegexPattern`` (filter:string) (expected:string) =
             filter 
             |> TextFilter.toRegexPattern
@@ -272,6 +274,8 @@ module Tests =
         [<InlineData("Overlapping matches 1", "aaaaaa","aa", "!aaaaaa")>]
         [<InlineData("Overlapping matches 2", "ababaccaba","aba", "!ababa,cc,!aba")>]
         [<InlineData("Overlapping matches 3", "aaabaaaab","aa","!aaa,b,!aaaa,b")>]
+        [<InlineData("Overlapping matches 4", "xxaabbbaabbbaaxx","aabbbaa", "xx,!aabbbaabbbaa,xx")>]
+        [<InlineData("Overlapping matches 5", "xxabbbbabbbaxx","abbbba", "xx,!abbbbabbba,xx")>]
         [<InlineData("Complex case 1", "apple pleasant plum","pl", "ap,!pl,e ,!pl,easant ,!pl,um")>]
         [<InlineData("Not found at all", "abc","x","abc")>]
         [<InlineData("Query is same as entire source", "abc","abc","!abc")>]
@@ -292,5 +296,5 @@ module Tests =
                 |> Result.map (fun h -> h source)
                 |> Result.map (fun r -> r |> Seq.map format)
                 |> Result.okValueOrThrow
-            expected
-            |> should equivalent actual
+            actual
+            |> should equivalent expected
