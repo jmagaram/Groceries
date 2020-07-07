@@ -65,7 +65,8 @@ module TextFilter =
         | true -> Error FilterIsEmptyOrWhitespace
         | false -> Ok (TextFilter.CaseInsensitiveTextFilter s)
 
-    let toRegexPattern s =
+    let toLowerRegexPattern (s:string) =
+        let s = s.ToLowerInvariant()
         let len = s |> String.length
         let beginEqualsEndChars =
             [len/2..-1..1]
@@ -85,7 +86,7 @@ module HighlightedText =
         let (CaseInsensitiveTextFilter filter) = q
         let regex = 
             Regex.Escape(filter)
-            |> TextFilter.toRegexPattern
+            |> TextFilter.toLowerRegexPattern
             |> fun pattern -> new Regex(pattern, RegexOptions.IgnoreCase)
         let endIndex (m:Match) = m.Index + m.Length
         seq {
@@ -102,7 +103,8 @@ module HighlightedText =
                     else
                         let prevEnd = ms.[i-1] |> endIndex
                         let currStart = ms.[i].Index
-                        yield Span.regular (s.Substring(prevEnd, currStart - prevEnd))
+                        if (prevEnd < currStart) then
+                            yield Span.regular (s.Substring(prevEnd, currStart - prevEnd))
                     yield Span.highlight (curr.Value)
                 let lastEnd = ms.[ms.Count-1] |> endIndex
                 if lastEnd < s.Length then
@@ -240,18 +242,20 @@ module Tests =
             |> should equal (Some (TextFilter.CaseInsensitiveTextFilter s))
 
         [<Theory>]
+        [<InlineData("ABC", "(abc)+")>]
         [<InlineData("a", "(a)+")>]
         [<InlineData("ab", "(ab)+")>]
         [<InlineData("abc", "(abc)+")>]
         [<InlineData("aa", "(a)+a")>]
+        //[<InlineData("aaa", "(aa)+a")>] don't know what this should be
+        [<InlineData("aA", "(a)+a")>]
         [<InlineData("aba", "(ab)+a")>] 
         [<InlineData("abcabc", "(abc)+abc")>]
-        [<InlineData("aaa", "(aa)+a")>]
         [<InlineData("abbbbba", "(abbbbb)+a")>]
         [<InlineData("abxxxxxxxxxab", "(abxxxxxxxxx)+ab")>]
-        let ``toRegexPattern`` (filter:string) (expected:string) =
-            filter 
-            |> TextFilter.toRegexPattern
+        let ``toLowerRegexPattern`` (filter:string) (expected:string) =
+            filter
+            |> TextFilter.toLowerRegexPattern
             |> should equal expected
 
     module HighlightedTextTests =
@@ -272,6 +276,16 @@ module Tests =
             let actual = highlighter source
             actual |> Seq.isEmpty |> should equal true
 
+        [<Fact>]
+        let ``applyFilter - when search a whitespace string find just that``() =
+            let filter = TextFilter.create "abc" |> Result.okValueOrThrow
+            let highlighter = HighlightedText.applyFilter filter
+            let source = "     "
+            let actual = highlighter source
+            actual 
+            |> 
+            should equivalent [ Span.regularUnsafe source ]
+
         [<Theory>]
         [<InlineData("Once at beginning", "123xyz","123", "!123,xyz")>]
         [<InlineData("Once at end", "123xyz","xyz", "123,!xyz")>]
@@ -282,11 +296,15 @@ module Tests =
         [<InlineData("Overlapping matches 3", "aaabaaaab","aa","!aaa,b,!aaaa,b")>]
         [<InlineData("Overlapping matches 4", "xxaabbbaabbbaaxx","aabbbaa", "xx,!aabbbaabbbaa,xx")>]
         [<InlineData("Overlapping matches 5", "xxabbbbabbbbaxx","abbbba", "xx,!abbbbabbbba,xx")>]
+        [<InlineData("Overlapping matches 6", "baaaaacaaaccaa aaacaaa aac b","aa", "b,!aaaaa,c,!aaa,cc,!aa, ,!aaa,c,!aaa, ,!aa,c b")>]
+        [<InlineData("Overlapping matches 7", "AaA","aA", "!AaA")>]
+        [<InlineData("Overlapping matches 8", "AbaaaAAb aabcb", "aAA","Ab,!aaaAA,b aabcb")>]
+        [<InlineData("Overlapping matches 9", "AAAa", "aaa","!AAAa")>]
         [<InlineData("Complex case 1", "apple pleasant plum","pl", "ap,!pl,e ,!pl,easant ,!pl,um")>]
         [<InlineData("Not found at all", "abc","x","abc")>]
         [<InlineData("Query is same as entire source", "abc","abc","!abc")>]
         [<InlineData("Search for regex characters", "abc^$()[]\/?.+*abc", "^$()[]\/?.+*", "abc,!^$()[]\/?.+*,abc")>]
-        let ``applyFilter`` (comment:string) (source:string) (filter:string) (expected:string) =
+        let ``applyFilter with specific examples`` (comment:string) (source:string) (filter:string) (expected:string) =
             let format (s:Span) = 
                 match s.Format with
                 | Highlight -> sprintf "!%s" s.Text
@@ -348,9 +366,85 @@ module Tests =
         type Generators =
             static member ApplyFilterParameters() = Arb.fromGen applyFilterParameters
 
-        [<Property(MaxTest=1000, Arbitrary=[| typeof<Generators> |] )>]
-        let ``apply filter - all spans when concatenated equal original source`` (p:ApplyFilterParameters) =
+        [<Property(Arbitrary=[| typeof<Generators> |] )>]
+        let ``apply filter - concatenated spans equal source`` (p:ApplyFilterParameters) =
             p.Source 
             |> HighlightedText.applyFilter p.Filter
             |> Seq.fold (fun total i -> total + i.Text) ""
             |> should equal p.Source
+
+        [<Property(Arbitrary=[| typeof<Generators> |] )>]
+        let ``applyFilter - spans alternate between highlighted and regular`` (p:ApplyFilterParameters) =
+            p.Source 
+            |> HighlightedText.applyFilter p.Filter
+            |> Seq.pairwise
+            |> Seq.exists (fun (a,b) -> a.Format = b.Format)
+            |> should equal false
+
+        [<Property(MaxTest=10000, Arbitrary=[| typeof<Generators> |] )>]
+        let ``applyFilter - find nothing when search regular results`` (p:ApplyFilterParameters) =
+            p.Source
+            |> HighlightedText.applyFilter p.Filter
+            |> Seq.choose (fun i -> 
+                match i.Format with
+                | Format.Regular -> Some i.Text
+                | _ -> None)
+            |> Seq.forall (fun t -> 
+                match t |> HighlightedText.applyFilter p.Filter |> Seq.tryExactlyOne with
+                | Some r -> r.Format = Format.Regular
+                | _ -> false)
+            |> should equal true
+
+        let filterLength f = match f with | CaseInsensitiveTextFilter f -> f.Length
+
+        let endsWithMatch filter text  =
+            text
+            |> HighlightedText.applyFilter filter
+            |> Seq.toList
+            |> fun ss ->
+                match ss with
+                | [] -> false
+                | [a] -> a.Format = Format.Highlight
+                | [_;b] -> b.Format = Format.Highlight
+                | _ -> false
+
+        [<Property(MaxTest=10000,Arbitrary=[| typeof<Generators> |] )>]
+        let ``applyFilter - if highlight is longer than filter, then overlapping or back to back filters in source`` (p:ApplyFilterParameters) =
+            let filterLength = match p.Filter with | CaseInsensitiveTextFilter f -> f.Length
+            p.Source
+            |> HighlightedText.applyFilter p.Filter
+            |> Seq.choose (fun i -> 
+                match i.Format with
+                | Format.Highlight when i.Text.Length > filterLength -> Some i.Text
+                | _ -> None)
+            |> Seq.forall (fun t -> 
+                let excess = t.Length - filterLength
+                [0..excess]
+                |> Seq.forall (fun x -> 
+                    let res = endsWithMatch p.Filter (t.Substring(x))
+                    res))
+
+        [<Property(Arbitrary=[| typeof<Generators> |] )>]
+        let ``applyFilter - results do not depend on case of filter`` (p:ApplyFilterParameters) =
+            let mapFilter mapping f = 
+                match f with 
+                | CaseInsensitiveTextFilter t -> mapping t |> TextFilter.create |> Result.okValueOrThrow 
+            let upperFilter = p.Filter |> mapFilter (fun t -> t.ToUpper())
+            let lowerFilter = p.Filter |> mapFilter (fun t -> t.ToLower())
+            let withUpperFilter = p.Source |> HighlightedText.applyFilter upperFilter
+            let withLowerFilter = p.Source |> HighlightedText.applyFilter lowerFilter
+            withUpperFilter
+            |> should equivalent withLowerFilter
+
+        [<Property(Arbitrary=[| typeof<Generators> |] )>]
+        let ``applyFilter - results do not depend on case of source text`` (p:ApplyFilterParameters) =
+            let withUpperSource = 
+                p.Source.ToUpper() 
+                |> HighlightedText.applyFilter p.Filter
+                |> Seq.map (fun t -> { t with Text = t.Text.ToLower() })
+            let withLowerSource = 
+                p.Source.ToLower() 
+                |> HighlightedText.applyFilter p.Filter
+                |> Seq.map (fun t -> { t with Text =t.Text.ToLower() })
+            withUpperSource
+            |> should equivalent withLowerSource
