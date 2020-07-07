@@ -67,12 +67,16 @@ module TextFilter =
 
     let toRegexPattern s =
         let len = s |> String.length
-        let div = len/2 + (len%2)
-        let a = s.Substring(0, div)
-        let b = s.Substring(div)
-        if ((a+a+b).StartsWith(a+b)) 
-        then sprintf "(%s)+%s" a b
-        else sprintf "(%s)+" s
+        let beginEqualsEndChars =
+            [len/2..-1..1]
+            |> Seq.filter (fun i -> s.Substring(0,i) = s.Substring(len-i))
+            |> Seq.tryHead
+        match beginEqualsEndChars with
+        | None -> sprintf "(%s)+" s
+        | Some x -> 
+            let a = s.Substring(0,len-x)
+            let b = s.Substring(len-x)
+            sprintf "(%s)+%s" a b
 
 module HighlightedText =
 
@@ -190,6 +194,8 @@ module Tests =
 
     open Xunit
     open FsUnit
+    open FsCheck
+    open FsCheck.Xunit
 
     module SpanTests = 
 
@@ -275,7 +281,7 @@ module Tests =
         [<InlineData("Overlapping matches 2", "ababaccaba","aba", "!ababa,cc,!aba")>]
         [<InlineData("Overlapping matches 3", "aaabaaaab","aa","!aaa,b,!aaaa,b")>]
         [<InlineData("Overlapping matches 4", "xxaabbbaabbbaaxx","aabbbaa", "xx,!aabbbaabbbaa,xx")>]
-        [<InlineData("Overlapping matches 5", "xxabbbbabbbaxx","abbbba", "xx,!abbbbabbba,xx")>]
+        [<InlineData("Overlapping matches 5", "xxabbbbabbbbaxx","abbbba", "xx,!abbbbabbbba,xx")>]
         [<InlineData("Complex case 1", "apple pleasant plum","pl", "ap,!pl,e ,!pl,easant ,!pl,um")>]
         [<InlineData("Not found at all", "abc","x","abc")>]
         [<InlineData("Query is same as entire source", "abc","abc","!abc")>]
@@ -298,3 +304,53 @@ module Tests =
                 |> Result.okValueOrThrow
             actual
             |> should equivalent expected
+
+        type ApplyFilterParameters =
+            { Filter : TextFilter
+              Source : string }
+
+        let chooseFromList xs = 
+            gen { 
+                let! i = Gen.choose (0, List.length xs-1) 
+                return List.item i xs 
+            }
+
+        let validCharacters = chooseFromList ['a';'A';'b';'c';' '];
+        
+        let filter =
+            gen {
+                let! len = Gen.choose (1,10)
+                let! chars = Gen.arrayOfLength len validCharacters
+                let filter = String(chars).Trim() |> TextFilter.create
+                return filter
+            }
+            |> Gen.filter Result.isOk
+            |> Gen.map Result.okValueOrThrow
+
+        let textToSearch =
+            gen {
+                let! len = Gen.choose (0,30)
+                let! chars = Gen.arrayOfLength len validCharacters
+                let s = String(chars)
+                return s
+            }
+
+        let applyFilterParameters =
+            gen {
+                let! f = filter
+                let! s = textToSearch
+                let result = 
+                    { Filter = f
+                      Source = s }
+                return result
+            }
+
+        type Generators =
+            static member ApplyFilterParameters() = Arb.fromGen applyFilterParameters
+
+        [<Property(MaxTest=1000, Arbitrary=[| typeof<Generators> |] )>]
+        let ``apply filter - all spans when concatenated equal original source`` (p:ApplyFilterParameters) =
+            p.Source 
+            |> HighlightedText.applyFilter p.Filter
+            |> Seq.fold (fun total i -> total + i.Text) ""
+            |> should equal p.Source
