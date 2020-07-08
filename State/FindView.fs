@@ -81,19 +81,16 @@ module TextFilter =
         |> Seq.tryHead
 
     let edgeMiddleEdge s =
-        let len = s |> String.length
-        let maxEdgeLength =
-            match len % 2 = 0 with
-            | true -> len / 2 - 1
-            | false -> len / 2
+        let len = String.length s
+        let maxEdgeLength = (len - 1) / 2 
         seq { maxEdgeLength..(-1)..1 }
         |> Seq.choose (fun i -> 
-            let startsWith = s.Substring(0,i)
-            let endsWith = s.Substring(len-i)
-            if startsWith = endsWith
+            let starts = s.Substring(0, i)
+            let ends = s.Substring(len-i)
+            if starts = ends
             then 
                 let middle = s.Substring(i, len-i*2)
-                Some {| Edge = startsWith; Middle = middle |}
+                Some {| Edge = starts; Middle = middle |}
             else 
                 None)
         |> Seq.tryHead
@@ -268,38 +265,6 @@ module Tests =
             |> Result.okValue
             |> should equal (Some (TextFilter.CaseInsensitiveTextFilter s))
 
-        //[<Theory>]
-        //// does not repeat in any way
-        //[<InlineData("a", "(a)+")>]
-        //[<InlineData("ab", "(ab)+")>]
-        //[<InlineData("abc", "(abc)+")>]
-        //// same thing repeated over and over
-        //[<InlineData("aa", "(a){2,}")>]
-        //[<InlineData("aaa", "(a){3,}")>]
-        //[<InlineData("aaaa", "(a){4,}")>]
-        //[<InlineData("abab", "(ab){2,}")>]
-        //[<InlineData("ababab", "(ab){3,}")>]
-        //[<InlineData("abababab", "(ab){4,}")>]
-        //[<InlineData("abcabc", "(abc){2,}")>]
-        //[<InlineData("abcabcabc", "(abc){3,}")>]
-        //[<InlineData("abcabcabcabc", "(abc){4,}")>]
-        //// case insensitive
-        //[<InlineData("ABC", "(abc)+")>]
-        //// ends the way it starts, but not same thing over and over
-        //[<InlineData("aba", "(ab)+a")>]
-        //[<InlineData("abba", "(abb)+a")>]
-        //[<InlineData("abbba", "(abbb)+a")>]
-        //[<InlineData("abxab", "(abx)+ab")>]
-        //[<InlineData("abxxab", "(abxx)+ab")>]
-        //[<InlineData("abxxxab", "(abxxx)+ab")>]
-        //[<InlineData("abcxabc", "(abcx)+abc")>]
-        //[<InlineData("abcxxabc", "(abcxx)+abc")>]
-        //[<InlineData("abcxxxabc", "(abcxxx)+abc")>]
-        //let ``toLowerRegexPattern`` (filter:string) (expected:string) =
-        //    filter
-        //    |> TextFilter.toLowerRegexPattern
-        //    |> should equal expected
-
     module HighlightedTextTests =
 
         let private parseSpan (s:String) =
@@ -342,10 +307,13 @@ module Tests =
         [<InlineData("Overlapping matches 7", "AaA","aA", "!AaA")>]
         [<InlineData("Overlapping matches 8", "AbaaaAAb aabcb", "aAA","Ab,!aaaAA,b aabcb")>]
         [<InlineData("Overlapping matches 9", "AAAa", "aaa","!AAAa")>]
+        [<InlineData("Overlapping matches 10", "abaababa", "aba", "!abaababa")>]
+        [<InlineData("Overlapping matches 11", "abababaaba", "aba", "!abababaaba")>]
         [<InlineData("Complex case 1", "apple pleasant plum","pl", "ap,!pl,e ,!pl,easant ,!pl,um")>]
         [<InlineData("Not found at all", "abc","x","abc")>]
         [<InlineData("Query is same as entire source", "abc","abc","!abc")>]
         [<InlineData("Search for regex characters", "abc^$()[]\/?.+*abc", "^$()[]\/?.+*", "abc,!^$()[]\/?.+*,abc")>]
+
         let ``applyFilter with specific examples`` (comment:string) (source:string) (filterString:string) (expected:string) =
             let formatSpan (s:Span) = 
                 match s.Format with
@@ -393,7 +361,7 @@ module Tests =
 
         let textToSearch =
             gen {
-                let! len = Gen.choose (0,30)
+                let! len = Gen.choose (0, 30)
                 let! chars = Gen.arrayOfLength len validCharacters
                 let s = String(chars)
                 return s
