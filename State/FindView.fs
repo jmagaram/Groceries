@@ -108,10 +108,6 @@ module TextFilter =
             | None -> sprintf "(%s)+" s
 
 module HighlightedText =
-    // Current issue is with patterns like aba
-    // Converted to regex (ab)+a
-    // But text might have "abaaba" which matches to two (ab)+a in a row
-    // Rather than (aba)+ which would match both
     type private ApplyTextFilter = TextFilter -> string -> HighlightedText
     let applyFilter : ApplyTextFilter = fun q s ->
         let (CaseInsensitiveTextFilter filter) = q
@@ -350,8 +346,6 @@ module Tests =
         [<InlineData("Not found at all", "abc","x","abc")>]
         [<InlineData("Query is same as entire source", "abc","abc","!abc")>]
         [<InlineData("Search for regex characters", "abc^$()[]\/?.+*abc", "^$()[]\/?.+*", "abc,!^$()[]\/?.+*,abc")>]
-
-
         let ``applyFilter with specific examples`` (comment:string) (source:string) (filterString:string) (expected:string) =
             let formatSpan (s:Span) = 
                 match s.Format with
