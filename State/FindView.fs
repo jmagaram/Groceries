@@ -66,15 +66,12 @@ module TextFilter =
         | false -> Ok (TextFilter.CaseInsensitiveTextFilter s)
 
     let repeatFormula s =
-        let repeatString n s =
-            seq { 1..n }
-            |> Seq.fold (fun total i -> total + s) ""
         let len = s |> String.length
         [1..len]
         |> Seq.choose (fun i ->
             let endsWith = s.Substring(len - i)
             let n = len / i
-            match (endsWith |> repeatString n) = s with
+            match (endsWith |> String.replicate n) = s with
             | true -> Some (endsWith, n)
             | false -> None)
         |> Seq.filter (fun (_, i) -> i > 1)
@@ -95,7 +92,8 @@ module TextFilter =
                 None)
         |> Seq.tryHead
 
-    let toLowerRegexPattern (s:string) =
+    // invariant culture?
+    let toRegex (s:string) =
         let s = s.ToLower()
         match s |> repeatFormula with
         | Some (x,n) -> sprintf "(%s){%d,}" x n
@@ -110,7 +108,7 @@ module HighlightedText =
         let (CaseInsensitiveTextFilter filter) = q
         let regex = 
             Regex.Escape(filter)
-            |> TextFilter.toLowerRegexPattern
+            |> TextFilter.toRegex
             |> fun pattern -> new Regex(pattern, RegexOptions.IgnoreCase)
         let endIndex (m:Match) = m.Index + m.Length
         seq {
@@ -313,7 +311,6 @@ module Tests =
         [<InlineData("Not found at all", "abc","x","abc")>]
         [<InlineData("Query is same as entire source", "abc","abc","!abc")>]
         [<InlineData("Search for regex characters", "abc^$()[]\/?.+*abc", "^$()[]\/?.+*", "abc,!^$()[]\/?.+*,abc")>]
-
         let ``applyFilter with specific examples`` (comment:string) (source:string) (filterString:string) (expected:string) =
             let formatSpan (s:Span) = 
                 match s.Format with
@@ -341,27 +338,27 @@ module Tests =
             { Filter : TextFilter
               Source : string }
 
-        let chooseFromList xs = 
-            gen { 
-                let! i = Gen.choose (0, List.length xs-1) 
-                return List.item i xs 
-            }
-
-        let validCharacters = chooseFromList ['a';'A';'b';'c';' '];
+        let validCharacters = Gen.growingElements ['a';'b';'c';'d';' ']
         
         let filter =
             gen {
-                let! len = Gen.choose (1,10)
-                let! chars = Gen.arrayOfLength len validCharacters
-                let filter = String(chars).Trim() |> TextFilter.create
+                let maxSize = 10
+                let! startsWith = validCharacters |> Gen.filter (fun f -> f <> ' ')
+                let! endsWithLength = seq { 1..maxSize-1 } |> Gen.growingElements
+                let! endsWith = Gen.listOfLength endsWithLength validCharacters
+                let filter = 
+                    (startsWith :: endsWith)
+                    |> List.toArray
+                    |> fun s -> String(s)
+                    |> TextFilter.create
+                    |> Result.okValueOrThrow
                 return filter
             }
-            |> Gen.filter Result.isOk
-            |> Gen.map Result.okValueOrThrow
 
         let textToSearch =
             gen {
-                let! len = Gen.choose (0, 30)
+                let maxSize = 30
+                let! len = seq { 1..maxSize } |> Gen.growingElements
                 let! chars = Gen.arrayOfLength len validCharacters
                 let s = String(chars)
                 return s
