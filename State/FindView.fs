@@ -65,19 +65,45 @@ module TextFilter =
         | true -> Error FilterIsEmptyOrWhitespace
         | false -> Ok (TextFilter.CaseInsensitiveTextFilter s)
 
-    let toLowerRegexPattern (s:string) =
-        let s = s.ToLowerInvariant()
+    let private repeatFormula s =
+        let repeatString n s =
+            seq { 1..n }
+            |> Seq.fold (fun total i -> total + s) ""
         let len = s |> String.length
-        let beginEqualsEndChars =
-            [len/2..-1..1]
-            |> Seq.filter (fun i -> s.Substring(0,i) = s.Substring(len-i))
-            |> Seq.tryHead
-        match beginEqualsEndChars with
-        | None -> sprintf "(%s)+" s
-        | Some x -> 
-            let a = s.Substring(0,len-x)
-            let b = s.Substring(len-x)
-            sprintf "(%s)+%s" a b
+        [1..len]
+        |> Seq.choose (fun i ->
+            let endsWith = s.Substring(len - i)
+            let n = len / i
+            match (endsWith |> repeatString n) = s with
+            | true -> Some (endsWith, n)
+            | false -> None)
+        |> Seq.filter (fun (_, i) -> i > 1)
+        |> Seq.tryHead
+
+    let private startMiddleStart s =
+        let len = s |> String.length
+        let max =
+            match len % 2 = 0 with
+            | true -> len / 2 - 1
+            | false -> len / 2
+        let edgeLength =
+            seq {max..(-1)..1}
+            |> Seq.tryFind (fun i -> s.Substring(0,i) = s.Substring(len-i))
+        match edgeLength with
+        | None -> None
+        | Some i ->
+            let ends = s.Substring(0, i)
+            let middle = s.Substring(i, len-i * 2)
+            Some {| Edge = ends; Middle = middle |}
+
+    let toLowerRegexPattern (s:string) =
+        let s = s.ToLower()
+        match s |> repeatFormula with
+        | Some (x,n) -> sprintf "(%s){%d,}" x n
+        | None -> 
+            match s |> startMiddleStart with
+            | Some i -> sprintf "(%s%s)+%s" i.Edge i.Middle i.Edge
+            | None -> sprintf "(%s)+" s
 
 module HighlightedText =
 
@@ -242,17 +268,32 @@ module Tests =
             |> should equal (Some (TextFilter.CaseInsensitiveTextFilter s))
 
         [<Theory>]
-        [<InlineData("ABC", "(abc)+")>]
+        // does not repeat in any way
         [<InlineData("a", "(a)+")>]
         [<InlineData("ab", "(ab)+")>]
         [<InlineData("abc", "(abc)+")>]
-        [<InlineData("aa", "(a)+a")>]
-        //[<InlineData("aaa", "(aa)+a")>] don't know what this should be
-        [<InlineData("aA", "(a)+a")>]
-        [<InlineData("aba", "(ab)+a")>] 
-        [<InlineData("abcabc", "(abc)+abc")>]
-        [<InlineData("abbbbba", "(abbbbb)+a")>]
-        [<InlineData("abxxxxxxxxxab", "(abxxxxxxxxx)+ab")>]
+        // same thing repeated over and over
+        [<InlineData("aa", "(a){2,}")>]
+        [<InlineData("aaa", "(a){3,}")>]
+        [<InlineData("aaaa", "(a){4,}")>]
+        [<InlineData("abab", "(ab){2,}")>]
+        [<InlineData("ababab", "(ab){3,}")>]
+        [<InlineData("abababab", "(ab){4,}")>]
+        [<InlineData("abcabc", "(abc){2,}")>]
+        [<InlineData("abcabcabc", "(abc){3,}")>]
+        [<InlineData("abcabcabcabc", "(abc){4,}")>]
+        // case insensitive
+        [<InlineData("ABC", "(abc)+")>]
+        // ends the way it starts, but not same thing over and over
+        [<InlineData("aba", "(ab)+a")>]
+        [<InlineData("abba", "(abb)+a")>]
+        [<InlineData("abbba", "(abbb)+a")>]
+        [<InlineData("abxab", "(abx)+ab")>]
+        [<InlineData("abxxab", "(abxx)+ab")>]
+        [<InlineData("abxxxab", "(abxxx)+ab")>]
+        [<InlineData("abcxabc", "(abcx)+abc")>]
+        [<InlineData("abcxxabc", "(abcxx)+abc")>]
+        [<InlineData("abcxxxabc", "(abcxxx)+abc")>]
         let ``toLowerRegexPattern`` (filter:string) (expected:string) =
             filter
             |> TextFilter.toLowerRegexPattern
@@ -366,14 +407,14 @@ module Tests =
         type Generators =
             static member ApplyFilterParameters() = Arb.fromGen applyFilterParameters
 
-        [<Property(Arbitrary=[| typeof<Generators> |] )>]
-        let ``apply filter - concatenated spans equal source`` (p:ApplyFilterParameters) =
+        [<Property(MaxTest=1000, Arbitrary=[| typeof<Generators> |] )>]
+        let ``applyFilter - concatenated spans equal source`` (p:ApplyFilterParameters) =
             p.Source 
             |> HighlightedText.applyFilter p.Filter
             |> Seq.fold (fun total i -> total + i.Text) ""
             |> should equal p.Source
 
-        [<Property(Arbitrary=[| typeof<Generators> |] )>]
+        [<Property(MaxTest=1000, Arbitrary=[| typeof<Generators> |] )>]
         let ``applyFilter - spans alternate between highlighted and regular`` (p:ApplyFilterParameters) =
             p.Source 
             |> HighlightedText.applyFilter p.Filter
@@ -382,7 +423,7 @@ module Tests =
             |> should equal false
 
         [<Property(MaxTest=10000, Arbitrary=[| typeof<Generators> |] )>]
-        let ``applyFilter - find nothing when search regular results`` (p:ApplyFilterParameters) =
+        let ``applyFilter - when search in regular spans will find nothing`` (p:ApplyFilterParameters) =
             p.Source
             |> HighlightedText.applyFilter p.Filter
             |> Seq.choose (fun i -> 
@@ -395,9 +436,7 @@ module Tests =
                 | _ -> false)
             |> should equal true
 
-        let filterLength f = match f with | CaseInsensitiveTextFilter f -> f.Length
-
-        let endsWithMatch filter text  =
+        let endsWithHighlightedMatch filter text =
             text
             |> HighlightedText.applyFilter filter
             |> Seq.toList
@@ -408,7 +447,7 @@ module Tests =
                 | [_;b] -> b.Format = Format.Highlight
                 | _ -> false
 
-        [<Property(MaxTest=10000,Arbitrary=[| typeof<Generators> |] )>]
+        [<Property(MaxTest=10000, Arbitrary=[| typeof<Generators> |] )>]
         let ``applyFilter - if highlight is longer than filter, then overlapping or back to back filters in source`` (p:ApplyFilterParameters) =
             let filterLength = match p.Filter with | CaseInsensitiveTextFilter f -> f.Length
             p.Source
@@ -421,7 +460,7 @@ module Tests =
                 let excess = t.Length - filterLength
                 [0..excess]
                 |> Seq.forall (fun x -> 
-                    let res = endsWithMatch p.Filter (t.Substring(x))
+                    let res = endsWithHighlightedMatch p.Filter (t.Substring(x))
                     res))
 
         [<Property(Arbitrary=[| typeof<Generators> |] )>]
