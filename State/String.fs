@@ -22,14 +22,6 @@ let tryParseGuid = tryParseWith System.Guid.TryParse
 
 let tryParseTimeSpan = tryParseWith System.TimeSpan.TryParse
 
-let repeat n s = 
-    if n < 0
-        then raise (ArgumentOutOfRangeException("n","The repeat count must be greater than or equal to zero."))
-    elif s = null
-        then raise (ArgumentNullException("s"))
-    else
-        String.Join("", Seq.replicate (n+1) s)
-
 module Tests = 
 
     open System
@@ -47,25 +39,6 @@ module Tests =
         static member String() =
             Arb.Default.String()
             |> Arb.filter (fun s -> s <> null)
-
-    [<Fact>]
-    let ``repeat when n < 0 should throw`` () =
-        (fun() -> repeat -1 "aaa" |> ignore)
-        |> should throw typeof<ArgumentOutOfRangeException>
-
-    [<Fact>]
-    let ``repeat when passed null should throw`` () =
-        (fun() -> repeat 3 null |> ignore)
-        |> should throw typeof<ArgumentNullException>
-
-    [<Property(Arbitrary=[| typeof<ZeroOrPositive>; typeof<NotNullString> |])>]
-    let ``repeat n times is repeat n-1 plus original, but if n = 0 then original`` (s:string) (n:int) = 
-        let actual = s |> repeat n
-        let expected = 
-            match n with
-            | 0 -> s
-            | x -> sprintf("%s%s") (s |> repeat (x-1)) s
-        actual = expected
 
     [<Theory>]
     [<InlineData("1", 1)>]
