@@ -348,18 +348,23 @@ module Tests =
             { Filter : TextFilter
               Source : string }
 
-        let applyFilterParameters =
-            gen {
-                let validCharacters = ['a';'b';'c';'d';' ';'^';'$';'(';')';'*';'+';'?';'.';'\\';'/']
-                let charGen = Gen.frequency [
-                    ( 5, Gen.elements (validCharacters |> Seq.takeAtMost 1));
-                    (10, Gen.elements (validCharacters |> Seq.takeAtMost 2));
-                    (10, Gen.elements (validCharacters |> Seq.takeAtMost 3));
-                    (10, Gen.elements (validCharacters |> Seq.takeAtMost 4));
-                    ( 5, Gen.elements (validCharacters |> Seq.takeAtMost 5));
-                    ( 5, Gen.elements (validCharacters |> Seq.takeAtMost 99));
-                ]
+        let manyChars =
+            let validCharacters = ['a';'b';'c';'d';' ';'^';'$';'(';')';'*';'+';'?';'.';'\\';'/']
+            Gen.frequency [
+                ( 5, Gen.elements (validCharacters |> Seq.takeAtMost 1));
+                (10, Gen.elements (validCharacters |> Seq.takeAtMost 2));
+                (10, Gen.elements (validCharacters |> Seq.takeAtMost 3));
+                (10, Gen.elements (validCharacters |> Seq.takeAtMost 4));
+                ( 5, Gen.elements (validCharacters |> Seq.takeAtMost 5));
+                ( 5, Gen.elements (validCharacters |> Seq.takeAtMost 99));
+            ]
 
+        let veryFewChars =
+            let validCharacters = ['a';'b';' ']
+            Gen.elements validCharacters
+
+        let applyFilterParameters charGen =
+            gen {
                 let! startFilterChar = charGen |> Gen.filter (fun c -> c <> ' ')
                 let! endFilterCharLen = Gen.frequency [ 
                     (10, Gen.choose(0,2)); 
@@ -389,7 +394,9 @@ module Tests =
             }
 
         type Generators =
-            static member ApplyFilterParameters() = Arb.fromGen applyFilterParameters
+            static member ApplyFilterParameters() = 
+                applyFilterParameters veryFewChars
+                |> Arb.fromGen
 
         [<Property(MaxTest=1000, Arbitrary=[| typeof<Generators> |] )>]
         let ``applyFilter - concatenated spans equal source`` (p:ApplyFilterParameters) =
@@ -461,10 +468,3 @@ module Tests =
                 |> Seq.map (fun t -> { t with Text =t.Text.ToLower() })
                 |> List.ofSeq
             withUpperSource = withLowerSource
-
-        [<Property(MaxTest=10000, Arbitrary=[| typeof<Generators> |] )>]
-        let ``applyFilter - spans alternate between highlighted and regular`` (p:ApplyFilterParameters) =
-            p.Source 
-            |> HighlightedText.applyFilter p.Filter
-            |> Seq.pairwise
-            |> Seq.forall (fun (a,b) -> a.Format <> b.Format)
