@@ -57,6 +57,15 @@ module Span =
 
     let asString s = s.Text
 
+    let merge second first =
+        if second.Format = first.Format
+        then 
+            { Text = sprintf "%s%s" first.Text second.Text
+              Format = second.Format }
+            |> Some
+        else
+            None
+
 module TextFilter =
 
     type private Create = string -> Result<TextFilter, TextFilterError>
@@ -133,6 +142,7 @@ module HighlightedText =
                     yield Span.regular (s.Substring(lastEnd, s.Length - lastEnd))
         }
         |> Seq.map Result.okValueOrThrow
+        |> Seq.chunk id Span.merge
 
     let empty = Seq.empty
 
