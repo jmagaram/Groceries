@@ -92,24 +92,24 @@ module TextFilter =
                 None)
         |> Seq.tryHead
 
-    // invariant culture?
     let toRegex (s:string) =
-        let s = s.ToLower()
+        let s = s.ToLowerInvariant()
+        let escape s = Regex.Escape(s)
         match s |> repeatFormula with
-        | Some (x,n) -> sprintf "(%s){%d,}" x n
+        | Some (x,n) -> sprintf "(%s){%d,}" (escape x) n
         | None -> 
             match s |> edgeMiddleEdge with
-            | Some i -> sprintf "(%s)+(%s)*" s (i.Middle + i.Edge)
-            | None -> sprintf "(%s)+" s
+            | Some i -> sprintf "(%s)+(%s)*" (escape s) (escape (i.Middle + i.Edge))
+            | None -> sprintf "(%s)+" (escape s)
 
 module HighlightedText =
     type private ApplyTextFilter = TextFilter -> string -> HighlightedText
     let applyFilter : ApplyTextFilter = fun q s ->
         let (CaseInsensitiveTextFilter filter) = q
         let regex = 
-            Regex.Escape(filter)
+            filter
             |> TextFilter.toRegex
-            |> fun pattern -> new Regex(pattern, RegexOptions.IgnoreCase)
+            |> fun pattern -> new Regex(pattern, RegexOptions.IgnoreCase ||| RegexOptions.CultureInvariant)
         let endIndex (m:Match) = m.Index + m.Length
         seq {
             let ms = regex.Matches(s)
@@ -338,40 +338,44 @@ module Tests =
             { Filter : TextFilter
               Source : string }
 
-        let validCharacters = Gen.growingElements ['a';'b';'c';'d';' ']
-        
-        let filter =
+        let applyFilterParameters =
             gen {
-                let maxSize = 10
-                let! startsWith = validCharacters |> Gen.filter (fun f -> f <> ' ')
-                let! endsWithLength = seq { 1..maxSize-1 } |> Gen.growingElements
-                let! endsWith = Gen.listOfLength endsWithLength validCharacters
+                let validCharacters = ['a';'b';'c';'d';' ';'^';'$';'(';')';'*';'+';'?';'.';'\\';'/']
+                let charGen = Gen.frequency [
+                    ( 5, Gen.elements (validCharacters |> Seq.takeAtMost 1));
+                    (10, Gen.elements (validCharacters |> Seq.takeAtMost 2));
+                    (10, Gen.elements (validCharacters |> Seq.takeAtMost 3));
+                    (10, Gen.elements (validCharacters |> Seq.takeAtMost 4));
+                    ( 5, Gen.elements (validCharacters |> Seq.takeAtMost 5));
+                    ( 5, Gen.elements (validCharacters |> Seq.takeAtMost 99));
+                ]
+
+                let! startFilterChar = charGen |> Gen.filter (fun c -> c <> ' ')
+                let! endFilterCharLen = Gen.frequency [ 
+                    (10, Gen.choose(0,2)); 
+                    (10, Gen.choose(3,5));
+                    ( 5, Gen.choose(6,8));
+                    ( 1, Gen.choose(9,11));
+                    ( 1, Gen.choose(12,20))]
+                let! endChars = charGen |> Gen.listOfLength endFilterCharLen
                 let filter = 
-                    (startsWith :: endsWith)
+                    startFilterChar :: endChars
                     |> List.toArray
                     |> fun s -> String(s)
                     |> TextFilter.create
                     |> Result.okValueOrThrow
-                return filter
-            }
 
-        let textToSearch =
-            gen {
-                let maxSize = 30
-                let! len = seq { 1..maxSize } |> Gen.growingElements
-                let! chars = Gen.arrayOfLength len validCharacters
-                let s = String(chars)
-                return s
-            }
+                let! searchTextLen = Gen.frequency [ 
+                    (10, Gen.choose(0,10)); 
+                    (02, Gen.choose(11,20));
+                    (02, Gen.choose(200,300))]
+                let! searchTextChars = Gen.arrayOfLength searchTextLen charGen
+                let searchText = String(searchTextChars)
 
-        let applyFilterParameters =
-            gen {
-                let! f = filter
-                let! s = textToSearch
-                let result = 
-                    { Filter = f
-                      Source = s }
-                return result
+                return {
+                    Filter = filter
+                    Source = searchText
+                }
             }
 
         type Generators =
@@ -383,15 +387,6 @@ module Tests =
             |> HighlightedText.applyFilter p.Filter
             |> Seq.fold (fun total i -> total + i.Text) ""
             |> fun x -> x = p.Source
-
-        [<Property(MaxTest=10000, Arbitrary=[| typeof<Generators> |] )>]
-        let ``applyFilter - spans alternate between highlighted and regular`` (p:ApplyFilterParameters) =
-            p.Source 
-            |> HighlightedText.applyFilter p.Filter
-            |> Seq.pairwise
-            |> Seq.forall (fun (a,b) -> 
-                let consecutiveSpansAreDifferent = a.Format <> b.Format
-                consecutiveSpansAreDifferent)
 
         [<Property(MaxTest=10000, Arbitrary=[| typeof<Generators> |] )>]
         let ``applyFilter - when search in regular spans will find nothing`` (p:ApplyFilterParameters) =
@@ -406,19 +401,18 @@ module Tests =
                 | Some r -> r.Format = Format.Regular
                 | None -> false)
 
-        let endsWithHighlightedMatch filter text =
-            text
-            |> HighlightedText.applyFilter filter
-            |> Seq.toList
-            |> fun ss ->
-                match ss with
-                | [] -> false
-                | [a] -> a.Format = Format.Highlight
-                | [_;b] -> b.Format = Format.Highlight
-                | _ -> false
-
         [<Property(MaxTest=10000, Arbitrary=[| typeof<Generators> |] )>]
         let ``applyFilter - if highlight is longer than filter, then overlapping or back to back filters in source`` (p:ApplyFilterParameters) =
+            let endsWithHighlightedMatch filter text =
+                text
+                |> HighlightedText.applyFilter filter
+                |> Seq.toList
+                |> fun ss ->
+                    match ss with
+                    | [] -> false
+                    | [a] -> a.Format = Format.Highlight
+                    | [_;b] -> b.Format = Format.Highlight
+                    | _ -> false
             let filterLength = match p.Filter with | CaseInsensitiveTextFilter f -> f.Length
             p.Source
             |> HighlightedText.applyFilter p.Filter
@@ -457,3 +451,10 @@ module Tests =
                 |> Seq.map (fun t -> { t with Text =t.Text.ToLower() })
                 |> List.ofSeq
             withUpperSource = withLowerSource
+
+        [<Property(MaxTest=10000, Arbitrary=[| typeof<Generators> |] )>]
+        let ``applyFilter - spans alternate between highlighted and regular`` (p:ApplyFilterParameters) =
+            p.Source 
+            |> HighlightedText.applyFilter p.Filter
+            |> Seq.pairwise
+            |> Seq.forall (fun (a,b) -> a.Format <> b.Format)
