@@ -57,15 +57,6 @@ module Span =
 
     let asString s = s.Text
 
-    let merge second first =
-        if second.Format = first.Format
-        then 
-            { Text = sprintf "%s%s" first.Text second.Text
-              Format = second.Format }
-            |> Some
-        else
-            None
-
 module TextFilter =
 
     type private Create = string -> Result<TextFilter, TextFilterError>
@@ -108,7 +99,7 @@ module TextFilter =
         | Some (x,n) -> sprintf "(%s){%d,}" (escape x) n
         | None -> 
             match s |> edgeMiddleEdge with
-            | Some i -> sprintf "(%s)+(%s)*" (escape s) (escape (i.Middle + i.Edge))
+            | Some i -> sprintf "((%s)+(%s)*)+" (escape s) (escape (i.Middle + i.Edge))
             | None -> sprintf "(%s)+" (escape s)
 
 module HighlightedText =
@@ -134,15 +125,13 @@ module HighlightedText =
                     else
                         let prevEnd = ms.[i-1] |> endIndex
                         let currStart = ms.[i].Index
-                        if (prevEnd < currStart) then
-                            yield Span.regular (s.Substring(prevEnd, currStart - prevEnd))
+                        yield Span.regular (s.Substring(prevEnd, currStart - prevEnd))
                     yield Span.highlight (curr.Value)
                 let lastEnd = ms.[ms.Count-1] |> endIndex
                 if lastEnd < s.Length then
                     yield Span.regular (s.Substring(lastEnd, s.Length - lastEnd))
         }
         |> Seq.map Result.okValueOrThrow
-        |> Seq.chunk id Span.merge
 
     let empty = Seq.empty
 
@@ -349,27 +338,25 @@ module Tests =
               Source : string }
 
         let manyChars =
-            let validCharacters = ['a';'b';'c';'d';' ';'^';'$';'(';')';'*';'+';'?';'.';'\\';'/']
+            let knownCharacters = [
+                'a';'b';'c';'d';' ';
+                'A';'B';
+                '^';'$';'(';')';'*';'+';'?';'.';'\\';'/';'<';'>']
             Gen.frequency [
-                ( 5, Gen.elements (validCharacters |> Seq.takeAtMost 1));
-                (10, Gen.elements (validCharacters |> Seq.takeAtMost 2));
-                (10, Gen.elements (validCharacters |> Seq.takeAtMost 3));
-                (10, Gen.elements (validCharacters |> Seq.takeAtMost 4));
-                ( 5, Gen.elements (validCharacters |> Seq.takeAtMost 5));
-                ( 5, Gen.elements (validCharacters |> Seq.takeAtMost 99));
+                (4, Gen.elements (knownCharacters |> Seq.takeAtMost 3));
+                (1, Gen.elements (knownCharacters |> Seq.takeAtMost 5));
+                (1, Gen.elements (knownCharacters |> Seq.takeAtMost 7));
+                (1, Gen.elements (knownCharacters |> Seq.takeAtMost 100));
+                (1, Arb.generate<char>);
             ]
-
-        let veryFewChars =
-            let validCharacters = ['a';'b';' ']
-            Gen.elements validCharacters
 
         let applyFilterParameters charGen =
             gen {
-                let! startFilterChar = charGen |> Gen.filter (fun c -> c <> ' ')
+                let! startFilterChar = charGen |> Gen.filter (fun c -> not (Char.IsWhiteSpace(c)))
                 let! endFilterCharLen = Gen.frequency [ 
                     (10, Gen.choose(0,2)); 
-                    (10, Gen.choose(3,5));
-                    ( 5, Gen.choose(6,8));
+                    ( 5, Gen.choose(3,5));
+                    ( 1, Gen.choose(6,8));
                     ( 1, Gen.choose(9,11));
                     ( 1, Gen.choose(12,20))]
                 let! endChars = charGen |> Gen.listOfLength endFilterCharLen
@@ -381,9 +368,8 @@ module Tests =
                     |> Result.okValueOrThrow
 
                 let! searchTextLen = Gen.frequency [ 
-                    (10, Gen.choose(0,10)); 
-                    (02, Gen.choose(11,20));
-                    (02, Gen.choose(200,300))]
+                    (1, Gen.choose(0,10)); 
+                    (1, Gen.choose(11,500))]
                 let! searchTextChars = Gen.arrayOfLength searchTextLen charGen
                 let searchText = String(searchTextChars)
 
@@ -395,7 +381,7 @@ module Tests =
 
         type Generators =
             static member ApplyFilterParameters() = 
-                applyFilterParameters veryFewChars
+                applyFilterParameters manyChars
                 |> Arb.fromGen
 
         [<Property(MaxTest=1000, Arbitrary=[| typeof<Generators> |] )>]
