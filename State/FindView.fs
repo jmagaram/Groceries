@@ -65,7 +65,7 @@ module TextFilter =
         | true -> Error FilterIsEmptyOrWhitespace
         | false -> Ok (TextFilter.CaseInsensitiveTextFilter s)
 
-    let repeatFormula s =
+    let isRepeating s =
         let len = s |> String.length
         [1..len]
         |> Seq.choose (fun i ->
@@ -95,7 +95,7 @@ module TextFilter =
     let toRegex (s:string) =
         let s = s.ToLowerInvariant()
         let escape s = Regex.Escape(s)
-        match s |> repeatFormula with
+        match s |> isRepeating with
         | Some (x,n) -> sprintf "(%s){%d,}" (escape x) n
         | None -> 
             match s |> edgeMiddleEdge with
