@@ -105,9 +105,13 @@ module TextFilter =
 module HighlightedText =
     type private ApplyTextFilter = TextFilter -> string -> HighlightedText
     let applyFilter : ApplyTextFilter = fun (CaseInsensitiveTextFilter filter) s ->
-        seq {
-            if String.length s > 0 then
-                let regex = new Regex(filter |> TextFilter.toRegex, RegexOptions.IgnoreCase ||| RegexOptions.CultureInvariant)
+        match s |> String.length with
+        | 0 -> Seq.empty
+        | _ ->
+            seq {
+                let options = RegexOptions.IgnoreCase ||| RegexOptions.CultureInvariant
+                let pattern = filter |> TextFilter.toRegex
+                let regex = new Regex(pattern, options)
                 let ms = regex.Matches(s)
                 if ms.Count = 0 then 
                     yield Span.regular s
@@ -120,8 +124,8 @@ module HighlightedText =
                         yield Span.regular (s.Substring(regStart, ms.[i+1].Index - regStart))
                     else if regStart < s.Length then
                         yield Span.regular (s.Substring(regStart))
-        }
-        |> Seq.map Result.okValueOrThrow
+            }
+            |> Seq.map Result.okValueOrThrow
 
     let empty = Seq.empty
 
