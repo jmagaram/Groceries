@@ -104,32 +104,22 @@ module TextFilter =
 
 module HighlightedText =
     type private ApplyTextFilter = TextFilter -> string -> HighlightedText
-    let applyFilter : ApplyTextFilter = fun q s ->
-        let (CaseInsensitiveTextFilter filter) = q
-        let regex = 
-            filter
-            |> TextFilter.toRegex
-            |> fun pattern -> new Regex(pattern, RegexOptions.IgnoreCase ||| RegexOptions.CultureInvariant)
-        let endIndex (m:Match) = m.Index + m.Length
+    let applyFilter : ApplyTextFilter = fun (CaseInsensitiveTextFilter filter) s ->
         seq {
-            let ms = regex.Matches(s)
-            if ms.Count = 0 then
-                if s |> String.length > 0 then
+            if String.length s > 0 then
+                let regex = new Regex(filter |> TextFilter.toRegex, RegexOptions.IgnoreCase ||| RegexOptions.CultureInvariant)
+                let ms = regex.Matches(s)
+                if ms.Count = 0 then 
                     yield Span.regular s
-            else
-                for i = 0 to (ms.Count-1) do
-                    let curr = ms.[i]
-                    if i = 0 then
-                        if curr.Index > 0 then
-                            yield Span.regular (s.Substring(0, curr.Index))
-                    else
-                        let prevEnd = ms.[i-1] |> endIndex
-                        let currStart = ms.[i].Index
-                        yield Span.regular (s.Substring(prevEnd, currStart - prevEnd))
-                    yield Span.highlight (curr.Value)
-                let lastEnd = ms.[ms.Count-1] |> endIndex
-                if lastEnd < s.Length then
-                    yield Span.regular (s.Substring(lastEnd, s.Length - lastEnd))
+                elif ms.[0].Index > 0 then 
+                    yield Span.regular (s.Substring(0, ms.[0].Index))
+                for i in 0..ms.Count - 1 do
+                    yield Span.highlight ms.[i].Value
+                    let regStart = ms.[i].Index + ms.[i].Length
+                    if i < ms.Count - 1 then
+                        yield Span.regular (s.Substring(regStart, ms.[i+1].Index - regStart))
+                    else if regStart < s.Length then
+                        yield Span.regular (s.Substring(regStart))
         }
         |> Seq.map Result.okValueOrThrow
 
