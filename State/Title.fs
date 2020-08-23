@@ -1,6 +1,12 @@
 ﻿module Title
 open DomainTypes
 
+let rules =
+    [ PlainTextRule.MaximumLength 20<chars>
+      PlainTextRule.MinimumLength 1<chars>
+      PlainTextRule.NoLeadingOrTrailingWhitespace
+      PlainTextRule.SingleLineOnly ]
+
 let normalize : NormalizeString = trim
 
 let maxLength = 20

@@ -1,7 +1,16 @@
 ﻿[<AutoOpen>]
 module String
 
-open System
+let lengthIsAtLeast min s = (String.length s) >= min
+
+let lengthIsAtMost max s = (String.length s) <= max
+
+let startsWithOrEndsWithWhitespace s =
+    match s |> String.length with
+    | 0 -> false
+    | len -> (s.[0] |> Char.isWhitespace) || (s.[len-1] |> Char.isWhitespace)
+
+let containsNewLine (s:string) = s.Contains(System.Environment.NewLine)
 
 let isNullOrWhiteSpace s = System.String.IsNullOrWhiteSpace(s)
 

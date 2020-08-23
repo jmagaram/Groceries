@@ -1,7 +1,18 @@
 ﻿module DomainTypes
 open System
 
+[<Measure>]
+type chars
+
 type NowUtc = unit -> DateTime
+
+type PlainTextRule =
+    | MinimumLength of int<chars>
+    | MaximumLength of int<chars>
+    | NoLeadingOrTrailingWhitespace
+    | SingleLineOnly
+
+type PlainText = PlainText of string
 
 type Repeat = 
     | DoesNotRepeat
@@ -9,23 +20,23 @@ type Repeat =
 
 type NormalizeString = string -> string
 
-type Title = | Title of string
+type Title = Title of string
 
 type TitleError =
     | TitleIsRequired
     | TitleIsOverMaxLength of int
 
-type Note = | Note of string
+type Note = Note of string
 
 type NoteError =
     | NoteIsOverMaxLength of int
 
-type Quantity = | Quantity of string
+type Quantity = Quantity of string
 
 type QuantityError =
     | QuantityIsOverMaxLength of int
 
-type ItemId = | ItemId of Guid
+type ItemId = ItemId of Guid
 
 type Status =
     | Active
@@ -40,9 +51,9 @@ type Item =
       Repeat : Repeat
       Status : Status }
 
-type StoreId = | StoreId of Guid
+type StoreId = StoreId of Guid
 
-type StoreName = | StoreName of string
+type StoreName = StoreName of string
 
 type PickOne<'T> when 'T : comparison =
     { Choices : Set<'T>
