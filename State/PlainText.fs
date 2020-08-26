@@ -1,57 +1,49 @@
 ﻿module PlainText
 open DomainTypes
+open System.Text.RegularExpressions
 
-let private ruleAsPredicate (r:PlainTextRule) =
-    match r with
-    | SingleLineOnly -> String.containsNewLine >> not
-    | MinimumLength x -> String.lengthIsAtLeast (x |> int)
-    | MaximumLength x -> String.lengthIsAtMost (x |> int)
-    | NoLeadingOrTrailingWhitespace -> String.startsWithOrEndsWithWhitespace >> not
+let private lengthIsAtLeast (n:int<chars>) s = String.length s >= (n |> int)
 
-type private ViolatedRules = PlainTextRule seq
+let private lengthIsAtMost (n:int<chars>) s = String.length s <= (n |> int)
 
-type private Validate = PlainTextRule seq -> string -> ViolatedRules
-let private validate : Validate = fun rs s ->
-    rs
-    |> Seq.choose (fun r -> 
-        match s |> (r |> ruleAsPredicate) with
-        | false -> Some r
-        | true -> None)
+let private characterClass c =
+    match c with
+    | Letter       -> "\p{L}"
+    | Mark         -> "\p{M}"
+    | Number       -> "\p{N}"
+    | Punctuation  -> "\p{P}"
+    | Symbol       -> "\p{S}"
+    | Space        -> "\p{Zs}"
+    | LineFeed     -> "\n"
 
-type private Create = string -> PlainTextRule seq -> Result<PlainText, PlainTextRule>
-let create : Create = fun s rs ->
-    s
-    |> validate rs
-    |> Seq.tryHead
-    |> Option.map Error
-    |> Option.defaultValue(s |> PlainText |> Ok )
+let private onlyContains cs =
+    match cs with
+    | [] -> fun s -> (String.length s) = 0 
+    | cs -> 
+        let pattern =
+            cs 
+            |> Seq.map characterClass
+            |> String.concat ""
+            |> fun s -> sprintf "[%s]*" s
+        let regex = new Regex(pattern)
+        fun s -> regex.IsMatch(s)
 
-module Tests = 
+let private normalizeLineFeeds = 
+    let regex = new Regex("\r\n")
+    fun s -> regex.Replace(s,"\n")
 
-    open System
-    open Xunit
-    open FsUnit
-
-    [<Fact>]
-    let ``finds first error`` () =
-        let minLength = MinimumLength 2<chars>
-        let maxLength = MaximumLength 5<chars>
-
-        // tricky; must define rules in order
-        let requirements = 
-            [ NoLeadingOrTrailingWhitespace
-              SingleLineOnly
-              minLength
-              maxLength ]
-
-        Assert.Equal(PlainText "ab" |> Ok, requirements |> create "ab")
-        Assert.Equal(minLength |> Error, requirements |> create "a")
-
-        Assert.Equal(PlainText "abcde" |> Ok, requirements |> create "abcde")
-        Assert.Equal(maxLength |> Error, requirements |> create "abcdef")
-
-        Assert.Equal(NoLeadingOrTrailingWhitespace |> Error, requirements |> create " abc")
-        Assert.Equal(NoLeadingOrTrailingWhitespace |> Error, requirements |> create "abc ")
-        Assert.Equal(NoLeadingOrTrailingWhitespace |> Error, requirements |> create "  abc ")
-       
-        Assert.Equal(SingleLineOnly |> Error, requirements |> create ("abc" + System.Environment.NewLine + "abc"))
+type private CreateValidator = PlainTextRules -> (string -> Result<PlainText, PlainTextRules>)
+let createValidator : CreateValidator = fun rs ->
+    let onlyContainsPermittedChars = rs.PermittedCharacters |> onlyContains
+    fun s ->
+        let s = 
+            s 
+            |> trim 
+            |> normalizeLineFeeds
+        let isValid =
+            lengthIsAtMost rs.MaximumLength s
+            && lengthIsAtLeast rs.MinimumLength s
+            && (onlyContainsPermittedChars s)
+        match isValid with
+        | true -> Ok (PlainText s)
+        | false -> Error rs

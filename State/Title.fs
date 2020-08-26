@@ -2,10 +2,16 @@
 open DomainTypes
 
 let rules =
-    [ PlainTextRule.MaximumLength 20<chars>
-      PlainTextRule.MinimumLength 1<chars>
-      PlainTextRule.NoLeadingOrTrailingWhitespace
-      PlainTextRule.SingleLineOnly ]
+    { MinimumLength = 1<chars>
+      MaximumLength = 20<chars>
+      PermittedCharacters = 
+        [ Letter
+          Number
+          Mark
+          Punctuation
+          Symbol
+          Space
+        ] }
 
 let normalize : NormalizeString = trim
 

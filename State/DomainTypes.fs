@@ -6,13 +6,21 @@ type chars
 
 type NowUtc = unit -> DateTime
 
-type PlainTextRule =
-    | MinimumLength of int<chars>
-    | MaximumLength of int<chars>
-    | NoLeadingOrTrailingWhitespace
-    | SingleLineOnly
-
 type PlainText = PlainText of string
+
+type PlainTextCharacter =
+    | Letter
+    | Mark
+    | Number
+    | Punctuation
+    | Symbol
+    | Space
+    | LineFeed
+
+type PlainTextRules =
+    { MinimumLength : int<chars>
+      MaximumLength : int<chars>
+      PermittedCharacters : PlainTextCharacter list }
 
 type Repeat = 
     | DoesNotRepeat

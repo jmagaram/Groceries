@@ -1,23 +1,9 @@
 ﻿[<AutoOpen>]
 module String
 
-let lengthIsAtLeast min s = (String.length s) >= min
-
-let lengthIsAtMost max s = (String.length s) <= max
-
-let startsWithOrEndsWithWhitespace s =
-    match s |> String.length with
-    | 0 -> false
-    | len -> (s.[0] |> Char.isWhitespace) || (s.[len-1] |> Char.isWhitespace)
-
-let containsNewLine (s:string) = s.Contains(System.Environment.NewLine)
-
 let isNullOrWhiteSpace s = System.String.IsNullOrWhiteSpace(s)
 
-let trim (s:string) = 
-    match s |> isNullOrWhiteSpace with
-    | true -> ""
-    | false -> s.Trim()
+let trim (s:string) = s.Trim() 
 
 let tryParseWith (tryParseFunc: string -> bool * _) = tryParseFunc >> function
     | true, v    -> Some v
@@ -36,18 +22,6 @@ module Tests =
     open System
     open Xunit
     open FsUnit
-    open FsCheck
-    open FsCheck.Xunit
-
-    type ZeroOrPositive =
-        static member Integer() = 
-            Arb.Default.Int32()
-            |> Arb.mapFilter abs (fun t -> t >= 0)
-
-    type NotNullString =
-        static member String() =
-            Arb.Default.String()
-            |> Arb.filter (fun s -> s <> null)
 
     [<Theory>]
     [<InlineData("1", 1)>]
