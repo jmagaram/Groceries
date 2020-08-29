@@ -96,6 +96,7 @@ let create : Create = fun () ->
         |> Seq.map (fun i -> (i.Id, i))
         |> Map.ofSeq 
       ItemListView = ItemListView.create Seq.empty
+      EditModel = ItemEditModel.createNew
     }
 
 type Update = StateMessage -> State -> State
@@ -117,6 +118,9 @@ let update : Update = fun msg s ->
             Items = items
             ItemListView = listView
         }
+    | ItemEditMessage msg ->
+        let model = s.EditModel |> ItemEditModel.update msg
+        { s with EditModel = model }
 
 let private addItem state (item:Item) = 
     { state with State.Items = state.Items |> Map.add item.Id item }

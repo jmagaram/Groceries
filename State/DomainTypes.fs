@@ -229,9 +229,13 @@ type State =
     { Stores : Map<StoreId, StoreName> 
       Items : Map<ItemId, Item> 
       ItemIsUnavailableInStore : Set<StoreId * ItemId> 
-      ItemListView : ItemListView }
+      ItemListView : ItemListView 
+      EditModel : ItemEditModel
+      //EditModel : System.Reactive.Subjects.BehaviorSubject<ItemEditModel> 
+    }
 
 type StateMessage =
     | InsertItem of ItemEditorModel
     | DeleteItem of ItemId
     | ItemListViewMessage of ItemListViewMessage
+    | ItemEditMessage of ItemEditMessage

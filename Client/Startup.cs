@@ -29,7 +29,7 @@ namespace Client
             services.AddRazorPages();
             services.AddServerSideBlazor();
             services.AddSingleton<WeatherForecastService>();
-            var state = new ApplicationStateService { State = State.stateWithSampleItems };
+            var state = new ApplicationStateService();
             services.AddSingleton<ApplicationStateService>(state);
         }
 
