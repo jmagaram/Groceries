@@ -10,11 +10,11 @@ let create =
       Note = NoteTextBox.create |> NoteTextBox.update (TextBoxMessage.SetText "")
       Status = RelativeStatusSelector.create |> PickOne.select RelativeStatus.active }
 
-let update msg model =
+let update (msg:ItemEditorMessage) model =
     match msg with
-    | TitleMessage t -> { model with ItemEditorModel.Title = model.Title |> TitleTextBox.update t } 
-    | NoteMessage t -> { model with Note = model.Note |> NoteTextBox.update t }
-    | QuantityMessage t -> 
+    | ItemEditorMessage.TitleMessage t -> { model with ItemEditorModel.Title = model.Title |> TitleTextBox.update t } 
+    | ItemEditorMessage.NoteMessage t -> { model with Note = model.Note |> NoteTextBox.update t }
+    | ItemEditorMessage.QuantityMessage t -> 
         let txtBox = model.Quantity |> QuantityTextBox.update t
         let spin = 
             { model.QuantitySpinner with 
@@ -23,8 +23,8 @@ let update msg model =
         { model with 
             Quantity = txtBox
             QuantitySpinner = spin }
-    | RepeatMessage r -> { model with ItemEditorModel.Repeat = model.Repeat |> PickOne.update (PickOneMessage.PickOneByItem r) }
-    | QuantitySpinner spin ->
+    | ItemEditorMessage.RepeatMessage r -> { model with ItemEditorModel.Repeat = model.Repeat |> PickOne.update (PickOneMessage.PickOneByItem r) }
+    | ItemEditorMessage.QuantitySpinner spin ->
         let qty =
             match spin with
             | Increase -> QuantitySpinner.increase model.Quantity.NormalizedText

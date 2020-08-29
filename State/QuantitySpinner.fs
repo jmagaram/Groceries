@@ -90,6 +90,19 @@ let decrease qty =
                 |> format
             Some result
 
+// BEST TO ADD THESE TO THE QUANTITY OBJECT DIRECTLY
+let increaseQty qty = 
+    qty 
+    |> Quantity.asString 
+    |> increase 
+    |> Option.map Quantity // not good logic; Quantity.create makes a Result
+
+let decreaseQty qty =
+    qty
+    |> Quantity.asString
+    |> decrease
+    |> Option.map Quantity
+
 let create qty =
     { CanIncrease = qty |> increase |> Option.isSome 
       CanDecrease = qty |> decrease |> Option.isSome }

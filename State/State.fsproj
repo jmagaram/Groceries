@@ -24,6 +24,7 @@
     <Compile Include="ChooseOne.fs" />
     <Compile Include="RelativeStatusSelector.fs" />
     <Compile Include="TextBoxOld.fs" />
+    <Compile Include="FormField.fs" />
     <Compile Include="TextField.fs" />
     <Compile Include="Spinner.fs" />
     <Compile Include="TitleTextBox.fs" />
@@ -33,6 +34,8 @@
     <Compile Include="ViewModelTypes.fs" />
     <Compile Include="RepeatSelector.fs" />
     <Compile Include="ItemEditorModel.fs" />
+    <Compile Include="ItemEditModel.fs" />
+    <Compile Include="ItemEditView.fs" />
     <Compile Include="FindView.fs" />
     <Compile Include="ItemFilter.fs" />
     <Compile Include="ItemSummary.fs" />

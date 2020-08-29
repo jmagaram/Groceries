@@ -136,6 +136,17 @@ type ItemEditorModel =
       Repeat : RepeatSelector 
       Status : RelativeStatusSelector }
 
+type FormField<'Proposed, 'Validated, 'Error> =
+    { Proposed : 'Proposed
+      Normalized : 'Proposed
+      ValidationResult : Result<'Validated, 'Error>
+      InitialValue : 'Proposed }
+
+type FormFieldMessage<'T> =
+    | LostFocus
+    | GainedFocus
+    | Propose of 'T
+
 type TextField<'Value, 'Error> =
     { BindToTextBox : string
       NormalizedText : string
@@ -152,50 +163,43 @@ type ChooseOneItem<'T> =
       IsSelected : bool
       Key : string }
 
-type FormFieldMessage<'T> =
-    | LostFocus
-    | SetValue of 'T
+type Never = Never of unit
 
-module ItemBuilderModule =
+type ItemEditModel = 
+    { Title : FormField<string, Title, TitleError>
+      Quantity : FormField<string, Quantity, QuantityError>
+      QuantityBigger : Quantity option
+      QuantitySmaller : Quantity option 
+      Note : FormField<string, Note, NoteError>
+      Repeat : FormField<Repeat, Repeat, Never> 
+      RelativeStatus : FormField<RelativeStatus, RelativeStatus, Never>
+      CanSubmit : bool
+      CanCancel : bool
+      CanDelete : bool }
 
-    type ItemBuilderModel = 
-        { Title : TextField<Title, TitleError>
-          Quantity : TextField<Quantity, QuantityError>
-          QuantitySpinner : Spinner
-          Note : TextField<Note, NoteError>
-          Repeat : Repeat
-          RelativeStatus : RelativeStatus }
+type ItemEditCommand = 
+    | Submit
+    | Delete
+    | Cancel
+    | QuantityIncrease
+    | QuantityDecrease
 
-    type ItemBuilderField = 
-        | TitleField
-        | QuantityField
-        | NoteField
-        | RepeatField
-        | RelativeStatusField
+type ItemEditMessage = 
+    | TitleMessage of FormFieldMessage<string>
+    | QuantityMessage of FormFieldMessage<string>
+    | NoteMessage of FormFieldMessage<string>
+    | RepeatMessage of FormFieldMessage<Repeat>
+    | SetRelativeStatus of FormFieldMessage<RelativeStatus>
+    | InvokeCommand of ItemEditCommand
 
-    type ItemEditorCommand = 
-        | Submit
-        | Delete
-        | Cancel
-        | QuantityIncrease
-        | QuantityDecrease
-
-    type Msg = 
-        | TitleMessage of FormFieldMessage<string>
-        | QuantityMessage of FormFieldMessage<string>
-        | NoteMessage of FormFieldMessage<string>
-        | RepeatMessage of FormFieldMessage<Repeat>
-        | SetRelativeStatus of FormFieldMessage<RelativeStatus>
-        | InvokeCommand of ItemEditorCommand
-
-    type ItemBuilderView = 
-        { Title : TextBox<TitleError>
-          Quantity : TextBox<QuantityError>
-          QuantitySpinner : Spinner
-          Note : TextBox<NoteError>
-          Repeat : ChooseOne<Repeat>
-          RelativeStatus : ChooseOne<RelativeStatus>
-          Commands : Set<ItemEditorCommand> }
+type ItemEditView = 
+    { Title : TextBox<TitleError>
+      Quantity : TextBox<QuantityError>
+      QuantitySpinner : Spinner
+      Note : TextBox<NoteError>
+      Repeat : ChooseOne<Repeat>
+      RelativeStatus : ChooseOne<RelativeStatus>
+      Commands : Set<ItemEditCommand> }
 
 type ItemSummary =
     { Id : ItemId
