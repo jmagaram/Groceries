@@ -26,6 +26,7 @@
     <Compile Include="TextBoxOld.fs" />
     <Compile Include="FormField.fs" />
     <Compile Include="TextField.fs" />
+    <Compile Include="TextBox.fs" />
     <Compile Include="Spinner.fs" />
     <Compile Include="TitleTextBox.fs" />
     <Compile Include="QuantityTextBox.fs" />
