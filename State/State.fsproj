@@ -21,8 +21,10 @@
     <Compile Include="Repeat.fs" />
     <Compile Include="RelativeStatus.fs" />
     <Compile Include="PickOne.fs" />
+    <Compile Include="ChooseOne.fs" />
     <Compile Include="RelativeStatusSelector.fs" />
-    <Compile Include="TextBox.fs" />
+    <Compile Include="TextBoxOld.fs" />
+    <Compile Include="TextField.fs" />
     <Compile Include="Spinner.fs" />
     <Compile Include="TitleTextBox.fs" />
     <Compile Include="QuantityTextBox.fs" />

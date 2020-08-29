@@ -29,7 +29,7 @@ type ItemSummary =
       Status : Status }
 
 type View =
-    { TextFilterBox : TextBox<TextFilterError>
+    { TextFilterBox : TextBoxOld<TextFilterError>
       Items : ItemSummary seq }
 
 type ViewMessage =
@@ -174,9 +174,9 @@ module FilterTextBox =
         |> TextFilter.create
         |> Result.errorValue
 
-    let create = TextBox.create validate normalize
+    let create = TextBoxOld.create validate normalize
 
-    let update = TextBox.update validate normalize
+    let update = TextBoxOld.update validate normalize
 
 module View =
 

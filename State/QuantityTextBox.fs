@@ -7,6 +7,6 @@ let validate t =
     | x when x > 10 -> Some "The quantity can't be that big."
     | _ -> None
 
-let create = TextBox.create validate normalize
+let create = TextBoxOld.create validate normalize
 
-let update = TextBox.update validate normalize
+let update = TextBoxOld.update validate normalize

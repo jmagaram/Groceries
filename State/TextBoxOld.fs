@@ -1,13 +1,13 @@
-﻿module TextBox
+﻿module TextBoxOld
 open DomainTypes
 
-let hasFocus tb = tb.HasFocus
+let hasFocus (tb:TextBoxOld<_>) = tb.HasFocus
 
-let text tb = tb.Text
+let text (tb:TextBoxOld<_>) = tb.Text
 
-let error tb = tb.Error
+let error (tb:TextBoxOld<_>) = tb.Error
 
-let normalizedText tb = tb.NormalizedText
+let normalizedText (tb:TextBoxOld<_>) = tb.NormalizedText
 
 let create v n =
     let nt = "" |> n
@@ -37,9 +37,9 @@ let loseFocus tb =
 
 let update v n msg tb = 
     match msg with
-    | GetFocus -> tb |> getFocus
-    | LoseFocus -> tb |> loseFocus
-    | SetText t -> tb |> (setText v n t)
+    | TextBoxMessage.GetFocus -> tb |> getFocus
+    | TextBoxMessage.LoseFocus -> tb |> loseFocus
+    | TextBoxMessage.SetText t -> tb |> (setText v n t)
 
 module Tests = 
 

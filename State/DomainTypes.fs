@@ -84,17 +84,21 @@ type RelativeStatusSelector = PickOne<RelativeStatus>
 
 type StatusSelectorMessage = RelativeStatus
 
-type TextBox<'Error> =
+type TextBoxOld<'Error> =
     { Text : string
       NormalizedText : string
       Error : 'Error option 
       HasFocus : bool }
 
-type TitleTextBox = TextBox<string>
+type TextBox<'Error> =
+    { Text : string
+      Error : 'Error option }
 
-type QuantityTextBox = TextBox<string>
+type TitleTextBox = TextBoxOld<string>
 
-type NoteTextBox = TextBox<string>
+type QuantityTextBox = TextBoxOld<string>
+
+type NoteTextBox = TextBoxOld<string>
 
 type TextBoxMessage = 
     | SetText of string
@@ -131,6 +135,67 @@ type ItemEditorModel =
       Note : NoteTextBox
       Repeat : RepeatSelector 
       Status : RelativeStatusSelector }
+
+type TextField<'Value, 'Error> =
+    { BindToTextBox : string
+      NormalizedText : string
+      ValidationResult : Result<'Value, 'Error> }
+
+type ChooseOne<'T> when 'T : comparison =
+    { Choices : 'T list 
+      SelectedItem : 'T 
+      Serialize : 'T -> string
+      Deserialize : string -> 'T }
+
+type ChooseOneItem<'T> = 
+    { Value : 'T 
+      IsSelected : bool
+      Key : string }
+
+type FormFieldMessage<'T> =
+    | LostFocus
+    | SetValue of 'T
+
+module ItemBuilderModule =
+
+    type ItemBuilderModel = 
+        { Title : TextField<Title, TitleError>
+          Quantity : TextField<Quantity, QuantityError>
+          QuantitySpinner : Spinner
+          Note : TextField<Note, NoteError>
+          Repeat : Repeat
+          RelativeStatus : RelativeStatus }
+
+    type ItemBuilderField = 
+        | TitleField
+        | QuantityField
+        | NoteField
+        | RepeatField
+        | RelativeStatusField
+
+    type ItemEditorCommand = 
+        | Submit
+        | Delete
+        | Cancel
+        | QuantityIncrease
+        | QuantityDecrease
+
+    type Msg = 
+        | TitleMessage of FormFieldMessage<string>
+        | QuantityMessage of FormFieldMessage<string>
+        | NoteMessage of FormFieldMessage<string>
+        | RepeatMessage of FormFieldMessage<Repeat>
+        | SetRelativeStatus of FormFieldMessage<RelativeStatus>
+        | InvokeCommand of ItemEditorCommand
+
+    type ItemBuilderView = 
+        { Title : TextBox<TitleError>
+          Quantity : TextBox<QuantityError>
+          QuantitySpinner : Spinner
+          Note : TextBox<NoteError>
+          Repeat : ChooseOne<Repeat>
+          RelativeStatus : ChooseOne<RelativeStatus>
+          Commands : Set<ItemEditorCommand> }
 
 type ItemSummary =
     { Id : ItemId
