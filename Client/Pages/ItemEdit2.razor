@@ -5,21 +5,8 @@
 
 <h1>Item edit page</h1>
 
-<ItemEditor OnSave="@OnSave" Model="@itemEditorModel"></ItemEditor>
+<ItemEditComponent></ItemEditComponent>
 
 @code {
 
-    protected DomainTypes.ItemEditorModel itemEditorModel;
-
-    protected override void OnInitialized()
-    {
-        base.OnInitialized();
-        itemEditorModel = ItemEditorModel.create;
-    }
-
-    protected void OnSave(DomainTypes.ItemEditorModel msg)
-    {
-        var stateMsg = DomainTypes.StateMessage.NewInsertItem(msg);
-        ApplicationState.State = global::State.update(stateMsg, ApplicationState.State);
-    }
 }

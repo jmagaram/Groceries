@@ -1,0 +1,103 @@
+﻿@inject Client.Data.ApplicationStateService StateService
+@implements IDisposable
+@using System.Reactive.Linq
+ 
+<h3>Item Edit</h3>
+
+<form>
+    <div>
+        <label>
+            Name: <input @oninput="OnTitleChange" @onfocusout="OnTitleFocusOut" @onfocusin="OnTitleFocusIn" placeholder="Apples, Canned Tuna, ..." value="@_view.Title.Text" />
+            @if (_view.Title.Error.IsSome())
+            {
+                <span>Error: @_view.Title.Error.Value</span>
+            }
+        </label>
+    </div>
+    @*<div>
+            <label>
+                Quantity: <input @oninput="_quantity.OnTextChange" @onfocusout="_quantity.OnFocusOut" @onfocusin="_quantity.OnFocusIn" placeholder="1 jar, 3 lb, lots!" value="@Model.Quantity.Text" />
+                @if (Model.Quantity.Error.IsSome())
+                {
+                    <span>Error: @Model.Quantity.Error.Value</span>
+                }
+                <button disabled="@(!Model.QuantitySpinner.CanDecrease)" type="button" @onclick="DecreaseQuantity">-</button>
+                <button disabled="@(!Model.QuantitySpinner.CanIncrease)" type="button" @onclick="IncreaseQuantity">+</button>
+            </label>
+        </div>
+        <div>
+            <label>
+                Note: <textarea rows="3" @oninput="_note.OnTextChange" @onfocusout="_note.OnFocusOut" @onfocusin="_note.OnFocusIn" placeholder="Favorite brand, organic-only, not too ripe, .." value="@Model.Note.Text" />
+                @if (Model.Note.Error.IsSome())
+                {
+                    <span>Error: @Model.Note.Error.Value</span>
+                }
+            </label>
+        </div>
+        <div>
+            <label>
+                Repeat:
+                <select @onchange="OnRepeatChange">
+                    @foreach (var i in Model.Repeat.Choices.OrderBy(global::Repeat.orderBy))
+                    {
+                        string key = global::Repeat.serialize(i);
+                        string selectedKey = global::Repeat.serialize(Model.Repeat.SelectedItem);
+                        bool isSelected = key == selectedKey;
+                        string description = RepeatAsText(i);
+                        <option selected="@isSelected" value="@key">@description</option>
+                    }
+                </select>
+            </label>
+        </div>
+        <div>
+            <label>
+                Status:
+                <select @onchange="OnStatusChange">
+                    @foreach (var i in Model.Status.Choices.OrderBy(global::RelativeStatus.orderBy))
+                    {
+                        string key = global::RelativeStatus.serialize(i);
+                        string selectedKey = global::RelativeStatus.serialize(Model.Status.SelectedItem);
+                        bool isSelected = key == selectedKey;
+                        string description = RelativeStatusAsText(i);
+                        <option selected="@isSelected" value="@key">@description</option>
+                    }
+                </select>
+            </label>
+        </div>
+        <button type="button" disabled="@HasErrors" @onclick="e=>OnSave.InvokeAsync(Model)">Save</button>
+        <button type="button" @onclick="e=>OnCancel.InvokeAsync(null)">Cancel</button>
+        <button type="button" @onclick="e=>OnDelete.InvokeAsync(null)">Delete</button>*@
+    <button type="button">Do nothing</button>
+</form>
+
+@code {
+
+    private IDisposable _subscription = null;
+    public DomainTypes.ItemEditView _view = null;
+
+    protected override void OnInitialized()
+    {
+        base.OnInitialized();
+        _subscription =
+            ItemEditView
+            .fromObservable(StateService.StateObservable.Select(i => i.EditModel))
+            .Subscribe(OnNextView);
+    }
+
+    protected void OnTitleChange(ChangeEventArgs e) => StateService.Update(DomainTypes.StateMessage.NewItemEditMessage(DomainTypes.ItemEditMessage.NewTitleMessage(DomainTypes.FormFieldMessage<string>.NewPropose((string)e.Value))));
+
+    public void OnTitleFocusIn(FocusEventArgs e) => StateService.Update(DomainTypes.StateMessage.NewItemEditMessage(DomainTypes.ItemEditMessage.NewTitleMessage(DomainTypes.FormFieldMessage<string>.GainedFocus)));
+
+    public void OnTitleFocusOut(FocusEventArgs e) => StateService.Update(DomainTypes.StateMessage.NewItemEditMessage(DomainTypes.ItemEditMessage.NewTitleMessage(DomainTypes.FormFieldMessage<string>.LostFocus)));
+
+
+    void OnNextView(DomainTypes.ItemEditView view)
+    {
+        _view = view;
+    }
+
+    public void Dispose()
+    {
+        _subscription?.Dispose();
+    }
+}
