@@ -15,18 +15,29 @@ let canSubmitIfNoErrors (m:ItemEditModel) =
     | true, true -> { m with CanSubmit = false }
     | false, false -> { m with CanSubmit = true }
 
+let updateQuantitySpinners (m:ItemEditModel) =
+    let bigger = 
+        m.Quantity.ValidationResult 
+        |> Result.okValue
+        |> Option.bind QuantitySpinner.increaseQty
+    let smaller = 
+        m.Quantity.ValidationResult 
+        |> Result.okValue
+        |> Option.bind QuantitySpinner.decreaseQty
+    { m with 
+        QuantityBigger = bigger
+        QuantitySmaller = smaller }
+
 let createNew =
     let title = FormField.init (Some Title.normalize) Title.create ""
     let qty = FormField.init (Some Quantity.normalize) Quantity.create ""
-    let qtyBigger = qty.ValidationResult |> Result.okValue |> Option.bind QuantitySpinner.increaseQty
-    let qtySmaller = qty.ValidationResult |> Result.okValue |> Option.bind QuantitySpinner.decreaseQty
     let note = FormField.init (Some Note.normalize) Note.create ""
     let repeat = FormField.init None Ok Repeat.doesNotRepeat
     let relativeStatus = FormField.init None Ok RelativeStatus.active
     { ItemEditModel.Title = title 
       Quantity = qty
-      QuantityBigger = qtyBigger
-      QuantitySmaller = qtySmaller
+      QuantityBigger = None
+      QuantitySmaller = None
       Note = note
       Repeat = repeat
       RelativeStatus = relativeStatus
@@ -34,6 +45,7 @@ let createNew =
       CanCancel = true
       CanDelete = false }
     |> canSubmitIfNoErrors
+    |> updateQuantitySpinners
 
 let titleMessageHandler = FormField.handleMessage (Some Title.normalize) Title.create
 let qtyMessageHandler = FormField.handleMessage (Some Quantity.normalize) Quantity.create
@@ -46,7 +58,9 @@ let rec update msg (model:ItemEditModel) =
         match msg with
         | ItemEditMessage.TitleMessage m -> { model with Title = model.Title |> titleMessageHandler m }
         | ItemEditMessage.NoteMessage m -> { model with Note = model.Note |> noteMessageHandler m }
-        | ItemEditMessage.QuantityMessage m -> { model with Quantity = model.Quantity |> qtyMessageHandler m }
+        | ItemEditMessage.QuantityMessage m -> 
+            { model with Quantity = model.Quantity |> qtyMessageHandler m }
+            |> updateQuantitySpinners
         | ItemEditMessage.RepeatMessage m -> { model with Repeat = model.Repeat |> repeatMessageHandler m }
         | ItemEditMessage.SetRelativeStatus m -> { model with RelativeStatus = model.RelativeStatus |> relativeStatusMessageHandler m }
         | ItemEditMessage.InvokeCommand m -> 
@@ -56,28 +70,20 @@ let rec update msg (model:ItemEditModel) =
                 match model.QuantityBigger with
                 | None -> failwith "Can not increase the quantity!"
                 | Some q -> 
-                    let bigger = QuantitySpinner.increaseQty q
-                    let smaller = QuantitySpinner.decreaseQty q
                     let qText = q |> Quantity.asString
-                    let model = 
-                        { model with 
-                            QuantityBigger = bigger 
-                            QuantitySmaller = smaller }
                     let msg = qText |> FormFieldMessage.Propose |> QuantityMessage
-                    model |> update msg
+                    model
+                    |> update msg
+                    |> updateQuantitySpinners
             | QuantityDecrease -> 
                 match model.QuantitySmaller with
                 | None -> failwith "Can not decrease the quantity!"
                 | Some q -> 
-                    let bigger = QuantitySpinner.increaseQty q
-                    let smaller = QuantitySpinner.decreaseQty q
                     let qText = q |> Quantity.asString
-                    let model = 
-                        { model with 
-                            QuantityBigger = bigger 
-                            QuantitySmaller = smaller }
                     let msg = qText |> FormFieldMessage.Propose |> QuantityMessage
-                    model |> update msg
+                    model
+                    |> update msg
+                    |> updateQuantitySpinners
             | _ -> failwith "Do not know how to handle commands right now."
     model
     |> canSubmitIfNoErrors

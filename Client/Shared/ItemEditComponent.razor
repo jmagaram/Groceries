@@ -1,7 +1,7 @@
 ﻿@inject Client.Data.ApplicationStateService StateService
 @implements IDisposable
 @using System.Reactive.Linq
- 
+
 <h3>Item Edit</h3>
 
 <form>
@@ -14,66 +14,69 @@
             }
         </label>
     </div>
-    @*<div>
-            <label>
-                Quantity: <input @oninput="_quantity.OnTextChange" @onfocusout="_quantity.OnFocusOut" @onfocusin="_quantity.OnFocusIn" placeholder="1 jar, 3 lb, lots!" value="@Model.Quantity.Text" />
-                @if (Model.Quantity.Error.IsSome())
+    <div>
+        <label>
+            Quantity: <input @oninput="OnQuantityChange" @onfocusout="OnQuantityFocusOut" @onfocusin="OnQuantityFocusIn" placeholder="1 jar, 3 lb, lots!" value="@_view.Quantity.Text" />
+            @if (_view.Quantity.Error.IsSome())
+            {
+                <span>Error: @_view.Quantity.Error.Value</span>
+            }
+            <button disabled="@(!_view.QuantitySpinner.CanDecrease)" type="button" @onclick="QuantityDecrease">-</button>
+            <button disabled="@(!_view.QuantitySpinner.CanIncrease)" type="button" @onclick="QuantityIncrease">+</button>
+        </label>
+    </div>
+    <div>
+        <label>
+            Note: <textarea rows="3" @oninput="OnNoteChange" @onfocusout="OnNoteFocusOut" @onfocusin="OnNoteFocusIn" placeholder="Favorite brand, organic-only, not too ripe, .." value="@_view.Note.Text" />
+            @if (_view.Note.Error.IsSome())
+            {
+                <span>Error: @_view.Note.Error.Value</span>
+            }
+        </label>
+    </div>
+    <div>
+        <label>
+            Repeat:
+            <select @onchange="OnRepeatChange" @onfocusin="OnRepeatFocusIn" @onfocusout="OnRepeatFocusOut">
+                @foreach (var i in global::ChooseOne.items(_view.Repeat))
                 {
-                    <span>Error: @Model.Quantity.Error.Value</span>
+                    string description = RepeatAsText(i.Value);
+                    <option selected="@i.IsSelected" value="@i.Key">@description</option>
                 }
-                <button disabled="@(!Model.QuantitySpinner.CanDecrease)" type="button" @onclick="DecreaseQuantity">-</button>
-                <button disabled="@(!Model.QuantitySpinner.CanIncrease)" type="button" @onclick="IncreaseQuantity">+</button>
-            </label>
-        </div>
-        <div>
-            <label>
-                Note: <textarea rows="3" @oninput="_note.OnTextChange" @onfocusout="_note.OnFocusOut" @onfocusin="_note.OnFocusIn" placeholder="Favorite brand, organic-only, not too ripe, .." value="@Model.Note.Text" />
-                @if (Model.Note.Error.IsSome())
+            </select>
+        </label>
+    </div>
+    <div>
+        <label>
+            RelativeStatus:
+            <select @onchange="OnRelativeStatusChange" @onfocusin="OnRelativeStatusFocusIn" @onfocusout="OnRelativeStatusFocusOut">
+                @foreach (var i in global::ChooseOne.items(_view.RelativeStatus))
                 {
-                    <span>Error: @Model.Note.Error.Value</span>
+                    string description = RelativeStatusAsText(i.Value);
+                    <option selected="@i.IsSelected" value="@i.Key">@description</option>
                 }
-            </label>
-        </div>
-        <div>
-            <label>
-                Repeat:
-                <select @onchange="OnRepeatChange">
-                    @foreach (var i in Model.Repeat.Choices.OrderBy(global::Repeat.orderBy))
-                    {
-                        string key = global::Repeat.serialize(i);
-                        string selectedKey = global::Repeat.serialize(Model.Repeat.SelectedItem);
-                        bool isSelected = key == selectedKey;
-                        string description = RepeatAsText(i);
-                        <option selected="@isSelected" value="@key">@description</option>
-                    }
-                </select>
-            </label>
-        </div>
-        <div>
-            <label>
-                Status:
-                <select @onchange="OnStatusChange">
-                    @foreach (var i in Model.Status.Choices.OrderBy(global::RelativeStatus.orderBy))
-                    {
-                        string key = global::RelativeStatus.serialize(i);
-                        string selectedKey = global::RelativeStatus.serialize(Model.Status.SelectedItem);
-                        bool isSelected = key == selectedKey;
-                        string description = RelativeStatusAsText(i);
-                        <option selected="@isSelected" value="@key">@description</option>
-                    }
-                </select>
-            </label>
-        </div>
-        <button type="button" disabled="@HasErrors" @onclick="e=>OnSave.InvokeAsync(Model)">Save</button>
-        <button type="button" @onclick="e=>OnCancel.InvokeAsync(null)">Cancel</button>
-        <button type="button" @onclick="e=>OnDelete.InvokeAsync(null)">Delete</button>*@
-    <button type="button">Do nothing</button>
+            </select>
+        </label>
+    </div>
+    <button type="button" @onclick="e=>OnSubmit.InvokeAsync(null)" disabled="@(!_view.Commands.Contains(DomainTypes.ItemEditCommand.Submit))">Save</button>
+    <button type="button" @onclick="e=>OnDelete.InvokeAsync(null)" disabled="@(!_view.Commands.Contains(DomainTypes.ItemEditCommand.Delete))">Delete</button>
+    <button type="button" @onclick="e=>OnCancel.InvokeAsync(null)" disabled="@(!_view.Commands.Contains(DomainTypes.ItemEditCommand.Cancel))">Cancel</button>
+
 </form>
 
 @code {
 
     private IDisposable _subscription = null;
     public DomainTypes.ItemEditView _view = null;
+
+    [Parameter]
+    public EventCallback OnSubmit { get; set; }
+
+    [Parameter]
+    public EventCallback OnDelete { get; set; }
+
+    [Parameter]
+    public EventCallback OnCancel { get; set; }
 
     protected override void OnInitialized()
     {
@@ -90,6 +93,73 @@
 
     public void OnTitleFocusOut(FocusEventArgs e) => StateService.Update(DomainTypes.StateMessage.NewItemEditMessage(DomainTypes.ItemEditMessage.NewTitleMessage(DomainTypes.FormFieldMessage<string>.LostFocus)));
 
+    protected void OnNoteChange(ChangeEventArgs e) => StateService.Update(DomainTypes.StateMessage.NewItemEditMessage(DomainTypes.ItemEditMessage.NewNoteMessage(DomainTypes.FormFieldMessage<string>.NewPropose((string)e.Value))));
+
+    public void OnNoteFocusIn(FocusEventArgs e) => StateService.Update(DomainTypes.StateMessage.NewItemEditMessage(DomainTypes.ItemEditMessage.NewNoteMessage(DomainTypes.FormFieldMessage<string>.GainedFocus)));
+
+    public void OnNoteFocusOut(FocusEventArgs e) => StateService.Update(DomainTypes.StateMessage.NewItemEditMessage(DomainTypes.ItemEditMessage.NewNoteMessage(DomainTypes.FormFieldMessage<string>.LostFocus)));
+
+    protected void OnQuantityChange(ChangeEventArgs e) => StateService.Update(DomainTypes.StateMessage.NewItemEditMessage(DomainTypes.ItemEditMessage.NewQuantityMessage(DomainTypes.FormFieldMessage<string>.NewPropose((string)e.Value))));
+
+    public void OnQuantityFocusIn(FocusEventArgs e) => StateService.Update(DomainTypes.StateMessage.NewItemEditMessage(DomainTypes.ItemEditMessage.NewQuantityMessage(DomainTypes.FormFieldMessage<string>.GainedFocus)));
+
+    public void OnQuantityFocusOut(FocusEventArgs e) => StateService.Update(DomainTypes.StateMessage.NewItemEditMessage(DomainTypes.ItemEditMessage.NewQuantityMessage(DomainTypes.FormFieldMessage<string>.LostFocus)));
+
+    protected void OnRepeatChange(ChangeEventArgs e) {
+        string selected = (string)(e.Value);
+        var selectedRepeat = _view.Repeat.Deserialize.Invoke(selected);
+        StateService.Update(DomainTypes.StateMessage.NewItemEditMessage(DomainTypes.ItemEditMessage.NewRepeatMessage(DomainTypes.FormFieldMessage<DomainTypes.Repeat>.NewPropose(selectedRepeat))));
+    }
+
+    public void OnRepeatFocusIn(FocusEventArgs e) => StateService.Update(DomainTypes.StateMessage.NewItemEditMessage(DomainTypes.ItemEditMessage.NewRepeatMessage(DomainTypes.FormFieldMessage<DomainTypes.Repeat>.GainedFocus)));
+
+    public void OnRepeatFocusOut(FocusEventArgs e) => StateService.Update(DomainTypes.StateMessage.NewItemEditMessage(DomainTypes.ItemEditMessage.NewRepeatMessage(DomainTypes.FormFieldMessage<DomainTypes.Repeat>.LostFocus)));
+
+    protected void OnRelativeStatusChange(ChangeEventArgs e)
+    {
+        string selected = (string)(e.Value);
+        var selectedRelativeStatus = _view.RelativeStatus.Deserialize.Invoke(selected);
+        StateService.Update(DomainTypes.StateMessage.NewItemEditMessage(DomainTypes.ItemEditMessage.NewSetRelativeStatus(DomainTypes.FormFieldMessage<DomainTypes.RelativeStatus>.NewPropose(selectedRelativeStatus))));
+    }
+
+    public void OnRelativeStatusFocusIn(FocusEventArgs e) => StateService.Update(DomainTypes.StateMessage.NewItemEditMessage(DomainTypes.ItemEditMessage.NewSetRelativeStatus(DomainTypes.FormFieldMessage<DomainTypes.RelativeStatus>.GainedFocus)));
+
+    public void OnRelativeStatusFocusOut(FocusEventArgs e) => StateService.Update(DomainTypes.StateMessage.NewItemEditMessage(DomainTypes.ItemEditMessage.NewSetRelativeStatus(DomainTypes.FormFieldMessage<DomainTypes.RelativeStatus>.LostFocus)));
+
+    protected void QuantityDecrease() =>
+StateService.Update(DomainTypes.StateMessage.NewItemEditMessage(DomainTypes.ItemEditMessage.NewInvokeCommand(DomainTypes.ItemEditCommand.QuantityDecrease)));
+
+    protected void QuantityIncrease()=>
+        StateService.Update(DomainTypes.StateMessage.NewItemEditMessage(DomainTypes.ItemEditMessage.NewInvokeCommand(DomainTypes.ItemEditCommand.QuantityIncrease)));
+
+    protected string RepeatAsText(DomainTypes.Repeat r) => global::Repeat.formatEnglish.Invoke(r);
+
+    protected string RelativeStatusAsText(DomainTypes.RelativeStatus r)
+    {
+        if (r.IsComplete)
+            return "Complete";
+        else if (r.IsActive)
+            return "Active";
+        else
+        {
+            (int, string) units(int days) =>
+                (days % 30 == 0)
+                ? (days / 30, days == 30 ? "month" : "months")
+                : (days % 7 == 0)
+                ? (days / 7, days == 7 ? "week" : "weeks")
+                : (days, days == 1 ? "day" : "days");
+            var d = (r as DomainTypes.RelativeStatus.PostponedDays).Item;
+            var (count, unitType) = units(d);
+            if (d == 1)
+                return $"Postponed until tomorrow";
+            else if (d == 0)
+                return $"Due today";
+            else if (d > 0)
+                return $"Postponed for {count} {unitType}";
+            else
+                return $"Overdue {-count} {unitType}";
+        }
+    }
 
     void OnNextView(DomainTypes.ItemEditView view)
     {
