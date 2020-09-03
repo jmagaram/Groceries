@@ -26,17 +26,21 @@ module DataRow =
         | Modified m -> Some m.Current
         | Deleted _ -> None
 
-    let update v' row = 
+    let update pk v' row =
+        let ensureKeyNotChanged (m:Modified<_>) =
+            if (pk m.Current) <> (pk m.Original) 
+            then DataRowUpdateError.KeyCanNotBeChanged |> Error
+            else m |> Modified |> Ok
         match row with
         | Unchanged v -> 
             if v <> v'
-            then Modified { Original = v; Current = v' } |> Ok
+            then { Original = v; Current = v' } |> ensureKeyNotChanged
             else row |> Ok
         | Deleted _ -> DataRowUpdateError.DeletedRowsCanNotBeUpdated |> Error
         | Modified m -> 
             if m.Original = v'
             then Unchanged v' |> Ok
-            else { m with Current = v' } |> Modified |> Ok
+            else { m with Current = v' } |> ensureKeyNotChanged
         | Added v -> Added v' |> Ok
 
     let delete row =
@@ -61,9 +65,12 @@ module DataTable =
         match dt |> Map.tryFind key with
         | None -> DataTableUpdateError.RowNotFound |> Error
         | Some r -> 
-            match r |> DataRow.update i with
+            match r |> DataRow.update pk i with
             | Ok r -> dt |> Map.add key r |> DataTable |> Ok
-            | Error DataRowUpdateError.DeletedRowsCanNotBeUpdated -> DataTableUpdateError.DeletedRowsCanNotBeUpdated |> Error
+            | Error DataRowUpdateError.DeletedRowsCanNotBeUpdated -> 
+                DataTableUpdateError.DeletedRowsCanNotBeUpdated |> Error
+            | Error DataRowUpdateError.KeyCanNotBeChanged -> 
+                DataTableUpdateError.KeyCanNotBeChanged |> Error
 
     let upsert pk i dt =
         match dt |> insert pk i with
@@ -76,8 +83,10 @@ module DataTable =
         | Some r ->
             match r |> DataRow.delete with
             | Ok r -> dt |> Map.add key r |> DataTable |> Ok
-            | Error DataRowDeleteError.DeletedRowsCanNotBeDeletedAgain -> DataTableDeleteError.DeletedRowsCanNotBeDeletedAgain |> Error
-            | Error DataRowDeleteError.AddedRowsCanNotBeDeleted -> dt |> Map.remove key |> DataTable |> Ok
+            | Error DataRowDeleteError.DeletedRowsCanNotBeDeletedAgain -> 
+                DataTableDeleteError.DeletedRowsCanNotBeDeletedAgain |> Error
+            | Error DataRowDeleteError.AddedRowsCanNotBeDeleted -> 
+                dt |> Map.remove key |> DataTable |> Ok
 
     let current (dt:DataTable<_,_>) =
         match dt with

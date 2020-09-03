@@ -61,6 +61,7 @@ type DataRow<'T> =
 
 type DataRowUpdateError =
     | DeletedRowsCanNotBeUpdated
+    | KeyCanNotBeChanged
 
 type DataRowDeleteError =
     | DeletedRowsCanNotBeDeletedAgain
@@ -77,7 +78,8 @@ type DataTableDeleteError =
 
 type DataTableUpdateError =
     | RowNotFound
-    | DeletedRowsCanNotBeUpdated   
+    | DeletedRowsCanNotBeUpdated
+    | KeyCanNotBeChanged
 
 type State =
     { Categories : DataTable<CategoryId, Category> 
