@@ -23,6 +23,9 @@ type Schedule =
 
 type CategoryId = CategoryId of Guid
 
+type IKey<'TKey> =
+    abstract member Key: 'TKey 
+
 type Item = 
     { ItemId : ItemId
       Name : ItemName
@@ -30,6 +33,7 @@ type Item =
       Quantity : Quantity option
       CategoryId : CategoryId option
       Schedule : Schedule }
+    interface IKey<ItemId> with member this.Key = this.ItemId
 
 type CategoryName = CategoryName of string
 
@@ -40,14 +44,20 @@ type StoreName = StoreName of string
 type Store = 
     { StoreId : StoreId 
       Name : StoreName }
+    interface IKey<StoreId> with member this.Key = this.StoreId
 
 type Category =
     { CategoryId : CategoryId 
       Name : CategoryName }
+    interface IKey<CategoryId> with member this.Key = this.CategoryId
 
 type StoreNeverStocksItem =
     { StoreId : StoreId 
       ItemId : ItemId }
+
+type Changed<'T> =
+    { Original : 'T
+      Current : 'T }
 
 type Modified<'T> =
     { Original : 'T 

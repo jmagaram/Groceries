@@ -5,8 +5,8 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Compile Include="Utilities.fs" />
     <Compile Include="DomainTypes.fs" />
+    <Compile Include="Utilities.fs" />
     <Compile Include="Synchronization.fs" />
   </ItemGroup>
 

@@ -1,6 +1,16 @@
 ﻿namespace Models
 open DomainTypes
 
+//module Modified = 
+
+//    type ModifiedError =
+//        | ValuesAreTheSame
+//        | KeysAreDifferent
+
+//    let create original current =
+//        match original = current with
+//        | true -> ModifiedError.
+
 module DataRow =
 
     let unchanged v = Unchanged v
@@ -26,9 +36,9 @@ module DataRow =
         | Modified m -> Some m.Current
         | Deleted _ -> None
 
-    let update pk v' row =
+    let update v' row =
         let ensureKeyNotChanged (m:Modified<_>) =
-            if (pk m.Current) <> (pk m.Original) 
+            if (m.Current |> keyOf) <> (m.Original |> keyOf) 
             then DataRowUpdateError.KeyCanNotBeChanged |> Error
             else m |> Modified |> Ok
         match row with
@@ -54,28 +64,28 @@ module DataTable =
 
     let empty = Map.empty
 
-    let insert pk i dt = 
-        let key = pk i
+    let insert i dt = 
+        let key = i |> keyOf
         match dt |> Map.tryFind key with
         | None -> dt |> Map.add key (Added i) |> DataTable |> Ok
         | Some _ -> DataTableInsertError.DuplicateKey |> Error
 
-    let update pk i dt =
-        let key = pk i
+    let update i dt =
+        let key = i |> keyOf
         match dt |> Map.tryFind key with
         | None -> DataTableUpdateError.RowNotFound |> Error
         | Some r -> 
-            match r |> DataRow.update pk i with
+            match r |> DataRow.update i with
             | Ok r -> dt |> Map.add key r |> DataTable |> Ok
             | Error DataRowUpdateError.DeletedRowsCanNotBeUpdated -> 
                 DataTableUpdateError.DeletedRowsCanNotBeUpdated |> Error
             | Error DataRowUpdateError.KeyCanNotBeChanged -> 
                 DataTableUpdateError.KeyCanNotBeChanged |> Error
 
-    let upsert pk i dt =
-        match dt |> insert pk i with
+    let upsert i dt =
+        match dt |> insert i with
         | Ok dt -> dt |> Ok
-        | Error DataTableInsertError.DuplicateKey -> dt |> update pk i
+        | Error DataTableInsertError.DuplicateKey -> dt |> update i
 
     let delete key dt =
         match dt |> Map.tryFind key with
