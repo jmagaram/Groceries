@@ -63,6 +63,10 @@ type Modified<'T> =
     { Original : 'T 
       Current : 'T }
 
+type ModifiedError =
+    | ValuesAreTheSame
+    | KeysAreDifferent
+
 type DataRow<'T> =
     | Unchanged of 'T
     | Deleted of 'T

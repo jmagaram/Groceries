@@ -1,15 +1,21 @@
 ﻿namespace Models
 open DomainTypes
 
-//module Modified = 
+module Modified = 
 
-//    type ModifiedError =
-//        | ValuesAreTheSame
-//        | KeysAreDifferent
+    let current (m:Modified<_>) = m.Current
 
-//    let create original current =
-//        match original = current with
-//        | true -> ModifiedError.
+    let original (m:Modified<_>) = m.Original
+
+    let create original current =
+        match original = current with
+        | true -> ModifiedError.ValuesAreTheSame |> Error
+        | false -> 
+            if (original |> keyOf) <> (current |> keyOf)
+            then ModifiedError.KeysAreDifferent |> Error
+            else { Modified.Current = current; Modified.Original = original } |> Ok
+
+    let updateCurrent v (m:Modified<_>) = create m.Original v
 
 module DataRow =
 
@@ -19,45 +25,43 @@ module DataRow =
         match row with
         | Unchanged _ -> row |> Some
         | Deleted _ -> None
-        | Modified m -> Unchanged m.Current |> Some
+        | Modified m -> m |> Modified.current |> Unchanged |> Some
         | Added i -> Unchanged i |> Some
 
     let rejectChanges row =
         match row with
         | Unchanged _ -> row |> Some
         | Deleted v -> Unchanged v |> Some
-        | Modified m -> Unchanged m.Original |> Some
-        | Added i -> None
+        | Modified m -> m |> Modified.original |> Unchanged |> Some
+        | Added _ -> None
 
     let current row = 
         match row with
         | Unchanged t -> Some t
         | Added t -> Some t
-        | Modified m -> Some m.Current
+        | Modified m -> m |> Modified.current |> Some
         | Deleted _ -> None
 
     let update v' row =
-        let ensureKeyNotChanged (m:Modified<_>) =
-            if (m.Current |> keyOf) <> (m.Original |> keyOf) 
-            then DataRowUpdateError.KeyCanNotBeChanged |> Error
-            else m |> Modified |> Ok
         match row with
         | Unchanged v -> 
-            if v <> v'
-            then { Original = v; Current = v' } |> ensureKeyNotChanged
-            else row |> Ok
+            match Modified.create v v' with
+            | Ok m -> m |> Modified |> Ok
+            | Error ModifiedError.KeysAreDifferent -> DataRowUpdateError.KeyCanNotBeChanged |> Error
+            | Error ModifiedError.ValuesAreTheSame -> row |> Ok
         | Deleted _ -> DataRowUpdateError.DeletedRowsCanNotBeUpdated |> Error
         | Modified m -> 
-            if m.Original = v'
-            then Unchanged v' |> Ok
-            else { m with Current = v' } |> ensureKeyNotChanged
+            match m |> Modified.updateCurrent v' with
+            | Ok m -> m |> Modified |> Ok
+            | Error ModifiedError.KeysAreDifferent -> DataRowUpdateError.KeyCanNotBeChanged |> Error
+            | Error ModifiedError.ValuesAreTheSame -> row |> Ok
         | Added v -> Added v' |> Ok
 
     let delete row =
         match row with
         | Unchanged v -> Deleted v |> Ok
         | Deleted _ -> DataRowDeleteError.DeletedRowsCanNotBeDeletedAgain |> Error
-        | Modified m -> m.Original |> Deleted |> Ok
+        | Modified m -> m |> Modified.original |> Deleted |> Ok
         | Added _ -> DataRowDeleteError.AddedRowsCanNotBeDeleted |> Error
 
 module DataTable = 
