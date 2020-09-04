@@ -2,7 +2,8 @@
 
 open System
 
-[<Measure>] type days
+[<Measure>]
+type days
 
 type ItemId = ItemId of Guid
 
@@ -13,8 +14,8 @@ type Note = Note of string
 type Quantity = Quantity of string
 
 type Repeat =
-    { Interval : int<days> 
-      PostponedUntil : DateTime }
+    { Interval: int<days>
+      PostponedUntil: DateTime option }
 
 type Schedule =
     | Completed
@@ -24,16 +25,17 @@ type Schedule =
 type CategoryId = CategoryId of Guid
 
 type IKey<'TKey> =
-    abstract member Key: 'TKey 
+    abstract Key: 'TKey
 
-type Item = 
-    { ItemId : ItemId
-      Name : ItemName
-      Note : Note option
-      Quantity : Quantity option
-      CategoryId : CategoryId option
-      Schedule : Schedule }
-    interface IKey<ItemId> with member this.Key = this.ItemId
+type Item =
+    { ItemId: ItemId
+      Name: ItemName
+      Note: Note option
+      Quantity: Quantity option
+      CategoryId: CategoryId option
+      Schedule: Schedule }
+    interface IKey<ItemId> with
+        member this.Key = this.ItemId
 
 type CategoryName = CategoryName of string
 
@@ -41,27 +43,21 @@ type StoreId = StoreId of Guid
 
 type StoreName = StoreName of string
 
-type Store = 
-    { StoreId : StoreId 
-      Name : StoreName }
-    interface IKey<StoreId> with member this.Key = this.StoreId
+type Store =
+    { StoreId: StoreId
+      Name: StoreName }
+    interface IKey<StoreId> with
+        member this.Key = this.StoreId
 
 type Category =
-    { CategoryId : CategoryId 
-      Name : CategoryName }
-    interface IKey<CategoryId> with member this.Key = this.CategoryId
+    { CategoryId: CategoryId
+      Name: CategoryName }
+    interface IKey<CategoryId> with
+        member this.Key = this.CategoryId
 
-type StoreNeverStocksItem =
-    { StoreId : StoreId 
-      ItemId : ItemId }
+type NeverSell = { StoreId: StoreId; ItemId: ItemId }
 
-type Changed<'T> =
-    { Original : 'T
-      Current : 'T }
-
-type Modified<'T> =
-    { Original : 'T 
-      Current : 'T }
+type Modified<'T> = { Original: 'T; Current: 'T }
 
 type DataRow<'T> =
     | Unchanged of 'T
@@ -69,10 +65,11 @@ type DataRow<'T> =
     | Modified of Modified<'T>
     | Added of 'T
 
-type DataTable<'T, 'TKey> when 'TKey : comparison = DataTable of Map<'TKey, DataRow<'T>>
+type DataTable<'Key, 'T when 'Key: comparison> = DataTable of Map<'Key, DataRow<'T>>
 
 type State =
-    { Categories : DataTable<CategoryId, Category> 
-      Stores : DataTable<Store, StoreId>
-      Items : DataTable<Item, ItemId>
-      AntiInventory : DataTable<StoreNeverStocksItem, StoreNeverStocksItem> }
+    { Categories: DataTable<CategoryId, Category>
+      Stores: DataTable<StoreId, Store>
+      Items: DataTable<ItemId, Item>
+      NeverSells: DataTable<NeverSell, NeverSell> }
+
