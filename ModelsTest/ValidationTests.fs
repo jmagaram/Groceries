@@ -2,30 +2,35 @@ namespace ModelsTest
 
 open System
 open Xunit
+open FsUnit
+open FsUnit.Xunit
 
 module StringValidationTests =
 
     open Models.StringValidation
-
-    let onlyContainsLetters = onlyContains [ CharacterKind.Letter ]
+    open FsCheck
 
     [<Fact>]
-    let ``onlyContains - when character list is empty throw`` () = true
+    let ``onlyContains - when character list is empty throw`` () = 
+        (fun () -> onlyContains [] |> ignore)
+        |> shouldFail
 
     [<Fact>]
     let ``onlyContains - when source is empty string return true`` () =
-        Assert.True(onlyContains [ CharacterKind.Letter ] "")
-        Assert.True(onlyContains [ CharacterKind.Mark ] "")
-        Assert.True(onlyContains [ CharacterKind.Number ] "")
-        Assert.True(onlyContains [ CharacterKind.Space ] "")
-        Assert.True(onlyContains [ CharacterKind.Space ] "")
-        Assert.True(onlyContains [ CharacterKind.Space ] "")
+        (onlyContains [ CharacterKind.Letter ]) "" |> should equal true
+        (onlyContains [ CharacterKind.Mark ]) "" |> should equal true
+        (onlyContains [ CharacterKind.Number ]) "" |> should equal true
+        (onlyContains [ CharacterKind.Space ]) "" |> should equal true
+        (onlyContains [ CharacterKind.LineFeed ]) "" |> should equal true
+        (onlyContains [ CharacterKind.Punctuation ]) "" |> should equal true
+        (onlyContains [ CharacterKind.Symbol ]) "" |> should equal true
 
     [<Theory>]
     [<InlineData("abc", true)>]
     [<InlineData("123", false)>]
     [<InlineData("123abc123", false)>]
-    [<InlineData("", true)>]
+    [<InlineData("abc123abc", false)>]
     let ``onlyContains - check for letters`` (source: string, expected: bool) =
+        let onlyContainsLetters = onlyContains [ CharacterKind.Letter ]
         let actual = source |> onlyContainsLetters
         Assert.Equal(expected, actual)

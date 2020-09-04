@@ -16,13 +16,23 @@ module StringValidation =
         | Space
         | LineFeed
 
-    let lengthIsAtLeast c s = String.length s >= (c |> int)
+    type Rules =
+        { MinLength: int<chars>
+          MaxLength: int<chars>
+          OnlyContains: CharacterKind list }
 
-    let lengthIsAtMost c s = String.length s <= (c |> int)
+    type StringError =
+        | TooLong
+        | TooShort
+        | InvalidCharacters
+
+    let lengthAtLeast c s = (String.length s) >= (c |> int)
+
+    let lengthAtMost c s = (String.length s) <= (c |> int)
 
     let onlyContains cs =
         match cs with
-        | [] -> fun s -> (String.length s) = 0
+        | [] -> failwith "No list of valid characters was provided."
         | cs ->
             let characterClass c =
                 match c with
@@ -42,53 +52,12 @@ module StringValidation =
 
             fun s -> regex.IsMatch(s) |> not
 
-//let private lengthIsAtLeast (n:int<chars>) s = String.length s >= (n |> int)
+    let createValidator (r: Rules) =
+        let vs =
+            [ (r.MinLength |> lengthAtLeast, TooShort)
+              (r.MaxLength |> lengthAtMost, TooLong)
+              (r.OnlyContains |> onlyContains, InvalidCharacters) ]
 
-//let private lengthIsAtMost (n:int<chars>) s = String.length s <= (n |> int)
-
-//let private characterClass c =
-//    match c with
-//    | Letter       -> "\p{L}"
-//    | Mark         -> "\p{M}"
-//    | Number       -> "\p{N}"
-//    | Punctuation  -> "\p{P}"
-//    | Symbol       -> "\p{S}"
-//    | Space        -> "\p{Zs}"
-//    | LineFeed     -> "\n"
-
-//let private onlyContains cs =
-//    match cs with
-//    | [] -> fun s -> (String.length s) = 0
-//    | cs ->
-//        let pattern =
-//            cs
-//            |> Seq.map characterClass
-//            |> String.concat ""
-//            |> fun s -> sprintf "[%s]*" s
-//        let regex = new Regex(pattern)
-//        fun s -> regex.IsMatch(s)
-
-//let private normalizeLineFeeds =
-//    let regex = new Regex("\r\n")
-//    fun s -> regex.Replace(s,"\n")
-
-//type private CreateValidator = PlainTextRules -> (string -> Result<PlainText, PlainTextRules>)
-//let createValidator : CreateValidator = fun rs ->
-//    let onlyContainsPermittedChars = rs.PermittedCharacters |> onlyContains
-//    fun s ->
-//        let s =
-//            s
-//            |> trim
-//            |> normalizeLineFeeds
-//        let isValid =
-//            lengthIsAtMost rs.MaximumLength s
-//            && lengthIsAtLeast rs.MinimumLength s
-//            && (onlyContainsPermittedChars s)
-//        match isValid with
-//        | true -> Ok (PlainText s)
-//        | false -> Error rs
-
-//type PlainTextRules =
-//    { MinimumLength: int<chars>
-//      MaximumLength: int<chars>
-//      PermittedCharacters: PlainTextCharacter list }
+        fun s ->
+            vs
+            |> Seq.choose (fun (p, err) -> if p s then None else Some err)
