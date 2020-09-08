@@ -21,6 +21,29 @@ module StringValidation =
           MaxLength: int<chars>
           OnlyContains: CharacterKind list }
 
+    let singleLine minLength maxLength =
+        { MinLength = minLength
+          MaxLength = maxLength
+          OnlyContains =
+              [ Letter
+                Mark
+                Number
+                Punctuation
+                Space
+                Symbol ] }
+
+    let multipleLine minLength maxLength =
+        { MinLength = minLength
+          MaxLength = maxLength
+          OnlyContains =
+              [ Letter
+                Mark
+                Number
+                Punctuation
+                Space
+                Symbol
+                LineFeed ] }
+
     type StringError =
         | TooLong
         | TooShort

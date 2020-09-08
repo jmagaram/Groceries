@@ -1,5 +1,6 @@
 ﻿namespace Models
 open DomainTypes
+open System
 
 [<AutoOpen>]
 module General = 
@@ -11,8 +12,8 @@ module Map =
 
     let values m = m |> Map.toSeq |> Seq.map snd
 
-//[<AutoOpen>]
-//module Seq =
+[<AutoOpen>]
+module String =
 
-//    let doesNotExist q = q |> Seq.
+    let trim (s:String) = s.Trim()
 

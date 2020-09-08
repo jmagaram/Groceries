@@ -73,3 +73,5 @@ type State =
       Items: DataTable<ItemId, Item>
       NeverSells: DataTable<NeverSell, NeverSell> }
 
+type StateMessage =
+    | DeleteCategory of CategoryId
