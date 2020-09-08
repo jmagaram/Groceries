@@ -91,18 +91,14 @@ module State =
           Stores = DataTable.empty
           NeverSells = DataTable.empty }
 
-    let private updateCategories f s =
-        s.Categories
-        |> f
-        |> Result.map (fun cs -> { s with Categories = cs })
-        
+    let private updateCategories f s = { s with Categories = s.Categories |> f }
     let private updateStores f s = { s with Stores = s.Stores |> f }
     let private updateItems f s = { s with Items = s.Items |> f }
     let private updateNeverSells f s = { s with NeverSells = s.NeverSells |> f }
 
     let deleteCategory id (s:State) = 
         s 
-        |> updateCategories (fun cs -> cs |> DataTable.delete id)
+        |> updateCategories (fun cs -> cs |> DataTable.deleteIf (fun x -> x.CategoryId = id))
 
     let update msg s = 
         match msg with

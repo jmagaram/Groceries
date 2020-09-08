@@ -5,12 +5,16 @@ open System
 [<Measure>]
 type days
 
+[<Struct>]
 type ItemId = ItemId of Guid
 
+[<Struct>]
 type ItemName = ItemName of string
 
+[<Struct>]
 type Note = Note of string
 
+[<Struct>]
 type Quantity = Quantity of string
 
 type Repeat =
@@ -22,6 +26,7 @@ type Schedule =
     | Once
     | Repeat of Repeat
 
+[<Struct>]
 type CategoryId = CategoryId of Guid
 
 type IKey<'TKey> =
@@ -37,10 +42,13 @@ type Item =
     interface IKey<ItemId> with
         member this.Key = this.ItemId
 
+[<Struct>]
 type CategoryName = CategoryName of string
 
+[<Struct>]
 type StoreId = StoreId of Guid
 
+[<Struct>]
 type StoreName = StoreName of string
 
 type Store =
@@ -57,13 +65,14 @@ type Category =
 
 type NeverSell = { StoreId: StoreId; ItemId: ItemId }
 
-type Modified<'T> = { Original: 'T; Current: 'T }
+type ActiveRow<'T> =
+    | Unchanged of 'T
+    | Modified of {| Original: 'T; Current: 'T |}
+    | Added of 'T
 
 type DataRow<'T> =
-    | Unchanged of 'T
-    | Deleted of 'T
-    | Modified of Modified<'T>
-    | Added of 'T
+    | ActiveRow of ActiveRow<'T>
+    | DeletedRow of 'T
 
 type DataTable<'Key, 'T when 'Key: comparison> = DataTable of Map<'Key, DataRow<'T>>
 
@@ -73,5 +82,4 @@ type State =
       Items: DataTable<ItemId, Item>
       NeverSells: DataTable<NeverSell, NeverSell> }
 
-type StateMessage =
-    | DeleteCategory of CategoryId
+type StateMessage = DeleteCategory of CategoryId

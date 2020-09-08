@@ -2,210 +2,185 @@
 
 open DomainTypes
 
-module Modified =
+module ActiveRow =
 
-    type Error<'T> =
-        | ValuesAreEqual of 'T 
-        | KeysAreDifferent
+    let added v = Added v
 
-    let create v v' =
+    let unchanged v = Unchanged v
+
+    let modified v v' =
         match v = v' with
-        | true -> ValuesAreEqual v |> Error
+        | true -> Unchanged v'
         | false ->
             let vKey = v |> keyOf
             let vKey' = v' |> keyOf
             match vKey = vKey' with
-            | true -> { Original = v; Current = v' } |> Ok
-            | false -> KeysAreDifferent |> Error
+            | false -> failwith "It is not possible to change the key when modifying a data row."
+            | true -> Modified {| Original = v; Current = v' |}
 
-    let current (m: Modified<_>) = m.Current
+    let update v' a =
+        match a with
+        | Unchanged v -> modified v v'
+        | Modified m -> modified m.Original v'
+        | Added _ -> added v'
 
-    let original (m: Modified<_>) = m.Original
+    let map f a =
+        match a with
+        | Unchanged v -> modified v (f v)
+        | Modified m -> modified m.Original (f m.Current)
+        | Added v -> added (f v)
 
-    let update v (m: Modified<_>) = create (m |> original) v
+    let delete a =
+        match a with
+        | Unchanged v -> v |> Some
+        | Modified m -> m.Original |> Some
+        | Added _ -> None
 
-    let map f (m: Modified<_>) =
-        create (m |> original) (m |> current |> f)
-
-module CurrentModule = 
-
-    // active?
-
-    type Current<'T> = 
-        | Unchanged of 'T
-        | Added of 'T
-        | Modified of Modified<'T>
-
-    type Row<'T> =
-        | Deleted of 'T
-        | Active of Current<'T>
-
-    let value c = 
-        match c with
+    let value a =
+        match a with
         | Unchanged v -> v
+        | Modified m -> m.Current
         | Added v -> v
-        | Modified m -> m |> Modified.current
 
-    let updateCurrent v' c =
-        match c with
-        | Unchanged v -> 
-            match Modified.create v v' with
-            | Ok m -> Modified m
-            | Error Modified.KeysAreDifferent -> failwith "aa"
-            | Error (Modified.ValuesAreEqual _) -> c
-        | Added _ -> Added v'
-        | Modified m -> 
-            match m |> Modified.update v' with
-            | Ok m -> Modified m
-            | Error Modified.KeysAreDifferent -> failwith "aa"
-            | Error (Modified.ValuesAreEqual _) -> Unchanged v'
+    let hasChanges a =
+        match a with
+        | Unchanged _ -> false
+        | Modified _ -> true
+        | Added _ -> true
 
-    let mapCurrent f c =
-        let v' = c |> value |> f
-        c |> updateCurrent v'
+    let acceptChanges a = a |> value |> Unchanged
 
-    let acceptChangesCurrent c =
-        match c with
-        | Unchanged v -> c
-        | Added v -> Unchanged v
-        | Modified m -> m |> Modified.current |> Unchanged
-
-    let mapCurrentRow f r =
-        match r with
-        | Active c -> c |> mapCurrent f |> Active
-        | Deleted _ -> r
+    let rejectChanges a =
+        match a with
+        | Unchanged _ -> a |> Some
+        | Modified m -> m.Original |> unchanged |> Some
+        | Added _ -> None
 
 module DataRow =
 
-    type UpdateRowError =
-        | DeletedRowsCanNotBeUpdated
-        | KeysAreDifferent
+    type UpdateError = | DeletedRowsCanNotBeUpdated
 
-    type DeleteRowError =
-        | DeletedRowsCanNotBeDeletedAgain
+    type DeleteError =
         | AddedRowsCanNotBeDeleted
+        | DeletedRowsCanNotBeDeletedAgain
 
-    let unchanged v = v |> Unchanged
+    let activeRow a = a |> ActiveRow
 
-    let current r =
+    let deletedRow v = v |> DeletedRow
+
+    let update v r =
         match r with
-        | DataRow.Unchanged v -> v |> Some
-        | Added v -> v |>  Some 
-        | Modified m -> m |> Modified.current|> Some
-        | Deleted _ -> None
-
-    let update v' r =
-        match r with
-        | Unchanged v -> 
-            match Modified.create v v' with
-            | Ok m -> m |> Modified |>  Ok
-            | Error Modified.KeysAreDifferent -> KeysAreDifferent |> Error
-            | Error (Modified.ValuesAreEqual _) -> r |> Ok
-        | Deleted _ -> DeletedRowsCanNotBeUpdated |> Error
-        | Modified m ->
-            match m |> Modified.update v' with
-            | Ok m -> m  |> Modified |> Ok
-            | Error Modified.KeysAreDifferent -> KeysAreDifferent |> Error
-            | Error (Modified.ValuesAreEqual v) -> v |> Unchanged |>  Ok
-        | Added _ -> v' |> Added |> Ok
-
-    let delete r =
-        match r with
-        | Unchanged v -> v |> Deleted |>  Ok
-        | Deleted _ -> DeletedRowsCanNotBeDeletedAgain |> Error
-        | Modified m -> m |> Modified.original |> Deleted |>  Ok
-        | Added _ -> AddedRowsCanNotBeDeleted |> Error
+        | DeletedRow _ -> failwith "Deleted rows can not be updated."
+        | ActiveRow a -> a |> ActiveRow.update v |> activeRow
 
     let map f r =
         match r with
-        | Deleted _ -> DeletedRowsCanNotBeUpdated |> Error
-        | Unchanged v -> 
-            let v' = f v // better as Current |> Map
-            match Modified.create v v' with
-            | Ok m -> m |> Modified |>  Ok
-            | Error Modified.KeysAreDifferent -> KeysAreDifferent |> Error
-            | Error (Modified.ValuesAreEqual _) -> r |> Ok
-        | Modified m ->
-            match m |> Modified.map f with
-            | Ok m -> m  |> Modified |> Ok
-            | Error Modified.KeysAreDifferent -> KeysAreDifferent |> Error
-            | Error (Modified.ValuesAreEqual v') -> v' |> Unchanged |>  Ok
-        | Added v -> v |> f |> Added |> Ok
+        | DeletedRow _ -> failwith "Deleted rows can not be updated."
+        | ActiveRow a -> a |> ActiveRow.map f |> activeRow
+
+    let delete r =
+        match r with
+        | DeletedRow _ -> failwith "Deleted rows can not be deleted again."
+        | ActiveRow a ->
+            a
+            |> ActiveRow.delete
+            |> Option.map (fun v -> DeletedRow v)
+
+    let current r =
+        match r with
+        | DeletedRow _ -> None
+        | ActiveRow a -> a |> ActiveRow.value |> Some
 
     let hasChanges r =
         match r with
-        | Unchanged _ -> false
-        | _ -> true
+        | DeletedRow _ -> true
+        | ActiveRow a -> a |> ActiveRow.hasChanges
 
     let acceptChanges r =
         match r with
-        | Unchanged _ -> r |> Some
-        | Deleted _ -> None
-        | Modified m -> m |> Modified.current |> Unchanged |> Some
-        | Added v -> Unchanged v |> Some
+        | DeletedRow _ -> None
+        | ActiveRow a -> a |> ActiveRow.acceptChanges |> activeRow |> Some
 
     let rejectChanges r =
         match r with
-        | Unchanged _ -> r |> Some
-        | Deleted v -> Unchanged v |> Some
-        | Modified m -> m |> Modified.original |> Unchanged |> Some
-        | Added _ -> None
+        | DeletedRow v -> v |> ActiveRow.unchanged |> activeRow |> Some
+        | ActiveRow a ->
+            a
+            |> ActiveRow.rejectChanges
+            |> Option.map activeRow
 
 module DataTable =
-
-    type InsertError = | DuplicateKey
-
-    type DeleteError =
-        | RowNotFoundToDelete
-        | DeletedRowsCanNotBeDeletedAgain
-
-    type UpdateError =
-        | RowNotFoundToUpdate
-        | DeletedRowsCanNotBeUpdated
-        | KeyCanNotBeChanged
 
     let empty<'Key, 'T when 'Key: comparison> =
         Map.empty<'Key, DataRow<'T>> |> DataTable
 
-    let insert v dt =
-        let (DataTable dt) = dt
-        let key = v |> keyOf
-        match dt |> Map.tryFind key with
-        | None -> dt |> Map.add key (Added v) |> DataTable |> Ok
-        | Some _ -> DuplicateKey |> Error
+    let containsKey k (DataTable dt) = dt |> Map.containsKey k
 
-    let current dt =
-        let (DataTable dt) = dt
-        dt |> Map.values |> Seq.choose DataRow.current
+    let tryFind k (DataTable dt) = dt |> Map.tryFind k
+
+    let insert v dt =
+        let k = v |> keyOf
+        match dt |> containsKey k with
+        | false ->
+            v
+            |> ActiveRow.added
+            |> DataRow.activeRow
+            |> fun r ->
+                let (DataTable dt) = dt
+                dt |> Map.add k r |> DataTable
+        | true -> failwith "Attempt to insert an item with a duplicate key."
 
     let update v dt =
-        let (DataTable dt) = dt
-        let key = v |> keyOf
-        match dt |> Map.tryFind key with
-        | None -> RowNotFoundToUpdate |> Error
+        let k = v |> keyOf
+        match dt |> tryFind k with
+        | None -> failwithf "A row with the key %A could not be found." k
         | Some r ->
-            match r |> DataRow.update v with
-            | Ok r -> dt |> Map.add key r |> DataTable |> Ok
-            | Error DataRow.DeletedRowsCanNotBeUpdated -> DeletedRowsCanNotBeUpdated |> Error
-            | Error DataRow.KeysAreDifferent -> KeyCanNotBeChanged |> Error
+            let (DataTable dt) = dt
+            let r = r |> DataRow.update v
+            dt |> Map.add k r |> DataTable
+
+    let mapCurrent f (DataTable dt) =
+        dt
+        |> Map.map (fun _ r ->
+            match r with
+            | ActiveRow a -> a |> ActiveRow.map f |> ActiveRow
+            | DeletedRow _ -> r)
+        |> DataTable
 
     let upsert v dt =
-        match dt |> insert v with
-        | Ok dt -> dt |> Ok
-        | Error DuplicateKey -> dt |> update v
+        let key = v |> keyOf
+        match dt |> containsKey key with
+        | false -> dt |> insert v
+        | true -> dt |> update v
 
-    let delete key dt =
-        let (DataTable dt) = dt
-        match dt |> Map.tryFind key with
-        | None -> RowNotFoundToDelete |> Error
+    let delete k dt =
+        match dt |> tryFind k with
+        | None -> failwithf "A row with this key could not be found: %A" k
         | Some r ->
+            let (DataTable dt) = dt
             match r |> DataRow.delete with
-            | Ok r -> dt |> Map.add key r |> DataTable |> Ok
-            | Error DataRow.DeletedRowsCanNotBeDeletedAgain -> DeletedRowsCanNotBeDeletedAgain |> Error
-            | Error DataRow.AddedRowsCanNotBeDeleted -> dt |> Map.remove key |> DataTable |> Ok
+            | None -> dt |> Map.remove k |> DataTable
+            | Some r -> dt |> Map.add k r |> DataTable
 
-    let acceptChanges dt =
-        let (DataTable dt) = dt
+    let deleteIf p (DataTable dt) =
+        let choose r =
+            match r with
+            | ActiveRow a ->
+                match a |> ActiveRow.value |> p with
+                | true -> a |> ActiveRow.delete |> Option.map DeletedRow
+                | false -> r |> Some
+            | DeletedRow _ -> r |> Some
+
+        dt
+        |> Map.toSeq
+        |> Seq.choose (fun (k, v) -> v |> choose |> Option.map (fun v -> (k, v)))
+        |> Map.ofSeq
+        |> DataTable
+
+    let current (DataTable dt) =
+        dt |> Map.values |> Seq.choose DataRow.current
+
+    let acceptChanges (DataTable dt) =
         dt
         |> Map.toSeq
         |> Seq.choose (fun (k, v) ->
@@ -215,8 +190,7 @@ module DataTable =
         |> Map.ofSeq
         |> DataTable
 
-    let rejectChanges dt =
-        let (DataTable dt) = dt
+    let rejectChanges (DataTable dt) =
         dt
         |> Map.toSeq
         |> Seq.choose (fun (k, v) ->
