@@ -65,14 +65,11 @@ type Category =
 
 type NeverSell = { StoreId: StoreId; ItemId: ItemId }
 
-type ActiveRow<'T> =
+type DataRow<'T> = 
     | Unchanged of 'T
     | Modified of {| Original: 'T; Current: 'T |}
     | Added of 'T
-
-type DataRow<'T> =
-    | ActiveRow of ActiveRow<'T>
-    | DeletedRow of 'T
+    | Deleted of 'T
 
 type DataTable<'Key, 'T when 'Key: comparison> = DataTable of Map<'Key, DataRow<'T>>
 
