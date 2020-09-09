@@ -91,28 +91,39 @@ module State =
           Stores = DataTable.empty
           NeverSells = DataTable.empty }
 
-    let private updateCategories f s = { s with Categories = s.Categories |> f }
-    let private updateStores f s = { s with Stores = s.Stores |> f }
+    let private updateCategories f s =
+        { s with
+              Categories = s.Categories |> f }
+
     let private updateItems f s = { s with Items = s.Items |> f }
-    let private updateNeverSells f s = { s with NeverSells = s.NeverSells |> f }
+    let private updateStores f s = { s with Stores = s.Stores |> f }
 
-    let deleteCategory id (s:State) = 
-        s 
-        |> updateCategories (fun cs -> cs |> DataTable.deleteIf (fun x -> x.CategoryId = id))
+    let private updateNeverSells f s =
+        { s with
+              NeverSells = s.NeverSells |> f }
 
-    let update msg s = 
-        match msg with
-        | DeleteCategory id -> s |> deleteCategory id
+    let removeCategoryFromItem categoryId (i: Item) =
+        match i.CategoryId with
+        | None -> i
+        | Some c -> if c = categoryId then { i with CategoryId = None } else i
 
-    //let a (s:State) id = 
-    //    let m = s.Items |> DataTable.current
-    //    let toChange = m |> Seq.filter (fun i -> i.CategoryId = id)
-    //    let withChange = toChange |> Seq.map (fun i -> { i with CategoryId = None })
-        // update Seq.map
+    let deleteCategory id (s: State) =
+        s
+        |> updateCategories (DataTable.deleteIf (fun x -> x.CategoryId = id))
+        |> updateItems (DataTable.mapCurrent (removeCategoryFromItem id))
+
+//let update msg s =
+//    match msg with
+//    | DeleteCategory id -> s |> deleteCategory id
+
+//let a (s:State) id =
+//    let m = s.Items |> DataTable.current
+//    let toChange = m |> Seq.filter (fun i -> i.CategoryId = id)
+//    let withChange = toChange |> Seq.map (fun i -> { i with CategoryId = None })
+// update Seq.map
 
 //type State =
 //    { Categories: DataTable<CategoryId, Category>
 //      Stores: DataTable<StoreId, Store>
 //      Items: DataTable<ItemId, Item>
 //      NeverSells: DataTable<NeverSell, NeverSell> }
-

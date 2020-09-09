@@ -34,19 +34,19 @@ module DataRow =
         | Added _ -> added v'
         | Deleted _ -> failwith "Deleted rows can not be updated."
 
-    let map f r =
-        match r with
-        | Unchanged v -> modified v (f v)
-        | Modified m -> modified m.Original (f m.Current)
-        | Added v -> added (f v)
-        | Deleted _ -> failwith "Deleted rows can not be updated."
-
     let currentValue r =
         match r with
         | Unchanged v -> v |> Some
         | Modified m -> m.Current |> Some
         | Added v -> v |> Some
         | Deleted _ -> None
+
+    let mapCurrent f r =
+        match r with
+        | Unchanged v -> modified v (f v)
+        | Modified m -> modified m.Original (f m.Current)
+        | Added v -> added (f v)
+        | Deleted _ -> r
 
     let hasChanges r =
         match r with
@@ -149,3 +149,9 @@ module DataTable =
             | Some v -> if p v then r |> DataRow.delete else r |> Some
 
         chooseRow chooser dt
+
+    let mapCurrent f dt =
+        dt
+        |> asMap
+        |> Map.map (fun k r -> r |> DataRow.mapCurrent f)
+        |> fromMap
