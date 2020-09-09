@@ -133,6 +133,11 @@ module DataTable =
         |> Map.ofSeq
         |> fromMap
 
+    let hasChanges dt = 
+        dt
+        |> asMap
+        |> Map.exists (fun k v -> v |> DataRow.hasChanges)
+
     let acceptChanges dt = chooseRow DataRow.acceptChanges dt
 
     let rejectChanges dt = chooseRow DataRow.rejectChanges dt

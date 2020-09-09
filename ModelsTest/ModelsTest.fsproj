@@ -8,6 +8,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Include="SynchronizationTests.fs" />
     <Compile Include="ValidationTests.fs" />
     <Compile Include="Program.fs" />
   </ItemGroup>
