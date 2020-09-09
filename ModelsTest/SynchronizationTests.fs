@@ -7,7 +7,7 @@ open FsUnit.Xunit
 open Models
 open Models.DomainTypes
 
-module SynchronizationTestHelpers = 
+module SynchronizationTestHelpers =
 
     type Person =
         { Id: int
@@ -97,22 +97,55 @@ module DataRowTests =
 
 module DataTableTests =
     open SynchronizationTestHelpers
+    open DataTable
 
     [<Fact>]
-    let ``when delete row an ADDED row, remove it`` () =
-        let actual = 
-            DataTable.empty 
-            |> DataTable.insert bob
-            |> DataTable.delete bob.Id
-        actual |> DataTable.current |> Seq.isEmpty |> should equal true
-        actual |> DataTable.hasChanges |> not
+    let ``when delete an ADDED row, remove it`` () =
+        let actual = empty |> insert bob |> delete bob.Id
+        actual
+        |> asMap
+        |> Map.isEmpty
+        |> should equal true
 
     [<Fact>]
     let ``when delete an UNCHANGED row, mark it as deleted`` () =
-        let actual = 
-            DataTable.empty 
-            |> DataTable.insert bob
-            |> DataTable.acceptChanges
-            |> DataTable.delete bob.Id
-        actual |> DataTable.current |> Seq.isEmpty |> should equal true
-        actual |> DataTable.hasChanges |> should equal true
+        let actual =
+            empty
+            |> insert bob
+            |> acceptChanges
+            |> delete bob.Id
+
+        actual
+        |> asMap
+        |> Map.values
+        |> Seq.exactlyOne
+        |> should equal (DataRow.deleted bob)
+
+    [<Fact>]
+    let ``when deleteIf an ADDED row, remove it`` () =
+        let actual =
+            empty
+            |> insert bob
+            |> insert joe
+            |> deleteIf (fun i -> i.Name.StartsWith(bob.Name.Substring(0,2)))
+
+        actual
+        |> asMap
+        |> Map.values
+        |> Seq.exactlyOne
+        |> should equal (DataRow.added joe)
+
+    [<Fact>]
+    let ``when deleteIf an UNCHANGED row, mark it as deleted`` () =
+        let actual =
+            empty
+            |> insert bob
+            |> insert joe
+            |> acceptChanges
+            |> deleteIf (fun i -> i.Name.StartsWith(bob.Name.Substring(0,2)))
+            |> asMap
+            |> Map.values
+            |> Seq.toList
+        actual |> List.length |> should equal 2
+        actual |> List.contains (DataRow.unchanged joe) |> should equal true
+        actual |> List.contains (DataRow.deleted bob) |> should equal true

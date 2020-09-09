@@ -69,11 +69,11 @@ module DataRow =
 
 module DataTable =
 
-    let private asMap dt =
+    let private fromMap dt = DataTable dt
+
+    let asMap dt =
         match dt with
         | DataTable dt -> dt
-
-    let private fromMap dt = DataTable dt
 
     let empty<'Key, 'T when 'Key: comparison> =
         Map.empty<'Key, DataRow<'T>> |> DataTable
