@@ -1,6 +1,7 @@
 ﻿module Models.DomainTypes
 
 open System
+open SynchronizationTypes
 
 [<Measure>]
 type days
@@ -28,9 +29,6 @@ type Schedule =
 
 [<Struct>]
 type CategoryId = CategoryId of Guid
-
-type IKey<'TKey> =
-    abstract Key: 'TKey
 
 type Item =
     { ItemId: ItemId
@@ -64,14 +62,6 @@ type Category =
         member this.Key = this.CategoryId
 
 type NeverSell = { StoreId: StoreId; ItemId: ItemId }
-
-type DataRow<'T> = 
-    | Unchanged of 'T
-    | Modified of {| Original: 'T; Current: 'T |}
-    | Added of 'T
-    | Deleted of 'T
-
-type DataTable<'Key, 'T when 'Key: comparison> = DataTable of Map<'Key, DataRow<'T>>
 
 type State =
     { Categories: DataTable<CategoryId, Category>

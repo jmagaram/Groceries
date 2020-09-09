@@ -83,6 +83,11 @@ module StoreName =
             | [] -> s |> DomainTypes.StoreName |> Ok
             | _ -> Error errors
 
+//module Item = 
+
+//    let removeCategory id item = 
+//        match i 
+
 module State =
 
     let empty =
@@ -112,9 +117,9 @@ module State =
         |> updateCategories (DataTable.deleteIf (fun x -> x.CategoryId = id))
         |> updateItems (DataTable.mapCurrent (removeCategoryFromItem id))
 
-//let update msg s =
-//    match msg with
-//    | DeleteCategory id -> s |> deleteCategory id
+    let update msg s =
+        match msg with
+        | DeleteCategory id -> s |> deleteCategory id
 
 //let a (s:State) id =
 //    let m = s.Items |> DataTable.current

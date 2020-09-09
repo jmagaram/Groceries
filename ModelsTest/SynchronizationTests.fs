@@ -6,9 +6,9 @@ open FsUnit
 open FsUnit.Xunit
 open Models
 open Models.DomainTypes
+open Models.SynchronizationTypes
 
 module SynchronizationTestHelpers =
-
     type Person =
         { Id: int
           Name: string }

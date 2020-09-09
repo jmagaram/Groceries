@@ -1,8 +1,13 @@
 ﻿namespace Models
+open SynchronizationTypes
 
-open DomainTypes
+module SynchronizationUtilities =
+
+    let keyOf<'T, 'TKey when 'T :> IKey<'TKey>> i = (i :> IKey<'TKey>).Key
 
 module DataRow =
+
+    open SynchronizationUtilities
 
     let added v = Added v
 
@@ -14,6 +19,7 @@ module DataRow =
         | false ->
             let vKey = v |> keyOf
             let vKey' = v' |> keyOf
+
             match vKey = vKey' with
             | false -> failwith "It is not possible to change the key when modifying a data row."
             | true -> Modified {| Original = v; Current = v' |}
@@ -69,6 +75,8 @@ module DataRow =
 
 module DataTable =
 
+    open SynchronizationUtilities
+
     let private fromMap dt = DataTable dt
 
     let asMap dt =
@@ -82,6 +90,7 @@ module DataTable =
 
     let insert v dt =
         let k = v |> keyOf
+
         match dt |> containsKey k with
         | true -> failwith "A row with that key already exists."
         | false ->
@@ -93,6 +102,7 @@ module DataTable =
     let update v dt =
         let k = v |> keyOf
         let dt = dt |> asMap
+
         match dt |> Map.tryFind k with
         | None -> failwith "A row with the same key does not exist and thus could not be updated."
         | Some r ->
@@ -112,6 +122,7 @@ module DataTable =
 
     let delete k dt =
         let dt = dt |> asMap
+
         match dt |> Map.tryFind k with
         | None -> failwith "A row with that key does not exist and thus no row could be deleted."
         | Some r ->
@@ -133,7 +144,7 @@ module DataTable =
         |> Map.ofSeq
         |> fromMap
 
-    let hasChanges dt = 
+    let hasChanges dt =
         dt
         |> asMap
         |> Map.exists (fun k v -> v |> DataRow.hasChanges)

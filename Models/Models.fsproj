@@ -5,10 +5,11 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Compile Include="DomainTypes.fs" />
     <Compile Include="Utilities.fs" />
-    <Compile Include="Validation.fs" />
+    <Compile Include="SynchronizationTypes.fs" />
     <Compile Include="Synchronization.fs" />
+    <Compile Include="DomainTypes.fs" />
+    <Compile Include="Validation.fs" />
     <Compile Include="Core.fs" />
   </ItemGroup>
 
