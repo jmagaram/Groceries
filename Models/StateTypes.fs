@@ -1,4 +1,4 @@
-﻿module Models.DomainTypes
+﻿module Models.StateTypes
 
 open System
 open SynchronizationTypes

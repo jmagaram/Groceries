@@ -5,7 +5,6 @@ open Xunit
 open FsUnit
 open FsUnit.Xunit
 open Models
-open Models.DomainTypes
 open Models.SynchronizationTypes
 
 module SynchronizationTestHelpers =

@@ -5,13 +5,17 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Compile Include="Utilities.fs" />
+    <Compile Include="CommonTypes.fs" />
+    <Compile Include="Common.fs" />
     <Compile Include="SynchronizationTypes.fs" />
     <Compile Include="Synchronization.fs" />
-    <Compile Include="DomainTypes.fs" />
+    <Compile Include="ValidationTypes.fs" />
     <Compile Include="Validation.fs" />
-    <Compile Include="Core.fs" />
+    <Compile Include="StateTypes.fs" />
+    <Compile Include="State.fs" />
   </ItemGroup>
+
+  <ItemGroup />
 
   <ItemGroup>
     <PackageReference Update="FSharp.Core" Version="4.7.2" />

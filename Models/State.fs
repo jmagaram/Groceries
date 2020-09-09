@@ -1,7 +1,8 @@
 ﻿namespace Models
 
+open ValidationTypes
 open StringValidation
-open DomainTypes
+open StateTypes
 
 module ItemName =
 
@@ -16,7 +17,7 @@ module ItemName =
         |> List.ofSeq
         |> fun errors ->
             match errors with
-            | [] -> s |> DomainTypes.ItemName |> Ok
+            | [] -> s |> ItemName |> Ok
             | _ -> Error errors
 
 module Note =
@@ -32,7 +33,7 @@ module Note =
         |> List.ofSeq
         |> fun errors ->
             match errors with
-            | [] -> s |> DomainTypes.ItemName |> Ok
+            | [] -> s |> ItemName |> Ok
             | _ -> Error errors
 
 module Quantity =
@@ -48,7 +49,7 @@ module Quantity =
         |> List.ofSeq
         |> fun errors ->
             match errors with
-            | [] -> s |> DomainTypes.Quantity |> Ok
+            | [] -> s |> Quantity |> Ok
             | _ -> Error errors
 
 module CategoryName =
@@ -64,7 +65,7 @@ module CategoryName =
         |> List.ofSeq
         |> fun errors ->
             match errors with
-            | [] -> s |> DomainTypes.CategoryName |> Ok
+            | [] -> s |> CategoryName |> Ok
             | _ -> Error errors
 
 module StoreName =
@@ -80,7 +81,7 @@ module StoreName =
         |> List.ofSeq
         |> fun errors ->
             match errors with
-            | [] -> s |> DomainTypes.StoreName |> Ok
+            | [] -> s |> StoreName |> Ok
             | _ -> Error errors
 
 //module Item = 

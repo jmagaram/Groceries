@@ -1,13 +1,7 @@
 ﻿namespace Models
 open SynchronizationTypes
 
-module SynchronizationUtilities =
-
-    let keyOf<'T, 'TKey when 'T :> IKey<'TKey>> i = (i :> IKey<'TKey>).Key
-
 module DataRow =
-
-    open SynchronizationUtilities
 
     let added v = Added v
 
@@ -74,8 +68,6 @@ module DataRow =
         | Deleted v -> v |> unchanged |> Some
 
 module DataTable =
-
-    open SynchronizationUtilities
 
     let private fromMap dt = DataTable dt
 

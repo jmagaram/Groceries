@@ -1,25 +1,9 @@
 ﻿namespace Models
 
 open System.Text.RegularExpressions
+open Models.ValidationTypes
 
 module StringValidation =
-
-    [<Measure>]
-    type chars
-
-    type CharacterKind =
-        | Letter
-        | Mark
-        | Number
-        | Punctuation
-        | Symbol
-        | Space
-        | LineFeed
-
-    type Rules =
-        { MinLength: int<chars>
-          MaxLength: int<chars>
-          OnlyContains: CharacterKind list }
 
     let singleLine minLength maxLength =
         { MinLength = minLength
@@ -43,11 +27,6 @@ module StringValidation =
                 Space
                 Symbol
                 LineFeed ] }
-
-    type StringError =
-        | TooLong
-        | TooShort
-        | InvalidCharacters
 
     let lengthAtLeast c s = (String.length s) >= (c |> int)
 
@@ -75,7 +54,7 @@ module StringValidation =
 
             fun s -> regex.IsMatch(s) |> not
 
-    let createValidator (r: Rules) =
+    let createValidator (r: StringRules) =
         let vs =
             [ (r.MinLength |> lengthAtLeast, TooShort)
               (r.MaxLength |> lengthAtMost, TooLong)

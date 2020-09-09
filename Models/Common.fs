@@ -2,6 +2,11 @@
 open System
 
 [<AutoOpen>]
+module Common =
+
+    let keyOf<'T, 'TKey when 'T :> IKey<'TKey>> i = (i :> IKey<'TKey>).Key
+
+[<AutoOpen>]
 module Seq =
 
     let takeAtMost n source =
