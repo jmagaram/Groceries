@@ -84,71 +84,65 @@ module State =
           NotSoldItems = DataTable.empty }
 
     let addSampleData (s: State) =
-        let addCat n s =
-            n
-            |> CategoryName.tryParse
-            |> Result.okOrThrow
-            |> fun n ->
-                { CategoryId = Id.create CategoryId
-                  Name = n }
-            |> fun c ->
-                { s with
-                      Categories = s.Categories |> DataTable.insert c }
+        let addCategory n s =
+            { s with
+                  Categories =
+                      s.Categories
+                      |> DataTable.insert
+                          { CategoryId = Id.create CategoryId
+                            Name = n |> CategoryName.tryParse |> Result.okOrThrow } }
 
         let addStore n (s: State) =
-            n
-            |> StoreName.tryParse
-            |> Result.okOrThrow
-            |> fun n ->
-                { StoreId = Id.create StoreId
-                  Name = n }
-            |> fun n ->
-                { s with
-                      Stores = s.Stores |> DataTable.insert n }
+            { s with
+                  Stores =
+                      s.Stores
+                      |> DataTable.insert
+                          { StoreId = Id.create StoreId
+                            Name = n |> StoreName.tryParse |> Result.okOrThrow } }
 
-        let addItem name category qty note (s: State) =
-            let categoryId =
-                s.Categories
-                |> DataTable.current
-                |> Seq.tryPick (fun i -> if i.Name = CategoryName category then Some i.CategoryId else None)
-
-            let qty =
-                qty |> Quantity.tryParse |> Result.asOption
-
-            let note = note |> Note.tryParse |> Result.asOption
-
+        let addItem n cat qty note (s: State) =
             let item =
-                name
-                |> ItemName.tryParse
-                |> Result.okOrThrow
-                |> fun n ->
-                    { ItemId = Id.create ItemId
-                      Name = n
-                      CategoryId = categoryId
-                      Quantity = qty
-                      Note = note
-                      Schedule = Once }
+                { Item.Name = n |> ItemName.tryParse |> Result.okOrThrow
+                  ItemId = Id.create ItemId
+                  CategoryId =
+                      s.Categories
+                      |> DataTable.current
+                      |> Seq.tryPick (fun i -> if i.Name = CategoryName cat then Some i.CategoryId else None)
+                  Quantity = qty |> Quantity.tryParse |> Result.asOption
+                  Note = note |> Note.tryParse |> Result.asOption
+                  Schedule = Once }
 
             { s with
                   Items = s.Items |> DataTable.insert item }
 
-        let markComplete itemName (s: State) =
-            let name =
-                ItemName.tryParse itemName |> Result.okOrThrow
+        let findItem n (s: State) =
+            let itemName =
+                ItemName.tryParse n |> Result.okOrThrow
 
+            s.Items
+            |> DataTable.current
+            |> Seq.filter (fun i -> i.Name = itemName)
+            |> Seq.exactlyOne
+
+        let findStore n (s: State) =
+            let storeName =
+                StoreName.tryParse n |> Result.okOrThrow
+
+            s.Stores
+            |> DataTable.current
+            |> Seq.filter (fun i -> i.Name = storeName)
+            |> Seq.exactlyOne
+
+        let markComplete n (s: State) =
             let item =
-                s.Items
-                |> DataTable.current
-                |> Seq.find (fun i -> i.Name = name)
+                s
+                |> findItem n
                 |> fun i -> { i with Schedule = Completed }
 
             { s with
                   Items = s.Items |> DataTable.update item }
 
-        let makeRepeat itemName interval postpone (s: State) =
-            let name =
-                ItemName.tryParse itemName |> Result.okOrThrow
-
+        let makeRepeat n interval postpone (s: State) =
             let postpone =
                 postpone
                 |> Option.map (fun d -> DateTimeOffset.Now.AddDays(d |> float))
@@ -159,43 +153,26 @@ module State =
                 |> Schedule.Repeat
 
             let item =
-                s.Items
-                |> DataTable.current
-                |> Seq.find (fun i -> i.Name = name)
+                s
+                |> findItem n
                 |> fun i -> { i with Schedule = schedule }
 
             { s with
                   Items = s.Items |> DataTable.update item }
 
         let notSoldAt itemName storeName (s: State) =
-            let itemName =
-                ItemName.tryParse itemName |> Result.okOrThrow
-
-            let storeName =
-                StoreName.tryParse storeName |> Result.okOrThrow
-
-            let storeId =
-                s.Stores
-                |> DataTable.current
-                |> Seq.pick (fun i -> if i.Name = storeName then Some i.StoreId else None)
-
-            let itemId =
-                s.Items
-                |> DataTable.current
-                |> Seq.pick (fun i -> if i.Name = itemName then Some i.ItemId else None)
-
             let nsa =
-                { NotSold.StoreId = storeId
-                  ItemId = itemId }
+                { NotSold.StoreId = (s |> findStore storeName).StoreId
+                  ItemId = (s |> findItem itemName).ItemId }
 
             { s with
-                  NotSoldItems = s.NotSoldItems |> DataTable.upsert nsa }
+                  NotSoldItems = s.NotSoldItems |> DataTable.insert nsa }
 
         s
-        |> addCat "Produce"
-        |> addCat "Dairy"
-        |> addCat "Dry"
-        |> addCat "Frozen"
+        |> addCategory "Produce"
+        |> addCategory "Dairy"
+        |> addCategory "Dry"
+        |> addCategory "Frozen"
         |> addItem "Bananas" "Produce" "1 bunch" ""
         |> addItem "Apples" "Produce" "6 large" ""
         |> addItem "Chocolate bars" "Dry" "Assorted; many" "Prefer Eco brand"
