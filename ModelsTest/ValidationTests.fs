@@ -5,11 +5,12 @@ open Xunit
 open FsUnit
 open FsUnit.Xunit
 open Models.ValidationTypes
+open FsCheck
+open FsCheck.Xunit
 
 module StringValidationTests =
 
     open Models.StringValidation
-    open FsCheck
 
     [<Fact>]
     let ``onlyContains - when character list is empty throw`` () = 

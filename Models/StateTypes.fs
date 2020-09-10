@@ -30,6 +30,15 @@ type Schedule =
 [<Struct>]
 type CategoryId = CategoryId of Guid
 
+[<Struct>]
+type CategoryName = CategoryName of string
+
+[<Struct>]
+type StoreId = StoreId of Guid
+
+[<Struct>]
+type StoreName = StoreName of string
+
 type Item =
     { ItemId: ItemId
       Name: ItemName
@@ -39,15 +48,6 @@ type Item =
       Schedule: Schedule }
     interface IKey<ItemId> with
         member this.Key = this.ItemId
-
-[<Struct>]
-type CategoryName = CategoryName of string
-
-[<Struct>]
-type StoreId = StoreId of Guid
-
-[<Struct>]
-type StoreName = StoreName of string
 
 type Store =
     { StoreId: StoreId
@@ -69,4 +69,5 @@ type State =
       Items: DataTable<ItemId, Item>
       NeverSells: DataTable<NeverSell, NeverSell> }
 
-type StateMessage = DeleteCategory of CategoryId
+type StateMessage = 
+    | DeleteCategory of CategoryId

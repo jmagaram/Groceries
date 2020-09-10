@@ -1,93 +1,65 @@
 ﻿namespace Models
 
+open System
 open ValidationTypes
 open StringValidation
 open StateTypes
 
+[<AutoOpen>]
+module private X =
+
+    let parser tag rules =
+        let validator = rules |> createValidator
+
+        fun s ->
+            let s = s |> String.trim |> normalizeLineFeed
+
+            s
+            |> validator
+            |> List.ofSeq
+            |> fun errors ->
+                match errors with
+                | [] -> s |> tag |> Ok
+                | _ -> Error errors
+
 module ItemName =
 
     let rules = singleLine 3<chars> 50<chars>
-
-    let validator = rules |> createValidator
-
-    let create s =
-        let s = s |> String.trim
-        s
-        |> validator
-        |> List.ofSeq
-        |> fun errors ->
-            match errors with
-            | [] -> s |> ItemName |> Ok
-            | _ -> Error errors
+    let tryParse = parser ItemName rules
 
 module Note =
 
     let rules = multipleLine 3<chars> 200<chars>
-
-    let validator = rules |> createValidator
-
-    let create s =
-        let s = s |> String.trim
-        s
-        |> validator
-        |> List.ofSeq
-        |> fun errors ->
-            match errors with
-            | [] -> s |> ItemName |> Ok
-            | _ -> Error errors
+    let tryParse = parser Note rules
 
 module Quantity =
 
     let rules = singleLine 1<chars> 30<chars>
-
-    let validator = rules |> createValidator
-
-    let create s =
-        let s = s |> String.trim
-        s
-        |> validator
-        |> List.ofSeq
-        |> fun errors ->
-            match errors with
-            | [] -> s |> Quantity |> Ok
-            | _ -> Error errors
+    let tryParse = parser Quantity rules
 
 module CategoryName =
 
-    let rules = singleLine 1<chars> 30<chars>
-
-    let validator = rules |> createValidator
-
-    let create s =
-        let s = s |> String.trim
-        s
-        |> validator
-        |> List.ofSeq
-        |> fun errors ->
-            match errors with
-            | [] -> s |> CategoryName |> Ok
-            | _ -> Error errors
+    let rules = singleLine 3<chars> 30<chars>
+    let tryParse = parser CategoryName rules
 
 module StoreName =
 
-    let rules = singleLine 1<chars> 30<chars>
+    let rules = singleLine 3<chars> 30<chars>
+    let tryParse = parser StoreName rules
 
-    let validator = rules |> createValidator
+module Repeat =
 
-    let create s =
-        let s = s |> String.trim
-        s
-        |> validator
-        |> List.ofSeq
-        |> fun errors ->
-            match errors with
-            | [] -> s |> StoreName |> Ok
-            | _ -> Error errors
+    let rules = { Min = 1<days>; Max = 365<days> }
 
-//module Item = 
+    let create interval postponedUntil =
+        let validator = RangeValidation.createValidator rules
 
-//    let removeCategory id item = 
-//        match i 
+        match interval |> validator with
+        | None ->
+            { Interval = interval
+              PostponedUntil = postponedUntil }
+            |> Ok
+        | Some e -> e |> Error
 
 module State =
 

@@ -6,6 +6,8 @@ module Common =
 
     let keyOf<'T, 'TKey when 'T :> IKey<'TKey>> i = (i :> IKey<'TKey>).Key
 
+    let newGuid = System.Guid.NewGuid()
+
 [<AutoOpen>]
 module Seq =
 

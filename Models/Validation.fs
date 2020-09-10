@@ -5,6 +5,9 @@ open Models.ValidationTypes
 
 module StringValidation =
 
+    let normalizeLineFeed (s: string) =
+        s.Replace("\r\n", "\n").Replace("\r", "\n")
+
     let singleLine minLength maxLength =
         { MinLength = minLength
           MaxLength = maxLength
@@ -63,3 +66,10 @@ module StringValidation =
         fun s ->
             vs
             |> Seq.choose (fun (p, err) -> if p s then None else Some err)
+
+module RangeValidation =
+
+    let createValidator (r: Range<_>) v =
+        if v < r.Min then RangeError.TooSmall |> Some
+        elif v > r.Max then RangeError.TooBig |> Some
+        else None

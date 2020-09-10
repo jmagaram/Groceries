@@ -21,3 +21,9 @@ type StringError =
     | TooLong
     | TooShort
     | InvalidCharacters
+
+type Range<'T> = { Min: 'T; Max: 'T }
+
+type RangeError =
+    | TooSmall
+    | TooBig
