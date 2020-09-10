@@ -202,15 +202,3 @@ module State =
     let update msg s =
         match msg with
         | DeleteCategory id -> s |> deleteCategory id
-
-//let a (s:State) id =
-//    let m = s.Items |> DataTable.current
-//    let toChange = m |> Seq.filter (fun i -> i.CategoryId = id)
-//    let withChange = toChange |> Seq.map (fun i -> { i with CategoryId = None })
-// update Seq.map
-
-//type State =
-//    { Categories: DataTable<CategoryId, Category>
-//      Stores: DataTable<StoreId, Store>
-//      Items: DataTable<ItemId, Item>
-//      NeverSells: DataTable<NeverSell, NeverSell> }

@@ -158,3 +158,8 @@ module DataTable =
         |> asMap
         |> Map.map (fun k r -> r |> DataRow.mapCurrent f)
         |> fromMap
+
+    let findCurrent k dt =
+        dt
+        |> current
+        |> Seq.pick (fun v -> if keyOf v = k then Some v else None)
