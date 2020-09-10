@@ -6,7 +6,7 @@ open StringValidation
 open StateTypes
 
 [<AutoOpen>]
-module private X =
+module private StateUtilities =
 
     let parser tag rules =
         let validator = rules |> createValidator
@@ -21,6 +21,10 @@ module private X =
                 match errors with
                 | [] -> s |> tag |> Ok
                 | _ -> Error errors
+
+module Id =
+
+    let create tag = newGuid () |> tag
 
 module ItemName =
 
@@ -63,22 +67,150 @@ module Repeat =
 
 module State =
 
+    let private editItems f s = { s with Items = f s.Items }
+
+    let private editCategories f s = { s with Categories = f s.Categories }
+
+    let private editStores f s = { s with Stores = f s.Stores }
+
+    let private editNotSoldItems f s =
+        { s with
+              NotSoldItems = f s.NotSoldItems }
+
     let empty =
         { Categories = DataTable.empty
           Items = DataTable.empty
           Stores = DataTable.empty
-          NeverSells = DataTable.empty }
+          NotSoldItems = DataTable.empty }
 
-    let private updateCategories f s =
-        { s with
-              Categories = s.Categories |> f }
+    let addSampleData (s: State) =
+        let addCat n s =
+            n
+            |> CategoryName.tryParse
+            |> Result.okOrThrow
+            |> fun n ->
+                { CategoryId = Id.create CategoryId
+                  Name = n }
+            |> fun c ->
+                { s with
+                      Categories = s.Categories |> DataTable.insert c }
 
-    let private updateItems f s = { s with Items = s.Items |> f }
-    let private updateStores f s = { s with Stores = s.Stores |> f }
+        let addStore n (s: State) =
+            n
+            |> StoreName.tryParse
+            |> Result.okOrThrow
+            |> fun n ->
+                { StoreId = Id.create StoreId
+                  Name = n }
+            |> fun n ->
+                { s with
+                      Stores = s.Stores |> DataTable.insert n }
 
-    let private updateNeverSells f s =
-        { s with
-              NeverSells = s.NeverSells |> f }
+        let addItem name category qty note (s: State) =
+            let categoryId =
+                s.Categories
+                |> DataTable.current
+                |> Seq.tryPick (fun i -> if i.Name = CategoryName category then Some i.CategoryId else None)
+
+            let qty =
+                qty |> Quantity.tryParse |> Result.asOption
+
+            let note = note |> Note.tryParse |> Result.asOption
+
+            let item =
+                name
+                |> ItemName.tryParse
+                |> Result.okOrThrow
+                |> fun n ->
+                    { ItemId = Id.create ItemId
+                      Name = n
+                      CategoryId = categoryId
+                      Quantity = qty
+                      Note = note
+                      Schedule = Once }
+
+            { s with
+                  Items = s.Items |> DataTable.insert item }
+
+        let markComplete itemName (s: State) =
+            let name =
+                ItemName.tryParse itemName |> Result.okOrThrow
+
+            let item =
+                s.Items
+                |> DataTable.current
+                |> Seq.find (fun i -> i.Name = name)
+                |> fun i -> { i with Schedule = Completed }
+
+            { s with
+                  Items = s.Items |> DataTable.update item }
+
+        let makeRepeat itemName interval postpone (s: State) =
+            let name =
+                ItemName.tryParse itemName |> Result.okOrThrow
+
+            let postpone =
+                postpone
+                |> Option.map (fun d -> DateTimeOffset.Now.AddDays(d |> float))
+
+            let schedule =
+                Repeat.create interval postpone
+                |> Result.okOrThrow
+                |> Schedule.Repeat
+
+            let item =
+                s.Items
+                |> DataTable.current
+                |> Seq.find (fun i -> i.Name = name)
+                |> fun i -> { i with Schedule = schedule }
+
+            { s with
+                  Items = s.Items |> DataTable.update item }
+
+        let notSoldAt itemName storeName (s: State) =
+            let itemName =
+                ItemName.tryParse itemName |> Result.okOrThrow
+
+            let storeName =
+                StoreName.tryParse storeName |> Result.okOrThrow
+
+            let storeId =
+                s.Stores
+                |> DataTable.current
+                |> Seq.pick (fun i -> if i.Name = storeName then Some i.StoreId else None)
+
+            let itemId =
+                s.Items
+                |> DataTable.current
+                |> Seq.pick (fun i -> if i.Name = itemName then Some i.ItemId else None)
+
+            let nsa =
+                { NotSold.StoreId = storeId
+                  ItemId = itemId }
+
+            { s with
+                  NotSoldItems = s.NotSoldItems |> DataTable.upsert nsa }
+
+        s
+        |> addCat "Produce"
+        |> addCat "Dairy"
+        |> addCat "Dry"
+        |> addCat "Frozen"
+        |> addItem "Bananas" "Produce" "1 bunch" ""
+        |> addItem "Apples" "Produce" "6 large" ""
+        |> addItem "Chocolate bars" "Dry" "Assorted; many" "Prefer Eco brand"
+        |> addItem "Peanut butter" "Dry" "Several jars" "Like Santa Cruz brand"
+        |> addItem "Nancy's lowfat yogurt" "Dairy" "1 tub" "Check the date"
+        |> addItem "Ice cream" "Frozen" "2 pints" ""
+        |> addItem "Dried flax seeds" "Dry" "1 bag" ""
+        |> makeRepeat "Bananas" 7<days> None
+        |> makeRepeat "Peanut butter" 14<days> (Some 3<days>)
+        |> markComplete "Ice cream"
+        |> notSoldAt "Dried flax seeds" "QFC"
+        |> notSoldAt "Dried flax seeds" "Whole Foods"
+        |> addStore "QFC"
+        |> addStore "Whole Foods"
+        |> addStore "Trader Joe's"
 
     let removeCategoryFromItem categoryId (i: Item) =
         match i.CategoryId with
@@ -87,8 +219,8 @@ module State =
 
     let deleteCategory id (s: State) =
         s
-        |> updateCategories (DataTable.deleteIf (fun x -> x.CategoryId = id))
-        |> updateItems (DataTable.mapCurrent (removeCategoryFromItem id))
+        |> editCategories (DataTable.deleteIf (fun x -> x.CategoryId = id))
+        |> editItems (DataTable.mapCurrent (removeCategoryFromItem id))
 
     let update msg s =
         match msg with

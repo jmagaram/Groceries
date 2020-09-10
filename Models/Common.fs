@@ -6,7 +6,7 @@ module Common =
 
     let keyOf<'T, 'TKey when 'T :> IKey<'TKey>> i = (i :> IKey<'TKey>).Key
 
-    let newGuid = System.Guid.NewGuid()
+    let newGuid () = System.Guid.NewGuid()
 
 [<AutoOpen>]
 module Seq =
@@ -31,3 +31,16 @@ module String =
     let trim (s: String) = s.Trim()
 
     let isNullOrWhiteSpace s = String.IsNullOrWhiteSpace(s)
+
+[<AutoOpen>]
+module Result =
+
+    let okOrThrow r =
+        match r with
+        | Ok v -> v
+        | Error e -> failwithf "The Result was an error: %A" e
+
+    let asOption r =
+        match r with
+        | Ok v -> Some v
+        | Error _ -> None

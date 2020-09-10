@@ -20,7 +20,7 @@ type Quantity = Quantity of string
 
 type Repeat =
     { Interval: int<days>
-      PostponedUntil: DateTime option }
+      PostponedUntil: DateTimeOffset option }
 
 type Schedule =
     | Completed
@@ -61,13 +61,16 @@ type Category =
     interface IKey<CategoryId> with
         member this.Key = this.CategoryId
 
-type NeverSell = { StoreId: StoreId; ItemId: ItemId }
+type NotSold =
+    { StoreId: StoreId
+      ItemId: ItemId }
+    interface IKey<NotSold> with
+        member this.Key = this
 
 type State =
-    { Categories: DataTable<CategoryId, Category>
+    { Items: DataTable<ItemId, Item>
+      Categories: DataTable<CategoryId, Category>
       Stores: DataTable<StoreId, Store>
-      Items: DataTable<ItemId, Item>
-      NeverSells: DataTable<NeverSell, NeverSell> }
+      NotSoldItems: DataTable<NotSold, NotSold> }
 
-type StateMessage = 
-    | DeleteCategory of CategoryId
+type StateMessage = DeleteCategory of CategoryId
