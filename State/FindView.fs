@@ -325,7 +325,7 @@ module Tests =
                     |> List.ofSeq
                 result
             actual
-            |> should equivalent expected
+            |> should equal expected
 
         type ApplyFilterParameters =
             { Filter : TextFilter
