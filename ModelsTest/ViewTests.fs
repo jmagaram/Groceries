@@ -140,5 +140,5 @@ module FormattedTextTests =
         |> fun x -> x = p.Source
 
     [<Property(MaxTest=1000, Arbitrary=[| typeof<TestDataGenerators> |] )>]
-    let ``generator exploration`` (items:ListOfLength<char,Num5>) =
+    let ``generator exploration`` (items:ListOfSize<Letter, Int5>) =
         items.Items |> List.length |> should equal 5
