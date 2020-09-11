@@ -82,6 +82,63 @@ module FormattedTextTests =
         actual
         |> should equal expected
 
-        // abc^$()[]\/?.+*abc
-        //    ^$()[]\/?.+*
-        // abc,!^$()[]\/?.+*,abc
+    type ApplyFilterParameters =
+        { Filter : SearchTerm
+          Source : string }
+
+    let manyChars =
+        let knownCharacters = [
+            'a';'b';'c';'d'; // space?
+            'A';'B';
+            '^';'$';'(';')';'*';'+';'?';'.';'\\';'/';'<';'>']
+        Gen.frequency [
+            (4, Gen.elements (knownCharacters |> Seq.takeAtMost 3));
+            (1, Gen.elements (knownCharacters |> Seq.takeAtMost 5));
+            (1, Gen.elements (knownCharacters |> Seq.takeAtMost 7));
+            (1, Gen.elements (knownCharacters |> Seq.takeAtMost 100));
+            (0, Arb.generate<char>);
+        ]
+
+    let applyFilterParameters charGen =
+        gen {
+            let! startFilterChar = charGen |> Gen.filter (fun c -> not (Char.IsWhiteSpace(c)))
+            let! endFilterCharLen = Gen.frequency [ 
+                (10, Gen.choose(0,2)); 
+                ( 5, Gen.choose(3,5));
+                ( 1, Gen.choose(6,8));
+                ( 1, Gen.choose(9,11));
+                ( 1, Gen.choose(12,20))]
+            let! endChars = charGen |> Gen.listOfLength endFilterCharLen
+            let filter = 
+                startFilterChar :: endChars
+                |> List.toArray
+                |> fun s -> String(s)
+                |> SearchTerm
+
+            let! searchTextLen = Gen.frequency [ 
+                (1, Gen.choose(0,10)); 
+                (1, Gen.choose(11,500))]
+            let! searchTextChars = Gen.arrayOfLength searchTextLen charGen
+            let searchText = String(searchTextChars)
+
+            return {
+                Filter = filter
+                Source = searchText
+            }
+        }
+
+    type Generators =
+        static member ApplyFilterParameters() = 
+            applyFilterParameters manyChars
+            |> Arb.fromGen
+
+    [<Property(MaxTest=1000, Arbitrary=[| typeof<Generators> |] )>]
+    let ``applyFilter - concatenated spans equal source`` (p:ApplyFilterParameters) =
+        p.Source 
+        |> FormattedText.applyFilter p.Filter
+        |> Seq.fold (fun total i -> total + i.Text) ""
+        |> fun x -> x = p.Source
+
+    [<Property(MaxTest=1000, Arbitrary=[| typeof<TestDataGenerators> |] )>]
+    let ``generator exploration`` (items:ListOfLength<char,Num5>) =
+        items.Items |> List.length |> should equal 5
