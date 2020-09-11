@@ -42,7 +42,7 @@ module Result =
     let okOrThrow r =
         match r with
         | Ok v -> v
-        | Error e -> failwithf "The Result was an error: %A" e
+        | Error e -> failwithf "Could not get the Ok value; this was the Error: %A" e
 
     let asOption r =
         match r with

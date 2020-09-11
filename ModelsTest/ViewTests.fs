@@ -59,7 +59,7 @@ module FormattedTextTests =
     [<InlineData("Not found at all", "abc","x","abc")>]
     [<InlineData("Query is same as entire source", "abc","abc","!abc")>]
     [<InlineData("Search for regex characters", "abc^$()[]\/?.+*abc", "^$()[]\/?.+*", "abc,!^$()[]\/?.+*,abc")>]
-    let ``applyFilter with specific examples`` (comment:string) (source:string) (filterString:string) (expected:string) =
+    let ``applyFilter with specific examples`` (comment:string) (source:string) (searchTerm:string) (expected:string) =
         let formatSpan (s:TextSpan) = 
             match s.Format with
             | Highlight -> sprintf "!%s" s.Text
@@ -71,7 +71,7 @@ module FormattedTextTests =
             |> List.ofSeq
         let actual =
             let filter = 
-                SearchTerm.tryParse filterString
+                SearchTerm.tryParse searchTerm
                 |> Result.okOrThrow
             let result =
                 source
@@ -82,3 +82,6 @@ module FormattedTextTests =
         actual
         |> should equal expected
 
+        // abc^$()[]\/?.+*abc
+        //    ^$()[]\/?.+*
+        // abc,!^$()[]\/?.+*,abc

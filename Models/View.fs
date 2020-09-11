@@ -27,7 +27,7 @@ module SearchTerm =
 
     let rules =
         { MinLength = 1<chars>
-          MaxLength = 10<chars>
+          MaxLength = 20<chars>
           StringRules.OnlyContains =
               [ Letter
                 Mark
@@ -121,6 +121,7 @@ module FormattedText =
                         elif regStart < s.Length
                         then yield TextSpan.normal (s.Substring(regStart))
 
+
                 }
 
 
@@ -148,85 +149,6 @@ module FormattedText =
 
 //module TextFilter =
 
-//    type private Create = string -> Result<TextFilter, TextFilterError>
-//    let create : Create = fun s ->
-//        match s |> isNullOrWhiteSpace with
-//        | true -> Error FilterIsEmptyOrWhitespace
-//        | false -> Ok (TextFilter.CaseInsensitiveTextFilter s)
-
-//    let isRepeating s =
-//        let len = s |> String.length
-//        [1..len]
-//        |> Seq.choose (fun i ->
-//            let endsWith = s.Substring(len - i)
-//            let n = len / i
-//            match (endsWith |> String.replicate n) = s with
-//            | true -> Some (endsWith, n)
-//            | false -> None)
-//        |> Seq.filter (fun (_, i) -> i > 1)
-//        |> Seq.tryHead
-
-//    let edgeMiddleEdge s =
-//        let len = String.length s
-//        let maxEdgeLength = (len - 1) / 2
-//        seq { maxEdgeLength..(-1)..1 }
-//        |> Seq.choose (fun i ->
-//            let starts = s.Substring(0, i)
-//            let ends = s.Substring(len-i)
-//            if starts = ends
-//            then
-//                let middle = s.Substring(i, len-i*2)
-//                Some {| Edge = starts; Middle = middle |}
-//            else
-//                None)
-//        |> Seq.tryHead
-
-//    let toRegex (s:string) =
-//        let s = s.ToLowerInvariant()
-//        let escape s = Regex.Escape(s)
-//        match s |> isRepeating with
-//        | Some (x,n) -> sprintf "(%s){%d,}" (escape x) n
-//        | None ->
-//            match s |> edgeMiddleEdge with
-//            | Some i -> sprintf "((%s)+(%s)*)+" (escape s) (escape (i.Middle + i.Edge))
-//            | None -> sprintf "(%s)+" (escape s)
-
-//module HighlightedText =
-//    type private ApplyTextFilter = TextFilter -> string -> HighlightedText
-//    let applyFilter : ApplyTextFilter = fun (CaseInsensitiveTextFilter filter) s ->
-//        match s |> String.length with
-//        | 0 -> Seq.empty
-//        | _ ->
-//            seq {
-//                let options = RegexOptions.IgnoreCase ||| RegexOptions.CultureInvariant
-//                let pattern = filter |> TextFilter.toRegex
-//                let regex = new Regex(pattern, options)
-//                let ms = regex.Matches(s)
-//                if ms.Count = 0 then
-//                    yield Span.regular s
-//                elif ms.[0].Index > 0 then
-//                    yield Span.regular (s.Substring(0, ms.[0].Index))
-//                for i in 0..ms.Count - 1 do
-//                    yield Span.highlight ms.[i].Value
-//                    let regStart = ms.[i].Index + ms.[i].Length
-//                    if i < ms.Count - 1 then
-//                        yield Span.regular (s.Substring(regStart, ms.[i+1].Index - regStart))
-//                    else if regStart < s.Length then
-//                        yield Span.regular (s.Substring(regStart))
-//            }
-//            |> Seq.map Result.okValueOrThrow
-
-//    let empty = Seq.empty
-
-//    let regular s =
-//        let result = s |> Span.regular
-//        match result with
-//        | Error (SpanError.SpanHasNoCharacters) -> empty
-//        | Ok s -> s |> Seq.singleton
-
-//    let hasHighlights h =
-//        h
-//        |> Seq.exists (fun i -> i |> Span.isHighlight)
 
 
 
