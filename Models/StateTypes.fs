@@ -41,7 +41,7 @@ type StoreName = StoreName of string
 
 type Item =
     { ItemId: ItemId
-      Name: ItemName
+      ItemName: ItemName
       Note: Note option
       Quantity: Quantity option
       CategoryId: CategoryId option
@@ -51,26 +51,26 @@ type Item =
 
 type Store =
     { StoreId: StoreId
-      Name: StoreName }
+      StoreName: StoreName }
     interface IKey<StoreId> with
         member this.Key = this.StoreId
 
 type Category =
     { CategoryId: CategoryId
-      Name: CategoryName }
+      CategoryName: CategoryName }
     interface IKey<CategoryId> with
         member this.Key = this.CategoryId
 
-type NotSold =
+type NotSoldItem =
     { StoreId: StoreId
       ItemId: ItemId }
-    interface IKey<NotSold> with
+    interface IKey<NotSoldItem> with
         member this.Key = this
 
 type State =
     { Items: DataTable<ItemId, Item>
       Categories: DataTable<CategoryId, Category>
       Stores: DataTable<StoreId, Store>
-      NotSoldItems: DataTable<NotSold, NotSold> }
+      NotSoldItems: DataTable<NotSoldItem, NotSoldItem> }
 
 type StateMessage = DeleteCategory of CategoryId

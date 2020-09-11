@@ -13,9 +13,8 @@
     <Compile Include="Validation.fs" />
     <Compile Include="StateTypes.fs" />
     <Compile Include="State.fs" />
-    <Compile Include="QueryTypes.fs" />
     <Compile Include="ViewTypes.fs" />
-    <None Include="View.fs" />
+    <Compile Include="View.fs" />
   </ItemGroup>
 
   <ItemGroup />

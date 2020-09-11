@@ -5,23 +5,6 @@ open ValidationTypes
 open StringValidation
 open StateTypes
 
-[<AutoOpen>]
-module private StateUtilities =
-
-    let parser tag rules =
-        let validator = rules |> createValidator
-
-        fun s ->
-            let s = s |> String.trim |> normalizeLineFeed
-
-            s
-            |> validator
-            |> List.ofSeq
-            |> fun errors ->
-                match errors with
-                | [] -> s |> tag |> Ok
-                | _ -> Error errors
-
 module Id =
 
     let create tag = newGuid () |> tag
@@ -90,7 +73,7 @@ module State =
                       s.Categories
                       |> DataTable.insert
                           { CategoryId = Id.create CategoryId
-                            Name = n |> CategoryName.tryParse |> Result.okOrThrow } }
+                            CategoryName = n |> CategoryName.tryParse |> Result.okOrThrow } }
 
         let addStore n (s: State) =
             { s with
@@ -98,16 +81,16 @@ module State =
                       s.Stores
                       |> DataTable.insert
                           { StoreId = Id.create StoreId
-                            Name = n |> StoreName.tryParse |> Result.okOrThrow } }
+                            StoreName = n |> StoreName.tryParse |> Result.okOrThrow } }
 
         let addItem n cat qty note (s: State) =
             let item =
-                { Item.Name = n |> ItemName.tryParse |> Result.okOrThrow
+                { Item.ItemName = n |> ItemName.tryParse |> Result.okOrThrow
                   ItemId = Id.create ItemId
                   CategoryId =
                       s.Categories
                       |> DataTable.current
-                      |> Seq.tryPick (fun i -> if i.Name = CategoryName cat then Some i.CategoryId else None)
+                      |> Seq.tryPick (fun i -> if i.CategoryName = CategoryName cat then Some i.CategoryId else None)
                   Quantity = qty |> Quantity.tryParse |> Result.asOption
                   Note = note |> Note.tryParse |> Result.asOption
                   Schedule = Once }
@@ -121,7 +104,7 @@ module State =
 
             s.Items
             |> DataTable.current
-            |> Seq.filter (fun i -> i.Name = itemName)
+            |> Seq.filter (fun i -> i.ItemName = itemName)
             |> Seq.exactlyOne
 
         let findStore n (s: State) =
@@ -130,7 +113,7 @@ module State =
 
             s.Stores
             |> DataTable.current
-            |> Seq.filter (fun i -> i.Name = storeName)
+            |> Seq.filter (fun i -> i.StoreName = storeName)
             |> Seq.exactlyOne
 
         let markComplete n (s: State) =
@@ -162,7 +145,7 @@ module State =
 
         let notSoldAt itemName storeName (s: State) =
             let nsa =
-                { NotSold.StoreId = (s |> findStore storeName).StoreId
+                { NotSoldItem.StoreId = (s |> findStore storeName).StoreId
                   ItemId = (s |> findItem itemName).ItemId }
 
             { s with

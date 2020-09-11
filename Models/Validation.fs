@@ -67,6 +67,20 @@ module StringValidation =
             vs
             |> Seq.choose (fun (p, err) -> if p s then None else Some err)
 
+    let parser tag rules =
+        let validator = rules |> createValidator
+
+        fun s ->
+            let s = s |> String.trim |> normalizeLineFeed
+
+            s
+            |> validator
+            |> List.ofSeq
+            |> fun errors ->
+                match errors with
+                | [] -> s |> tag |> Ok
+                | _ -> Error errors
+
 module RangeValidation =
 
     let createValidator (r: Range<_>) v =

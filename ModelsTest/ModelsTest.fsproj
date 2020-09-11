@@ -11,6 +11,7 @@
     <Compile Include="CommonTests.fs" />
     <Compile Include="SynchronizationTests.fs" />
     <Compile Include="ValidationTests.fs" />
+    <Compile Include="ViewTests.fs" />
     <Compile Include="Program.fs" />
   </ItemGroup>
 
