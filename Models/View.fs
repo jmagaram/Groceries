@@ -1,24 +1,6 @@
 ﻿namespace Models
 
 open ViewTypes
-//module Models.View
-
-//open Models.ValidationTypes
-//open Models.StringValidation
-
-//type TextFormat =
-//    | Highlight
-//    | Normal
-
-//type TextSpan =
-//    { Format : TextFormat
-//      Text : string }
-
-//type TextFilter = | CaseInsensitiveTextFilter of string
-
-//type TextFilterError = | FilterIsEmptyOrWhitespace
-
-//type FormattedText = FormattedText of TextSpan list
 
 module SearchTerm =
 
@@ -92,20 +74,56 @@ module FormattedText =
             | Some i -> sprintf "((%s)+(%s)*)+" (escape s) (escape (i.Middle + i.Edge))
             | None -> sprintf "(%s)+" (escape s)
 
-    type private ApplyTextFilter = SearchTerm -> string -> TextSpan seq
+    type Highlighter = string -> FormattedText
 
-    let applyFilter: ApplyTextFilter =
-        fun filter s ->
+    let spans (FormattedText ft) = ft
+
+    let createHighlighter searchTerm =
+        let options =
+            RegexOptions.IgnoreCase
+            ||| RegexOptions.CultureInvariant
+
+        let pattern = searchTerm |> toRegex
+        let regex = new Regex(pattern, options)
+
+        fun s ->
+            match s |> String.length with
+            | 0 -> [] |> FormattedText
+            | _ ->
+                seq {
+                    let ms = regex.Matches(s)
+
+                    if ms.Count = 0 then yield (TextSpan.normal s)
+                    elif ms.[0].Index > 0 then yield TextSpan.normal (s.Substring(0, ms.[0].Index))
+
+                    for i in 0 .. ms.Count - 1 do
+                        yield TextSpan.highlight ms.[i].Value
+                        let regStart = ms.[i].Index + ms.[i].Length
+
+                        if i < ms.Count - 1
+                        then yield TextSpan.normal (s.Substring(regStart, ms.[i + 1].Index - regStart))
+                        elif regStart < s.Length
+                        then yield TextSpan.normal (s.Substring(regStart))
+
+                }
+                |> List.ofSeq
+                |> FormattedText
+
+
+    type private ApplyTextFilter = SearchTerm -> string -> FormattedText
+
+    let find: ApplyTextFilter =
+        fun searchTerm s ->
 
             match s |> String.length with
-            | 0 -> Seq.empty
+            | 0 -> [] |> FormattedText
             | _ ->
                 seq {
                     let options =
                         RegexOptions.IgnoreCase
                         ||| RegexOptions.CultureInvariant
 
-                    let pattern = filter |> toRegex
+                    let pattern = searchTerm |> toRegex
                     let regex = new Regex(pattern, options)
                     let ms = regex.Matches(s)
 
@@ -122,34 +140,10 @@ module FormattedText =
                         then yield TextSpan.normal (s.Substring(regStart))
 
 
+
                 }
-
-
-//module Span =
-
-//    let private create f s =
-//        match s |> String.length with
-//        | 0 -> Error SpanHasNoCharacters
-//        | _ -> Ok { Text = s; Format = f }
-
-//    let highlight s = s |> create Highlight
-
-//    let highlightUnsafe s = s |> highlight |> Result.okValueOrThrow
-
-//    let regular s = s |> create Regular
-
-//    let regularUnsafe s = s |> regular |> Result.okValueOrThrow
-
-//    let isHighlight s =
-//        match s.Format with
-//        | Highlight _ -> true
-//        | _ -> false
-
-//    let asString s = s.Text
-
-//module TextFilter =
-
-
+                |> List.ofSeq
+                |> FormattedText
 
 
 //let join stores items criteria = 3
