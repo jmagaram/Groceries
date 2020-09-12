@@ -4,6 +4,7 @@ open ViewTypes
 
 module SearchTerm =
 
+    open System.Text.RegularExpressions
     open ValidationTypes
     open StringValidation
 
@@ -20,6 +21,54 @@ module SearchTerm =
 
     let tryParse = parser SearchTerm rules
 
+    let toRegex (SearchTerm s) =
+        let isRepeating s =
+            let len = s |> String.length
+
+            [ 1 .. len ]
+            |> Seq.choose (fun i ->
+                let endsWith = s.Substring(len - i)
+                let n = len / i
+
+                match (endsWith |> String.replicate n) = s with
+                | true -> Some(endsWith, n)
+                | false -> None)
+            |> Seq.filter (fun (_, i) -> i > 1)
+            |> Seq.tryHead
+
+        let edgeMiddleEdge s =
+            let len = String.length s
+            let maxEdgeLength = (len - 1) / 2
+
+            seq { maxEdgeLength .. (-1) .. 1 }
+            |> Seq.choose (fun i ->
+                let starts = s.Substring(0, i)
+                let ends = s.Substring(len - i)
+
+                if starts = ends then
+                    let middle = s.Substring(i, len - i * 2)
+                    Some {| Edge = starts; Middle = middle |}
+                else
+                    None)
+            |> Seq.tryHead
+
+        let s = s.ToLowerInvariant()
+        let escape s = Regex.Escape(s)
+
+        let pattern =
+            match s |> isRepeating with
+            | Some (x, n) -> sprintf "(%s){%d,}" (escape x) n
+            | None ->
+                match s |> edgeMiddleEdge with
+                | Some i -> sprintf "((%s)+(%s)*)+" (escape s) (escape (i.Middle + i.Edge))
+                | None -> sprintf "(%s)+" (escape s)
+
+        let options =
+            RegexOptions.IgnoreCase
+            ||| RegexOptions.CultureInvariant
+
+        new Regex(pattern, options)
+
 module TextSpan =
 
     let private create f s =
@@ -31,60 +80,12 @@ module TextSpan =
 
 module FormattedText =
 
-    open System.Text.RegularExpressions
-
-    let private isRepeating s =
-        let len = s |> String.length
-
-        [ 1 .. len ]
-        |> Seq.choose (fun i ->
-            let endsWith = s.Substring(len - i)
-            let n = len / i
-
-            match (endsWith |> String.replicate n) = s with
-            | true -> Some(endsWith, n)
-            | false -> None)
-        |> Seq.filter (fun (_, i) -> i > 1)
-        |> Seq.tryHead
-
-    let private edgeMiddleEdge s =
-        let len = String.length s
-        let maxEdgeLength = (len - 1) / 2
-
-        seq { maxEdgeLength .. (-1) .. 1 }
-        |> Seq.choose (fun i ->
-            let starts = s.Substring(0, i)
-            let ends = s.Substring(len - i)
-
-            if starts = ends then
-                let middle = s.Substring(i, len - i * 2)
-                Some {| Edge = starts; Middle = middle |}
-            else
-                None)
-        |> Seq.tryHead
-
-    let private toRegex (SearchTerm s) =
-        let s = s.ToLowerInvariant()
-        let escape s = Regex.Escape(s)
-
-        match s |> isRepeating with
-        | Some (x, n) -> sprintf "(%s){%d,}" (escape x) n
-        | None ->
-            match s |> edgeMiddleEdge with
-            | Some i -> sprintf "((%s)+(%s)*)+" (escape s) (escape (i.Middle + i.Edge))
-            | None -> sprintf "(%s)+" (escape s)
-
-    type Highlighter = string -> FormattedText
-
     let spans (FormattedText ft) = ft
 
-    let createHighlighter searchTerm =
-        let options =
-            RegexOptions.IgnoreCase
-            ||| RegexOptions.CultureInvariant
+module Highlighter = 
 
-        let pattern = searchTerm |> toRegex
-        let regex = new Regex(pattern, options)
+    let create searchTerm =
+        let regex = searchTerm |> SearchTerm.toRegex
 
         fun s ->
             match s |> String.length with
@@ -105,47 +106,10 @@ module FormattedText =
                         elif regStart < s.Length
                         then yield TextSpan.normal (s.Substring(regStart))
 
-                }
-                |> List.ofSeq
-                |> FormattedText
-
-
-    type private ApplyTextFilter = SearchTerm -> string -> FormattedText
-
-    let find: ApplyTextFilter =
-        fun searchTerm s ->
-
-            match s |> String.length with
-            | 0 -> [] |> FormattedText
-            | _ ->
-                seq {
-                    let options =
-                        RegexOptions.IgnoreCase
-                        ||| RegexOptions.CultureInvariant
-
-                    let pattern = searchTerm |> toRegex
-                    let regex = new Regex(pattern, options)
-                    let ms = regex.Matches(s)
-
-                    if ms.Count = 0 then yield (TextSpan.normal s)
-                    elif ms.[0].Index > 0 then yield TextSpan.normal (s.Substring(0, ms.[0].Index))
-
-                    for i in 0 .. ms.Count - 1 do
-                        yield TextSpan.highlight ms.[i].Value
-                        let regStart = ms.[i].Index + ms.[i].Length
-
-                        if i < ms.Count - 1
-                        then yield TextSpan.normal (s.Substring(regStart, ms.[i + 1].Index - regStart))
-                        elif regStart < s.Length
-                        then yield TextSpan.normal (s.Substring(regStart))
-
-
 
                 }
                 |> List.ofSeq
                 |> FormattedText
-
-
 //let join stores items criteria = 3
 
 //module Item =
