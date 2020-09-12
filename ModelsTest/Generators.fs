@@ -33,42 +33,50 @@ let private filteredChar f = allCharacters |> Seq.filter f
 let whiteSpace =
     filteredChar (fun i -> Char.IsWhiteSpace(i))
     |> Seq.map WhiteSpace
+    |> Array.ofSeq
     |> Gen.elements
 
 let letter =
     filteredChar (fun i -> Char.IsLetter(i))
     |> Seq.map Letter
+    |> Array.ofSeq
     |> Gen.elements
 
 let digit =
     filteredChar (fun i -> Char.IsDigit(i))
     |> Seq.map Digit
+    |> Array.ofSeq
     |> Gen.elements
 
 let letterOrDigit =
     filteredChar (fun i -> Char.IsLetterOrDigit(i))
     |> Seq.map LetterOrDigit
+    |> Array.ofSeq
     |> Gen.elements
 
 let punctuation =
     filteredChar (fun i -> Char.IsPunctuation(i))
     |> Seq.map Punctuation
+    |> Array.ofSeq
     |> Gen.elements
 
 let symbol =
     filteredChar (fun i -> Char.IsSymbol(i))
     |> Seq.map Symbol
+    |> Array.ofSeq
     |> Gen.elements
 
 let control =
     filteredChar (fun i -> Char.IsControl(i))
     |> Seq.map Control
+    |> Array.ofSeq
     |> Gen.elements
 
 let regexEscape =
     @"^$()[]\/?.+*# ".ToCharArray()
     |> Array.toSeq
     |> Seq.map RegexEscape
+    |> Array.ofSeq
     |> Gen.elements
 
 let listOfLength<'T, 'Count when 'Count :> IInt and 'Count: (new: unit -> 'Count)> () =
