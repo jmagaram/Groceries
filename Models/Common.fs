@@ -48,3 +48,8 @@ module Result =
         match r with
         | Ok v -> Some v
         | Error _ -> None
+
+    let isOk r = 
+        match r with
+        | Ok _ -> true
+        | Error _ -> false
