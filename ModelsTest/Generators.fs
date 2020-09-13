@@ -102,33 +102,8 @@ let listInSizeRange<'T, 'Min, 'Max when 'Min :> IInt and 'Min: (new: unit -> 'Mi
 
 type TestDataGenerators() =
 
-    //static member ListInSizeRange<'T, 'Min, 'Max when 'Min :> IInteger and 'Min: (new: unit -> 'Min) and 'Max :> IInteger and 'Max: (new: unit
-    //                                                                                                                                      -> 'Max)>()
-    //                                                                                                                                               =
-    //    let min = new 'Min()
-    //    let max = new 'Max()
-    //    let nMin = (min :> IInteger).Value
-    //    let nMax = (max :> IInteger).Value
-
-    //    gen {
-    //        let! n = Gen.choose (nMin, nMax)
-    //        return! Arb.generate<'T> |> Gen.listOfLength n
-    //    }
-    //    |> Gen.map (fun i -> ListInSizeRange(i, min, max))
-    //    |> Arb.fromGen
-
-    //static member ListOfLength<'T, 'Count when 'Count :> IInteger and 'Count: (new: unit -> 'Count)>() =
-    //    let count = new 'Count()
-    //    let n = (count :> IInteger).Value
-
-    //    Arb.generate<'T>
-    //    |> Gen.listOfLength n
-    //    |> Gen.map (fun i -> ListOfSize(i, count))
-    //    |> Arb.fromGen
-
     static member ListInSizeRange() = listInSizeRange () |> Arb.fromGen
     static member ListOfLength() = listOfLength () |> Arb.fromGen
-
     static member WhiteSpace() = whiteSpace |> Arb.fromGen
     static member Letter() = letter |> Arb.fromGen
     static member Digit() = digit |> Arb.fromGen
