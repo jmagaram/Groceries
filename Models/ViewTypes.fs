@@ -54,3 +54,11 @@ and StoreItem =
       Quantity: FormattedText option
       Category: ItemCategory option
       Schedule: StateTypes.Schedule }
+
+// store filter and picker?
+// future item status filter and picker?
+// order of display?
+// filter?
+type ShoppingList =
+    { Items : Item list       
+    }

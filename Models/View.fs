@@ -110,8 +110,8 @@ module Item =
 
     open Models.SynchronizationTypes
 
-    let create itemId (s: StateTypes.State) =
-        let item = s.Items |> DataTable.findCurrent itemId
+    let create itemId s =
+        let item = s |> State.items |> DataTable.findCurrent itemId
 
         { ItemId = item.ItemId
           ItemName = item.ItemName |> ItemName.asText |> FormattedText.normal
@@ -145,8 +145,8 @@ module Category =
 
     open Models.SynchronizationTypes
 
-    let create catId (s: StateTypes.State) =
-        let cat = s.Categories |> DataTable.findCurrent catId
+    let create catId s =
+        let cat = s |> State.categories |> DataTable.findCurrent catId
 
         { CategoryId = cat.CategoryId
           CategoryName =
@@ -183,3 +183,13 @@ module Category =
                                       StoreName = st.StoreName |> StoreName.asText |> FormattedText.normal })
                                 |> List.ofSeq })
               |> List.ofSeq }
+
+module ShoppingList = 
+
+    let create s =
+        { ShoppingList.Items = 
+            s
+            |> State.items
+            |> DataTable.current
+            |> Seq.map (fun i -> s |> Item.create i.ItemId)
+            |> List.ofSeq }

@@ -65,6 +65,9 @@ module State =
         { s with
               NotSoldItems = f s.NotSoldItems }
 
+    let items (s:State) = s.Items
+    let categories (s:State) = s.Categories
+
     let empty =
         { Categories = DataTable.empty
           Items = DataTable.empty
