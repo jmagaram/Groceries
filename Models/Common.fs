@@ -11,10 +11,6 @@ module Common =
 [<AutoOpen>]
 module Seq =
 
-    let chooseIf p source = 
-        source
-        |> Seq.choose (fun i -> if p i then Some i else None)
-
     let takeAtMost n source =
         if n < 0 then
             invalidArg "n" "The input must be non-negative."

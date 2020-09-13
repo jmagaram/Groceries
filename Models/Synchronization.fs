@@ -75,8 +75,7 @@ module DataTable =
         match dt with
         | DataTable dt -> dt
 
-    let empty<'Key, 'T when 'Key: comparison> =
-        Map.empty<'Key, DataRow<'T>> |> DataTable
+    let empty<'Key, 'T when 'Key: comparison> = Map.empty<'Key, DataRow<'T>> |> DataTable
 
     let containsKey k dt = dt |> asMap |> Map.containsKey k
 
@@ -85,11 +84,7 @@ module DataTable =
 
         match dt |> containsKey k with
         | true -> failwith "A row with that key already exists."
-        | false ->
-            dt
-            |> asMap
-            |> Map.add k (DataRow.added v)
-            |> fromMap
+        | false -> dt |> asMap |> Map.add k (DataRow.added v) |> fromMap
 
     let update v dt =
         let k = v |> keyOf

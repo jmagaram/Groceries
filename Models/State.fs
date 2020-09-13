@@ -13,26 +13,31 @@ module ItemName =
 
     let rules = singleLine 3<chars> 50<chars>
     let tryParse = parser ItemName rules
+    let asText (ItemName s) = s
 
 module Note =
 
     let rules = multipleLine 3<chars> 200<chars>
     let tryParse = parser Note rules
+    let asText (Note s) = s
 
 module Quantity =
 
     let rules = singleLine 1<chars> 30<chars>
     let tryParse = parser Quantity rules
+    let asText (Quantity s) = s
 
 module CategoryName =
 
     let rules = singleLine 3<chars> 30<chars>
     let tryParse = parser CategoryName rules
+    let asText (CategoryName s) = s
 
 module StoreName =
 
     let rules = singleLine 3<chars> 30<chars>
     let tryParse = parser StoreName rules
+    let asText (StoreName s) = s
 
 module Repeat =
 

@@ -75,6 +75,8 @@ module FormattedText =
 
     let fromList spans = FormattedText spans
 
+    let normal s = s |> TextSpan.normal |> List.singleton |> fromList
+
 module Highlighter =
 
     let create: Highlighter =
@@ -104,49 +106,80 @@ module Highlighter =
                     |> List.ofSeq
                     |> FormattedText.fromList
 
-//let join stores items criteria = 3
-//module Item =
-//    type Item =
-//        { ItemId : ItemId
-//          ItemName : ItemName
-//          Note : Note option
-//          Quantity : Quantity option
-//          Category : StateTypes.Category option
-//          Schedule : Schedule
-//          NotSoldAt : StateTypes.Store list
-//        }
-//    type Store =
-//        { StoreId : StoreId
-//          StoreName : StoreName
-//          NotSoldItems : StateTypes.Item list
-//        }
-//    type Category =
-//        { CategoryId : CategoryId
-//          CategoryName : CategoryName
-//          Items : StateTypes.Item list }
-//    let create itemId (s:StateTypes.State) =
-//        let item = s.Items |> DataTable.findCurrent itemId
-//        let category =
-//            item
-//            |> Option.bind (fun i -> i.CategoryId)
-//            |> Option.bind (fun i -> s.Categories |> DataTable.findCurrent i)
-//        let notSold =
-//            s.NotSoldItems
-//            |> DataTable.current
-//            |> Seq.choose (fun i ->
-//                if i.ItemId = itemId
-//                then s.Stores |> DataTable.findCurrent i.StoreId
-//                else None)
-//            |> List.ofSeq
-//        match item with
-//        | None -> None
-//        | Some item ->
-//            { ItemId = item.ItemId
-//              Name = item.Name
-//              Note = item.Note
-//              Quantity = item.Quantity
-//              Category = category
-//              NotSold = notSold
-//              Schedule = item.Schedule
-//            }
-//            |> Some
+module Item =
+
+    open Models.SynchronizationTypes
+
+    let create itemId (s: StateTypes.State) =
+        let item = s.Items |> DataTable.findCurrent itemId
+
+        { ItemId = item.ItemId
+          ItemName = item.ItemName |> ItemName.asText |> FormattedText.normal
+          Note =
+              item.Note
+              |> Option.map (fun n -> n |> Note.asText |> FormattedText.normal)
+          Quantity =
+              item.Quantity
+              |> Option.map (fun q -> q |> Quantity.asText |> FormattedText.normal)
+          Category =
+              item.CategoryId
+              |> Option.map (fun categoryId -> s.Categories |> DataTable.findCurrent categoryId)
+              |> Option.map (fun c ->
+                  { CategoryId = c.CategoryId
+                    CategoryName =
+                        c.CategoryName
+                        |> CategoryName.asText
+                        |> FormattedText.normal })
+          Schedule = item.Schedule
+          NotSoldAt =
+              s.NotSoldItems
+              |> DataTable.current
+              |> Seq.choose (fun i ->
+                  if i.ItemId = itemId then s.Stores |> DataTable.findCurrent i.StoreId |> Some else None)
+              |> Seq.map (fun i ->
+                  { StoreId = i.StoreId
+                    StoreName = i.StoreName |> StoreName.asText |> FormattedText.normal })
+              |> List.ofSeq }
+
+module Category =
+
+    open Models.SynchronizationTypes
+
+    let create catId (s: StateTypes.State) =
+        let cat = s.Categories |> DataTable.findCurrent catId
+
+        { CategoryId = cat.CategoryId
+          CategoryName =
+              cat.CategoryName
+              |> CategoryName.asText
+              |> FormattedText.normal
+          Items =
+              s.Items
+              |> DataTable.current
+              |> Seq.choose (fun itm ->
+                  if itm.CategoryId <> (Some catId) then
+                      None
+                  else
+                      Some
+                          { ItemId = itm.ItemId
+                            ItemName = itm.ItemName |> ItemName.asText |> FormattedText.normal
+                            Note =
+                                itm.Note
+                                |> Option.map (fun n -> n |> Note.asText |> FormattedText.normal)
+                            Quantity =
+                                itm.Quantity
+                                |> Option.map (fun q -> q |> Quantity.asText |> FormattedText.normal)
+                            Schedule = itm.Schedule
+                            NotSoldAt =
+                                s.NotSoldItems
+                                |> DataTable.current
+                                |> Seq.choose (fun ns ->
+                                    if ns.ItemId = itm.ItemId then
+                                        s.Stores |> DataTable.findCurrent ns.StoreId |> Some
+                                    else
+                                        None)
+                                |> Seq.map (fun st ->
+                                    { StoreId = st.StoreId
+                                      StoreName = st.StoreName |> StoreName.asText |> FormattedText.normal })
+                                |> List.ofSeq })
+              |> List.ofSeq }
