@@ -92,39 +92,40 @@ module HighlighterTests =
 
     type HighlighterTest = { SearchTerm: SearchTerm; Source: string }
 
-    let highlighterTestGen =
+    let veryLimitedCharGens = [| Gen.elements "abcde" |]
+
+    let regularEnglishCharGens =
+        "abcde"
+        |> Seq.append "ABCDE"
+        |> Seq.append "012345"
+        |> Seq.append " *-/()#;.[]"
+        |> List.ofSeq
+        |> Gen.elements
+        |> fun g -> [| g |]
+
+    let comprehensiveCharGens =
+        let abcd = Gen.elements [ 'a'; 'b'; 'c'; 'd' ]
+        let std = letterOrDigit.Select(fun (LetterOrDigit c) -> c)
+        let rgx = regexEscape.Select(fun (RegexEscape c) -> c)
+        let punc = punctuation.Select(fun (Punctuation c) -> c)
+        let sym = symbol.Select(fun (Symbol c) -> c)
+        let space = Gen.constant ' '
+
+        [ (3, abcd)
+          (1, Gen.frequency [ (10, std); (1, space) ])
+          (1, rgx)
+          (1, Gen.oneof [ rgx; punc; sym; space ])
+          (1, Gen.oneof [ std; rgx; punc; sym; space ]) ]
+        |> Seq.map (fun (n, g) -> Seq.replicate n g)
+        |> Seq.concat
+        |> Array.ofSeq
+
+    let highlighterTestGen (charGens: Gen<char> []) =
         gen {
-            let abcd = Gen.elements [ 'a'; 'b'; 'c'; 'd' ]
-
-            let std = letterOrDigit.Select(fun (LetterOrDigit c) -> c)
-
-            let rgx = regexEscape.Select(fun (RegexEscape c) -> c)
-
-            let punc = punctuation.Select(fun (Punctuation c) -> c)
-
-            let sym = symbol.Select(fun (Symbol c) -> c)
-            let space = Gen.constant ' '
             let cr = Gen.constant '\r'
             let lf = Gen.constant '\n'
-
-            let charGens =
-                [ (3, abcd)
-                  (1, Gen.frequency [ (10, std); (1, space) ])
-                  (1, rgx)
-                  (1, Gen.oneof [ rgx; punc; sym; space ])
-                  (1, Gen.oneof [ std; rgx; punc; sym; space ]) ]
-                |> Seq.map (fun (n, g) -> Seq.replicate n g)
-                |> Seq.concat
-                |> Array.ofSeq
-
             let! charGenIndex = Gen.choose (0, charGens.Length - 1)
             let termChars = charGens.[charGenIndex]
-
-            let sourceChars =
-                Gen.frequency [ (20, termChars)
-                                (1, cr)
-                                (1, lf) ]
-
             let minLen = SearchTerm.rules.MinLength |> int
             let maxLen = SearchTerm.rules.MaxLength |> int
 
@@ -144,6 +145,11 @@ module HighlighterTests =
                 |> Gen.filter (fun r -> r |> Result.isOk)
                 |> Gen.map (fun r -> r |> Result.okOrThrow)
 
+            let sourceChars =
+                Gen.frequency [ (20, termChars)
+                                (1, cr)
+                                (1, lf) ]
+
             let! source =
                 sourceChars
                 |> Gen.listOfLength sourceLen
@@ -152,11 +158,31 @@ module HighlighterTests =
             return { SearchTerm = searchTerm; Source = source }
         }
 
+    type Comprehensive = Comprehensive of HighlighterTest
+    type CommonEnglish = CommonEnglish of HighlighterTest
+    type VeryLimited = VeryLimited of HighlighterTest
+
     type Generators =
-        static member HighlighterTest() = highlighterTestGen |> Arb.fromGen
+        static member Comprehensive() =
+            comprehensiveCharGens
+            |> highlighterTestGen
+            |> Gen.map Comprehensive
+            |> Arb.fromGen
+
+        static member CommonEnglish() =
+            regularEnglishCharGens
+            |> highlighterTestGen
+            |> Gen.map CommonEnglish
+            |> Arb.fromGen
+
+        static member VeryLimited() =
+            veryLimitedCharGens
+            |> highlighterTestGen
+            |> Gen.map VeryLimited
+            |> Arb.fromGen
 
     [<Property(MaxTest = 1000, Arbitrary = [| typeof<Generators> |])>]
-    let ``concatenated spans equal source`` (p: HighlighterTest) =
+    let ``concatenated spans equal source`` (Comprehensive p) =
         p.Source
         |> Highlighter.create p.SearchTerm
         |> FormattedText.spans
@@ -164,7 +190,7 @@ module HighlighterTests =
         |> fun x -> x = p.Source
 
     [<Property(MaxTest = 10000, Arbitrary = [| typeof<Generators> |])>]
-    let ``when search in regular spans will find nothing`` (p: HighlighterTest) =
+    let ``when search in regular spans will find nothing`` (Comprehensive p) =
         p.Source
         |> Highlighter.create p.SearchTerm
         |> FormattedText.spans
@@ -181,7 +207,7 @@ module HighlighterTests =
             | None -> false)
 
     [<Property(MaxTest = 10000, Arbitrary = [| typeof<Generators> |])>]
-    let ``if highlight is longer than search term, then overlapping or back to back terms in source`` (p: HighlighterTest) =
+    let ``if highlight is longer than search term, then overlapping or back to back terms in source`` (VeryLimited p) =
         let highlighter = p.SearchTerm |> Highlighter.create
 
         let chooseLongHighlight searchTerm span =
@@ -215,8 +241,8 @@ module HighlighterTests =
         |> Seq.concat
         |> Seq.forall endsWithHighlight
 
-    [<Property(Arbitrary = [| typeof<Generators> |])>]
-    let ``results do not depend on case of search term`` (p: HighlighterTest) =
+    [<Property(MaxTest = 10000, Arbitrary = [| typeof<Generators> |])>]
+    let ``results do not depend on case of search term`` (Comprehensive p) =
         let mapSearchTerm mapping st =
             st
             |> SearchTerm.value
@@ -246,8 +272,8 @@ module HighlighterTests =
 
         withUpperFilter = withLowerFilter
 
-    [<Property(Arbitrary = [| typeof<Generators> |])>]
-    let ``results do not depend on case of source text`` (p: HighlighterTest) =
+    [<Property(MaxTest = 10000, Arbitrary = [| typeof<Generators> |])>]
+    let ``results do not depend on case of source text`` (CommonEnglish p) =
         let highlighter = p.SearchTerm |> Highlighter.create
 
         let spanToLower span =
