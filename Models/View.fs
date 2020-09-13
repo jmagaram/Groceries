@@ -19,6 +19,8 @@ module SearchTerm =
                 Space
                 Symbol ] }
 
+    let value (SearchTerm s) = s
+
     let tryParse = parser SearchTerm rules
 
     let toRegex (SearchTerm s) =

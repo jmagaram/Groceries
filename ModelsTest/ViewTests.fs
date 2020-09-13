@@ -18,9 +18,12 @@ module HighlighterTests =
         let searchTerm = "abc" |> SearchTerm.tryParse |> Result.okOrThrow
         let highlighter = searchTerm |> Highlighter.create
         let source = ""
-        let actual = source |> highlighter |> FormattedText.spans
-        let expected = []
-        actual |> should equal expected
+
+        source
+        |> highlighter
+        |> FormattedText.spans
+        |> List.length
+        |> should equal 0
 
     [<Fact>]
     let ``highlighter - when search a whitespace string find exactly that`` () =
@@ -54,11 +57,7 @@ module HighlighterTests =
     [<InlineData("Not found at all", "abc", "x", "abc")>]
     [<InlineData("Query is same as entire source", "abc", "abc", "!abc")>]
     [<InlineData("Search for regex characters", "abc^$()[]\/?.+*abc", "^$()[]\/?.+*", "abc,!^$()[]\/?.+*,abc")>]
-    let ``highlighter - specific examples`` (comment: string)
-                                               (source: string)
-                                               (searchTerm: string)
-                                               (expected: string)
-                                               =
+    let ``highlighter - specific examples`` (comment: string) (source: string) (searchTerm: string) (expected: string) =
         let parseSpan (s: String) =
             if s.[0] = '!' then (s.Substring(1) |> TextSpan.highlight) else s |> TextSpan.normal
 
@@ -150,9 +149,7 @@ module HighlighterTests =
                 |> Gen.listOfLength sourceLen
                 |> Gen.map (fun cs -> cs |> Array.ofList |> String)
 
-            return
-                { HighlighterTest.SearchTerm = searchTerm
-                  Source = source }
+            return { SearchTerm = searchTerm; Source = source }
         }
 
     type Generators =
@@ -184,61 +181,66 @@ module HighlighterTests =
             | None -> false)
 
     [<Property(MaxTest = 10000, Arbitrary = [| typeof<Generators> |])>]
-    let ``if highlight is longer than filter, then overlapping or back to back filters in source`` (p: HighlighterTest) =
-        let endsWithHighlightedMatch filter text =
-            text
-            |> Highlighter.create p.SearchTerm
-            |> FormattedText.spans
-            |> fun ss ->
-                match ss with
-                | [] -> false
-                | [ a ] -> a.Format = TextFormat.Highlight
-                | [ _; b ] -> b.Format = TextFormat.Highlight
-                | _ -> false
+    let ``if highlight is longer than search term, then overlapping or back to back terms in source`` (p: HighlighterTest) =
+        let highlighter = p.SearchTerm |> Highlighter.create
 
-        let filterLength =
-            match p.SearchTerm with
-            | SearchTerm f -> f.Length
+        let chooseLongHighlight searchTerm span =
+            match span.Format with
+            | Normal -> None
+            | Highlight ->
+                let termLen = searchTerm |> SearchTerm.value |> String.length
+                let spanLen = span.Text.Length
+                if spanLen > termLen then Some span.Text else None
+
+        let endsWithHighlight s =
+            s
+            |> highlighter
+            |> FormattedText.spans
+            |> List.tryLast
+            |> Option.map (fun i -> i.Format = TextFormat.Highlight)
+            |> Option.defaultValue false
+
+        let rightmostSubstrings minLen s =
+            { 0 .. String.length (s) - minLen }
+            |> Seq.map (fun i -> s.Substring(i))
+            |> List.ofSeq
+
+        let searchLen = p.SearchTerm |> SearchTerm.value |> String.length
 
         p.Source
-        |> Highlighter.create p.SearchTerm
+        |> highlighter
         |> FormattedText.spans
-        |> Seq.choose (fun i ->
-            match i.Format with
-            | TextFormat.Highlight when i.Text.Length > filterLength -> Some i.Text
-            | _ -> None)
-        |> Seq.forall (fun t ->
-            let excess = t.Length - filterLength
-
-            [ 0 .. excess ]
-            |> Seq.forall (fun x ->
-                let res =
-                    endsWithHighlightedMatch p.SearchTerm (t.Substring(x))
-
-                res))
+        |> Seq.choose (chooseLongHighlight p.SearchTerm)
+        |> Seq.map (rightmostSubstrings searchLen)
+        |> Seq.concat
+        |> Seq.forall endsWithHighlight
 
     [<Property(Arbitrary = [| typeof<Generators> |])>]
-    let ``results do not depend on case of filter`` (p: HighlighterTest) =
-        let mapFilter mapping f =
-            match f with
-            | SearchTerm t ->
-                mapping t
-                |> SearchTerm.tryParse
-                |> Result.okOrThrow
+    let ``results do not depend on case of search term`` (p: HighlighterTest) =
+        let mapSearchTerm mapping st =
+            st
+            |> SearchTerm.value
+            |> mapping
+            |> SearchTerm.tryParse
+            |> Result.okOrThrow
 
-        let upperFilter = p.SearchTerm |> mapFilter (fun t -> t.ToUpper())
+        let upper =
+            p.SearchTerm
+            |> mapSearchTerm (fun t -> t.ToUpper())
 
-        let lowerFilter = p.SearchTerm |> mapFilter (fun t -> t.ToLower())
+        let lower =
+            p.SearchTerm
+            |> mapSearchTerm (fun t -> t.ToLower())
 
         let withUpperFilter =
             p.Source
-            |> Highlighter.create upperFilter
+            |> Highlighter.create upper
             |> FormattedText.spans
             |> List.ofSeq
 
         let withLowerFilter =
             p.Source
-            |> Highlighter.create lowerFilter
+            |> Highlighter.create lower
             |> FormattedText.spans
             |> List.ofSeq
 
@@ -246,18 +248,24 @@ module HighlighterTests =
 
     [<Property(Arbitrary = [| typeof<Generators> |])>]
     let ``results do not depend on case of source text`` (p: HighlighterTest) =
+        let highlighter = p.SearchTerm |> Highlighter.create
+
+        let spanToLower span =
+            { span with
+                  TextSpan.Text = span.Text.ToLowerInvariant() }
+
         let withUpperSource =
             p.Source.ToUpper()
-            |> Highlighter.create p.SearchTerm
+            |> highlighter
             |> FormattedText.spans
-            |> Seq.map (fun t -> { t with Text = t.Text.ToLower() })
+            |> Seq.map spanToLower
             |> List.ofSeq
 
         let withLowerSource =
             p.Source.ToLower()
-            |> Highlighter.create p.SearchTerm
+            |> highlighter
             |> FormattedText.spans
-            |> Seq.map (fun t -> { t with Text = t.Text.ToLower() })
+            |> Seq.map spanToLower
             |> List.ofSeq
 
         withUpperSource = withLowerSource
