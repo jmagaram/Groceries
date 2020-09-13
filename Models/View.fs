@@ -1,9 +1,7 @@
 ﻿namespace Models
-
 open ViewTypes
 
 module SearchTerm =
-
     open System.Text.RegularExpressions
     open ValidationTypes
     open StringValidation
@@ -11,13 +9,7 @@ module SearchTerm =
     let rules =
         { MinLength = 1<chars>
           MaxLength = 20<chars>
-          StringRules.OnlyContains =
-              [ Letter
-                Mark
-                Number
-                Punctuation
-                Space
-                Symbol ] }
+          StringRules.OnlyContains = [ Letter; Mark; Number; Punctuation; Space; Symbol ] }
 
     let value (SearchTerm s) = s
 
@@ -65,10 +57,7 @@ module SearchTerm =
                 | Some i -> sprintf "((%s)+(%s)*)+" (escape s) (escape (i.Middle + i.Edge))
                 | None -> sprintf "(%s)+" (escape s)
 
-        let options =
-            RegexOptions.IgnoreCase
-            ||| RegexOptions.CultureInvariant
-
+        let options = RegexOptions.IgnoreCase ||| RegexOptions.CultureInvariant
         new Regex(pattern, options)
 
 module TextSpan =
@@ -88,37 +77,35 @@ module FormattedText =
 
 module Highlighter =
 
-    let create searchTerm =
-        let regex = searchTerm |> SearchTerm.toRegex
+    let create: Highlighter =
+        fun searchTerm ->
+            let regex = searchTerm |> SearchTerm.toRegex
 
-        fun s ->
-            match s |> String.length with
-            | 0 -> [] |> FormattedText
-            | _ ->
-                seq {
-                    let ms = regex.Matches(s)
+            fun s ->
+                match s |> String.length with
+                | 0 -> [] |> FormattedText
+                | _ ->
+                    seq {
+                        let ms = regex.Matches(s)
 
-                    if ms.Count = 0 then yield (TextSpan.normal s)
-                    elif ms.[0].Index > 0 then yield TextSpan.normal (s.Substring(0, ms.[0].Index))
+                        if ms.Count = 0 then yield (TextSpan.normal s)
+                        elif ms.[0].Index > 0 then yield TextSpan.normal (s.Substring(0, ms.[0].Index))
 
-                    for i in 0 .. ms.Count - 1 do
-                        yield TextSpan.highlight ms.[i].Value
-                        let regStart = ms.[i].Index + ms.[i].Length
+                        for i in 0 .. ms.Count - 1 do
+                            yield TextSpan.highlight ms.[i].Value
+                            let regStart = ms.[i].Index + ms.[i].Length
 
-                        if i < ms.Count - 1
-                        then yield TextSpan.normal (s.Substring(regStart, ms.[i + 1].Index - regStart))
-                        elif regStart < s.Length
-                        then yield TextSpan.normal (s.Substring(regStart))
+                            if i < ms.Count - 1
+                            then yield TextSpan.normal (s.Substring(regStart, ms.[i + 1].Index - regStart))
+                            elif regStart < s.Length
+                            then yield TextSpan.normal (s.Substring(regStart))
 
-
-                }
-                |> List.ofSeq
-                |> FormattedText.fromList
+                    }
+                    |> List.ofSeq
+                    |> FormattedText.fromList
 
 //let join stores items criteria = 3
-
 //module Item =
-
 //    type Item =
 //        { ItemId : ItemId
 //          ItemName : ItemName
@@ -128,18 +115,15 @@ module Highlighter =
 //          Schedule : Schedule
 //          NotSoldAt : StateTypes.Store list
 //        }
-
 //    type Store =
 //        { StoreId : StoreId
 //          StoreName : StoreName
 //          NotSoldItems : StateTypes.Item list
 //        }
-
 //    type Category =
 //        { CategoryId : CategoryId
 //          CategoryName : CategoryName
 //          Items : StateTypes.Item list }
-
 //    let create itemId (s:StateTypes.State) =
 //        let item = s.Items |> DataTable.findCurrent itemId
 //        let category =

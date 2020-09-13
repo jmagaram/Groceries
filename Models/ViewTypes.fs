@@ -12,4 +12,4 @@ type SearchTerm = SearchTerm of string
 
 type FormattedText = FormattedText of TextSpan list
 
-type Highlighter = string -> FormattedText
+type Highlighter = SearchTerm -> string -> FormattedText

@@ -57,7 +57,7 @@ module HighlighterTests =
     [<InlineData("Not found at all", "abc", "x", "abc")>]
     [<InlineData("Query is same as entire source", "abc", "abc", "!abc")>]
     [<InlineData("Search for regex characters", "abc^$()[]\/?.+*abc", "^$()[]\/?.+*", "abc,!^$()[]\/?.+*,abc")>]
-    let ``highlighter - specific examples`` (comment: string) (source: string) (searchTerm: string) (expected: string) =
+    let ``highlighter - specific examples`` (comment: string) source searchTerm expected =
         let parseSpan (s: String) =
             if s.[0] = '!' then (s.Substring(1) |> TextSpan.highlight) else s |> TextSpan.normal
 
@@ -145,10 +145,7 @@ module HighlighterTests =
                 |> Gen.filter (fun r -> r |> Result.isOk)
                 |> Gen.map (fun r -> r |> Result.okOrThrow)
 
-            let sourceChars =
-                Gen.frequency [ (20, termChars)
-                                (1, cr)
-                                (1, lf) ]
+            let sourceChars = Gen.frequency [ (20, termChars); (1, cr); (1, lf) ]
 
             let! source =
                 sourceChars
@@ -250,13 +247,9 @@ module HighlighterTests =
             |> SearchTerm.tryParse
             |> Result.okOrThrow
 
-        let upper =
-            p.SearchTerm
-            |> mapSearchTerm (fun t -> t.ToUpper())
+        let upper = p.SearchTerm |> mapSearchTerm (fun t -> t.ToUpper())
 
-        let lower =
-            p.SearchTerm
-            |> mapSearchTerm (fun t -> t.ToLower())
+        let lower = p.SearchTerm |> mapSearchTerm (fun t -> t.ToLower())
 
         let withUpperFilter =
             p.Source
@@ -276,9 +269,7 @@ module HighlighterTests =
     let ``results do not depend on case of source text`` (CommonEnglish p) =
         let highlighter = p.SearchTerm |> Highlighter.create
 
-        let spanToLower span =
-            { span with
-                  TextSpan.Text = span.Text.ToLowerInvariant() }
+        let spanToLower span = { span with TextSpan.Text = span.Text.ToLowerInvariant() }
 
         let withUpperSource =
             p.Source.ToUpper()
