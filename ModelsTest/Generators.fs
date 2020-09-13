@@ -100,7 +100,7 @@ let listInSizeRange<'T, 'Min, 'Max when 'Min :> IInt and 'Min: (new: unit -> 'Mi
     }
     |> Gen.map (fun i -> ListInSizeRange(i, min, max))
 
-type TestDataGenerators() =
+type CommonGenerators() =
 
     static member ListInSizeRange() = listInSizeRange () |> Arb.fromGen
     static member ListOfLength() = listOfLength () |> Arb.fromGen
