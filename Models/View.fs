@@ -52,10 +52,10 @@ module SearchTerm =
                     None)
             |> Seq.tryHead
 
-        let s = s.ToLowerInvariant()
-        let escape s = Regex.Escape(s)
-
         let pattern =
+            let s = s.ToLowerInvariant()
+            let escape s = Regex.Escape(s)
+
             match s |> isRepeating with
             | Some (x, n) -> sprintf "(%s){%d,}" (escape x) n
             | None ->
@@ -82,7 +82,9 @@ module FormattedText =
 
     let spans (FormattedText ft) = ft
 
-module Highlighter = 
+    let fromList spans = FormattedText spans
+
+module Highlighter =
 
     let create searchTerm =
         let regex = searchTerm |> SearchTerm.toRegex
@@ -109,7 +111,8 @@ module Highlighter =
 
                 }
                 |> List.ofSeq
-                |> FormattedText
+                |> FormattedText.fromList
+
 //let join stores items criteria = 3
 
 //module Item =
