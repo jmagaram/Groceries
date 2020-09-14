@@ -1,25 +1,25 @@
-﻿using System;
+﻿using Models;
+using System;
 using System.Reactive.Subjects;
-using static Models.StateTypes;
+using System.Reactive.Linq;
 
 namespace WebApp.Data {
     public class ApplicationStateService {
-        readonly BehaviorSubject<State> _state;
-        readonly IObservable<State> _stateObs;
+        readonly BehaviorSubject<StateTypes.State> _state;
+        readonly IObservable<StateTypes.State> _stateObs;
 
         public ApplicationStateService() {
-            _state = new BehaviorSubject<State>(Models.State.createWithSampleData);
+            _state = new BehaviorSubject<StateTypes.State>(State.createWithSampleData);
             _stateObs = _state;
+            ShoppingListView = ShoppingList.fromObservable(_stateObs);
         }
 
-        //public DomainTypes.State State { get; set; }
-
-        //public IObservable<DomainTypes.State> StateObservable => _stateObs;
-
-        public void Update(StateMessage msg) {
+        public void Update(StateTypes.StateMessage msg) {
             var state = _state.Value;
-            state = Models.State.update(msg, state);
+            state = State.update(msg, state);
             _state.OnNext(state);
         }
+
+        public IObservable<ViewTypes.ShoppingList> ShoppingListView { get;  }
     }
 }

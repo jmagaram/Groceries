@@ -1,0 +1,28 @@
+﻿@page "/shoppinglist"
+@using Models
+
+@inject Data.ApplicationStateService StateService
+
+<h1>ShoppingList</h1>
+<ul>
+    @foreach (var i in ShoppingListView.Items) {
+        <li>@i.ItemName.Item.Aggregate("", (i, j) => i + j.Text)</li>
+    }
+</ul>
+@code {
+    // some kind of special Component needed for formatted text
+    IDisposable _subscription = null;
+
+    protected override void OnInitialized() {
+        base.OnInitialized();
+        _subscription =
+            StateService
+            .ShoppingListView.Subscribe(s => { ShoppingListView = s; });
+    }
+
+    protected ViewTypes.ShoppingList ShoppingListView { get; private set; }
+
+    public void Dispose() {
+        _subscription?.Dispose();
+    }
+}

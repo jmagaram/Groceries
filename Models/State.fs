@@ -171,11 +171,11 @@ module State =
         |> makeRepeat "Bananas" 7<days> None
         |> makeRepeat "Peanut butter" 14<days> (Some 3<days>)
         |> markComplete "Ice cream"
-        |> notSoldAt "Dried flax seeds" "QFC"
-        |> notSoldAt "Dried flax seeds" "Whole Foods"
         |> addStore "QFC"
         |> addStore "Whole Foods"
         |> addStore "Trader Joe's"
+        |> notSoldAt "Dried flax seeds" "QFC"
+        |> notSoldAt "Dried flax seeds" "Whole Foods"
 
     let removeCategoryFromItem categoryId (i: Item) =
         match i.CategoryId with

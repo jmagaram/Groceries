@@ -63,7 +63,7 @@ and StoreItem =
 // any errors in a form?
 
 // OPTION 1 - Just keep ItemId in the list, sorted as I want, bind by ID
-// OPTION 2 - Full list of items, whole list changes each time
+// OPTION 2 - Full list of items, whole list changes each time BUT distinctUntilChanged
 // 
 // Also, should the view contain several IObservables that change independently?
-type ShoppingList = { Items: StateTypes.ItemId list }
+type ShoppingList = { Items: Item list }

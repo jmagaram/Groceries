@@ -1,10 +1,11 @@
 ﻿namespace Models
-open ViewTypes
 open System
+open System.Reactive.Linq
+open System.Text.RegularExpressions
 open FSharp.Control.Reactive
+open ViewTypes
 
 module SearchTerm =
-    open System.Text.RegularExpressions
     open ValidationTypes
     open StringValidation
 
@@ -107,6 +108,7 @@ module Highlighter =
 
 
 
+
                     }
                     |> List.ofSeq
                     |> FormattedText.fromList
@@ -151,15 +153,6 @@ module Item =
 
     let create itemId s = tryCreate itemId s |> Option.get
 
-    // changes if any number of rows change; tough to prevent calculating it anyway
-    let createObservable itemId (sObs: IObservable<Models.StateTypes.State>) =
-        sObs
-        |> Observable.map (fun s ->
-            s.Items
-            |> DataTable.tryFindCurrent itemId
-            |> Option.map (fromItem s))
-        |> Observable.distinctUntilChanged // how does it calculate equality?
-
 module Category =
 
     let create catId s =
@@ -202,8 +195,6 @@ module Category =
               |> List.ofSeq }
 
 module ShoppingList =
-    open System.Reactive.Linq
-    open FSharp.Control.Reactive
 
     let create (s: StateTypes.State) =
         { ShoppingList.Items =
@@ -215,10 +206,11 @@ module ShoppingList =
                   s.ShoppingListViewOptions.StoreFilter
                   |> Option.map (fun storeId -> i.NotSoldAt |> Seq.forall (fun ns -> ns.StoreId <> storeId))
                   |> Option.defaultValue (true))
-              |> Seq.map (fun i -> i.ItemId)
               |> List.ofSeq }
 
-    let fromObservable (s: IObservable<Models.StateTypes.State>) = 
-        s 
+    // Could make this smarter to only recalculate when specific parts of the
+    // State change. This logic should be in this assembly not the client.
+    let fromObservable (s: IObservable<Models.StateTypes.State>) =
+        s
         |> Observable.map create
-        |> Observable.distinctUntilChanged // how is comparison handled?
+        |> Observable.distinctUntilChanged
