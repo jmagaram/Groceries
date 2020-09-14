@@ -69,14 +69,14 @@ module State =
     let items (s: State) = s.Items
     let categories (s: State) = s.Categories
 
-    let empty =
+    let createDefault =
         { Categories = DataTable.empty
           Items = DataTable.empty
           Stores = DataTable.empty
           NotSoldItems = DataTable.empty
           ShoppingListViewOptions = ShoppingListViewOptions.defaultView }
 
-    let addSampleData (s: State) =
+    let createWithSampleData =
         let addCategory n s =
             { s with
                   Categories =
@@ -156,7 +156,7 @@ module State =
             { s with
                   NotSoldItems = s.NotSoldItems |> DataTable.insert nsa }
 
-        s
+        createDefault
         |> addCategory "Produce"
         |> addCategory "Dairy"
         |> addCategory "Dry"
