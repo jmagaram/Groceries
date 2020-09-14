@@ -77,4 +77,6 @@ type State =
       NotSoldItems: DataTable<NotSoldItem, NotSoldItem> 
       ShoppingListViewOptions : ShoppingListViewOptions }
 
-type StateMessage = DeleteCategory of CategoryId
+type StateMessage = 
+    | DeleteCategory of CategoryId
+    | DeleteItem of ItemId

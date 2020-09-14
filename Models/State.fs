@@ -187,6 +187,12 @@ module State =
         |> editCategories (DataTable.deleteIf (fun x -> x.CategoryId = id))
         |> editItems (DataTable.mapCurrent (removeCategoryFromItem id))
 
+    let deleteItem id (s:State) =
+        s
+        |> editItems (DataTable.delete id)
+        |> editNotSoldItems (DataTable.deleteIf (fun x -> x.ItemId = id))
+
     let update msg s =
         match msg with
         | DeleteCategory id -> s |> deleteCategory id
+        | DeleteItem id -> s |> deleteItem id

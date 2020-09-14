@@ -11,7 +11,7 @@
     IDisposable _subscription = null;
 
     private void OnClickDelete(Models.StateTypes.ItemId itemId) {
-
+        StateService.Update(StateTypes.StateMessage.DeleteItem.NewDeleteItem(itemId));
     }
 
     protected override void OnInitialized() {
