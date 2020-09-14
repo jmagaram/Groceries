@@ -5,11 +5,14 @@
 
 <h1>ShoppingList</h1>
 @foreach (var i in ShoppingListView.Items) {
-    <WebApp.Shared.Item View="@i"/>
-    <p>@*<FormattedText Text="@i.ItemName" />*@</p>
+    <WebApp.Shared.Item OnClickDelete="OnClickDelete" View="@i"/>
 }
 @code {
     IDisposable _subscription = null;
+
+    private void OnClickDelete(Models.StateTypes.ItemId itemId) {
+
+    }
 
     protected override void OnInitialized() {
         base.OnInitialized();
