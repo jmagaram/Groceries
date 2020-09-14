@@ -102,13 +102,12 @@ module Highlighter =
                             elif regStart < s.Length
                             then yield TextSpan.normal (s.Substring(regStart))
 
+
                     }
                     |> List.ofSeq
                     |> FormattedText.fromList
 
 module Item =
-
-    open Models.SynchronizationTypes
 
     let create itemId s =
         let item = s |> State.items |> DataTable.findCurrent itemId
@@ -142,8 +141,6 @@ module Item =
               |> List.ofSeq }
 
 module Category =
-
-    open Models.SynchronizationTypes
 
     let create catId s =
         let cat = s |> State.categories |> DataTable.findCurrent catId
@@ -184,12 +181,16 @@ module Category =
                                 |> List.ofSeq })
               |> List.ofSeq }
 
-module ShoppingList = 
+module ShoppingList =
 
-    let create s =
-        { ShoppingList.Items = 
-            s
-            |> State.items
-            |> DataTable.current
-            |> Seq.map (fun i -> s |> Item.create i.ItemId)
-            |> List.ofSeq }
+    // how to sort?
+    let create (s: StateTypes.State) =
+        { ShoppingList.Items =
+              s.Items
+              |> DataTable.current
+              |> Seq.map (fun i -> s |> Item.create i.ItemId)
+              |> Seq.filter (fun i ->
+                  s.ShoppingListViewOptions.StoreFilter
+                  |> Option.map (fun storeId -> i.NotSoldAt |> Seq.forall (fun ns -> ns.StoreId <> storeId))
+                  |> Option.defaultValue (true))
+              |> List.ofSeq }

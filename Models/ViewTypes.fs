@@ -1,13 +1,11 @@
 ﻿module Models.ViewTypes
 
-[<Struct>]
 type TextFormat =
     | Highlight
     | Normal
 
 type TextSpan = { Format: TextFormat; Text: string }
 
-[<Struct>]
 type SearchTerm = SearchTerm of string
 
 type FormattedText = FormattedText of TextSpan list
@@ -59,6 +57,8 @@ and StoreItem =
 // future item status filter and picker?
 // order of display?
 // filter?
-type ShoppingList =
-    { Items : Item list       
-    }
+
+// stores to choose from
+// currently selected store
+// any errors in a form?
+type ShoppingList = { Items: Item list }

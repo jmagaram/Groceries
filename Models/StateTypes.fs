@@ -67,10 +67,14 @@ type NotSoldItem =
     interface IKey<NotSoldItem> with
         member this.Key = this
 
+type ShoppingListViewOptions =
+    { StoreFilter : StoreId option }
+
 type State =
     { Items: DataTable<ItemId, Item>
       Categories: DataTable<CategoryId, Category>
       Stores: DataTable<StoreId, Store>
-      NotSoldItems: DataTable<NotSoldItem, NotSoldItem> }
+      NotSoldItems: DataTable<NotSoldItem, NotSoldItem> 
+      ShoppingListViewOptions : ShoppingListViewOptions }
 
 type StateMessage = DeleteCategory of CategoryId

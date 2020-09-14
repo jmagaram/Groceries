@@ -48,10 +48,13 @@ module Repeat =
 
         match interval |> validator with
         | None ->
-            { Interval = interval
-              PostponedUntil = postponedUntil }
+            { Interval = interval; PostponedUntil = postponedUntil }
             |> Ok
         | Some e -> e |> Error
+
+module ShoppingListViewOptions =
+
+    let defaultView = { ShoppingListViewOptions.StoreFilter = None }
 
 module State =
 
@@ -61,18 +64,17 @@ module State =
 
     let private editStores f s = { s with Stores = f s.Stores }
 
-    let private editNotSoldItems f s =
-        { s with
-              NotSoldItems = f s.NotSoldItems }
+    let private editNotSoldItems f s = { s with NotSoldItems = f s.NotSoldItems }
 
-    let items (s:State) = s.Items
-    let categories (s:State) = s.Categories
+    let items (s: State) = s.Items
+    let categories (s: State) = s.Categories
 
     let empty =
         { Categories = DataTable.empty
           Items = DataTable.empty
           Stores = DataTable.empty
-          NotSoldItems = DataTable.empty }
+          NotSoldItems = DataTable.empty
+          ShoppingListViewOptions = ShoppingListViewOptions.defaultView }
 
     let addSampleData (s: State) =
         let addCategory n s =
@@ -103,12 +105,10 @@ module State =
                   Note = note |> Note.tryParse |> Result.asOption
                   Schedule = Once }
 
-            { s with
-                  Items = s.Items |> DataTable.insert item }
+            { s with Items = s.Items |> DataTable.insert item }
 
         let findItem n (s: State) =
-            let itemName =
-                ItemName.tryParse n |> Result.okOrThrow
+            let itemName = ItemName.tryParse n |> Result.okOrThrow
 
             s.Items
             |> DataTable.current
@@ -116,8 +116,7 @@ module State =
             |> Seq.exactlyOne
 
         let findStore n (s: State) =
-            let storeName =
-                StoreName.tryParse n |> Result.okOrThrow
+            let storeName = StoreName.tryParse n |> Result.okOrThrow
 
             s.Stores
             |> DataTable.current
@@ -130,8 +129,7 @@ module State =
                 |> findItem n
                 |> fun i -> { i with Schedule = Completed }
 
-            { s with
-                  Items = s.Items |> DataTable.update item }
+            { s with Items = s.Items |> DataTable.update item }
 
         let makeRepeat n interval postpone (s: State) =
             let postpone =
@@ -148,8 +146,7 @@ module State =
                 |> findItem n
                 |> fun i -> { i with Schedule = schedule }
 
-            { s with
-                  Items = s.Items |> DataTable.update item }
+            { s with Items = s.Items |> DataTable.update item }
 
         let notSoldAt itemName storeName (s: State) =
             let nsa =
