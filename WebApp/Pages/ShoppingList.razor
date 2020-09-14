@@ -4,13 +4,10 @@
 @inject Data.ApplicationStateService StateService
 
 <h1>ShoppingList</h1>
-<ul>
-    @foreach (var i in ShoppingListView.Items) {
-        <li>@i.ItemName.Item.Aggregate("", (i, j) => i + j.Text)</li>
-    }
-</ul>
+@foreach (var i in ShoppingListView.Items) {
+    <p><FormattedText Text="@i.ItemName" /></p>
+}
 @code {
-    // some kind of special Component needed for formatted text
     IDisposable _subscription = null;
 
     protected override void OnInitialized() {
@@ -22,7 +19,6 @@
 
     protected ViewTypes.ShoppingList ShoppingListView { get; private set; }
 
-    public void Dispose() {
+    public void Dispose() =>
         _subscription?.Dispose();
-    }
 }
