@@ -7,6 +7,24 @@ open FsCheck
 open FsCheck.Xunit
 open Models.ValidationTypes
 
+module ReactiveTests = 
+
+    open System.Reactive.Linq
+    open FSharp.Control.Reactive
+
+    [<Fact>]
+    let ``distinctUntilChanged uses F# equality`` () =
+        let x = [1;2;3;4]
+        let y = [1;2;3;4]
+        let bs = x |> Subject.behavior
+        let obs = bs |> Observable.distinctUntilChanged
+        let mutable count = 0
+        use sub = obs |> Observable.subscribe (fun i -> count <- count + 1 )
+        bs.OnNext(y)
+        bs.OnNext(x)
+        bs.OnNext(y)
+        count |> should equal 1
+
 module HighlighterTests =
 
     open Models
