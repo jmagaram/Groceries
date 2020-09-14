@@ -61,4 +61,9 @@ and StoreItem =
 // stores to choose from
 // currently selected store
 // any errors in a form?
-type ShoppingList = { Items: Item list }
+
+// OPTION 1 - Just keep ItemId in the list, sorted as I want, bind by ID
+// OPTION 2 - Full list of items, whole list changes each time
+// 
+// Also, should the view contain several IObservables that change independently?
+type ShoppingList = { Items: StateTypes.ItemId list }

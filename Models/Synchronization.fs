@@ -154,7 +154,14 @@ module DataTable =
         |> Map.map (fun k r -> r |> DataRow.mapCurrent f)
         |> fromMap
 
-    let findCurrent k dt =
+    let tryFindCurrent k dt =
         dt
-        |> current
-        |> Seq.pick (fun v -> if keyOf v = k then Some v else None)
+        |> asMap
+        |> Map.tryFind k
+        |> Option.bind DataRow.currentValue
+
+    let findCurrent k dt = 
+        tryFindCurrent k dt
+        |> Option.get
+
+

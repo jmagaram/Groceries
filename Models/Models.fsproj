@@ -17,7 +17,10 @@
     <Compile Include="View.fs" />
   </ItemGroup>
 
-  <ItemGroup />
+  <ItemGroup>
+    <PackageReference Include="FSharp.Control.Reactive" Version="4.4.2" />
+    <PackageReference Include="System.Reactive" Version="4.4.1" />
+  </ItemGroup>
 
   <ItemGroup>
     <PackageReference Update="FSharp.Core" Version="4.7.2" />

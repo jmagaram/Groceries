@@ -1,5 +1,7 @@
 ﻿namespace Models
 open ViewTypes
+open System
+open FSharp.Control.Reactive
 
 module SearchTerm =
     open System.Text.RegularExpressions
@@ -103,15 +105,16 @@ module Highlighter =
                             then yield TextSpan.normal (s.Substring(regStart))
 
 
+
+
                     }
                     |> List.ofSeq
                     |> FormattedText.fromList
 
+
 module Item =
 
-    let create itemId s =
-        let item = s |> State.items |> DataTable.findCurrent itemId
-
+    let fromItem (s: StateTypes.State) (item: StateTypes.Item) =
         { ItemId = item.ItemId
           ItemName = item.ItemName |> ItemName.asText |> FormattedText.normal
           Note =
@@ -134,11 +137,28 @@ module Item =
               s.NotSoldItems
               |> DataTable.current
               |> Seq.choose (fun i ->
-                  if i.ItemId = itemId then s.Stores |> DataTable.findCurrent i.StoreId |> Some else None)
+                  if i.ItemId = item.ItemId then s.Stores |> DataTable.findCurrent i.StoreId |> Some else None)
               |> Seq.map (fun i ->
                   { StoreId = i.StoreId
                     StoreName = i.StoreName |> StoreName.asText |> FormattedText.normal })
               |> List.ofSeq }
+
+    let tryCreate (itemId: StateTypes.ItemId) (s: StateTypes.State) =
+        s
+        |> State.items
+        |> DataTable.tryFindCurrent itemId
+        |> Option.map (fromItem s)
+
+    let create itemId s = tryCreate itemId s |> Option.get
+
+    // changes if any number of rows change; tough to prevent calculating it anyway
+    let createObservable itemId (sObs: IObservable<Models.StateTypes.State>) =
+        sObs
+        |> Observable.map (fun s ->
+            s.Items
+            |> DataTable.tryFindCurrent itemId
+            |> Option.map (fromItem s))
+        |> Observable.distinctUntilChanged // how does it calculate equality?
 
 module Category =
 
@@ -182,15 +202,23 @@ module Category =
               |> List.ofSeq }
 
 module ShoppingList =
+    open System.Reactive.Linq
+    open FSharp.Control.Reactive
 
-    // how to sort?
     let create (s: StateTypes.State) =
         { ShoppingList.Items =
               s.Items
               |> DataTable.current
               |> Seq.map (fun i -> s |> Item.create i.ItemId)
+              |> Seq.sortBy (fun i -> (i.Category, i.ItemName))
               |> Seq.filter (fun i ->
                   s.ShoppingListViewOptions.StoreFilter
                   |> Option.map (fun storeId -> i.NotSoldAt |> Seq.forall (fun ns -> ns.StoreId <> storeId))
                   |> Option.defaultValue (true))
+              |> Seq.map (fun i -> i.ItemId)
               |> List.ofSeq }
+
+    let fromObservable (s: IObservable<Models.StateTypes.State>) = 
+        s 
+        |> Observable.map create
+        |> Observable.distinctUntilChanged // how is comparison handled?
