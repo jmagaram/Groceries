@@ -113,7 +113,7 @@ module Highlighter =
                     |> List.ofSeq
                     |> FormattedText.fromList
 
-
+[<CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
 module Item =
 
     let fromItem (s: StateTypes.State) (item: StateTypes.Item) =
@@ -194,6 +194,7 @@ module Category =
                                 |> List.ofSeq })
               |> List.ofSeq }
 
+[<CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
 module ShoppingList =
 
     let create (s: StateTypes.State) =

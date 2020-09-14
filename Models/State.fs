@@ -56,6 +56,7 @@ module ShoppingListViewOptions =
 
     let defaultView = { ShoppingListViewOptions.StoreFilter = None }
 
+[<CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
 module State =
 
     let private editItems f s = { s with Items = f s.Items }
