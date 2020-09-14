@@ -1,0 +1,28 @@
+﻿@using Common
+
+<p>
+    <FormattedText Text="@(View.ItemName)" />
+    @if (View.Category.IsSome()) {
+        var category = View.Category.Value.CategoryName;
+        <text>&nbsp;| &nbsp;</text><FormattedText Text="@category" />
+    }
+    @if (View.Quantity.IsSome()) {
+        var quantity = View.Quantity.Value;
+        <text>&nbsp;| &nbsp;</text><FormattedText Text="@(quantity)" />
+    }
+    @if (View.Note.IsSome()) {
+        var note = View.Note.Value;
+        <text>&nbsp;| &nbsp;</text><FormattedText Text="@(note)" />
+    }
+    <text>&nbsp;|&nbsp;</text><button class="btn btn-secondary btn-sm" @onclick:preventDefault @onclick="@(async () => { await OnClickDelete.InvokeAsync(View.ItemId); })">
+        Delete
+    </button>
+</p>
+
+@code {
+    [Parameter]
+    public Models.ViewTypes.Item View { get; set; }
+
+    [Parameter]
+    public EventCallback<Models.StateTypes.ItemId> OnClickDelete { get; set; }
+}
