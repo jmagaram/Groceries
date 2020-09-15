@@ -15,7 +15,10 @@ namespace WebApp.Data {
             _state = new BehaviorSubject<State>(StateModule.createWithSampleData);
             _stateObs = _state;
             ShoppingListView = ShoppingListModule.fromObservable(_stateObs);
-            Stores = StoreModule.allFromObservable(_stateObs);
+            Stores = Query.stores(_stateObs);
+            Items = Query.items(_stateObs);
+            Categories = Query.categories(_stateObs);
+
         }
 
         public void Update(StateMessage msg) {
@@ -25,6 +28,8 @@ namespace WebApp.Data {
         }
 
         public IObservable<ViewTypes.ShoppingList> ShoppingListView { get;  }
-        public IObservable<FSharpList<ViewTypes.Store>> Stores { get; }
+        public IObservable<FSharpList<QueryTypes.StoreQry>> Stores { get; }
+        public IObservable<FSharpList<QueryTypes.ItemQry>> Items { get; }
+        public IObservable<FSharpList<QueryTypes.CategoryQry>> Categories { get; }
     }
 }

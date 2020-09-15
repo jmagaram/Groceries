@@ -1,4 +1,10 @@
 ﻿module Models.Query
+
+open System
+open System.Reactive
+open System.Reactive.Linq
+open FSharp.Control.Reactive
+
 open Models
 open Models.QueryTypes
 open Models.StateTypes
@@ -15,9 +21,7 @@ let private itemCategory categoryId (state: State) =
         { ItemCategory.CategoryId = cat.CategoryId
           CategoryName = cat.CategoryName }
 
-let itemQry itemId (s: State) =
-    let item = s.Items |> DataTable.findCurrent itemId
-
+let private itemQry (item: Item) (s: State) =
     { ItemQry.ItemId = item.ItemId
       ItemName = item.ItemName
       Note = item.Note
@@ -46,15 +50,14 @@ let private categoryItem (item: Item) (state: State) =
           |> Seq.map (fun storeId -> itemStore storeId state)
           |> List.ofSeq }
 
-let categoryQry catId (s: State) =
-    let category = s.Categories |> DataTable.findCurrent catId
+let private categoryQry (category:Category) (s: State) =
 
     { CategoryQry.CategoryId = category.CategoryId
       CategoryName = category.CategoryName
       Items =
           s.Items
           |> DataTable.current
-          |> Seq.choose (fun i -> if i.CategoryId = Some catId then Some i else None)
+          |> Seq.choose (fun i -> if i.CategoryId = Some category.CategoryId then Some i else None)
           |> Seq.map (fun i -> categoryItem i s)
           |> List.ofSeq }
 
@@ -70,14 +73,37 @@ let private storeItem itemId (s: State) =
           |> Option.map (fun catId -> itemCategory catId s)
       Schedule = item.Schedule }
 
-let storeQry storeId (s: State) =
-    let store = s.Stores |> DataTable.findCurrent storeId
+let private storeQry (store:Store) (s: State) =
 
     { StoreQry.StoreId = store.StoreId
       StoreName = store.StoreName
       NotSoldItems =
           s.NotSoldItems
           |> DataTable.current
-          |> Seq.choose (fun ns -> if ns.StoreId = storeId then Some ns.ItemId else None)
+          |> Seq.choose (fun ns -> if ns.StoreId = store.StoreId then Some ns.ItemId else None)
           |> Seq.map (fun itemId -> storeItem itemId s)
           |> List.ofSeq }
+
+let items (s: IObservable<StateTypes.State>) =
+    s
+    |> Observable.map (fun s ->
+        s.Items
+        |> DataTable.current
+        |> Seq.map (fun i -> itemQry i s)
+        |> List.ofSeq)
+
+let categories (s: IObservable<StateTypes.State>) =
+    s
+    |> Observable.map (fun s ->
+        s.Categories
+        |> DataTable.current
+        |> Seq.map (fun i -> categoryQry i s)
+        |> List.ofSeq)
+
+let stores (s: IObservable<StateTypes.State>) =
+    s
+    |> Observable.map (fun s ->
+        s.Stores
+        |> DataTable.current
+        |> Seq.map (fun i -> storeQry i s)
+        |> List.ofSeq)
