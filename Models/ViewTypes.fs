@@ -1,4 +1,5 @@
 ﻿module Models.ViewTypes
+open Models.FormsTypes
 
 type TextFormat =
     | Highlight
@@ -43,7 +44,7 @@ and CategoryItem =
 type Store =
     { StoreId: StateTypes.StoreId
       StoreName: FormattedText
-      NotSoldItems: StateTypes.Item list }
+      NotSoldItems: StoreItem list }
 
 and StoreItem =
     { ItemId: StateTypes.ItemId
@@ -66,4 +67,14 @@ and StoreItem =
 // OPTION 2 - Full list of items, whole list changes each time BUT distinctUntilChanged
 // 
 // Also, should the view contain several IObservables that change independently?
-type ShoppingList = { Items: Item list }
+
+// Not sure this should be a view Maybe just have an IObservable of Items and
+// let the UI figure out how to package it all together Maybe have a previous
+// module that has the collections as predefined but useful queries and then
+// combine them and fiilter them in other modules
+type ShoppingList = 
+    { Items: Item list 
+      //StoreFilter : ChooseOne<ChooseOneItem<StateTypes.Store>>
+    }
+
+// or show for every store

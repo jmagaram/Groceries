@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Reactive.Subjects;
+using System.Collections.Generic;
 using System.Reactive.Linq;
+using Microsoft.FSharp.Collections;
 using Models;
 using static Models.StateTypes;
 
@@ -13,6 +15,7 @@ namespace WebApp.Data {
             _state = new BehaviorSubject<State>(StateModule.createWithSampleData);
             _stateObs = _state;
             ShoppingListView = ShoppingListModule.fromObservable(_stateObs);
+            Stores = StoreModule.allFromObservable(_stateObs);
         }
 
         public void Update(StateMessage msg) {
@@ -22,5 +25,6 @@ namespace WebApp.Data {
         }
 
         public IObservable<ViewTypes.ShoppingList> ShoppingListView { get;  }
+        public IObservable<FSharpList<ViewTypes.Store>> Stores { get; }
     }
 }

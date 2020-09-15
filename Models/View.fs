@@ -109,12 +109,24 @@ module Highlighter =
 
 
 
+
+
+
                     }
                     |> List.ofSeq
                     |> FormattedText.fromList
 
-[<CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
+[<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
 module Item =
+
+    let createItemCategory (c: StateTypes.CategoryId) (s: StateTypes.State) =
+        let c = s.Categories |> DataTable.findCurrent c
+
+        { CategoryId = c.CategoryId
+          CategoryName =
+              c.CategoryName
+              |> CategoryName.asText
+              |> FormattedText.normal }
 
     let fromItem (s: StateTypes.State) (item: StateTypes.Item) =
         { ItemId = item.ItemId
@@ -128,12 +140,7 @@ module Item =
           Category =
               item.CategoryId
               |> Option.map (fun categoryId -> s.Categories |> DataTable.findCurrent categoryId)
-              |> Option.map (fun c ->
-                  { CategoryId = c.CategoryId
-                    CategoryName =
-                        c.CategoryName
-                        |> CategoryName.asText
-                        |> FormattedText.normal })
+              |> Option.map (fun c -> createItemCategory c.CategoryId s)
           Schedule = item.Schedule
           NotSoldAt =
               s.NotSoldItems
@@ -152,6 +159,49 @@ module Item =
         |> Option.map (fromItem s)
 
     let create itemId s = tryCreate itemId s |> Option.get
+
+[<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
+module Store =
+
+    let private storeItem (itemId: StateTypes.ItemId) (s: StateTypes.State) =
+        let item = s.Items |> DataTable.findCurrent itemId
+
+        { ItemId = item.ItemId
+          ItemName = item.ItemName |> ItemName.asText |> FormattedText.normal
+          Note =
+              item.Note
+              |> Option.map (fun n -> n |> Note.asText |> FormattedText.normal)
+          Quantity =
+              item.Quantity
+              |> Option.map (fun q -> q |> Quantity.asText |> FormattedText.normal)
+          Category =
+              item.CategoryId
+              |> Option.map (fun c -> Item.createItemCategory c s)
+          Schedule = item.Schedule }
+
+    let fromStore (s: StateTypes.State) (store: StateTypes.Store) =
+        { StoreId = store.StoreId
+          StoreName = store.StoreName |> StoreName.asText |> FormattedText.normal
+          NotSoldItems =
+              s.NotSoldItems
+              |> DataTable.current
+              |> Seq.choose (fun ns -> if ns.StoreId <> store.StoreId then None else Some(storeItem ns.ItemId s))
+              |> List.ofSeq }
+
+    let tryCreate (id: StateTypes.StoreId) (s: StateTypes.State) =
+        s.Stores
+        |> DataTable.tryFindCurrent id
+        |> Option.map (fromStore s)
+
+    let create (id: StateTypes.StoreId) (s: StateTypes.State) = tryCreate id s |> Option.get
+
+    let allFromObservable (s: IObservable<Models.StateTypes.State>) =
+        s
+        |> Observable.map (fun s ->
+            s.Stores
+            |> DataTable.current
+            |> Seq.map (fun store -> fromStore s store)
+            |> List.ofSeq)
 
 module Category =
 
@@ -194,7 +244,11 @@ module Category =
                                 |> List.ofSeq })
               |> List.ofSeq }
 
-[<CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
+
+
+// not sure this attribute is needed
+// https://github.com/fsharp/fslang-design/blob/master/FSharp-4.1/FS-1019-implicitly-add-the-module-suffix.md
+[<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
 module ShoppingList =
 
     let create (s: StateTypes.State) =

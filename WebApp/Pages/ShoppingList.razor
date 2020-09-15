@@ -1,14 +1,19 @@
 ﻿@page "/shoppinglist"
 @using Models
+@using System.Reactive.Linq
 
 @inject Data.ApplicationStateService StateService
 
-<h1>ShoppingList</h1>
+<h1>Shopping List</h1>
+@foreach(var s in StoreNames) {
+    <FormattedText Text="@s"/>
+}
 @foreach (var i in ShoppingListView.Items) {
-    <WebApp.Shared.Item OnClickDelete="OnClickDelete" View="@i"/>
+    <WebApp.Shared.Item OnClickDelete="OnClickDelete" View="@i" />
 }
 @code {
-    IDisposable _subscription = null;
+    IDisposable _viewSubscription = null;
+    IDisposable _storeListSubscription = null;
 
     private void OnClickDelete(Models.StateTypes.ItemId itemId) {
         StateService.Update(StateTypes.StateMessage.DeleteItem.NewDeleteItem(itemId));
@@ -16,13 +21,22 @@
 
     protected override void OnInitialized() {
         base.OnInitialized();
-        _subscription =
+        _viewSubscription =
             StateService
             .ShoppingListView.Subscribe(s => { ShoppingListView = s; });
+        _storeListSubscription =
+            StateService.Stores
+            .Select(i => i.Select(j => j.StoreName).ToList())
+            .Subscribe(s => StoreNames = s);
+        // sort by?
     }
+
+    protected List<ViewTypes.FormattedText> StoreNames { get; private set; }
 
     protected ViewTypes.ShoppingList ShoppingListView { get; private set; }
 
-    public void Dispose() =>
-        _subscription?.Dispose();
+    public void Dispose() {
+        _viewSubscription?.Dispose();
+        _storeListSubscription?.Dispose();
+    }
 }

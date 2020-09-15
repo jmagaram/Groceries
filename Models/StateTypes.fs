@@ -77,6 +77,11 @@ type State =
       NotSoldItems: DataTable<NotSoldItem, NotSoldItem> 
       ShoppingListViewOptions : ShoppingListViewOptions }
 
+type ShoppingListMessage = 
+    | ClearStoreFilter
+    | SetStoreFilterTo of StoreId
+
 type StateMessage = 
     | DeleteCategory of CategoryId
     | DeleteItem of ItemId
+    | ShoppingListMessage of ShoppingListMessage

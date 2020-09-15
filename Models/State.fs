@@ -192,8 +192,22 @@ module State =
         s
         |> editItems (DataTable.delete id)
         |> editNotSoldItems (DataTable.deleteIf (fun x -> x.ItemId = id))
+        
+    let updateShoppingListViewOptions f (state:State) =
+        let opt =
+            state.ShoppingListViewOptions 
+            |> f
+        { state with ShoppingListViewOptions = opt }
+
+    let setShoppingListStoreFilterTo storeId (state:State) =
+        state
+        |> updateShoppingListViewOptions (fun o -> { o with StoreFilter = storeId })
 
     let update msg s =
         match msg with
         | DeleteCategory id -> s |> deleteCategory id
         | DeleteItem id -> s |> deleteItem id
+        | ShoppingListMessage msg -> 
+            match msg with
+            | ClearStoreFilter -> s |> setShoppingListStoreFilterTo None
+            | SetStoreFilterTo id -> s |> setShoppingListStoreFilterTo (Some id)
