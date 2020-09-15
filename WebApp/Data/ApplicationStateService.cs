@@ -15,6 +15,7 @@ namespace WebApp.Data {
             Items = Query.items(_stateObs);
             Stores = Query.stores(_stateObs);
             Categories = Query.categories(_stateObs);
+            ShoppingListViewOptions = Query.shoppingListViewOptions(_stateObs);
         }
 
         public void Update(StateMessage msg) {
@@ -27,5 +28,6 @@ namespace WebApp.Data {
 
         public IObservable<FSharpList<QueryTypes.ItemQry>> Items { get; }
         public IObservable<FSharpList<QueryTypes.CategoryQry>> Categories { get; }
+        public IObservable<ShoppingListViewOptions> ShoppingListViewOptions { get; }
     }
 }

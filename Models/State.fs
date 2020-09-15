@@ -5,40 +5,47 @@ open ValidationTypes
 open StringValidation
 open StateTypes
 
+[<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
 module Id =
 
     let create tag = newGuid () |> tag
 
+[<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
 module ItemName =
 
     let rules = singleLine 3<chars> 50<chars>
     let tryParse = parser ItemName rules
     let asText (ItemName s) = s
 
+[<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
 module Note =
 
     let rules = multipleLine 3<chars> 200<chars>
     let tryParse = parser Note rules
     let asText (Note s) = s
 
+[<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
 module Quantity =
 
     let rules = singleLine 1<chars> 30<chars>
     let tryParse = parser Quantity rules
     let asText (Quantity s) = s
 
+[<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
 module CategoryName =
 
     let rules = singleLine 3<chars> 30<chars>
     let tryParse = parser CategoryName rules
     let asText (CategoryName s) = s
 
+[<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
 module StoreName =
 
     let rules = singleLine 3<chars> 30<chars>
     let tryParse = parser StoreName rules
     let asText (StoreName s) = s
 
+[<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
 module Repeat =
 
     let rules = { Min = 1<days>; Max = 365<days> }
@@ -52,6 +59,7 @@ module Repeat =
             |> Ok
         | Some e -> e |> Error
 
+[<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
 module ShoppingListViewOptions =
 
     let defaultView = { ShoppingListViewOptions.StoreFilter = None }
