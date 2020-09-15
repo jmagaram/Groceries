@@ -8,11 +8,11 @@
 @foreach(var s in StoreNames) {
     @s 
 }
-@foreach (var i in ShoppingListView.Items) {
-    <WebApp.Shared.Item OnClickDelete="OnClickDelete" View="@i" />
+@foreach (var i in Items) {
+    <WebApp.Shared.Item OnClickDelete="OnClickDelete" ItemQry="@i" />
 }
 @code {
-    IDisposable _viewSubscription = null;
+    IDisposable _itemsSubscription = null;
     IDisposable _storeListSubscription = null;
 
     private void OnClickDelete(Models.StateTypes.ItemId itemId) {
@@ -21,9 +21,11 @@
 
     protected override void OnInitialized() {
         base.OnInitialized();
-        _viewSubscription =
+        _itemsSubscription =
             StateService
-            .ShoppingListView.Subscribe(s => { ShoppingListView = s; });
+            .Items
+            .Select(i=>i.ToList())
+            .Subscribe(s => Items = s);
         _storeListSubscription =
             StateService.Stores
             .Select(i => i.Select(j => j.StoreName.Item).ToList())
@@ -32,10 +34,10 @@
 
     protected List<string> StoreNames { get; private set; }
 
-    protected ViewTypes.ShoppingList ShoppingListView { get; private set; }
+    protected List<QueryTypes.ItemQry> Items { get; private set; }
 
     public void Dispose() {
-        _viewSubscription?.Dispose();
+        _itemsSubscription?.Dispose();
         _storeListSubscription?.Dispose();
     }
 }

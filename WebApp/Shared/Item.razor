@@ -1,27 +1,27 @@
 ﻿@using Common
 
 <p>
-    <FormattedText Text="@(View.ItemName)" />
-    @if (View.Category.IsSome()) {
-        var category = View.Category.Value.CategoryName;
-        <text>&nbsp;| &nbsp;</text><FormattedText Text="@category" />
+    <span>@ItemQry.ItemName.Item</span>
+    @if (ItemQry.Category.IsSome()) {
+        var category = ItemQry.Category.Value.CategoryName;
+        <text>&nbsp;| &nbsp;</text>@ItemQry.Category.Value.CategoryName.Item
     }
-    @if (View.Quantity.IsSome()) {
-        var quantity = View.Quantity.Value;
-        <text>&nbsp;| &nbsp;</text><FormattedText Text="@(quantity)" />
+    @if (ItemQry.Quantity.IsSome()) {
+        var quantity = ItemQry.Quantity.Value;
+        <text>&nbsp;| &nbsp;</text>@ItemQry.Quantity.Value
     }
-    @if (View.Note.IsSome()) {
-        var note = View.Note.Value;
-        <text>&nbsp;| &nbsp;</text><FormattedText Text="@(note)" />
+    @if (ItemQry.Note.IsSome()) {
+        var note = ItemQry.Note.Value;
+        <text>&nbsp;| &nbsp;</text>@ItemQry.Note.Value
     }
-    <text>&nbsp;|&nbsp;</text><button class="btn btn-secondary btn-sm" @onclick:preventDefault @onclick="@(async () => { await OnClickDelete.InvokeAsync(View.ItemId); })">
+    <text>&nbsp;|&nbsp;</text><button class="btn btn-secondary btn-sm" @onclick:preventDefault @onclick="@(async () => { await OnClickDelete.InvokeAsync(ItemQry.ItemId); })">
         Delete
     </button>
 </p>
 
 @code {
     [Parameter]
-    public Models.ViewTypes.Item View { get; set; }
+    public Models.QueryTypes.ItemQry ItemQry { get; set; }
 
     [Parameter]
     public EventCallback<Models.StateTypes.ItemId> OnClickDelete { get; set; }
