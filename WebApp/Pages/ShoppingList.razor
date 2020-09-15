@@ -12,8 +12,8 @@
     <WebApp.Shared.Item OnClickDelete="OnClickDelete" ItemQry="@i" />
 }
 @code {
-    IDisposable _itemsSubscription = null;
-    IDisposable _storeListSubscription = null;
+    IDisposable _items = null;
+    IDisposable _stores = null;
 
     private void OnClickDelete(Models.StateTypes.ItemId itemId) {
         StateService.Update(StateTypes.StateMessage.DeleteItem.NewDeleteItem(itemId));
@@ -21,12 +21,12 @@
 
     protected override void OnInitialized() {
         base.OnInitialized();
-        _itemsSubscription =
+        _items =
             StateService
             .Items
             .Select(i=>i.ToList())
             .Subscribe(s => Items = s);
-        _storeListSubscription =
+        _stores =
             StateService.Stores
             .Select(i => i.Select(j => j.StoreName.Item).ToList())
             .Subscribe(s => StoreNames = s);
@@ -37,7 +37,7 @@
     protected List<QueryTypes.ItemQry> Items { get; private set; }
 
     public void Dispose() {
-        _itemsSubscription?.Dispose();
-        _storeListSubscription?.Dispose();
+        _items?.Dispose();
+        _stores?.Dispose();
     }
 }

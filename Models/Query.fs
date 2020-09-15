@@ -50,7 +50,7 @@ let private categoryItem (item: Item) (state: State) =
           |> Seq.map (fun storeId -> itemStore storeId state)
           |> List.ofSeq }
 
-let private categoryQry (category:Category) (s: State) =
+let private categoryQry (category: Category) (s: State) =
 
     { CategoryQry.CategoryId = category.CategoryId
       CategoryName = category.CategoryName
@@ -73,7 +73,7 @@ let private storeItem itemId (s: State) =
           |> Option.map (fun catId -> itemCategory catId s)
       Schedule = item.Schedule }
 
-let private storeQry (store:Store) (s: State) =
+let private storeQry (store: Store) (s: State) =
 
     { StoreQry.StoreId = store.StoreId
       StoreName = store.StoreName
@@ -107,3 +107,10 @@ let stores (s: IObservable<StateTypes.State>) =
         |> DataTable.current
         |> Seq.map (fun i -> storeQry i s)
         |> List.ofSeq)
+
+let shoppingListViewOptions (s: IObservable<StateTypes.State>) =
+    s
+    |> Observable.map (fun i ->
+        i.ShoppingListViewOptions
+        |> DataRow.currentValue
+        |> Option.defaultValue (ShoppingListViewOptions.defaultView))

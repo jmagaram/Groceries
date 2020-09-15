@@ -56,7 +56,7 @@ module ShoppingListViewOptions =
 
     let defaultView = { ShoppingListViewOptions.StoreFilter = None }
 
-[<CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
+[<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
 module State =
 
     let private editItems f s = { s with Items = f s.Items }
@@ -68,6 +68,7 @@ module State =
     let private editNotSoldItems f s = { s with NotSoldItems = f s.NotSoldItems }
 
     let items (s: State) = s.Items
+
     let categories (s: State) = s.Categories
 
     let createDefault =
@@ -75,7 +76,7 @@ module State =
           Items = DataTable.empty
           Stores = DataTable.empty
           NotSoldItems = DataTable.empty
-          ShoppingListViewOptions = ShoppingListViewOptions.defaultView }
+          ShoppingListViewOptions = DataRow.unchanged ShoppingListViewOptions.defaultView }
 
     let createWithSampleData =
         let addCategory n s =
@@ -178,36 +179,34 @@ module State =
         |> notSoldAt "Dried flax seeds" "QFC"
         |> notSoldAt "Dried flax seeds" "Whole Foods"
 
-    let removeCategoryFromItem categoryId (i: Item) =
+    let private removeCategoryFromItem categoryId (i: Item) =
         match i.CategoryId with
         | None -> i
         | Some c -> if c = categoryId then { i with CategoryId = None } else i
 
-    let deleteCategory id (s: State) =
+    let private deleteCategory id (s: State) =
         s
         |> editCategories (DataTable.deleteIf (fun x -> x.CategoryId = id))
         |> editItems (DataTable.mapCurrent (removeCategoryFromItem id))
 
-    let deleteItem id (s:State) =
+    let private deleteItem id (s: State) =
         s
         |> editItems (DataTable.delete id)
         |> editNotSoldItems (DataTable.deleteIf (fun x -> x.ItemId = id))
-        
-    let updateShoppingListViewOptions f (state:State) =
-        let opt =
-            state.ShoppingListViewOptions 
-            |> f
+
+    let private updateShoppingListViewOptions f (state: State) =
+        let opt = state.ShoppingListViewOptions |> DataRow.mapCurrent f
         { state with ShoppingListViewOptions = opt }
 
-    let setShoppingListStoreFilterTo storeId (state:State) =
+    let private setShoppingListStoreFilterTo storeId (state: State) =
         state
-        |> updateShoppingListViewOptions (fun o -> { o with StoreFilter = storeId })
+        |> updateShoppingListViewOptions (fun i -> { i with StoreFilter = storeId })
 
     let update msg s =
         match msg with
         | DeleteCategory id -> s |> deleteCategory id
         | DeleteItem id -> s |> deleteItem id
-        | ShoppingListMessage msg -> 
+        | ShoppingListMessage msg ->
             match msg with
             | ClearStoreFilter -> s |> setShoppingListStoreFilterTo None
             | SetStoreFilterTo id -> s |> setShoppingListStoreFilterTo (Some id)
