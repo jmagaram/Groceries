@@ -13,6 +13,8 @@
     <Compile Include="Validation.fs" />
     <Compile Include="StateTypes.fs" />
     <Compile Include="State.fs" />
+    <Compile Include="QueryTypes.fs" />
+    <Compile Include="Query.fs" />
     <Compile Include="FormsTypes.fs" />
     <Compile Include="Forms.fs" />
     <Compile Include="ViewTypes.fs" />
