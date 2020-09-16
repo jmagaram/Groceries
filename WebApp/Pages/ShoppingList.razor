@@ -1,5 +1,6 @@
 ﻿@page "/shoppinglist"
 
+<button @onclick="OnDeleteStore">delete store</button>
 <h1>Shopping List</h1>
 <select @onchange="OnStoreFilterChange">
     <option value="@Guid.Empty" selected="@(StoreFilter==Guid.Empty)">All Stores</option>
@@ -10,6 +11,7 @@
         <option selected="@isSelected" value="@key.ToString()">@description</option>
     }
 </select>
+
 @foreach (var i in Items) {
     <WebApp.Shared.Item OnClickDelete="OnClickDelete" ItemQry="@i" />
 }

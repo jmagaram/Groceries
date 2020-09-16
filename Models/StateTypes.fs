@@ -72,18 +72,25 @@ type ShoppingListViewOptions =
     interface IKey<string> with
         member this.Key = "singleton"
 
+type ItemTable = DataTable<ItemId, Item>
+type StoreTable = DataTable<StoreId, Store>
+type CategoryTable = DataTable<CategoryId, Category>
+type NotSoldItemsTable = DataTable<NotSoldItem, NotSoldItem>
+type ShoppingListViewOptionsRow = DataRow<ShoppingListViewOptions>
+
 type State =
-    { Items: DataTable<ItemId, Item>
-      Categories: DataTable<CategoryId, Category>
-      Stores: DataTable<StoreId, Store>
-      NotSoldItems: DataTable<NotSoldItem, NotSoldItem>
-      ShoppingListViewOptions: DataRow<ShoppingListViewOptions> }
+    { Items: ItemTable
+      Categories: CategoryTable
+      Stores: StoreTable
+      NotSoldItems: NotSoldItemsTable
+      ShoppingListViewOptions: ShoppingListViewOptionsRow }
 
 type ShoppingListMessage =
     | ClearStoreFilter
     | SetStoreFilterTo of StoreId
 
 type StateMessage =
+    | DeleteStore of StoreId
     | DeleteCategory of CategoryId
     | DeleteItem of ItemId
     | ShoppingListMessage of ShoppingListMessage

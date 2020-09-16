@@ -79,6 +79,12 @@ module State =
 
     let categories (s: State) = s.Categories
 
+    let stores (s: State) = s.Stores
+
+    let notSoldItems (s: State) = s.NotSoldItems
+
+    let shoppingListViewOptions (s: State) = s.ShoppingListViewOptions
+
     let createDefault =
         { Categories = DataTable.empty
           Items = DataTable.empty
@@ -227,10 +233,16 @@ module State =
         state
         |> updateShoppingListViewOptions (fun i -> { i with StoreFilter = storeId })
 
+    let private deleteStore id (s: State) =
+        s
+        |> editStores (DataTable.deleteIf (fun x -> x.StoreId = id))
+        |> editNotSoldItems (DataTable.deleteIf (fun x -> x.StoreId = id))
+
     let update msg s =
         match msg with
         | DeleteCategory id -> s |> deleteCategory id
         | DeleteItem id -> s |> deleteItem id
+        | DeleteStore id -> s |> deleteStore id
         | ShoppingListMessage msg ->
             match msg with
             | ClearStoreFilter -> s |> setShoppingListStoreFilterTo None

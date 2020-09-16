@@ -29,13 +29,20 @@ namespace WebApp.Pages {
                 .Select(i => i.Items.Where(j => i.Filter.IsNone() || j.NotSoldAt.All(k => !k.StoreId.Equals(i.Filter.Value))))
                 .Subscribe(i =>
                 {
+                    isUpdatinglist = true;
                     var items = i.ToList();
                     Items = items;
+                    isUpdatinglist = false;
+                    // switches to 6 items and then immediately to 8, huh?
+                    // 
                 });
 
             _stores =
                 StateService.Stores
-                .Subscribe(s => StoreFilterChoices = s.OrderBy(i => i.StoreName).ToList());
+                .Subscribe(s =>
+                {
+                    StoreFilterChoices = s.OrderBy(i => i.StoreName).ToList();
+                });
 
             _storeOptions =
                  StateService.ShoppingListViewOptions
@@ -48,6 +55,13 @@ namespace WebApp.Pages {
                          StoreFilter = s.StoreFilter.Value.Item;
                      }
                  });
+        }
+
+        bool isUpdatinglist = false;
+
+        private void OnDeleteStore() {
+            var secondStore = StoreFilterChoices.Skip(1).First().StoreId;
+            StateService.Update(StateMessage.NewDeleteStore(secondStore));
         }
 
         private void OnStoreFilterChange(ChangeEventArgs e) {

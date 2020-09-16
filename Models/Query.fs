@@ -9,19 +9,19 @@ open Models
 open Models.QueryTypes
 open Models.StateTypes
 
-let private itemStore storeId (state: State) =
-    state.Stores
+let private itemStore storeId stores =
+    stores
     |> DataTable.findCurrent storeId
-    |> fun s -> { ItemStore.StoreId = s.StoreId; StoreName = s.StoreName }
+    |> fun (s: Store) -> { ItemStore.StoreId = s.StoreId; StoreName = s.StoreName }
 
-let private itemCategory categoryId (state: State) =
-    state.Categories
+let private itemCategory categoryId cats =
+    cats
     |> DataTable.findCurrent categoryId
     |> fun cat ->
         { ItemCategory.CategoryId = cat.CategoryId
           CategoryName = cat.CategoryName }
 
-let private itemQry (item: Item) (s: State) =
+let private itemQry (item: Item) cats notSoldItems stores =
     { ItemQry.ItemId = item.ItemId
       ItemName = item.ItemName
       Note = item.Note
@@ -29,40 +29,39 @@ let private itemQry (item: Item) (s: State) =
       Schedule = item.Schedule
       Category =
           item.CategoryId
-          |> Option.map (fun cId -> itemCategory cId s)
+          |> Option.map (fun cId -> itemCategory cId cats)
       NotSoldAt =
-          s.NotSoldItems
+          notSoldItems
           |> DataTable.current
           |> Seq.choose (fun ns -> if ns.ItemId = item.ItemId then Some ns.StoreId else None)
-          |> Seq.map (fun storeId -> itemStore storeId s)
+          |> Seq.map (fun storeId -> itemStore storeId stores)
           |> List.ofSeq }
 
-let private categoryItem (item: Item) (state: State) =
+let private categoryItem (item: Item) notSoldItems stores =
     { CategoryItem.ItemId = item.ItemId
       ItemName = item.ItemName
       Note = item.Note
       Quantity = item.Quantity
       Schedule = item.Schedule
       NotSoldAt =
-          state.NotSoldItems
+          notSoldItems
           |> DataTable.current
           |> Seq.choose (fun ns -> if ns.ItemId = item.ItemId then Some ns.StoreId else None)
-          |> Seq.map (fun storeId -> itemStore storeId state)
+          |> Seq.map (fun storeId -> itemStore storeId stores)
           |> List.ofSeq }
 
-let private categoryQry (category: Category) (s: State) =
-
+let private categoryQry (category: Category) items notSold stores =
     { CategoryQry.CategoryId = category.CategoryId
       CategoryName = category.CategoryName
       Items =
-          s.Items
+          items
           |> DataTable.current
-          |> Seq.choose (fun i -> if i.CategoryId = Some category.CategoryId then Some i else None)
-          |> Seq.map (fun i -> categoryItem i s)
+          |> Seq.choose (fun (i: Item) -> if i.CategoryId = Some category.CategoryId then Some i else None)
+          |> Seq.map (fun i -> categoryItem i notSold stores)
           |> List.ofSeq }
 
-let private storeItem itemId (s: State) =
-    let item = s.Items |> DataTable.findCurrent itemId
+let private storeItem itemId items cats =
+    let item = items |> DataTable.findCurrent itemId
 
     { StoreItem.ItemId = itemId
       ItemName = item.ItemName
@@ -70,47 +69,79 @@ let private storeItem itemId (s: State) =
       Quantity = item.Quantity
       Category =
           item.CategoryId
-          |> Option.map (fun catId -> itemCategory catId s)
+          |> Option.map (fun catId -> itemCategory catId cats)
       Schedule = item.Schedule }
 
-let private storeQry (store: Store) (s: State) =
+let private storeQry (store: Store) items cats notSold =
 
     { StoreQry.StoreId = store.StoreId
       StoreName = store.StoreName
       NotSoldItems =
-          s.NotSoldItems
+          notSold
           |> DataTable.current
           |> Seq.choose (fun ns -> if ns.StoreId = store.StoreId then Some ns.ItemId else None)
-          |> Seq.map (fun itemId -> storeItem itemId s)
+          |> Seq.map (fun itemId -> storeItem itemId items cats)
           |> List.ofSeq }
 
+// distinctUntilChanged will do a value equality of lists and records this is
+// slower than doing an object.equals comparison because if the object pointers
+// are different there will be still be a field by field comparison. another
+// option for speeding it up is giving a datatable a "last changed date" or
+// "version" for comparison
 let items (s: IObservable<StateTypes.State>) =
-    s
-    |> Observable.map (fun s ->
-        s.Items
+    let items = s |> Observable.map (fun s -> s.Items)
+    let cats =  s |> Observable.map (fun s -> s.Categories)
+    let ns =  s |> Observable.map (fun s -> s.NotSoldItems)
+    let stores =  s |> Observable.map (fun s -> s.Stores)
+    items
+    |> Observable.combineLatest cats
+    |> Observable.combineLatest ns
+    |> Observable.combineLatest stores
+    |> Observable.map (fun (stores, (ns, (cats, items)))-> 
+        items
         |> DataTable.current
-        |> Seq.map (fun i -> itemQry i s)
+        |> Seq.map (fun i -> itemQry i cats ns stores)
         |> List.ofSeq)
+    |> Observable.distinctUntilChanged
 
 let categories (s: IObservable<StateTypes.State>) =
-    s
-    |> Observable.map (fun s ->
-        s.Categories
+    let cats = s |> Observable.map (fun s -> s.Categories)
+    let items = s |> Observable.map (fun s -> s.Items)
+    let notSold = s |> Observable.map (fun s -> s.NotSoldItems)
+    let stores = s |> Observable.map (fun s -> s.Stores)
+
+    cats
+    |> Observable.combineLatest items
+    |> Observable.combineLatest notSold
+    |> Observable.combineLatest stores
+    |> Observable.map (fun (stores, (notSold, (items, cats))) ->
+        cats
         |> DataTable.current
-        |> Seq.map (fun i -> categoryQry i s)
-        |> List.ofSeq)
+        |> Seq.map (fun cat -> categoryQry cat items notSold stores)
+        |> Seq.toList)
+    |> Observable.distinctUntilChanged
 
 let stores (s: IObservable<StateTypes.State>) =
-    s
-    |> Observable.map (fun s ->
-        s.Stores
+    let cats = s |> Observable.map (fun s -> s.Categories)
+    let items = s |> Observable.map (fun s -> s.Items)
+    let notSold = s |> Observable.map (fun s -> s.NotSoldItems)
+    let stores = s |> Observable.map (fun s -> s.Stores)
+    cats
+    |> Observable.combineLatest items
+    |> Observable.combineLatest notSold
+    |> Observable.combineLatest stores
+    |> Observable.map (fun (stores, (notSold, (items, cats))) ->
+        stores
         |> DataTable.current
-        |> Seq.map (fun i -> storeQry i s)
-        |> List.ofSeq)
+        |> Seq.map (fun store -> storeQry store items cats notSold)
+        |> Seq.toList)
+    |> Observable.distinctUntilChanged
 
 let shoppingListViewOptions (s: IObservable<StateTypes.State>) =
     s
+    |> Observable.map (fun i -> i.ShoppingListViewOptions)
+    |> Observable.map DataRow.currentValue
     |> Observable.map (fun i ->
-        i.ShoppingListViewOptions
-        |> DataRow.currentValue
+        i
         |> Option.defaultValue (ShoppingListViewOptions.defaultView))
+    |> Observable.distinctUntilChanged
