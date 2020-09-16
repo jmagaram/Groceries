@@ -175,18 +175,7 @@ module State =
                 let nsa = { StoreId = store.StoreId; ItemId = itemId }
 
                 { state with
-                      NotSoldItems = s.NotSoldItems |> DataTable.insert nsa }) s
-
-        //let notSoldAt itemName stores (s: State) =
-        //    let itemId = (s |> findItem itemName).ItemId
-
-        //    stores
-        //    |> Seq.fold (fun state storeName ->
-        //        let storeId = (s |> findStore storeName).StoreId
-        //        let nsa = { StoreId = storeId; ItemId = itemId }
-
-        //        { state with
-        //              NotSoldItems = s.NotSoldItems |> DataTable.insert nsa }) s
+                      NotSoldItems = state.NotSoldItems |> DataTable.insert nsa }) s
 
         createDefault
         |> addCategory "Produce"
