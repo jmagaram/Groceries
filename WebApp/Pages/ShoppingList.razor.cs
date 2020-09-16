@@ -9,9 +9,9 @@ using static Models.StateTypes;
 
 namespace WebApp.Pages {
     public partial class ShoppingList : ComponentBase {
-        IDisposable _items = null;
-        IDisposable _stores = null;
-        IDisposable _storeOptions = null;
+        IDisposable _updateItemList = null;
+        IDisposable _updateStorePickerList = null;
+        IDisposable _updateStorePickerCurrentValue = null;
 
         private void OnClickDelete(ItemId itemId) {
             StateService.Update(StateMessage.NewDeleteItem(itemId));
@@ -22,46 +22,49 @@ namespace WebApp.Pages {
 
         protected override void OnInitialized() {
             base.OnInitialized();
-            _items =
-                StateService
-                .Items
-                .CombineLatest(StateService.ShoppingListViewOptions, (i, j) => (Items: i, Filter: j.StoreFilter))
-                .Select(i => i.Items.Where(j => i.Filter.IsNone() || j.NotSoldAt.All(k => !k.StoreId.Equals(i.Filter.Value))))
-                .Subscribe(i =>
-                {
-                    isUpdatinglist = true;
-                    var items = i.ToList();
-                    Items = items;
-                    isUpdatinglist = false;
-                    // switches to 6 items and then immediately to 8, huh?
-                    // 
-                });
-
-            _stores =
-                StateService.Stores
-                .Subscribe(s =>
-                {
-                    StoreFilterChoices = s.OrderBy(i => i.StoreName).ToList();
-                });
-
-            _storeOptions =
-                 StateService.ShoppingListViewOptions
-                 .Subscribe(s =>
-                 {
-                     if (s.StoreFilter.IsNone()) {
-                         StoreFilter = Guid.Empty;
-                     }
-                     else {
-                         StoreFilter = s.StoreFilter.Value.Item;
-                     }
-                 });
+            _updateItemList = UpdateItems();
+            _updateStorePickerList = UpdateStoreList();
+            _updateStorePickerCurrentValue = UpdateViewOptions();
         }
 
-        bool isUpdatinglist = false;
+        private IDisposable UpdateViewOptions() =>
+            StateService.ShoppingListViewOptions
+            .Subscribe(s =>
+            {
+                if (s.StoreFilter.IsNone()) {
+                    StoreFilter = Guid.Empty;
+                }
+                else {
+                    StoreFilter = s.StoreFilter.Value.Item;
+                }
+            });
+
+        private IDisposable UpdateStoreList() =>
+            StateService.Stores
+            .Subscribe(s =>
+            {
+                StoreFilterChoices = s.OrderBy(i => i.StoreName).ToList();
+            });
+
+        // worried about combining observables; one will change before the other
+        // somewhat arbitrarily, depending on how i set them up. the data
+        // between them may not be in sync. consider just having one observable
+        // per view and define on server.
+        private IDisposable UpdateItems() =>
+            StateService
+            .Items
+            .CombineLatest(StateService.ShoppingListViewOptions, (i, j) => (Items: i, Filter: j.StoreFilter))
+            .Select(i => i.Items.Where(j => i.Filter.IsNone() || j.NotSoldAt.All(k => !k.StoreId.Equals(i.Filter.Value))))
+            .Subscribe(i =>
+            {
+                var items = i.ToList();
+                Items = items;
+            });
 
         private void OnDeleteStore() {
-            var secondStore = StoreFilterChoices.Skip(1).First().StoreId;
-            StateService.Update(StateMessage.NewDeleteStore(secondStore));
+            //var toDelete = StoreFilterChoices.Skip(1).First().StoreId;
+            var toDelete = StoreFilterChoices.First(i => i.StoreId.Item.Equals(StoreFilter)).StoreId;
+            StateService.Update(StateMessage.NewDeleteStore(toDelete));
         }
 
         private void OnStoreFilterChange(ChangeEventArgs e) {
@@ -75,16 +78,24 @@ namespace WebApp.Pages {
             }
         }
 
-        protected Guid StoreFilter { get; private set; }
+        private Guid storeFilter;
+
+        protected Guid StoreFilter
+        {
+            get => storeFilter; private set
+            {
+                storeFilter = value;
+            }
+        }
 
         protected IEnumerable<QueryTypes.ItemQry> Items { get; private set; }
 
         protected List<QueryTypes.StoreQry> StoreFilterChoices { get; private set; }
 
         public void Dispose() {
-            _items?.Dispose();
-            _stores?.Dispose();
-            _storeOptions?.Dispose();
+            _updateItemList?.Dispose();
+            _updateStorePickerList?.Dispose();
+            _updateStorePickerCurrentValue?.Dispose();
         }
     }
 }

@@ -226,6 +226,7 @@ module State =
         s
         |> editStores (DataTable.deleteIf (fun x -> x.StoreId = id))
         |> editNotSoldItems (DataTable.deleteIf (fun x -> x.StoreId = id))
+        |> updateShoppingListViewOptions (fun v -> if v.StoreFilter = Some id then { v with StoreFilter = None } else v)
 
     let update msg s =
         match msg with
