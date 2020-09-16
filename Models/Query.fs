@@ -8,6 +8,7 @@ open FSharp.Control.Reactive
 open Models
 open Models.QueryTypes
 open Models.StateTypes
+open Models.SynchronizationTypes
 
 let private itemStore storeId stores =
     stores
@@ -83,67 +84,60 @@ let private storeQry (store: Store) items cats notSold =
           |> Seq.map (fun itemId -> storeItem itemId items cats)
           |> List.ofSeq }
 
+let itemsFromState (s: State) =
+    s
+    |> State.items
+    |> DataTable.current
+    |> Seq.map (fun i -> itemQry i s.Categories s.NotSoldItems s.Stores)
+    |> List.ofSeq
+
 // distinctUntilChanged will do a value equality of lists and records this is
 // slower than doing an object.equals comparison because if the object pointers
-// are different there will be still be a field by field comparison. another
-// option for speeding it up is giving a datatable a "last changed date" or
-// "version" for comparison
+// are different there will be still be a field by field comparison.
+//
+// previously tried creating separate observables for the items, categories,
+// etc. and doing a combine latest. was trying to only recalculate when
+// something changed. but one of these fires before the rest. so if table a has
+// a foreign key to table b and a row in b is removed, b might fire before a,
+// causing errors when trying to find the source. need to trigger on foreign
+// keys first.
 let items (s: IObservable<StateTypes.State>) =
-    let items = s |> Observable.map (fun s -> s.Items)
-    let cats =  s |> Observable.map (fun s -> s.Categories)
-    let ns =  s |> Observable.map (fun s -> s.NotSoldItems)
-    let stores =  s |> Observable.map (fun s -> s.Stores)
-    items
-    |> Observable.combineLatest cats
-    |> Observable.combineLatest ns
-    |> Observable.combineLatest stores
-    |> Observable.map (fun (stores, (ns, (cats, items)))-> 
-        items
-        |> DataTable.current
-        |> Seq.map (fun i -> itemQry i cats ns stores)
-        |> List.ofSeq)
+    s
+    |> Observable.map itemsFromState
     |> Observable.distinctUntilChanged
+
+let private categoriesFromState (s: State) =
+    s
+    |> State.categories
+    |> DataTable.current
+    |> Seq.map (fun cat -> categoryQry cat s.Items s.NotSoldItems s.Stores)
+    |> List.ofSeq
 
 let categories (s: IObservable<StateTypes.State>) =
-    let cats = s |> Observable.map (fun s -> s.Categories)
-    let items = s |> Observable.map (fun s -> s.Items)
-    let notSold = s |> Observable.map (fun s -> s.NotSoldItems)
-    let stores = s |> Observable.map (fun s -> s.Stores)
-
-    cats
-    |> Observable.combineLatest items
-    |> Observable.combineLatest notSold
-    |> Observable.combineLatest stores
-    |> Observable.map (fun (stores, (notSold, (items, cats))) ->
-        cats
-        |> DataTable.current
-        |> Seq.map (fun cat -> categoryQry cat items notSold stores)
-        |> Seq.toList)
+    s
+    |> Observable.map categoriesFromState
     |> Observable.distinctUntilChanged
+
+let private storesFromState (s: State) =
+    s
+    |> State.stores
+    |> DataTable.current
+    |> Seq.map (fun store -> storeQry store s.Items s.Categories s.NotSoldItems)
+    |> List.ofSeq
 
 let stores (s: IObservable<StateTypes.State>) =
-    let cats = s |> Observable.map (fun s -> s.Categories)
-    let items = s |> Observable.map (fun s -> s.Items)
-    let notSold = s |> Observable.map (fun s -> s.NotSoldItems)
-    let stores = s |> Observable.map (fun s -> s.Stores)
-    cats
-    |> Observable.combineLatest items
-    |> Observable.combineLatest notSold
-    |> Observable.combineLatest stores
-    |> Observable.map (fun (stores, (notSold, (items, cats))) ->
-        stores
-        |> DataTable.current
-        |> Seq.map (fun store -> storeQry store items cats notSold)
-        |> Seq.toList)
+    s
+    |> Observable.map storesFromState
     |> Observable.distinctUntilChanged
+
+let private shoppingListViewOptionsFromState (s: State) =
+    s.ShoppingListViewOptions
+    |> DataRow.currentValue
+    |> Option.defaultValue (ShoppingListViewOptions.defaultView)
 
 let shoppingListViewOptions (s: IObservable<StateTypes.State>) =
     s
-    |> Observable.map (fun i -> i.ShoppingListViewOptions)
-    |> Observable.map DataRow.currentValue
-    |> Observable.map (fun i ->
-        i
-        |> Option.defaultValue (ShoppingListViewOptions.defaultView))
+    |> Observable.map shoppingListViewOptionsFromState
     |> Observable.distinctUntilChanged
 
 // other useful views like...
