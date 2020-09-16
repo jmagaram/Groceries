@@ -1,6 +1,5 @@
 ﻿@page "/shoppinglist"
 
-<button @onclick="OnDeleteStore">delete store</button>
 <h1>Shopping List</h1>
 <select @onchange="OnStoreFilterChange">
     <option value="@Guid.Empty" selected="@(StoreFilter==Guid.Empty)">All Stores</option>

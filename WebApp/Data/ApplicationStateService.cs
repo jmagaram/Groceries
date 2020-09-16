@@ -1,6 +1,6 @@
-﻿using Microsoft.FSharp.Collections;
-using Models;
+﻿using Models;
 using System;
+using System.Reactive.Linq;
 using System.Reactive.Subjects;
 using static Models.StateTypes;
 
@@ -12,10 +12,7 @@ namespace WebApp.Data {
         public ApplicationStateService() {
             _state = new BehaviorSubject<State>(StateModule.createWithSampleData);
             _stateObs = _state;
-            Items = Query.items(_stateObs);
-            Stores = Query.stores(_stateObs);
-            Categories = Query.categories(_stateObs);
-            ShoppingListViewOptions = Query.shoppingListViewOptions(_stateObs);
+            ShoppingListQry = _stateObs.Select(Query.shoppingListQry);
         }
 
         public void Update(StateMessage msg) {
@@ -24,10 +21,6 @@ namespace WebApp.Data {
             _state.OnNext(state);
         }
 
-        public IObservable<FSharpList<QueryTypes.StoreQry>> Stores { get; }
-
-        public IObservable<FSharpList<QueryTypes.ItemQry>> Items { get; }
-        public IObservable<FSharpList<QueryTypes.CategoryQry>> Categories { get; }
-        public IObservable<ShoppingListViewOptions> ShoppingListViewOptions { get; }
+        public IObservable<QueryTypes.ShoppingListQry> ShoppingListQry { get; }
     }
 }

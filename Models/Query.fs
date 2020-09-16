@@ -74,7 +74,6 @@ let private storeItem itemId items cats =
       Schedule = item.Schedule }
 
 let private storeQry (store: Store) items cats notSold =
-
     { StoreQry.StoreId = store.StoreId
       StoreName = store.StoreName
       NotSoldItems =
@@ -84,62 +83,42 @@ let private storeQry (store: Store) items cats notSold =
           |> Seq.map (fun itemId -> storeItem itemId items cats)
           |> List.ofSeq }
 
-let itemsFromState (s: State) =
-    s
-    |> State.items
+let private items categories items notSold stores =
+    items
     |> DataTable.current
-    |> Seq.map (fun i -> itemQry i s.Categories s.NotSoldItems s.Stores)
-    |> List.ofSeq
+    |> Seq.map (fun i -> itemQry i categories notSold stores)
 
-// distinctUntilChanged will do a value equality of lists and records this is
-// slower than doing an object.equals comparison because if the object pointers
-// are different there will be still be a field by field comparison.
-//
-// previously tried creating separate observables for the items, categories,
-// etc. and doing a combine latest. was trying to only recalculate when
-// something changed. but one of these fires before the rest. so if table a has
-// a foreign key to table b and a row in b is removed, b might fire before a,
-// causing errors when trying to find the source. need to trigger on foreign
-// keys first.
-let items (s: IObservable<StateTypes.State>) =
-    s
-    |> Observable.map itemsFromState
-    |> Observable.distinctUntilChanged
-
-let private categoriesFromState (s: State) =
-    s
-    |> State.categories
+let private categories categories items notSold stores =
+    categories
     |> DataTable.current
-    |> Seq.map (fun cat -> categoryQry cat s.Items s.NotSoldItems s.Stores)
-    |> List.ofSeq
+    |> Seq.map (fun cat -> categoryQry cat items notSold stores)
 
-let categories (s: IObservable<StateTypes.State>) =
-    s
-    |> Observable.map categoriesFromState
-    |> Observable.distinctUntilChanged
-
-let private storesFromState (s: State) =
-    s
-    |> State.stores
+let private stores stores items categories notSold =
+    stores
     |> DataTable.current
-    |> Seq.map (fun store -> storeQry store s.Items s.Categories s.NotSoldItems)
-    |> List.ofSeq
+    |> Seq.map (fun store -> storeQry store items categories notSold)
 
-let stores (s: IObservable<StateTypes.State>) =
-    s
-    |> Observable.map storesFromState
-    |> Observable.distinctUntilChanged
-
-let private shoppingListViewOptionsFromState (s: State) =
-    s.ShoppingListViewOptions
+let private shoppingListViewOptions viewOptionRow =
+    viewOptionRow
     |> DataRow.currentValue
     |> Option.defaultValue (ShoppingListViewOptions.defaultView)
 
-let shoppingListViewOptions (s: IObservable<StateTypes.State>) =
-    s
-    |> Observable.map shoppingListViewOptionsFromState
-    |> Observable.distinctUntilChanged
+let private isSoldAt store (itemQry: ItemQry) =
+    store
+    |> Option.map (fun store ->
+        itemQry.NotSoldAt
+        |> Seq.forall (fun ns -> ns.StoreId <> store))
+    |> Option.defaultValue true
 
-// other useful views like...
-// items not sold at any store
-// items available at a particular store with filter (shopping list)
+let shoppingListQry (s: State) =
+    let viewOpt = s.ShoppingListViewOptions |> shoppingListViewOptions
+
+    { Stores = s.Stores |> DataTable.current |> List.ofSeq
+      Items =
+          s
+          |> State.items
+          |> DataTable.current
+          |> Seq.map (fun item -> itemQry item s.Categories s.NotSoldItems s.Stores)
+          |> Seq.filter (fun item -> item |> isSoldAt viewOpt.StoreFilter)
+          |> List.ofSeq
+      ShoppingListViewOptions = viewOpt }

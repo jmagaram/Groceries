@@ -42,3 +42,8 @@ and StoreItem =
       Quantity: Quantity option
       Category: ItemCategory option
       Schedule: Schedule }
+
+type ShoppingListQry =
+    { Stores : Store list
+      Items : ItemQry list
+      ShoppingListViewOptions : ShoppingListViewOptions }
