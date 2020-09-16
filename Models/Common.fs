@@ -8,6 +8,25 @@ module Common =
 
     let newGuid () = System.Guid.NewGuid()
 
+    let memoizeLast<'X, 'Result when 'Result : equality> (f: 'X -> 'Result, isEqual: 'X -> 'X -> bool) =
+        let mutable cache = None
+
+        let f' x =
+            match cache with
+            | None ->
+                let result = f x
+                cache <- Some(x, result)
+                result
+            | Some (cachedX, result) ->
+                if (isEqual cachedX x) then
+                    result
+                else
+                    let result = f x
+                    cache <- Some(x, result)
+                    result
+
+        f'
+
 [<AutoOpen>]
 module Seq =
 
@@ -45,7 +64,7 @@ module Result =
         | Ok v -> Some v
         | Error _ -> None
 
-    let isOk r = 
+    let isOk r =
         match r with
         | Ok _ -> true
         | Error _ -> false
