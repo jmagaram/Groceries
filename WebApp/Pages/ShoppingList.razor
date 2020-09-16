@@ -1,43 +1,15 @@
 ﻿@page "/shoppinglist"
-@using Models
-@using System.Reactive.Linq
-
-@inject Data.ApplicationStateService StateService
 
 <h1>Shopping List</h1>
-@foreach(var s in StoreNames) {
-    @s 
-}
+<select @onchange="OnStoreFilterChange">
+    <option value="@Guid.Empty" selected="@(StoreFilter==Guid.Empty)">All Stores</option>
+    @foreach (var s in StoreFilterChoices) {
+        Guid key = s.StoreId.Item;
+        bool isSelected = key == StoreFilter;
+        string description = s.StoreName.Item;
+        <option selected="@isSelected" value="@key.ToString()">@description</option>
+    }
+</select>
 @foreach (var i in Items) {
     <WebApp.Shared.Item OnClickDelete="OnClickDelete" ItemQry="@i" />
-}
-@code {
-    IDisposable _items = null;
-    IDisposable _stores = null;
-
-    private void OnClickDelete(Models.StateTypes.ItemId itemId) {
-        StateService.Update(StateTypes.StateMessage.DeleteItem.NewDeleteItem(itemId));
-    }
-
-    protected override void OnInitialized() {
-        base.OnInitialized();
-        _items =
-            StateService
-            .Items
-            .Select(i=>i.ToList())
-            .Subscribe(s => Items = s);
-        _stores =
-            StateService.Stores
-            .Select(i => i.Select(j => j.StoreName.Item).ToList())
-            .Subscribe(s => StoreNames = s);
-    }
-
-    protected List<string> StoreNames { get; private set; }
-
-    protected List<QueryTypes.ItemQry> Items { get; private set; }
-
-    public void Dispose() {
-        _items?.Dispose();
-        _stores?.Dispose();
-    }
 }

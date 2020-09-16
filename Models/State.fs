@@ -125,14 +125,6 @@ module State =
             |> Seq.filter (fun i -> i.ItemName = itemName)
             |> Seq.exactlyOne
 
-        let findStore n (s: State) =
-            let storeName = StoreName.tryParse n |> Result.okOrThrow
-
-            s.Stores
-            |> DataTable.current
-            |> Seq.filter (fun i -> i.StoreName = storeName)
-            |> Seq.exactlyOne
-
         let markComplete n (s: State) =
             let item =
                 s
@@ -158,13 +150,37 @@ module State =
 
             { s with Items = s.Items |> DataTable.update item }
 
-        let notSoldAt itemName storeName (s: State) =
-            let nsa =
-                { NotSoldItem.StoreId = (s |> findStore storeName).StoreId
-                  ItemId = (s |> findItem itemName).ItemId }
+        let findStore n (s: State) =
+            let storeName = StoreName.tryParse n |> Result.okOrThrow
 
-            { s with
-                  NotSoldItems = s.NotSoldItems |> DataTable.insert nsa }
+            s.Stores
+            |> DataTable.current
+            |> Seq.filter (fun i -> i.StoreName = storeName)
+            |> Seq.exactlyOne
+
+        let onlySoldAt itemName storeName (s: State) =
+            let itemId = (s |> findItem itemName).ItemId
+            let availableAtStoreId = (findStore storeName s).StoreId
+
+            s.Stores
+            |> DataTable.current
+            |> Seq.filter (fun i -> i.StoreId <> availableAtStoreId)
+            |> Seq.fold (fun state store ->
+                let nsa = { StoreId = store.StoreId; ItemId = itemId }
+
+                { state with
+                      NotSoldItems = s.NotSoldItems |> DataTable.insert nsa }) s
+
+        //let notSoldAt itemName stores (s: State) =
+        //    let itemId = (s |> findItem itemName).ItemId
+
+        //    stores
+        //    |> Seq.fold (fun state storeName ->
+        //        let storeId = (s |> findStore storeName).StoreId
+        //        let nsa = { StoreId = storeId; ItemId = itemId }
+
+        //        { state with
+        //              NotSoldItems = s.NotSoldItems |> DataTable.insert nsa }) s
 
         createDefault
         |> addCategory "Produce"
@@ -172,6 +188,7 @@ module State =
         |> addCategory "Dry"
         |> addCategory "Frozen"
         |> addItem "Bananas" "Produce" "1 bunch" ""
+        |> addItem "Frozen mango chunks" "Frozen" "1 bag" ""
         |> addItem "Apples" "Produce" "6 large" ""
         |> addItem "Chocolate bars" "Dry" "Assorted; many" "Prefer Eco brand"
         |> addItem "Peanut butter" "Dry" "Several jars" "Like Santa Cruz brand"
@@ -184,8 +201,8 @@ module State =
         |> addStore "QFC"
         |> addStore "Whole Foods"
         |> addStore "Trader Joe's"
-        |> notSoldAt "Dried flax seeds" "QFC"
-        |> notSoldAt "Dried flax seeds" "Whole Foods"
+        |> onlySoldAt "Dried flax seeds" "Trader Joe's"
+        |> onlySoldAt "Frozen mango chunks" "Trader Joe's"
 
     let private removeCategoryFromItem categoryId (i: Item) =
         match i.CategoryId with
