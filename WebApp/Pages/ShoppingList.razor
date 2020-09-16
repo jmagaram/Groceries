@@ -1,4 +1,6 @@
 ﻿@page "/shoppinglist"
+@using Common
+@using Microsoft.FSharp.Core;
 
 <h1>Shopping List</h1>
 <select @onchange="OnStoreFilterChange">
@@ -11,6 +13,10 @@
     }
 </select>
 
-@foreach (var i in Items) {
-    <WebApp.Shared.Item OnClickDelete="OnClickDelete" ItemQry="@i" />
+@foreach (var cat in Items.Select(j => j.Category).Distinct().OrderBy(i => i)) {
+    var categoryName = cat.IsNone() ? "(Uncategorized)" : cat.Value.CategoryName.Item;
+    <h2>@categoryName</h2>
+    @foreach (var item in Items.Where(i => i.Category.Equals(cat))) {
+        <WebApp.Shared.Item OnClickDelete="OnClickDelete" ItemQry="@item" />
+    }
 }

@@ -47,3 +47,16 @@ type ShoppingListQry =
     { Stores : Store list
       Items : ItemQry list
       ShoppingListViewOptions : ShoppingListViewOptions }
+
+type ItemFindQry =
+    { ItemId: ItemId
+      ItemName: ItemName
+      Note: Note option
+      Quantity: Quantity option
+      Category: ItemCategory option
+      Schedule: Schedule }
+
+//type ItemTextMatch = 
+//    { ItemName : FormattedText option
+//      CategoryName : FormattedText option
+//      Note : FormattedText option }
