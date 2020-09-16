@@ -145,3 +145,7 @@ let shoppingListViewOptions (s: IObservable<StateTypes.State>) =
         i
         |> Option.defaultValue (ShoppingListViewOptions.defaultView))
     |> Observable.distinctUntilChanged
+
+// other useful views like...
+// items not sold at any store
+// items available at a particular store with filter (shopping list)
