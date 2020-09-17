@@ -51,13 +51,10 @@ module Repeat =
     let rules = { Min = 1<days>; Max = 365<days> }
 
     let create interval postponedUntil =
-        let validator = RangeValidation.createValidator rules
-
-        match interval |> validator with
-        | None ->
-            { Interval = interval; PostponedUntil = postponedUntil }
-            |> Ok
-        | Some e -> e |> Error
+        interval
+        |> RangeValidation.createValidator rules
+        |> Option.map Error
+        |> Option.defaultValue (Ok { Interval = interval; PostponedUntil = postponedUntil })
 
 [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
 module ShoppingListViewOptions =
@@ -106,20 +103,8 @@ module Item =
         | Some c' when c = c' -> { i with CategoryId = None }
         | _ -> i
 
-    let setSchedule s (i:Item) = { i with Schedule = s }
-
-    let markAsComplete i = i |> setSchedule Completed
-
 [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
 module State =
-
-    let private editItems f s = { s with Items = f s.Items }
-
-    let private editCategories f s = { s with Categories = f s.Categories }
-
-    let private editStores f s = { s with Stores = f s.Stores }
-
-    let private editNotSoldItems f s = { s with NotSoldItems = f s.NotSoldItems }
 
     let items (s: State) = s.Items
 
@@ -131,6 +116,14 @@ module State =
 
     let shoppingListViewOptions (s: State) = s.ShoppingListViewOptions
 
+    let private editItems f s = { s with Items = f s.Items }
+
+    let private editCategories f s = { s with Categories = f s.Categories }
+
+    let private editStores f s = { s with Stores = f s.Stores }
+
+    let private editNotSoldItems f s = { s with NotSoldItems = f s.NotSoldItems }
+
     let createDefault =
         { Categories = DataTable.empty
           Items = DataTable.empty
@@ -140,34 +133,18 @@ module State =
 
     let createWithSampleData =
         let addCategory n s =
-            { s with
-                  Categories =
-                      s.Categories
-                      |> DataTable.insert
-                          { CategoryId = Id.create CategoryId
-                            CategoryName = n |> CategoryName.tryParse |> Result.okOrThrow } }
+            let category =
+                { CategoryId = Id.create CategoryId
+                  CategoryName = n |> CategoryName.tryParse |> Result.okOrThrow }
+
+            s |> editCategories (DataTable.insert category)
 
         let addStore n (s: State) =
-            { s with
-                  Stores =
-                      s.Stores
-                      |> DataTable.insert
-                          { StoreId = Id.create StoreId
-                            StoreName = n |> StoreName.tryParse |> Result.okOrThrow } }
+            let store =
+                { StoreId = Id.create StoreId
+                  StoreName = n |> StoreName.tryParse |> Result.okOrThrow }
 
-        let addItem n cat qty note (s: State) =
-            let item =
-                { Item.ItemName = n |> ItemName.tryParse |> Result.okOrThrow
-                  ItemId = Id.create ItemId
-                  CategoryId =
-                      s.Categories
-                      |> DataTable.current
-                      |> Seq.tryPick (fun i -> if i.CategoryName = CategoryName cat then Some i.CategoryId else None)
-                  Quantity = qty |> Quantity.tryParse |> Result.asOption
-                  Note = note |> Note.tryParse |> Result.asOption
-                  Schedule = Once }
-
-            { s with Items = s.Items |> DataTable.insert item }
+            s |> editStores (DataTable.insert store)
 
         let findItem n (s: State) =
             let itemName = ItemName.tryParse n |> Result.okOrThrow
@@ -177,8 +154,43 @@ module State =
             |> Seq.filter (fun i -> i.ItemName = itemName)
             |> Seq.exactlyOne
 
+        let findCategory n (s: State) =
+            s.Categories
+            |> DataTable.current
+            |> Seq.tryFind (fun i -> i.CategoryName = n)
+
+        let addItem n cat qty note (s: State) =
+            let (s, cat) =
+                if cat = "" then
+                    (s, None)
+                else
+                    let catName = cat |> CategoryName.tryParse |> Result.okOrThrow
+
+                    match s |> findCategory catName with
+                    | Some c -> (s, Some c)
+                    | None ->
+                        let c =
+                            { CategoryId = Id.create CategoryId
+                              CategoryName = catName }
+
+                        let s = s |> editCategories (DataTable.insert c)
+                        (s, Some c)
+
+            let item =
+                { Item.ItemName = n |> ItemName.tryParse |> Result.okOrThrow
+                  ItemId = Id.create ItemId
+                  CategoryId = cat |> Option.map (fun c -> c.CategoryId)
+                  Quantity = qty |> Quantity.tryParse |> Result.asOption
+                  Note = note |> Note.tryParse |> Result.asOption
+                  Schedule = Once }
+
+            s |> editItems (DataTable.insert item)
+
         let markComplete n (s: State) =
-            let item = s |> findItem n |> Item.markAsComplete
+            let item =
+                s
+                |> findItem n
+                |> fun i -> { i with Schedule = Schedule.Completed }
 
             { s with Items = s.Items |> DataTable.update item }
 
@@ -221,10 +233,6 @@ module State =
                       NotSoldItems = state.NotSoldItems |> DataTable.insert nsa }) s
 
         createDefault
-        |> addCategory "Produce"
-        |> addCategory "Dairy"
-        |> addCategory "Dry"
-        |> addCategory "Frozen"
         |> addItem "Bananas" "Produce" "1 bunch" ""
         |> addItem "Frozen mango chunks" "Frozen" "1 bag" ""
         |> addItem "Apples" "Produce" "6 large" ""
@@ -233,6 +241,7 @@ module State =
         |> addItem "Nancy's lowfat yogurt" "Dairy" "1 tub" "Check the date"
         |> addItem "Ice cream" "Frozen" "2 pints" ""
         |> addItem "Dried flax seeds" "Dry" "1 bag" ""
+        |> addCategory "Meat and Seafood"
         |> makeRepeat "Bananas" 7<days> None
         |> makeRepeat "Peanut butter" 14<days> (Some 3<days>)
         |> markComplete "Ice cream"
