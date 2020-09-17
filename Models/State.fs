@@ -256,6 +256,10 @@ module State =
         |> editCategories (DataTable.deleteIf (fun x -> x.CategoryId = id))
         |> editItems (DataTable.mapCurrent (Item.removeCategoryIfEqualTo id))
 
+    let private insertCategory c (s:State) =
+        s
+        |> editCategories (DataTable.insert c)
+
     let private deleteItem id (s: State) =
         s
         |> editItems (DataTable.delete id)
@@ -334,11 +338,18 @@ module State =
 
     let update msg s =
         match msg with
-        | CategoryDelete id -> s |> deleteCategory id
-        | ItemDelete id -> s |> deleteItem id
-        | StoreDelete id -> s |> deleteStore id
-        | ItemUpdate msg -> s |> updateItem msg
-        | ItemInsert msg -> s |> insertItem msg
+        | ItemMessage msg -> 
+            match msg with
+            | DeleteItem i -> s |> deleteItem i
+            | UpdateItem i -> s |> updateItem i
+            | InsertItem i -> s |> insertItem i
+        | StoreMessage msg -> 
+            match msg with 
+            | DeleteStore i -> s |> deleteStore i
+        | CategoryMessage msg ->
+            match msg with
+            | DeleteCategory i -> s |> deleteCategory i 
+            | InsertCategory i -> s |> insertCategory i
         | ShoppingListMessage msg ->
             match msg with
             | ClearStoreFilter -> s |> setShoppingListStoreFilterTo None

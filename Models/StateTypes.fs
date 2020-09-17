@@ -67,6 +67,7 @@ type NotSoldItem =
     interface IKey<NotSoldItem> with
         member this.Key = this
 
+// include "show empty categories"
 type ShoppingListViewOptions = 
     { StoreFilter: StoreId option }
     interface IKey<string> with
@@ -102,15 +103,25 @@ type ItemUpsert =
       Schedule: Schedule 
       NotSoldAt : StoreReference list }
 
+type ItemMessage =
+    | InsertItem of ItemUpsert
+    | UpdateItem of ItemUpsert
+    | DeleteItem of ItemId
+
+type CategoryMessage = 
+    | InsertCategory of Category
+    | DeleteCategory of CategoryId
+
+type StoreMessage = 
+    | DeleteStore of StoreId
+
 type ShoppingListMessage =
     | ClearStoreFilter
     | SetStoreFilterTo of StoreId
 
 type StateMessage =
-    | StoreDelete of StoreId
-    | CategoryDelete of CategoryId
-    | ItemDelete of ItemId
-    | ItemInsert of ItemUpsert
-    | ItemUpdate of ItemUpsert
+    | ItemMessage of ItemMessage
+    | StoreMessage of StoreMessage
+    | CategoryMessage of CategoryMessage
     | ShoppingListMessage of ShoppingListMessage
 
