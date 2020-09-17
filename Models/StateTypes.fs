@@ -85,12 +85,32 @@ type State =
       NotSoldItems: NotSoldItemsTable
       ShoppingListViewOptions: ShoppingListViewOptionsRow }
 
+type CategoryReference =
+    | ExistingCategory of CategoryId
+    | NewCategory of Category
+
+type StoreReference =
+    | ExistingStore of StoreId
+    | NewStore of Store
+
+type ItemUpsert =
+    { ItemId: ItemId
+      ItemName: ItemName
+      Note: Note option
+      Quantity: Quantity option
+      Category: CategoryReference option
+      Schedule: Schedule 
+      NotSoldAt : StoreReference list }
+
 type ShoppingListMessage =
     | ClearStoreFilter
     | SetStoreFilterTo of StoreId
 
 type StateMessage =
-    | DeleteStore of StoreId
-    | DeleteCategory of CategoryId
-    | DeleteItem of ItemId
+    | StoreDelete of StoreId
+    | CategoryDelete of CategoryId
+    | ItemDelete of ItemId
+    | ItemInsert of ItemUpsert
+    | ItemUpdate of ItemUpsert
     | ShoppingListMessage of ShoppingListMessage
+

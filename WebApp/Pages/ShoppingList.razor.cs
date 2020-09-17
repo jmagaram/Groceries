@@ -54,7 +54,7 @@ namespace WebApp.Pages {
         }
 
         private void OnClickDelete(ItemId itemId) {
-            StateService.Update(StateMessage.NewDeleteItem(itemId));
+            StateService.Update(StateMessage.NewItemDelete(itemId));
         }
 
         protected Guid StoreFilter { get; private set; }

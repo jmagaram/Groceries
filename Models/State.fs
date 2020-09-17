@@ -65,6 +65,52 @@ module ShoppingListViewOptions =
     let defaultView = { ShoppingListViewOptions.StoreFilter = None }
 
 [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
+module CategoryReference =
+
+    let id c =
+        match c with
+        | NewCategory c -> c.CategoryId
+        | ExistingCategory c -> c
+
+    let newCategory c =
+        match c with
+        | NewCategory c -> Some c
+        | ExistingCategory c -> None
+
+[<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
+module StoreReference =
+
+    let id s =
+        match s with
+        | NewStore c -> c.StoreId
+        | ExistingStore c -> c
+
+    let newStore s =
+        match s with
+        | NewStore c -> Some c
+        | ExistingStore c -> None
+
+[<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
+module Item =
+
+    let fromItemUpsert (i: ItemUpsert) =
+        { Item.ItemId = i.ItemId
+          ItemName = i.ItemName
+          CategoryId = i.Category |> Option.map CategoryReference.id
+          Note = i.Note
+          Quantity = i.Quantity
+          Schedule = i.Schedule }
+
+    let removeCategoryIfEqualTo (c: CategoryId) (i: Item) =
+        match i.CategoryId with
+        | Some c' when c = c' -> { i with CategoryId = None }
+        | _ -> i
+
+    let setSchedule s (i:Item) = { i with Schedule = s }
+
+    let markAsComplete i = i |> setSchedule Completed
+
+[<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
 module State =
 
     let private editItems f s = { s with Items = f s.Items }
@@ -132,10 +178,7 @@ module State =
             |> Seq.exactlyOne
 
         let markComplete n (s: State) =
-            let item =
-                s
-                |> findItem n
-                |> fun i -> { i with Schedule = Completed }
+            let item = s |> findItem n |> Item.markAsComplete
 
             { s with Items = s.Items |> DataTable.update item }
 
@@ -199,15 +242,10 @@ module State =
         |> onlySoldAt "Dried flax seeds" "Trader Joe's"
         |> onlySoldAt "Frozen mango chunks" "Trader Joe's"
 
-    let private removeCategoryFromItem categoryId (i: Item) =
-        match i.CategoryId with
-        | None -> i
-        | Some c -> if c = categoryId then { i with CategoryId = None } else i
-
     let private deleteCategory id (s: State) =
         s
         |> editCategories (DataTable.deleteIf (fun x -> x.CategoryId = id))
-        |> editItems (DataTable.mapCurrent (removeCategoryFromItem id))
+        |> editItems (DataTable.mapCurrent (Item.removeCategoryIfEqualTo id))
 
     let private deleteItem id (s: State) =
         s
@@ -228,11 +266,70 @@ module State =
         |> editNotSoldItems (DataTable.deleteIf (fun x -> x.StoreId = id))
         |> updateShoppingListViewOptions (fun v -> if v.StoreFilter = Some id then { v with StoreFilter = None } else v)
 
+    let (insertItem, updateItem) =
+
+        let go f (item: ItemUpsert) (s: State) =
+            let itemToInsert = item |> Item.fromItemUpsert
+
+            let items = s.Items |> f itemToInsert
+
+            let categoryToInsert =
+                item.Category
+                |> Option.bind (fun c -> c |> CategoryReference.newCategory)
+
+            let storesToInsert = item.NotSoldAt |> Seq.choose StoreReference.newStore
+
+            let (nsToAdd, nsToRemove) =
+                let proposed =
+                    item.NotSoldAt
+                    |> List.map (fun n ->
+                        { NotSoldItem.StoreId = n |> StoreReference.id
+                          ItemId = item.ItemId })
+
+                let current =
+                    s.NotSoldItems
+                    |> DataTable.current
+                    |> Seq.filter (fun i -> i.ItemId = item.ItemId)
+                    |> List.ofSeq
+
+                let nsToAdd = proposed |> Seq.except current
+                let nsToRemove = current |> Seq.except proposed
+                (nsToAdd, nsToRemove)
+
+            let categories =
+                categoryToInsert
+                |> Option.map (fun c -> s.Categories |> DataTable.insert c)
+                |> Option.defaultValue s.Categories
+
+            let stores =
+                storesToInsert
+                |> Seq.fold (fun t i -> t |> DataTable.insert i) s.Stores
+
+            let notSold =
+                let ns = s.NotSoldItems
+                let ns = nsToAdd |> Seq.fold (fun t i -> t |> DataTable.insert i) ns
+
+                let ns =
+                    nsToRemove
+                    |> Seq.fold (fun t i -> t |> DataTable.delete i) ns
+
+                ns
+
+            { s with
+                  Items = items
+                  Categories = categories
+                  Stores = stores
+                  NotSoldItems = notSold }
+
+        (go DataTable.insert, go DataTable.update)
+
     let update msg s =
         match msg with
-        | DeleteCategory id -> s |> deleteCategory id
-        | DeleteItem id -> s |> deleteItem id
-        | DeleteStore id -> s |> deleteStore id
+        | CategoryDelete id -> s |> deleteCategory id
+        | ItemDelete id -> s |> deleteItem id
+        | StoreDelete id -> s |> deleteStore id
+        | ItemUpdate msg -> s |> updateItem msg
+        | ItemInsert msg -> s |> insertItem msg
         | ShoppingListMessage msg ->
             match msg with
             | ClearStoreFilter -> s |> setShoppingListStoreFilterTo None

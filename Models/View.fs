@@ -112,6 +112,32 @@ module Highlighter =
 
 
 
+
                     }
                     |> List.ofSeq
                     |> FormattedText.fromList
+
+module ItemEditForm =
+    open StateTypes
+    open ValidationTypes
+    open FormsTypes
+
+    let init =
+        { ItemEditForm.ItemName = TextInput.init ItemName.tryParse String.trim "" }
+
+    // no way to store this in State variable because it is very early in the dependency list
+    // maybe core data is just one part of the application state
+
+    let handleMessage msg (form: ItemEditForm) =
+        let handleItemNameMsg = TextInput.handleMessage ItemName.tryParse String.trim
+
+        match msg with
+        | ItemNameMessage msg ->
+            { form with
+                  ItemName = form.ItemName |> handleItemNameMsg msg }
+
+//type ItemEditFormMessage =
+//    | ItemNameMessage of TextInputMessage
+
+//type ItemEditForm =
+//    { ItemName : TextInput<ItemName, StringError> }

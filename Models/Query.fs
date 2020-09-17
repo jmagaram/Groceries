@@ -34,7 +34,7 @@ let private itemQry (item: Item) cats notSoldItems stores =
       NotSoldAt =
           notSoldItems
           |> DataTable.current
-          |> Seq.choose (fun ns -> if ns.ItemId = item.ItemId then Some ns.StoreId else None)
+          |> Seq.choose (fun (ns:NotSoldItem) -> if ns.ItemId = item.ItemId then Some ns.StoreId else None)
           |> Seq.map (fun storeId -> itemStore storeId stores)
           |> List.ofSeq }
 
@@ -47,7 +47,7 @@ let private categoryItem (item: Item) notSoldItems stores =
       NotSoldAt =
           notSoldItems
           |> DataTable.current
-          |> Seq.choose (fun ns -> if ns.ItemId = item.ItemId then Some ns.StoreId else None)
+          |> Seq.choose (fun (ns:NotSoldItem) -> if ns.ItemId = item.ItemId then Some ns.StoreId else None)
           |> Seq.map (fun storeId -> itemStore storeId stores)
           |> List.ofSeq }
 
@@ -62,7 +62,7 @@ let private categoryQry (category: Category) items notSold stores =
           |> List.ofSeq }
 
 let private storeItem itemId items cats =
-    let item = items |> DataTable.findCurrent itemId
+    let (item:Item) = items |> DataTable.findCurrent itemId
 
     { StoreItem.ItemId = itemId
       ItemName = item.ItemName
