@@ -259,21 +259,20 @@ module State =
             |> Seq.filter (fun i -> i.ItemName = itemName)
             |> Seq.exactlyOne
 
-        let editItem n f (s:State) =
+        let setItemSchedule n sch (s: State) =
             let itemName = ItemName.tryParse n |> Result.okOrThrow
-            let item = s.Items |> DataTable.current |> Seq.find (fun i-> i.ItemName = itemName)
-            let item' = f item 
+
+            let item =
+                s.Items
+                |> DataTable.current
+                |> Seq.find (fun i -> i.ItemName = itemName)
+
+            let item' = { item with Schedule = sch }
             { s with Items = s.Items |> DataTable.update item' }
 
-        let markComplete n (s: State) =
-            let item =
-                s
-                |> findItem n
-                |> fun i -> { i with Schedule = Schedule.Completed }
+        let markComplete n = setItemSchedule n Schedule.Completed
 
-            { s with Items = s.Items |> DataTable.update item }
-
-        let makeRepeat n interval postpone (s: State) =
+        let makeRepeat n interval postpone =
             let postpone =
                 postpone
                 |> Option.map (fun d -> DateTimeOffset.Now.AddDays(d |> float))
@@ -283,12 +282,7 @@ module State =
                 |> Result.okOrThrow
                 |> Schedule.Repeat
 
-            let item =
-                s
-                |> findItem n
-                |> fun i -> { i with Schedule = schedule }
-
-            { s with Items = s.Items |> DataTable.update item }
+            setItemSchedule n schedule
 
         let findStore n (s: State) =
             let storeName = StoreName.tryParse n |> Result.okOrThrow
