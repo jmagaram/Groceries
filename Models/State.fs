@@ -227,6 +227,30 @@ module State =
               StoreName = n |> StoreName.tryParse |> Result.okOrThrow }
             |> insertStore
 
+        let catReference n (s: State) =
+            let catName = n |> CategoryName.tryParse |> Result.okOrThrow
+
+            s.Categories
+            |> DataTable.current
+            |> Seq.tryFind (fun i -> i.CategoryName = catName)
+            |> Option.map (fun c -> ExistingCategory c.CategoryId)
+            |> Option.defaultValue
+                (NewCategory
+                    { CategoryId = Id.create CategoryId
+                      CategoryName = catName })
+
+        let addItem n cat qty note (s: State) =
+            let item =
+                { ItemUpsert.ItemId = Id.create ItemId
+                  Category = if cat = "" then None else s |> catReference cat |> Some
+                  ItemName = n |> ItemName.tryParse |> Result.okOrThrow
+                  Note = note |> Note.tryParse |> Result.asOption
+                  Quantity = qty |> Quantity.tryParse |> Result.asOption
+                  NotSoldAt = []
+                  Schedule = Schedule.Once }
+
+            s |> insertItem item
+
         let findItem n (s: State) =
             let itemName = ItemName.tryParse n |> Result.okOrThrow
 
@@ -235,37 +259,11 @@ module State =
             |> Seq.filter (fun i -> i.ItemName = itemName)
             |> Seq.exactlyOne
 
-        let findCategory n (s: State) =
-            s.Categories
-            |> DataTable.current
-            |> Seq.tryFind (fun i -> i.CategoryName = n)
-
-        let addItem n cat qty note (s: State) =
-            let (s, cat) =
-                if cat = "" then
-                    (s, None)
-                else
-                    let catName = cat |> CategoryName.tryParse |> Result.okOrThrow
-
-                    match s |> findCategory catName with
-                    | Some c -> (s, Some c)
-                    | None ->
-                        let c =
-                            { CategoryId = Id.create CategoryId
-                              CategoryName = catName }
-
-                        let s = s |> editCategories (DataTable.insert c)
-                        (s, Some c)
-
-            let item =
-                { Item.ItemName = n |> ItemName.tryParse |> Result.okOrThrow
-                  ItemId = Id.create ItemId
-                  CategoryId = cat |> Option.map (fun c -> c.CategoryId)
-                  Quantity = qty |> Quantity.tryParse |> Result.asOption
-                  Note = note |> Note.tryParse |> Result.asOption
-                  Schedule = Once }
-
-            s |> editItems (DataTable.insert item)
+        let editItem n f (s:State) =
+            let itemName = ItemName.tryParse n |> Result.okOrThrow
+            let item = s.Items |> DataTable.current |> Seq.find (fun i-> i.ItemName = itemName)
+            let item' = f item 
+            { s with Items = s.Items |> DataTable.update item' }
 
         let markComplete n (s: State) =
             let item =
