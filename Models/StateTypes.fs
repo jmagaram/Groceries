@@ -113,6 +113,7 @@ type CategoryMessage =
     | DeleteCategory of CategoryId
 
 type StoreMessage = 
+    | InsertStore of Store
     | DeleteStore of StoreId
 
 type ShoppingListMessage =
