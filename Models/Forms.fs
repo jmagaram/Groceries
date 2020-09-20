@@ -20,6 +20,17 @@ module TextInput =
         | LoseFocus -> ti |> loseFocus normalize
         | TypeText s -> ti |> setText validate s
 
+module ChooseOne =
+
+    let create choices selected =
+        if choices |> List.contains selected |> not
+        then failwith "The selected item is not in the available choices."
+        else { Choices = choices; Selected = selected }
+
+    let setSelected selected chooseOne =
+        if chooseOne.Choices |> List.contains selected |> not
+        then failwith "The selected item is not in the available choices."
+        else { chooseOne with Selected = selected }
 
 //type TextInput<'T, 'Error> =
 //    { Value : string
@@ -72,10 +83,6 @@ module TextInput =
 //        | LostFocus -> f |> lostFocus
 //        | GainedFocus -> f |> gainedFocus
 //        | Propose p -> f |> propose p
-
-module ChooseOne =
-
-    let y = 4
 
 //type ChooseOne<'T> when 'T : comparison =
 //    { Choices : 'T list
