@@ -15,7 +15,7 @@ let private itemStore storeId stores =
     |> DataTable.findCurrent storeId
     |> fun (s: Store) -> { ItemStore.StoreId = s.StoreId; StoreName = s.StoreName }
 
-let private itemCategory categoryId cats =
+let private itemCategory categoryId (cats:CategoryTable) =
     cats
     |> DataTable.findCurrent categoryId
     |> fun cat ->
@@ -73,7 +73,7 @@ let private storeItem itemId items cats =
           |> Option.map (fun catId -> itemCategory catId cats)
       Schedule = item.Schedule }
 
-let private storeQry (store: Store) items cats notSold =
+let private storeQry (store: Store) items cats (notSold:NotSoldItemsTable) =
     { StoreQry.StoreId = store.StoreId
       StoreName = store.StoreName
       NotSoldItems =
