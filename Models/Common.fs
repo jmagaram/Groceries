@@ -6,6 +6,8 @@ module Common =
 
     let keyOf<'T, 'TKey when 'T :> IKey<'TKey>> i = (i :> IKey<'TKey>).Key
 
+    let refEquals<'T when 'T: not struct> x y = Object.ReferenceEquals(x, y)
+
     let newGuid () = System.Guid.NewGuid()
 
     let memoizeLast<'X, 'Result when 'Result : equality> (f: 'X -> 'Result, isEqual: 'X -> 'X -> bool) =
