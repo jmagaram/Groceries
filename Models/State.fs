@@ -57,9 +57,14 @@ module Repeat =
         |> Option.defaultValue (Ok { Interval = interval; PostponedUntil = postponedUntil })
 
 [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
-module ShoppingListViewOptions =
+module Settings =
 
-    let defaultView = { ShoppingListViewOptions.StoreFilter = None }
+    let create = { Settings.StoreFilter = None }
+
+    let setStoreFilter f s = { s with StoreFilter = f }
+
+    let clearStoreFilterIf k s =
+        if s.StoreFilter = Some k then s |> setStoreFilter None else s
 
 [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
 module CategoryReference =
@@ -98,10 +103,201 @@ module Item =
           Quantity = i.Quantity
           Schedule = i.Schedule }
 
-    let removeCategoryIfEqualTo (c: CategoryId) (i: Item) =
-        match i.CategoryId with
-        | Some c' when c = c' -> { i with CategoryId = None }
-        | _ -> i
+module StateCore =
+
+    let mapCategories f s = { s with Categories = f s.Categories }
+    let mapStores f s = { s with Stores = f s.Stores }
+    let mapNotSoldCategories f s = { s with NotSoldCategories = f s.NotSoldCategories }
+    let mapItems f s = { s with Items = f s.Items }
+    let mapNotSoldItems f s = { s with NotSoldItems = f s.NotSoldItems }
+    let mapSettings f s = { s with Settings = f s.Settings }
+
+    let (insertCategory, updateCategory, upsertCategory) =
+        let go f (c: Category) s = s |> mapCategories (f c)
+        (go DataTable.insert, go DataTable.update, go DataTable.upsert)
+
+    let (insertStore, updateStore, upsertStore) =
+        let go f (s: Store) = mapStores (f s)
+        (go DataTable.insert, go DataTable.update, go DataTable.upsert)
+
+    let (insertItem, updateItem, upsertItem) =
+        let go f (i: Item) s =
+            let isCategoryReferenceValid =
+                i.CategoryId
+                |> Option.map (fun c -> s.Categories |> DataTable.currentContainsKey c)
+                |> Option.defaultValue true
+
+            match isCategoryReferenceValid with
+            | false -> failwith "A category is referenced that does not exist."
+            | true -> s |> mapItems (f i)
+
+        (go DataTable.insert, go DataTable.update, go DataTable.upsert)
+
+    let insertNotSoldItem (nsi: NotSoldItem) s =
+        let item = s.Items |> DataTable.tryFindCurrent nsi.ItemId
+        let store = s.Stores |> DataTable.tryFindCurrent nsi.StoreId
+
+        match item, store with
+        | Some _, Some _ -> s |> mapNotSoldItems (DataTable.insert nsi)
+        | None, _ -> failwith "A store is referenced that does not exist."
+        | _, None -> failwith "An item is referenced that does not exist."
+
+    let insertNotSoldCategory (nsc: NotSoldCategory) s =
+        let category = s.Categories |> DataTable.tryFindCurrent nsc.CategoryId
+        let store = s.Stores |> DataTable.tryFindCurrent nsc.StoreId
+
+        match category, store with
+        | Some _, Some _ -> s |> mapNotSoldCategories (DataTable.insert nsc)
+        | None, _ -> failwith "A store is referenced that does not exist."
+        | _, None -> failwith "An item is referenced that does not exist."
+
+    let updateSettingsStoreFilter k s =
+        let isStoreReferenceValid =
+            k
+            |> Option.map (fun k -> s.Stores |> DataTable.currentContainsKey k)
+            |> Option.defaultValue true
+
+        match isStoreReferenceValid with
+        | false -> failwith "A store is referenced that does not exist."
+        | true -> mapSettings (DataRow.mapCurrent (Settings.setStoreFilter k)) s
+
+    let deleteStore k s =
+        s
+        |> mapStores (DataTable.delete k)
+        |> mapNotSoldItems (DataTable.deleteIf (fun i -> i.StoreId = k))
+        |> mapNotSoldCategories (DataTable.deleteIf (fun i -> i.StoreId = k))
+        |> mapSettings (DataRow.mapCurrent (Settings.clearStoreFilterIf k))
+
+    let deleteNotSoldItem k s = s |> mapNotSoldItems (DataTable.delete k)
+
+    let deleteNotSoldCategory k s = s |> mapNotSoldCategories (DataTable.delete k)
+
+    let deleteItem k s = s |> mapItems (DataTable.delete k)
+
+    let deleteCategory k s =
+        s
+        |> mapCategories (DataTable.delete k)
+        |> mapNotSoldCategories (DataTable.deleteIf (fun i -> i.CategoryId = k))
+        |> mapItems (fun dt ->
+            dt
+            |> DataTable.current
+            |> Seq.choose (fun i -> if i.CategoryId = Some k then Some { i with CategoryId = None } else None)
+            |> Seq.fold (fun dt i -> dt |> DataTable.update i) s.Items)
+
+    let createDefault =
+        { Categories = DataTable.empty
+          Items = DataTable.empty
+          Stores = DataTable.empty
+          NotSoldItems = DataTable.empty
+          NotSoldCategories = DataTable.empty
+          Settings = DataRow.unchanged Settings.create }
+
+    let createSampleData =
+
+        let newCategory n s =
+            s
+            |> insertCategory
+                { Category.CategoryId = Id.create CategoryId
+                  CategoryName = n |> CategoryName.tryParse |> Result.okOrThrow }
+
+        let newStore n s =
+            s
+            |> insertStore
+                { Store.StoreId = Id.create StoreId
+                  StoreName = n |> StoreName.tryParse |> Result.okOrThrow }
+
+        let findCategory n (s: State) =
+            let n = CategoryName.tryParse n |> Result.okOrThrow
+
+            s.Categories
+            |> DataTable.current
+            |> Seq.find (fun i -> i.CategoryName = n)
+
+        let findItem n (s: State) =
+            let n = ItemName.tryParse n |> Result.okOrThrow
+
+            s.Items
+            |> DataTable.current
+            |> Seq.find (fun i -> i.ItemName = n)
+
+        let findStore n (s: State) =
+            let n = StoreName.tryParse n |> Result.okOrThrow
+
+            s.Stores
+            |> DataTable.current
+            |> Seq.find (fun i -> i.StoreName = n)
+
+        let newItem name cat qty note s =
+            s
+            |> insertItem
+                { Item.ItemId = Id.create ItemId
+                  ItemName = name |> ItemName.tryParse |> Result.okOrThrow
+                  Quantity = if qty = "" then None else qty |> Quantity.tryParse |> Result.okOrThrow |> Some
+                  Note = if note = "" then None else note |> Note.tryParse |> Result.okOrThrow |> Some
+                  Item.Schedule = Schedule.Once
+                  Item.CategoryId = if cat = "" then None else Some (findCategory cat s).CategoryId }
+
+        let now = System.DateTimeOffset.Now
+
+        let markComplete n (s: State) =
+            let item =
+                s
+                |> findItem n
+                |> fun i -> { i with Schedule = Completed }
+
+            s |> mapItems (DataTable.update item)
+
+        let makeRepeat n days postpone (s: State) =
+            let postpone = postpone |> Option.map (fun d -> now.AddDays(d |> float))
+            let repeat = Repeat.create days postpone |> Result.okOrThrow
+
+            let item =
+                s
+                |> findItem n
+                |> fun i -> { i with Schedule = Repeat repeat }
+
+            s |> mapItems (DataTable.update item)
+
+        let doesNotSellItem store item (s: State) =
+            let ns =
+                { NotSoldItem.ItemId = (findItem item s).ItemId
+                  StoreId = (findStore store s).StoreId }
+
+            s |> mapNotSoldItems (DataTable.insert ns)
+
+        let doesNotSellCategory store category (s: State) =
+            let ns =
+                { NotSoldCategory.CategoryId = (findCategory category s).CategoryId
+                  StoreId = (findStore store s).StoreId }
+
+            s |> mapNotSoldCategories (DataTable.insert ns)
+
+        createDefault
+        |> newCategory "Meat and Seafood"
+        |> newCategory "Dairy"
+        |> newCategory "Frozen"
+        |> newCategory "Produce"
+        |> newCategory "Dry"
+        |> newItem "Bananas" "Produce" "1 bunch" ""
+        |> newItem "Frozen mango chunks" "Frozen" "1 bag" ""
+        |> newItem "Apples" "Produce" "6 large" ""
+        |> newItem "Chocolate bars" "Dry" "Assorted; many" "Prefer Eco brand"
+        |> newItem "Peanut butter" "Dry" "Several jars" "Like Santa Cruz brand"
+        |> newItem "Nancy's lowfat yogurt" "Dairy" "1 tub" "Check the date"
+        |> newItem "Ice cream" "Frozen" "2 pints" ""
+        |> newItem "Dried flax seeds" "Dry" "1 bag" ""
+        |> makeRepeat "Bananas" 7<days> None
+        |> makeRepeat "Peanut butter" 14<days> (Some 3<days>)
+        |> markComplete "Ice cream"
+        |> newStore "QFC"
+        |> newStore "Whole Foods"
+        |> newStore "Trader Joe's"
+        |> newStore "Costco"
+        |> newStore "Walgreens"
+        |> doesNotSellItem "QFC" "Dried flax seeds"
+        |> doesNotSellItem "Costco" "Chocolate bars"
+        |> doesNotSellCategory "Walgreens" "Produce"
+        |> doesNotSellCategory "Walgreens" "Dairy"
 
 [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
 module State =
@@ -114,7 +310,9 @@ module State =
 
     let notSoldItems (s: State) = s.NotSoldItems
 
-    let shoppingListViewOptions (s: State) = s.ShoppingListViewOptions
+    let notSoldCategories (s: State) = s.NotSoldCategories
+
+    let shoppingListViewOptions (s: State) = s.Settings
 
     let private editItems f s = { s with Items = f s.Items }
 
@@ -124,17 +322,28 @@ module State =
 
     let private editNotSoldItems f s = { s with NotSoldItems = f s.NotSoldItems }
 
+    let private editNotSoldCategories f s =
+        s
+        |> notSoldCategories
+        |> f
+        |> fun nsc -> { s with NotSoldCategories = nsc }
+
     let createDefault =
         { Categories = DataTable.empty
           Items = DataTable.empty
           Stores = DataTable.empty
           NotSoldItems = DataTable.empty
-          ShoppingListViewOptions = DataRow.unchanged ShoppingListViewOptions.defaultView }
+          NotSoldCategories = DataTable.empty
+          Settings = DataRow.unchanged Settings.create }
 
     let private deleteCategory id (s: State) =
         s
         |> editCategories (DataTable.deleteIf (fun x -> x.CategoryId = id))
-        |> editItems (DataTable.mapCurrent (Item.removeCategoryIfEqualTo id))
+        |> editItems (fun dt ->
+            dt
+            |> DataTable.current
+            |> Seq.choose (fun i -> if i.CategoryId = Some id then Some { i with CategoryId = None } else None)
+            |> Seq.fold (fun dt i -> dt |> DataTable.update i) s.Items)
 
     let private insertCategory c (s: State) = s |> editCategories (DataTable.insert c)
 
@@ -144,8 +353,8 @@ module State =
         |> editNotSoldItems (DataTable.deleteIf (fun x -> x.ItemId = id))
 
     let private updateShoppingListViewOptions f (state: State) =
-        let opt = state.ShoppingListViewOptions |> DataRow.mapCurrent f
-        { state with ShoppingListViewOptions = opt }
+        let opt = state.Settings |> DataRow.mapCurrent f
+        { state with Settings = opt }
 
     let private setShoppingListStoreFilterTo storeId (state: State) =
         state
@@ -158,6 +367,11 @@ module State =
         |> updateShoppingListViewOptions (fun v -> if v.StoreFilter = Some id then { v with StoreFilter = None } else v)
 
     let private insertStore store (s: State) = s |> editStores (DataTable.insert store)
+
+
+    // PROBLEM!
+    // if insert an item that points to a category AND that category does not exist,
+    // it will silently strip the category and not generate an error
 
     let (insertItem, updateItem) =
 
@@ -300,7 +514,7 @@ module State =
             |> DataTable.current
             |> Seq.filter (fun i -> i.StoreId <> availableAtStoreId)
             |> Seq.fold (fun state store ->
-                let nsa = { StoreId = store.StoreId; ItemId = itemId }
+                let nsa = { NotSoldItem.StoreId = store.StoreId; ItemId = itemId }
 
                 { state with
                       NotSoldItems = state.NotSoldItems |> DataTable.insert nsa }) s
@@ -323,6 +537,7 @@ module State =
         |> addStore "Trader Joe's"
         |> onlySoldAt "Dried flax seeds" "Trader Joe's"
         |> onlySoldAt "Frozen mango chunks" "Trader Joe's"
+
 
     let update msg s =
         match msg with

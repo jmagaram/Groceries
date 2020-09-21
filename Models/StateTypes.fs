@@ -67,24 +67,32 @@ type NotSoldItem =
     interface IKey<NotSoldItem> with
         member this.Key = this
 
+type NotSoldCategory =
+    { StoreId: StoreId
+      CategoryId: CategoryId }
+    interface IKey<NotSoldCategory> with
+        member this.Key = this
+
 // include "show empty categories"
-type ShoppingListViewOptions = 
+type Settings = 
     { StoreFilter: StoreId option }
     interface IKey<string> with
         member this.Key = "singleton"
 
-type ItemTable = DataTable<ItemId, Item>
-type StoreTable = DataTable<StoreId, Store>
+type ItemsTable = DataTable<ItemId, Item>
+type StoresTable = DataTable<StoreId, Store>
 type CategoryTable = DataTable<CategoryId, Category>
-type NotSoldItemsTable = DataTable<NotSoldItem, NotSoldItem>
-type ShoppingListViewOptionsRow = DataRow<ShoppingListViewOptions>
+type NotSoldItemTable = DataTable<NotSoldItem, NotSoldItem>
+type NotSoldCategoryTable = DataTable<NotSoldCategory, NotSoldCategory>
+type SettingsRow = DataRow<Settings>
 
 type State =
-    { Items: ItemTable
+    { Items: ItemsTable
       Categories: CategoryTable
-      Stores: StoreTable
-      NotSoldItems: NotSoldItemsTable
-      ShoppingListViewOptions: ShoppingListViewOptionsRow }
+      Stores: StoresTable
+      NotSoldItems: NotSoldItemTable
+      NotSoldCategories : NotSoldCategoryTable
+      Settings: SettingsRow }
 
 type CategoryReference =
     | ExistingCategory of CategoryId
@@ -102,6 +110,16 @@ type ItemUpsert =
       Category: CategoryReference option
       Schedule: Schedule 
       NotSoldAt : StoreReference list }
+// list each store
+// don't need new ones
+// for each store...
+// available, not available, category not available
+
+type StoreUpsert =
+    { StoreId : StoreId
+      StoreName : StoreName
+      UnstockedCategories : Set<CategoryId>
+      UnstockedItems : Set<ItemId> }
 
 type ItemMessage =
     | InsertItem of ItemUpsert

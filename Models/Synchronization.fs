@@ -1,4 +1,5 @@
 ﻿namespace Models
+
 open SynchronizationTypes
 
 module DataRow =
@@ -77,12 +78,11 @@ module DataTable =
 
     let empty<'Key, 'T when 'Key: comparison> = Map.empty<'Key, DataRow<'T>> |> DataTable
 
-    let containsKey k dt = dt |> asMap |> Map.containsKey k
-
     let insert v dt =
         let k = v |> keyOf
+        let rowHasKey k dt = dt |> asMap |> Map.containsKey k
 
-        match dt |> containsKey k with
+        match dt |> rowHasKey k with
         | true -> failwith "A row with that key already exists."
         | false -> dt |> asMap |> Map.add k (DataRow.added v) |> fromMap
 
@@ -141,18 +141,10 @@ module DataTable =
     let rejectChanges dt = chooseRow DataRow.rejectChanges dt
 
     let deleteIf p dt =
-        let chooser r =
-            match r |> DataRow.currentValue with
-            | None -> Some r
-            | Some v -> if p v then r |> DataRow.delete else r |> Some
-
-        chooseRow chooser dt
-
-    let mapCurrent f dt =
         dt
-        |> asMap
-        |> Map.map (fun k r -> r |> DataRow.mapCurrent f)
-        |> fromMap
+        |> current
+        |> Seq.choose (fun v -> if p v then Some (keyOf v) else None)
+        |> Seq.fold (fun dt k -> dt |> delete k) dt
 
     let tryFindCurrent k dt =
         dt
@@ -160,8 +152,6 @@ module DataTable =
         |> Map.tryFind k
         |> Option.bind DataRow.currentValue
 
-    let findCurrent k dt = 
-        tryFindCurrent k dt
-        |> Option.get
+    let currentContainsKey k dt = dt |> tryFindCurrent k |> Option.isSome
 
-
+    let findCurrent k dt = tryFindCurrent k dt |> Option.get

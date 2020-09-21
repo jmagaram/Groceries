@@ -73,7 +73,7 @@ let private storeItem itemId items cats =
           |> Option.map (fun catId -> itemCategory catId cats)
       Schedule = item.Schedule }
 
-let private storeQry (store: Store) items cats (notSold:NotSoldItemsTable) =
+let private storeQry (store: Store) items cats (notSold:NotSoldItemTable) =
     { StoreQry.StoreId = store.StoreId
       StoreName = store.StoreName
       NotSoldItems =
@@ -101,7 +101,7 @@ let private stores stores items categories notSold =
 let private shoppingListViewOptions viewOptionRow =
     viewOptionRow
     |> DataRow.currentValue
-    |> Option.defaultValue (ShoppingListViewOptions.defaultView)
+    |> Option.defaultValue (Settings.create)
 
 let private isSoldAt store (itemQry: ItemQry) =
     store
@@ -111,7 +111,7 @@ let private isSoldAt store (itemQry: ItemQry) =
     |> Option.defaultValue true
 
 let shoppingListQry (s: State) =
-    let viewOpt = s.ShoppingListViewOptions |> shoppingListViewOptions
+    let viewOpt = s.Settings |> shoppingListViewOptions
 
     { Stores = s.Stores |> DataTable.current |> List.ofSeq
       Items =

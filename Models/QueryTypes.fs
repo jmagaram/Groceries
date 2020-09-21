@@ -46,7 +46,7 @@ and StoreItem =
 type ShoppingListQry =
     { Stores : Store list
       Items : ItemQry list
-      ShoppingListViewOptions : ShoppingListViewOptions }
+      ShoppingListViewOptions : Settings }
 
 type ItemFindQry =
     { ItemId: ItemId
