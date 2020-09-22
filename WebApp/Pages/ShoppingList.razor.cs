@@ -25,9 +25,9 @@ namespace WebApp.Pages {
 
         private IDisposable UpdateStoreFilterSelectedItem() =>
             StateService.ShoppingListQry
-            .Select(i => i.ShoppingListViewOptions.StoreFilter)
+            .Select(i => i.StoreFilter)
             .DistinctUntilChanged()
-            .Subscribe(s => StoreFilter = s.AsNullable().Map(i => i.Item) ?? Guid.Empty);
+            .Subscribe(s => StoreFilter = s.IsNone() ? Guid.Empty : s.Value.StoreId.Item);
 
         private IDisposable UpdateStoreFilterPickerList() =>
             StateService.ShoppingListQry
@@ -46,10 +46,10 @@ namespace WebApp.Pages {
             Guid.TryParse((string)e.Value, out Guid selectedStore);
             var store = StoreFilterChoices.FirstOrDefault(i => i.StoreId.Item == selectedStore);
             if (store == null) {
-                StateService.Update(StateMessage.NewShoppingListMessage(ShoppingListMessage.ClearStoreFilter));
+                StateService.Update(StateMessage.NewSettingsMessage(SettingsMessage.ClearStoreFilter));
             }
             else {
-                StateService.Update(StateMessage.NewShoppingListMessage(ShoppingListMessage.NewSetStoreFilterTo(store.StoreId)));
+                StateService.Update(StateMessage.NewSettingsMessage(SettingsMessage.NewSetStoreFilterTo(store.StoreId)));
             }
         }
 

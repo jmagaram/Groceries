@@ -2,24 +2,22 @@
 open Models
 open StateTypes
 
+type StoreAvailability =
+    | ItemIsAvailable
+    | ItemIsNeverStocked
+    | CategoryIsNeverStocked
+
 type ItemQry =
     { ItemId: ItemId
       ItemName: ItemName
       Note: Note option
       Quantity: Quantity option
-      Category: ItemCategory option
+      Category: Category option
       Schedule: Schedule
-      NotSoldAt: ItemStore list }
-
-and ItemCategory =
-    { CategoryId: CategoryId
-      CategoryName: CategoryName }
-
-and ItemStore = { StoreId: StoreId; StoreName: StoreName }
+      Availability: (Store * StoreAvailability) list }
 
 type CategoryQry =
-    { CategoryId: CategoryId
-      CategoryName: CategoryName
+    { Category : Category option
       Items: CategoryItem list }
 
 and CategoryItem =
@@ -28,35 +26,17 @@ and CategoryItem =
       Note: Note option
       Quantity: Quantity option
       Schedule: Schedule
-      NotSoldAt: ItemStore list }
-
-type StoreQry =
-    { StoreId: StoreId
-      StoreName: StoreName
-      NotSoldItems: StoreItem list }
-
-and StoreItem =
-    { ItemId: ItemId
-      ItemName: ItemName
-      Note: Note option
-      Quantity: Quantity option
-      Category: ItemCategory option
-      Schedule: Schedule }
+      Availability: (Store * StoreAvailability) list }
 
 type ShoppingListQry =
     { Stores : Store list
       Items : ItemQry list
-      ShoppingListViewOptions : Settings }
+      StoreFilter : Store option }
 
 type ItemFindQry =
     { ItemId: ItemId
       ItemName: ItemName
       Note: Note option
       Quantity: Quantity option
-      Category: ItemCategory option
+      Category: Category option
       Schedule: Schedule }
-
-//type ItemTextMatch = 
-//    { ItemName : FormattedText option
-//      CategoryName : FormattedText option
-//      Note : FormattedText option }

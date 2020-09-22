@@ -10,7 +10,7 @@ namespace WebApp.Data {
         readonly IObservable<State> _stateObs;
 
         public ApplicationStateService() {
-            _state = new BehaviorSubject<State>(StateModule.createWithSampleData);
+            _state = new BehaviorSubject<State>(StateModule.createSampleData);
             _stateObs = _state;
             ShoppingListQry = _stateObs.Select(Query.shoppingListQry);
         }

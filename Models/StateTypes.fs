@@ -94,36 +94,9 @@ type State =
       NotSoldCategories : NotSoldCategoryTable
       Settings: SettingsRow }
 
-type CategoryReference =
-    | ExistingCategory of CategoryId
-    | NewCategory of Category
-
-type StoreReference =
-    | ExistingStore of StoreId
-    | NewStore of Store
-
-type ItemUpsert =
-    { ItemId: ItemId
-      ItemName: ItemName
-      Note: Note option
-      Quantity: Quantity option
-      Category: CategoryReference option
-      Schedule: Schedule 
-      NotSoldAt : StoreReference list }
-// list each store
-// don't need new ones
-// for each store...
-// available, not available, category not available
-
-type StoreUpsert =
-    { StoreId : StoreId
-      StoreName : StoreName
-      UnstockedCategories : Set<CategoryId>
-      UnstockedItems : Set<ItemId> }
-
 type ItemMessage =
-    | InsertItem of ItemUpsert
-    | UpdateItem of ItemUpsert
+    | InsertItem of Item
+    | UpdateItem of Item
     | DeleteItem of ItemId
 
 type CategoryMessage = 
@@ -134,7 +107,15 @@ type StoreMessage =
     | InsertStore of Store
     | DeleteStore of StoreId
 
-type ShoppingListMessage =
+type NotSoldItemMessage =
+    | InsertNotSoldItem of NotSoldItem
+    | DeleteNotSoldItem of NotSoldItem
+
+type NotSoldCategoryMessage =
+    | InsertNotSoldCategory of NotSoldCategory
+    | DeleteNotSoldCategory of NotSoldCategory
+
+type SettingsMessage =
     | ClearStoreFilter
     | SetStoreFilterTo of StoreId
 
@@ -142,5 +123,7 @@ type StateMessage =
     | ItemMessage of ItemMessage
     | StoreMessage of StoreMessage
     | CategoryMessage of CategoryMessage
-    | ShoppingListMessage of ShoppingListMessage
-
+    | NotSoldItemMessage of NotSoldItemMessage 
+    | NotSoldCategoryMessage of NotSoldCategoryMessage
+    | SettingsMessage of SettingsMessage
+    | Transaction of StateMessage seq
