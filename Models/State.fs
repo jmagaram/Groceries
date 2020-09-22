@@ -69,6 +69,20 @@ module Settings =
 [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
 module State =
 
+    let categoriesTable (s:State) = s.Categories
+    let storesTable (s:State) = s.Stores 
+    let itemsTable (s:State) = s.Items 
+    let notSoldItemsTable (s:State) = s.NotSoldItems 
+    let notSoldCategoriesTable (s:State) = s.NotSoldCategories 
+    let settingsRow (s:State) = s.Settings
+
+    let categories = categoriesTable >> DataTable.current
+    let stores = storesTable >> DataTable.current
+    let items = itemsTable >> DataTable.current 
+    let notSoldItems = notSoldItemsTable >> DataTable.current 
+    let notSoldCategories = notSoldCategoriesTable >> DataTable.current 
+    let settings = settingsRow >> DataRow.currentValue >> Option.defaultValue Settings.create
+
     let mapCategories f s = { s with Categories = f s.Categories }
     let mapStores f s = { s with Stores = f s.Stores }
     let mapNotSoldCategories f s = { s with NotSoldCategories = f s.NotSoldCategories }

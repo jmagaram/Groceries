@@ -2,10 +2,10 @@
 open Models
 open StateTypes
 
-type StoreAvailability =
+type ItemAvailability =
     | ItemIsAvailable
-    | ItemIsNeverStocked
-    | CategoryIsNeverStocked
+    | ItemIsNotSold
+    | CategoryIsNotSold
 
 type ItemQry =
     { ItemId: ItemId
@@ -14,7 +14,7 @@ type ItemQry =
       Quantity: Quantity option
       Category: Category option
       Schedule: Schedule
-      Availability: (Store * StoreAvailability) list }
+      StoreAvailability: (Store * ItemAvailability) list }
 
 type CategoryQry =
     { Category : Category option
@@ -26,7 +26,7 @@ and CategoryItem =
       Note: Note option
       Quantity: Quantity option
       Schedule: Schedule
-      Availability: (Store * StoreAvailability) list }
+      StoreAvailability: (Store * ItemAvailability) list }
 
 type ShoppingListQry =
     { Stores : Store list
