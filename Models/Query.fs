@@ -34,6 +34,31 @@ let private itemQry (item: Item) state =
           |> Seq.map (fun (_, s, a) -> (s, a))
           |> List.ofSeq }
 
+let catQrt state =
+    state
+    |> State.categories
+    |> Seq.map Some
+    |> Seq.append [ None ]
+    |> Seq.map (fun c ->
+        { Category = c
+          Items =
+              state
+              |> State.items
+              |> Seq.filter (fun i ->
+                  Option.map2 (fun c ic -> c.CategoryId = ic) c i.CategoryId
+                  |> Option.defaultValue true)
+              |> Seq.map (fun i ->
+                  { CategoryItem.ItemId = i.ItemId
+                    ItemName = i.ItemName
+                    Note = i.Note
+                    Quantity = i.Quantity
+                    Schedule = i.Schedule
+                    Availability =
+                        itemStoreAvailability (state |> State.stores) [ i ] state
+                        |> Seq.map (fun (i, s, a) -> (s, a))
+                        |> List.ofSeq })
+              |> List.ofSeq })
+
 let categoryQry (cat: Category option) state =
     { Category = cat
       Items =

@@ -15,6 +15,7 @@ type ItemQry =
       Schedule: Schedule
       Availability: (Store * ItemAvailability) list }
 
+// Use Seq instead of a list?
 type CategoryQry =
     { Category : Category option
       Items: CategoryItem list }
