@@ -1,26 +1,18 @@
 ﻿module Models.Query
 
-open System
-
 open Models
 open Models.QueryTypes
 open Models.StateTypes
-open Models.SynchronizationTypes
 
-let itemStoreAvailability (stores: Store seq) (items: Item seq) state =
-    Seq.allPairs stores items
-    |> Seq.map (fun (s, i) ->
-        let availability =
-            if state
-               |> State.notSoldItemsTable
-               |> DataTable.currentContainsKey { ItemId = i.ItemId; StoreId = s.StoreId } then
-                ItemIsAvailable
-            else
-                ItemIsNotSold
+let itemAvailability (s: Store) (i: Item) state =
+    if state
+       |> State.notSoldItemsTable
+       |> DataTable.currentContainsKey { ItemId = i.ItemId; StoreId = s.StoreId } then
+        ItemIsAvailable
+    else
+        ItemIsNotSold
 
-        (i, s, availability))
-
-let private itemQry (item: Item) state =
+let itemQry (item: Item) state =
     { ItemQry.ItemId = item.ItemId
       ItemName = item.ItemName
       Note = item.Note
@@ -30,41 +22,18 @@ let private itemQry (item: Item) state =
           item.CategoryId
           |> Option.map (fun c -> state |> State.categoriesTable |> DataTable.findCurrent c)
       Availability =
-          itemStoreAvailability (state |> State.stores) (item |> Seq.singleton) state
-          |> Seq.map (fun (_, s, a) -> (s, a))
-          |> List.ofSeq }
-
-let catQrt state =
-    state
-    |> State.categories
-    |> Seq.map Some
-    |> Seq.append [ None ]
-    |> Seq.map (fun c ->
-        { Category = c
-          Items =
-              state
-              |> State.items
-              |> Seq.filter (fun i ->
-                  Option.map2 (fun c ic -> c.CategoryId = ic) c i.CategoryId
-                  |> Option.defaultValue true)
-              |> Seq.map (fun i ->
-                  { CategoryItem.ItemId = i.ItemId
-                    ItemName = i.ItemName
-                    Note = i.Note
-                    Quantity = i.Quantity
-                    Schedule = i.Schedule
-                    Availability =
-                        itemStoreAvailability (state |> State.stores) [ i ] state
-                        |> Seq.map (fun (i, s, a) -> (s, a))
-                        |> List.ofSeq })
-              |> List.ofSeq })
+          state
+          |> State.stores
+          |> Seq.map (fun s -> (s, itemAvailability s item state)) }
 
 let categoryQry (cat: Category option) state =
     { Category = cat
       Items =
           state
           |> State.items
-          |> Seq.filter (fun i -> i.CategoryId = (cat |> Option.map (fun x -> x.CategoryId)))
+          |> Seq.filter (fun i ->
+              Option.map2 (fun c ic -> c.CategoryId = ic) cat i.CategoryId
+              |> Option.defaultValue true)
           |> Seq.map (fun i ->
               { CategoryItem.ItemId = i.ItemId
                 ItemName = i.ItemName
@@ -72,28 +41,25 @@ let categoryQry (cat: Category option) state =
                 Quantity = i.Quantity
                 Schedule = i.Schedule
                 Availability =
-                    itemStoreAvailability (state |> State.stores) (i |> Seq.singleton) state
-                    |> Seq.map (fun (_, s, a) -> (s, a))
-                    |> List.ofSeq })
-          |> List.ofSeq }
+                    state
+                    |> State.stores
+                    |> Seq.map (fun s -> (s, itemAvailability s i state)) }) }
 
 let shoppingListQry s =
-    let storeFilter =
-        (State.settings s).StoreFilter
-        |> Option.map (fun x -> s |> State.storesTable |> DataTable.findCurrent x)
+    let sf =
+        (s |> State.settings).StoreFilter
+        |> Option.map (fun storeId -> s |> State.storesTable |> DataTable.findCurrent storeId)
 
-    { Stores = s.Stores |> DataTable.current |> List.ofSeq
-      StoreFilter = storeFilter
+    { Stores = s |> State.stores |> List.ofSeq
+      StoreFilter = sf
       Items =
           s
           |> State.items
-          |> Seq.map (fun item -> itemQry item s)
-          |> Seq.filter (fun item ->
-              match storeFilter with
-              | None -> true
-              | Some filterId ->
-                  item.Availability
-                  |> Seq.exists (fun (st, it) ->
-                      st.StoreId = filterId.StoreId
-                      && it = ItemAvailability.ItemIsAvailable))
+          |> Seq.map (fun i -> itemQry i s)
+          |> Seq.filter (fun i ->
+              sf
+              |> Option.map (fun sf ->
+                  i.Availability
+                  |> Seq.exists (fun (s, a) -> s = sf && a = ItemIsAvailable))
+              |> Option.defaultValue true)
           |> List.ofSeq }

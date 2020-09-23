@@ -13,12 +13,11 @@ type ItemQry =
       Quantity: Quantity option
       Category: Category option
       Schedule: Schedule
-      Availability: (Store * ItemAvailability) list }
+      Availability: (Store * ItemAvailability) seq }
 
-// Use Seq instead of a list?
 type CategoryQry =
     { Category : Category option
-      Items: CategoryItem list }
+      Items: CategoryItem seq }
 
 and CategoryItem =
     { ItemId: ItemId
@@ -26,7 +25,7 @@ and CategoryItem =
       Note: Note option
       Quantity: Quantity option
       Schedule: Schedule
-      Availability: (Store * ItemAvailability) list }
+      Availability: (Store * ItemAvailability) seq }
 
 type ShoppingListQry =
     { Stores : Store list
