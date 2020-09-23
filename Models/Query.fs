@@ -8,9 +8,9 @@ let itemAvailability (s: Store) (i: Item) state =
     if state
        |> State.notSoldItemsTable
        |> DataTable.currentContainsKey { ItemId = i.ItemId; StoreId = s.StoreId } then
-        ItemIsAvailable
-    else
         ItemIsNotSold
+    else
+        ItemIsAvailable
 
 let itemQry (item: Item) state =
     { ItemQry.ItemId = item.ItemId
