@@ -1,39 +1,37 @@
 ﻿module Models.Query
 
 open System
-open System.Reactive
-open System.Reactive.Linq
-open FSharp.Control.Reactive
 
 open Models
 open Models.QueryTypes
 open Models.StateTypes
 open Models.SynchronizationTypes
 
-let private itemAvailability (item: Item) state =
-    state
-    |> State.stores
-    |> Seq.map (fun store ->
-        let isCategoryNotSold =
-            item.CategoryId
-            |> Option.map (fun c ->
+let itemStoreAvailability (stores: Store seq) (items: Item seq) state =
+    Seq.allPairs stores items
+    |> Seq.map (fun (s, i) ->
+        let availability =
+            let categoryIsNotSold =
+                i.CategoryId
+                |> Option.map (fun c ->
+                    state
+                    |> State.notSoldCategoriesTable
+                    |> DataTable.tryFindCurrent { CategoryId = c; StoreId = s.StoreId }
+                    |> Option.isSome)
+                |> Option.defaultValue false
+
+            let itemIsNotSold =
                 state
-                |> State.notSoldCategoriesTable
-                |> DataTable.currentContainsKey { NotSoldCategory.StoreId = store.StoreId; CategoryId = c })
-            |> Option.defaultValue false
+                |> State.notSoldItemsTable
+                |> DataTable.currentContainsKey { ItemId = i.ItemId; StoreId = s.StoreId }
 
-        let isItemNotSold =
-            state
-            |> State.notSoldItemsTable
-            |> DataTable.currentContainsKey
-                { NotSoldItem.StoreId = store.StoreId
-                  ItemId = item.ItemId }
+            match categoryIsNotSold, itemIsNotSold with
+            | false, false -> ItemIsAvailable
+            | true, false -> CategoryIsNotSold
+            | false, true -> ItemIsNotSold
+            | true, true -> CategoryAndItemAreNotSold
 
-        match isCategoryNotSold, isItemNotSold with
-        | true, false -> (store, CategoryIsNotSold)
-        | false, true -> (store, ItemIsNotSold)
-        | _, _ -> (store, ItemIsAvailable))
-    |> List.ofSeq
+        (i, s, availability))
 
 let private itemQry (item: Item) state =
     { ItemQry.ItemId = item.ItemId
@@ -44,7 +42,10 @@ let private itemQry (item: Item) state =
       Category =
           item.CategoryId
           |> Option.map (fun c -> state |> State.categoriesTable |> DataTable.findCurrent c)
-      StoreAvailability = itemAvailability item state }
+      StoreAvailability =
+          itemStoreAvailability (state |> State.stores) (item |> Seq.singleton) state
+          |> Seq.map (fun (_, s, a) -> (s, a))
+          |> List.ofSeq } // Seq.cache? Just a Seq?
 
 let categoryQry (cat: Category option) state =
     { Category = cat
@@ -58,7 +59,10 @@ let categoryQry (cat: Category option) state =
                 Note = i.Note
                 Quantity = i.Quantity
                 Schedule = i.Schedule
-                StoreAvailability = state |> itemAvailability i })
+                StoreAvailability =
+                    itemStoreAvailability (state |> State.stores) (i |> Seq.singleton) state
+                    |> Seq.map (fun (_, s, a) -> (s, a))
+                    |> List.ofSeq })
           |> List.ofSeq }
 
 let shoppingListQry s =

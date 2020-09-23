@@ -6,6 +6,7 @@ type ItemAvailability =
     | ItemIsAvailable
     | ItemIsNotSold
     | CategoryIsNotSold
+    | CategoryAndItemAreNotSold
 
 type ItemQry =
     { ItemId: ItemId
