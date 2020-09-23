@@ -78,3 +78,8 @@ module Result =
         match r with
         | Ok _ -> true
         | Error _ -> false
+
+    let error r = 
+        match r with
+        | Ok v -> None
+        | Error e -> Some e
