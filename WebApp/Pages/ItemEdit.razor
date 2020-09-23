@@ -1,0 +1,45 @@
+﻿@page "/itemedit"
+@using Common
+@using Microsoft.FSharp.Core;
+@using static Models.ItemEditFormModule
+
+<h1>Edit item</h1>
+<form>
+    <div>
+        <label>
+            Name: <input @oninput="OnItemNameChange" @onfocusout="OnItemNameFocusOut" placeholder="Apples, Canned Tuna, ..." value="@Form.ItemName" />
+            @if (Form.ItemNameError.IsSome()) {
+                <span>Error: @Form.ItemNameError.Value</span>
+            }
+        </label>
+    </div>
+    <div>
+        <label>
+            Quantity: <input @oninput="OnQuantityChange" @onfocusout="OnQuantityFocusOut" placeholder="3, Lots!, 2 lb., 1 jar, ..." value="@Form.Quantity" />
+            @if (Form.QuantityError.IsSome()) {
+                <span>Error: @Form.QuantityError.Value</span>
+            }
+        </label>
+    </div>
+    <div>
+        <label>
+            Repeat:
+            <select @onchange="OnRepeatChange">
+                @{ 
+                    int repeatInterval = Form.Schedule switch
+                    {
+                        RelativeSchedule.Repeat r => r.Item.Interval,
+                        _ => -1
+                    };
+                }
+                <option selected="@repeatInterval == -1" value="-1">Only once</option>
+                @foreach (var i in Form.RepeatIntervalChoices) {
+                    string description = Form.RepeatIntervalAsText(i);
+                    string key = i.ToString();
+                    bool isSelected = i == repeatInterval;
+                    <option selected="@isSelected" value="@key">@description</option>
+                }
+            </select>
+        </label>
+    </div>
+</form>

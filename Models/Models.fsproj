@@ -19,6 +19,7 @@
     <Compile Include="Forms.fs" />
     <Compile Include="ViewTypes.fs" />
     <Compile Include="View.fs" />
+    <Compile Include="ItemEditForm.fs" />
   </ItemGroup>
 
   <ItemGroup>

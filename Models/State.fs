@@ -50,6 +50,10 @@ module Repeat =
 
     let rules = { Min = 1<days>; Max = 365<days> }
 
+    let commonIntervals =
+        [ 1; 3; 7; 14; 30; 60; 90 ]
+        |> List.map (fun i -> i * 1<days>)
+
     let create interval postponedUntil =
         interval
         |> RangeValidation.createValidator rules
@@ -69,17 +73,21 @@ module Settings =
 [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
 module State =
 
-    let categoriesTable (s:State) = s.Categories
-    let storesTable (s:State) = s.Stores 
-    let itemsTable (s:State) = s.Items 
-    let notSoldItemsTable (s:State) = s.NotSoldItems 
-    let settingsRow (s:State) = s.Settings
+    let categoriesTable (s: State) = s.Categories
+    let storesTable (s: State) = s.Stores
+    let itemsTable (s: State) = s.Items
+    let notSoldItemsTable (s: State) = s.NotSoldItems
+    let settingsRow (s: State) = s.Settings
 
     let categories = categoriesTable >> DataTable.current
     let stores = storesTable >> DataTable.current
-    let items = itemsTable >> DataTable.current 
-    let notSoldItems = notSoldItemsTable >> DataTable.current 
-    let settings = settingsRow >> DataRow.currentValue >> Option.defaultValue Settings.create
+    let items = itemsTable >> DataTable.current
+    let notSoldItems = notSoldItemsTable >> DataTable.current
+
+    let settings =
+        settingsRow
+        >> DataRow.currentValue
+        >> Option.defaultValue Settings.create
 
     let mapCategories f s = { s with Categories = f s.Categories }
     let mapStores f s = { s with Stores = f s.Stores }
