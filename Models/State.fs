@@ -73,19 +73,16 @@ module State =
     let storesTable (s:State) = s.Stores 
     let itemsTable (s:State) = s.Items 
     let notSoldItemsTable (s:State) = s.NotSoldItems 
-    let notSoldCategoriesTable (s:State) = s.NotSoldCategories 
     let settingsRow (s:State) = s.Settings
 
     let categories = categoriesTable >> DataTable.current
     let stores = storesTable >> DataTable.current
     let items = itemsTable >> DataTable.current 
     let notSoldItems = notSoldItemsTable >> DataTable.current 
-    let notSoldCategories = notSoldCategoriesTable >> DataTable.current 
     let settings = settingsRow >> DataRow.currentValue >> Option.defaultValue Settings.create
 
     let mapCategories f s = { s with Categories = f s.Categories }
     let mapStores f s = { s with Stores = f s.Stores }
-    let mapNotSoldCategories f s = { s with NotSoldCategories = f s.NotSoldCategories }
     let mapItems f s = { s with Items = f s.Items }
     let mapNotSoldItems f s = { s with NotSoldItems = f s.NotSoldItems }
     let mapSettings f s = { s with Settings = f s.Settings }
@@ -120,15 +117,6 @@ module State =
         | None, _ -> failwith "A store is referenced that does not exist."
         | _, None -> failwith "An item is referenced that does not exist."
 
-    let insertNotSoldCategory (nsc: NotSoldCategory) s =
-        let category = s.Categories |> DataTable.tryFindCurrent nsc.CategoryId
-        let store = s.Stores |> DataTable.tryFindCurrent nsc.StoreId
-
-        match category, store with
-        | Some _, Some _ -> s |> mapNotSoldCategories (DataTable.insert nsc)
-        | None, _ -> failwith "A store is referenced that does not exist."
-        | _, None -> failwith "An item is referenced that does not exist."
-
     let updateSettingsStoreFilter k s =
         let isStoreReferenceValid =
             k
@@ -143,19 +131,15 @@ module State =
         s
         |> mapStores (DataTable.delete k)
         |> mapNotSoldItems (DataTable.deleteIf (fun i -> i.StoreId = k))
-        |> mapNotSoldCategories (DataTable.deleteIf (fun i -> i.StoreId = k))
         |> mapSettings (DataRow.mapCurrent (Settings.clearStoreFilterIf k))
 
     let deleteNotSoldItem k s = s |> mapNotSoldItems (DataTable.delete k)
-
-    let deleteNotSoldCategory k s = s |> mapNotSoldCategories (DataTable.delete k)
 
     let deleteItem k s = s |> mapItems (DataTable.delete k)
 
     let deleteCategory k s =
         s
         |> mapCategories (DataTable.delete k)
-        |> mapNotSoldCategories (DataTable.deleteIf (fun i -> i.CategoryId = k))
         |> mapItems (fun dt ->
             dt
             |> DataTable.current
@@ -167,7 +151,6 @@ module State =
           Items = DataTable.empty
           Stores = DataTable.empty
           NotSoldItems = DataTable.empty
-          NotSoldCategories = DataTable.empty
           Settings = DataRow.unchanged Settings.create }
 
     let createSampleData =
@@ -243,13 +226,6 @@ module State =
 
             s |> mapNotSoldItems (DataTable.insert ns)
 
-        let doesNotSellCategory store category (s: State) =
-            let ns =
-                { NotSoldCategory.CategoryId = (findCategory category s).CategoryId
-                  StoreId = (findStore store s).StoreId }
-
-            s |> mapNotSoldCategories (DataTable.insert ns)
-
         createDefault
         |> newCategory "Meat and Seafood"
         |> newCategory "Dairy"
@@ -274,8 +250,6 @@ module State =
         |> newStore "Walgreens"
         |> doesNotSellItem "QFC" "Dried flax seeds"
         |> doesNotSellItem "Costco" "Chocolate bars"
-        |> doesNotSellCategory "Walgreens" "Produce"
-        |> doesNotSellCategory "Walgreens" "Dairy"
 
     let rec update msg s =
         match msg with
@@ -292,10 +266,6 @@ module State =
             match msg with
             | InsertCategory i -> s |> insertCategory i
             | DeleteCategory k -> s |> deleteCategory k
-        | NotSoldCategoryMessage msg ->
-            match msg with
-            | InsertNotSoldCategory i -> s |> insertNotSoldCategory i
-            | DeleteNotSoldCategory i -> s |> deleteNotSoldCategory i
         | NotSoldItemMessage msg ->
             match msg with
             | InsertNotSoldItem i -> s |> insertNotSoldItem i

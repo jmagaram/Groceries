@@ -67,12 +67,6 @@ type NotSoldItem =
     interface IKey<NotSoldItem> with
         member this.Key = this
 
-type NotSoldCategory =
-    { StoreId: StoreId
-      CategoryId: CategoryId }
-    interface IKey<NotSoldCategory> with
-        member this.Key = this
-
 // include "show empty categories"
 type Settings = 
     { StoreFilter: StoreId option }
@@ -83,7 +77,6 @@ type ItemsTable = DataTable<ItemId, Item>
 type StoresTable = DataTable<StoreId, Store>
 type CategoryTable = DataTable<CategoryId, Category>
 type NotSoldItemTable = DataTable<NotSoldItem, NotSoldItem>
-type NotSoldCategoryTable = DataTable<NotSoldCategory, NotSoldCategory>
 type SettingsRow = DataRow<Settings>
 
 type State =
@@ -91,7 +84,6 @@ type State =
       Categories: CategoryTable
       Stores: StoresTable
       NotSoldItems: NotSoldItemTable
-      NotSoldCategories : NotSoldCategoryTable
       Settings: SettingsRow }
 
 type ItemMessage =
@@ -111,10 +103,6 @@ type NotSoldItemMessage =
     | InsertNotSoldItem of NotSoldItem
     | DeleteNotSoldItem of NotSoldItem
 
-type NotSoldCategoryMessage =
-    | InsertNotSoldCategory of NotSoldCategory
-    | DeleteNotSoldCategory of NotSoldCategory
-
 type SettingsMessage =
     | ClearStoreFilter
     | SetStoreFilterTo of StoreId
@@ -124,6 +112,5 @@ type StateMessage =
     | StoreMessage of StoreMessage
     | CategoryMessage of CategoryMessage
     | NotSoldItemMessage of NotSoldItemMessage 
-    | NotSoldCategoryMessage of NotSoldCategoryMessage
     | SettingsMessage of SettingsMessage
     | Transaction of StateMessage seq
