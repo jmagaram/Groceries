@@ -61,6 +61,12 @@ module String =
 
     let isNullOrWhiteSpace s = String.IsNullOrWhiteSpace(s)
 
+    let tryParseWith (tryParseFunc: string -> bool * _) = tryParseFunc >> function
+        | true, v    -> Some v
+        | false, _   -> None
+
+    let tryParseInt = tryParseWith System.Int32.TryParse
+
 [<AutoOpen>]
 module Result =
 
