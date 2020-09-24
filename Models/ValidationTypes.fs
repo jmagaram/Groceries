@@ -18,6 +18,7 @@ type StringRules =
       OnlyContains: CharacterKind list }
 
 type StringError =
+    | IsRequired
     | TooLong
     | TooShort
     | InvalidCharacters

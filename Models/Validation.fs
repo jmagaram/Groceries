@@ -5,19 +5,12 @@ open Models.ValidationTypes
 
 module StringValidation =
 
-    let normalizeLineFeed (s: string) =
-        s.Replace("\r\n", "\n").Replace("\r", "\n")
+    let normalizeLineFeed (s: string) = s.Replace("\r\n", "\n").Replace("\r", "\n")
 
     let singleLine minLength maxLength =
         { MinLength = minLength
           MaxLength = maxLength
-          OnlyContains =
-              [ Letter
-                Mark
-                Number
-                Punctuation
-                Space
-                Symbol ] }
+          OnlyContains = [ Letter; Mark; Number; Punctuation; Space; Symbol ] }
 
     let multipleLine minLength maxLength =
         { MinLength = minLength
@@ -31,9 +24,14 @@ module StringValidation =
                 Symbol
                 LineFeed ] }
 
-    let lengthAtLeast c s = (String.length s) >= (c |> int)
+    let lengthAtLeast min s = (String.length s) >= (min |> int)
 
-    let lengthAtMost c s = (String.length s) <= (c |> int)
+    let lengthAtMost max s = (String.length s) <= (max |> int)
+
+    let existsIfRequired min s = 
+        let isRequired = (min |> int) > 0
+        let isEmpty = s |> String.isNullOrWhiteSpace
+        isRequired && not isEmpty
 
     let onlyContains cs =
         match cs with
@@ -59,7 +57,8 @@ module StringValidation =
 
     let createValidator (r: StringRules) =
         let vs =
-            [ (r.MinLength |> lengthAtLeast, TooShort)
+            [ (r.MinLength |> existsIfRequired, IsRequired)
+              (r.MinLength |> lengthAtLeast, TooShort)
               (r.MaxLength |> lengthAtMost, TooLong)
               (r.OnlyContains |> onlyContains, InvalidCharacters) ]
 
@@ -88,9 +87,7 @@ module RangeValidation =
         elif v > r.Max then RangeError.TooBig |> Some
         else None
 
-    let forceIntoBounds v (r:Range<_>) =
-        if v < r.Min
-        then r.Min
-        elif v > r.Max
-        then r.Max
+    let forceIntoBounds v (r: Range<_>) =
+        if v < r.Min then r.Min
+        elif v > r.Max then r.Max
         else v
