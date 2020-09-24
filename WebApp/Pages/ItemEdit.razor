@@ -51,6 +51,20 @@
         </label>
     </div>
     <div>
+        <label>
+            Category:
+            <select @onchange="OnExistingCategoryChange">
+                <option selected="@Form.Category.ExistingCategory.IsNone()" value="-1">Uncategorized</option>
+                @foreach (var i in Form.Category.ExistingCategoryChoices) {
+                    string description = i.CategoryName.Item;
+                    string key = i.CategoryId.Item.ToString();
+                    bool isSelected = Form.Category.ExistingCategory.IsSome() && i.CategoryId.Equals(Form.Category.ExistingCategory.Value.CategoryId);
+                    <option selected="@isSelected" value="@key">@description</option>
+                }
+            </select>
+        </label>
+    </div>
+    <div>
         Stores:<br />
         @foreach (var st in Form.Stores.OrderBy(i => i.Store.StoreName)) {
             var id = st.Store.StoreId;

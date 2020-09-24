@@ -38,6 +38,7 @@ module Quantity =
 module CategoryName =
 
     let rules = singleLine 3<chars> 30<chars>
+    let normalizer = String.trim
     let tryParse = parser CategoryName rules
     let asText (CategoryName s) = s
 

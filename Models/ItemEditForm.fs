@@ -13,7 +13,58 @@ type RelativeSchedule =
     | Completed
     | Repeat of {| Interval: int<days>; PostponeDays: int<days> option |}
 
-type ListItem<'T> = { Value: 'T; Key: string; IsSelected: bool }
+type CategoryPickerMode =
+    | NoCategory
+    | ChooseExistingCategory
+    | CreateNewCategory
+
+type CategoryPicker =
+    { CategoryPickerMode: CategoryPickerMode
+      CreateCategory: TextInput<CategoryName, StringError>
+      ExistingCategory: Category option
+      ExistingCategoryChoices: Category list }
+
+module CategoryPicker =
+
+    let categoryNameValidator = CategoryName.tryParse >> Result.mapError List.head
+
+    let init cats =
+        { CategoryPickerMode = NoCategory
+          CreateCategory = TextInput.init categoryNameValidator CategoryName.normalizer ""
+          ExistingCategory = None
+          ExistingCategoryChoices = cats }
+
+    let setMode mode cp = { cp with CategoryPickerMode = mode }
+
+    let newCategoryNameEdit n cp =
+        { cp with
+              CreateCategory =
+                  cp.CreateCategory
+                  |> TextInput.setText categoryNameValidator n
+              CategoryPickerMode = CreateNewCategory }
+
+    let newCategoryNameLoseFocus cp =
+        { cp with
+              CreateCategory =
+                  cp.CreateCategory
+                  |> TextInput.loseFocus CategoryName.normalizer }
+
+    let chooseExisting id cp =
+        let cat =
+            cp.ExistingCategoryChoices
+            |> List.tryFind (fun i -> i.CategoryId = id)
+
+        { cp with
+              ExistingCategory = cat
+              CategoryPickerMode = ChooseExistingCategory }
+
+type CategoryPicker with
+    member this.ModeNoCategory() = this |> CategoryPicker.setMode NoCategory
+    member this.ModeCreateNew() = this |> CategoryPicker.setMode CreateNewCategory
+    member this.ModeChooseExisting() = this |> CategoryPicker.setMode ChooseExistingCategory
+    member this.NewCategoryEdit(n) = this |> CategoryPicker.newCategoryNameEdit n
+    member this.NewCategoryLoseFocus() = this |> CategoryPicker.newCategoryNameLoseFocus
+    member this.ChooseExisting(id) = this |> CategoryPicker.chooseExisting (CategoryId id)
 
 type T =
     { ItemId: ItemId
@@ -22,7 +73,8 @@ type T =
       Note: TextInput<Note, StringError>
       Schedule: RelativeSchedule
       RepeatIntervalChoices: int<days> list
-      Stores: ItemAvailability list }
+      Stores: ItemAvailability list
+      Category: CategoryPicker }
 
 type StoreAvailabilitySummary =
     | SoldEverywhere
@@ -31,16 +83,24 @@ type StoreAvailabilitySummary =
     | SoldEverywhereExcept of Store
     | VariedAvailability
 
-let availabilitySummary (availList:ItemAvailability seq) = 
-    let soldAt = availList |> Seq.choose (fun i -> if i.IsSold then Some i.Store else None) |> Set.ofSeq
-    let notSoldAt = availList |> Seq.choose (fun i -> if i.IsSold = false then Some i.Store else None) |> Set.ofSeq
+let availabilitySummary (availList: ItemAvailability seq) =
+    let soldAt =
+        availList
+        |> Seq.choose (fun i -> if i.IsSold then Some i.Store else None)
+        |> Set.ofSeq
+
+    let notSoldAt =
+        availList
+        |> Seq.choose (fun i -> if i.IsSold = false then Some i.Store else None)
+        |> Set.ofSeq
+
     match soldAt.Count, notSoldAt.Count with
     | x, 0 -> SoldEverywhere
     | 0, x when x >= 1 -> NotSoldAnywhere
-    | 1, x when x >= 1 -> SoldOnlyAt (soldAt |> Seq.head)
-    | x, 1 when x >= 1 -> SoldEverywhereExcept (notSoldAt |> Seq.head)
-    | _, _ -> VariedAvailability    
-    
+    | 1, x when x >= 1 -> SoldOnlyAt(soldAt |> Seq.head)
+    | x, 1 when x >= 1 -> SoldEverywhereExcept(notSoldAt |> Seq.head)
+    | _, _ -> VariedAvailability
+
 // stores
 // list all stores and availability of each
 
@@ -86,6 +146,12 @@ let stores =
                 StoreName = StoreName.tryParse name |> Result.okOrThrow }
           IsSold = isAvailable })
 
+let cats =
+    [ "Food"; "Frozen"; "Dry"; "Dairy" ]
+    |> List.map (fun i ->
+        { CategoryId = Id.create CategoryId
+          CategoryName = i |> CategoryName.tryParse |> Result.okOrThrow })
+
 let createNew =
     { ItemId = Id.create ItemId
       ItemName = TextInput.init itemNameValidator ItemName.normalizer ""
@@ -93,7 +159,9 @@ let createNew =
       Note = TextInput.init noteValidator Note.normalizer ""
       Schedule = RelativeSchedule.Once
       RepeatIntervalChoices = Repeat.commonIntervals
-      Stores = stores }
+      Stores = stores 
+      Category = CategoryPicker.init cats 
+    }
 
 let setStoreAvailability s b (form: T) =
     { form with
@@ -162,6 +230,8 @@ type T with
     member this.ScheduleOnlyOnce() = this |> scheduleOnlyOnce
     member this.ScheduleRepeat(d) = this |> scheduleRepeat d
     member this.SchedulePostpone(d) = this |> schedulePostpone d
-    member this.SetStoreAvailability(s,b) = this |> setStoreAvailability s b
+    member this.SetStoreAvailability(s, b) = this |> setStoreAvailability s b
     member this.StoreSummary() = this.Stores |> availabilitySummary
     member this.RepeatIntervalAsText(d) = d |> repeatIntervalAsText
+    member this.SetCategory(c) = { this with Category = c }
+

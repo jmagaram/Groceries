@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
 using Models;
+using System;
 using static Models.ItemEditFormModule;
 
 namespace WebApp.Pages {
@@ -43,6 +44,23 @@ namespace WebApp.Pages {
                 }
                 else {
                     Form = Form.ScheduleRepeat(d);
+                }
+            }
+        }
+
+        protected void OnExistingCategoryChange(ChangeEventArgs e) {
+            if (int.TryParse((string)(e.Value), out int d)) {
+                if (d == -1) {
+                    Form = Form.SetCategory(Form.Category.ModeNoCategory());
+                }
+            }
+            else {
+                if (Guid.TryParse((string)e.Value, out Guid g)) {
+                    Form = Form.SetCategory(Form.Category.ChooseExisting(g));
+
+                }
+                else {
+
                 }
             }
         }
