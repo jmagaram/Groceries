@@ -14,9 +14,21 @@ module SearchTerm =
           MaxLength = 20<chars>
           StringRules.OnlyContains = [ Letter; Mark; Number; Punctuation; Space; Symbol ] }
 
-    let value (SearchTerm s) = s
+    let normalizer = String.trim
 
-    let tryParse = parser SearchTerm rules
+    let validator = rules |> StringValidation.createValidator
+
+    let tryParse s =
+        s
+        |> normalizer
+        |> fun s ->
+            match validator s |> Seq.toList with
+            | [] -> Ok s
+            | errors -> Error errors
+        |> Result.mapError List.head
+        |> Result.map SearchTerm
+
+    let value (SearchTerm s) = s
 
     let toRegex (SearchTerm s) =
         let isRepeating s =

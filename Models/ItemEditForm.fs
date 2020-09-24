@@ -25,7 +25,7 @@ type CategoryPickerMode =
 type T =
     { ItemId: ItemId
       ItemName: TextInput<ItemName, StringError>
-      Quantity: TextInput<Quantity, StringError>
+      Quantity: TextInput<Quantity option, StringError>
       Note: TextInput<Note option, StringError>
       Schedule: RelativeSchedule
       RepeatIntervalChoices: int<days> list
@@ -42,15 +42,13 @@ type StoreAvailabilitySummary =
     | SoldEverywhereExcept of Store
     | VariedAvailability
 
-let categoryNameValidator = CategoryName.tryParse >> Result.mapError List.head
-
 let setCategoryPickerMode mode (form: T) = { form with CategoryPickerMode = mode }
 
 let newCategoryNameEdit n (form: T) =
     { form with
           NewCategory =
               form.NewCategory
-              |> TextInput.setText categoryNameValidator n
+              |> TextInput.setText CategoryName.tryParse n
           CategoryPickerMode = CreateNewCategory }
 
 let newCategoryNameLoseFocus (form: T) =
@@ -113,14 +111,6 @@ let repeatIntervalDeserialize s =
         | None -> Some 7<days>
         | Some d -> Some(d * 1<days> |> repeatIntervalNormalize)
 
-let itemNameValidator = ItemName.tryParse >> Result.mapError List.head
-
-let quantityValidator = Quantity.tryParse >> Result.mapError List.head
-
-let noteValidator = Note.tryParse >> Result.mapError List.head
-
-let optionalNoteValidator = noteValidator |> StringValidation.createOptionalParser
-
 let stores =
     [ ("QFC", true)
       ("Whole Foods", false)
@@ -138,16 +128,27 @@ let cats =
         { CategoryId = Id.create CategoryId
           CategoryName = i |> CategoryName.tryParse |> Result.okOrThrow })
 
+let (noteParser, quantityParser) =
+    let tryParseOptional normalizer tryParse s =
+        Some(normalizer s)
+        |> Option.filter String.isNotEmpty
+        |> Option.map tryParse
+        |> Option.map (Result.map Some)
+        |> Option.defaultValue (Ok None)
+    let noteParser = tryParseOptional Note.normalizer Note.tryParse
+    let quantityParser = tryParseOptional Quantity.normalizer Quantity.tryParse
+    (noteParser, quantityParser)
+
 let createNew =
     { ItemId = Id.create ItemId
-      ItemName = TextInput.init itemNameValidator ItemName.normalizer ""
-      Quantity = TextInput.init quantityValidator Quantity.normalizer ""
-      Note = TextInput.init optionalNoteValidator Note.normalizer ""
+      ItemName = TextInput.init ItemName.tryParse ItemName.normalizer ""
+      Quantity = TextInput.init quantityParser Quantity.normalizer ""
+      Note = TextInput.init noteParser Note.normalizer ""
       Schedule = RelativeSchedule.Once
       RepeatIntervalChoices = Repeat.commonIntervals
       Stores = stores
       CategoryPickerMode = NoCategory
-      NewCategory = TextInput.init categoryNameValidator CategoryName.normalizer ""
+      NewCategory = TextInput.init CategoryName.tryParse CategoryName.normalizer ""
       ExistingCategory = None
       ExistingCategoryChoices = cats }
 
@@ -159,7 +160,7 @@ let setStoreAvailability s b (form: T) =
 
 let itemNameEdit n (form: T) =
     { form with
-          ItemName = form.ItemName |> TextInput.setText itemNameValidator n }
+          ItemName = form.ItemName |> TextInput.setText ItemName.tryParse n }
 
 let itemNameLoseFocus (form: T) =
     { form with
@@ -167,7 +168,7 @@ let itemNameLoseFocus (form: T) =
 
 let quantityEdit n (form: T) =
     { form with
-          Quantity = form.Quantity |> TextInput.setText quantityValidator n }
+          Quantity = form.Quantity |> TextInput.setText quantityParser n }
 
 let quantityLoseFocus (form: T) =
     { form with
@@ -175,7 +176,7 @@ let quantityLoseFocus (form: T) =
 
 let noteEdit n (form: T) =
     { form with
-          Note = form.Note |> TextInput.setText optionalNoteValidator n }
+          Note = form.Note |> TextInput.setText noteParser n }
 
 let noteLoseFocus (form: T) =
     { form with

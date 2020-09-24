@@ -55,7 +55,6 @@ module StringValidation =
 
             fun s -> regex.IsMatch(s) |> not
 
-    // name of this is not good, or other one below parser, needs to change
     let createValidator (r: StringRules) =
         let vs =
             [ (r.MinLength |> existsIfRequired, IsRequired)
@@ -66,32 +65,6 @@ module StringValidation =
         fun s ->
             vs
             |> Seq.choose (fun (p, err) -> if p s then None else Some err)
-
-    // createParser?
-    // and "tag" is not proper name
-    // could separate the tag part and use Result.map
-    // pass in normalizer?
-    // lose the normalized version in the error
-    // s >> normalize >> validate >> map
-    let parser<'T> tag rules: StringValidator<'T, StringError list> =
-        let validator = rules |> createValidator
-
-        fun s ->
-            let s = s |> String.trim |> normalizeLineFeed
-
-            s
-            |> validator
-            |> List.ofSeq
-            |> fun errors ->
-                match errors with
-                | [] -> s |> tag |> Ok
-                | _ -> Error errors
-
-    let createOptionalParser<'T, 'Error> (validator: StringValidator<'T, 'Error>) s =
-        Some s
-        |> Option.filter (String.isNotEmpty)
-        |> Option.map (validator >> Result.map Some)
-        |> Option.defaultValue (Result.Ok None)
 
 module RangeValidation =
 
