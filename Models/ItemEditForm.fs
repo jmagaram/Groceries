@@ -86,7 +86,7 @@ let availabilitySummary (availList: ItemAvailability seq) =
     | x, 1 when x >= 1 -> SoldEverywhereExcept(notSoldAt |> Seq.head)
     | _, _ -> VariedAvailability
 
-let repeatIntervalNormalize d = d |> max (Repeat.rules.Max) |> min Repeat.rules.Min
+let repeatIntervalNormalize d = Repeat.rules |> RangeValidation.forceIntoBounds d
 
 let repeatIntervalAsText (d: int<days>) =
     let d = d |> int
@@ -213,6 +213,31 @@ let removePostpone (form: T) =
         { form with
               Schedule = Repeat { r with PostponeDays = None } }
 
+let postponeChoices (form: T) =
+    let p =
+        match form.Schedule with
+        | Repeat r -> r.PostponeDays
+        | _ -> None
+
+    [ 1; 3; 7; 14; 30; 60 ]
+    |> Seq.map (fun i -> i * 1<days> |> Some)
+    |> Seq.append [ p ]
+    |> Seq.choose id
+    |> Seq.distinct
+    |> Seq.sort
+
+let durationAsText (d: int<days>) =
+    let d = d |> int
+    let monthsExactly = if d / 30 > 0 && d % 30 = 0 then Some(d / 30) else None
+    let weeksExactly = if d / 7 > 0 && d % 7 = 0 then Some(d / 7) else None
+
+    match monthsExactly with
+    | Some m -> if m = 1 then "1 month" else sprintf "%i months" m
+    | None ->
+        match weeksExactly with
+        | Some w -> if w = 1 then "1 week" else sprintf "%i weeks" w
+        | None -> if d = 1 then "1 day" else sprintf "%i days" d
+
 type T with
     member this.ItemNameEdit(n) = this |> itemNameEdit n
     member this.ItemNameLoseFocus() = this |> itemNameLoseFocus
@@ -224,7 +249,7 @@ type T with
     member this.ScheduleOnlyOnce() = this |> scheduleOnlyOnce
     member this.ScheduleRepeat(d) = this |> scheduleRepeat d
     member this.SchedulePostpone(d) = this |> schedulePostpone d
-    member this.RemovePostpone(d) = this |> removePostpone
+    member this.RemovePostpone() = this |> removePostpone
     member this.SetStoreAvailability(s, b) = this |> setStoreAvailability s b
     member this.StoreSummary() = this.Stores |> availabilitySummary
     member this.RepeatIntervalAsText(d) = d |> repeatIntervalAsText
@@ -234,3 +259,11 @@ type T with
     member this.NewCategoryEdit(n) = this |> newCategoryNameEdit n
     member this.NewCategoryLoseFocus() = this |> newCategoryNameLoseFocus
     member this.ChooseExistingCategory(id) = this |> chooseExistingCategory (CategoryId id)
+    member this.PostponeChoices() = this |> postponeChoices // should this be a property? safer binding?
+    member this.PostponeDurationAsText(d) = d |> durationAsText
+
+    member this.PostponeDuration =
+        match this.Schedule with
+        | Repeat r -> r.PostponeDays
+        | _ -> None
+// extension methods instead?

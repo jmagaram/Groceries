@@ -70,5 +70,17 @@ namespace WebApp.Pages {
 
             }
         }
+
+        const string notPostponed = "notPostponed";
+
+        protected void OnPostponeChange(ChangeEventArgs e) {
+            string value = (string)(e.Value);
+            if (value == notPostponed) {
+                Form = Form.ModeNoCategory();
+            }
+            else if (int.TryParse(value, out int days)) {
+                Form = Form.SchedulePostpone(days);
+            }
+        }
     }
 }

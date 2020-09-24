@@ -50,6 +50,24 @@
             </select>
         </label>
     </div>
+    @if(Form.Schedule.IsRepeat) {
+    <div>
+        <label>
+            Postpone:
+            <select @onchange="OnPostponeChange">
+                @foreach (var i in Form.PostponeChoices()) {
+                    string description = Form.PostponeDurationAsText(i);
+                    string key = i.ToString();
+                    var pd = Form.PostponeDuration;
+                    bool isSelected = pd.IsSome() && pd.Value.Equals(i);
+                    <option selected="@isSelected" value="@key"><text>+</text>@description</option>
+                }
+                <option selected="@Form.PostponeDuration.IsNone()" value="@notPostponed">On shopping list now</option>
+                }
+            </select>
+        </label>
+    </div>
+    }
     <div>
         <label>
             Category:
