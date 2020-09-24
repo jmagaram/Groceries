@@ -66,14 +66,14 @@ module StringValidation =
             vs
             |> Seq.choose (fun (p, err) -> if p s then None else Some err)
 
-    let createParser normalizer validator onSuccess s = 
+    let createParser normalizer validator onSuccess onError s = 
         s
         |> normalizer
         |> fun s ->
             match validator s |> Seq.toList with
             | [] -> Ok s
             | errors -> Error errors
-        |> Result.mapError List.head
+        |> Result.mapError onError
         |> Result.map onSuccess
 
 module RangeValidation =
