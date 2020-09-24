@@ -23,6 +23,14 @@
     </div>
     <div>
         <label>
+            Note: <textarea rows="3" @oninput="OnNoteChange" @onfocusout="OnNoteFocusOut" placeholder="Favorite brand, extra firm only..." value="@Form.Note.Value" />
+            @if (Form.Note.ValidationResult.IsError) {
+                <span>Error: @Form.Note.ValidationResult.ErrorValue</span>
+            }
+        </label>
+    </div>
+    <div>
+        <label>
             Repeat:
             <select @onchange="OnRepeatChange">
                 @{

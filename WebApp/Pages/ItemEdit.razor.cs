@@ -27,6 +27,12 @@ namespace WebApp.Pages {
         protected void OnQuantityFocusOut(FocusEventArgs e) =>
             Form = Form.QuantityLoseFocus();
 
+        protected void OnNoteChange(ChangeEventArgs e) =>
+            Form = Form.NoteEdit((string)e.Value);
+
+        protected void OnNoteFocusOut(FocusEventArgs e) =>
+            Form = Form.NoteLoseFocus();
+
         protected void OnStoreChange(ChangeEventArgs e, StateTypes.StoreId store) =>
             Form = Form.SetStoreAvailability(store, (bool)e.Value);
 

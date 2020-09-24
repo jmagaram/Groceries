@@ -22,6 +22,7 @@ module ItemName =
 module Note =
 
     let rules = multipleLine 3<chars> 200<chars>
+    let normalizer = String.trim
     let tryParse = parser Note rules
     let asText (Note s) = s
 

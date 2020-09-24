@@ -19,6 +19,7 @@ type T =
     { ItemId: ItemId
       ItemName: TextInput<ItemName, StringError>
       Quantity: TextInput<Quantity, StringError>
+      Note: TextInput<Note, StringError>
       Schedule: RelativeSchedule
       RepeatIntervalChoices: int<days> list
       Stores: ItemAvailability list }
@@ -72,6 +73,7 @@ let repeatIntervalDeserialize s =
 
 let itemNameValidator = ItemName.tryParse >> Result.mapError List.head
 let quantityValidator = Quantity.tryParse >> Result.mapError List.head
+let noteValidator = Note.tryParse >> Result.mapError List.head
 
 let stores =
     [ ("QFC", true)
@@ -88,6 +90,7 @@ let createNew =
     { ItemId = Id.create ItemId
       ItemName = TextInput.init itemNameValidator ItemName.normalizer ""
       Quantity = TextInput.init quantityValidator Quantity.normalizer ""
+      Note = TextInput.init noteValidator Note.normalizer ""
       Schedule = RelativeSchedule.Once
       RepeatIntervalChoices = Repeat.commonIntervals
       Stores = stores }
@@ -113,6 +116,14 @@ let quantityEdit n (form: T) =
 let quantityLoseFocus (form: T) =
     { form with
           Quantity = form.Quantity |> TextInput.loseFocus Quantity.normalizer }
+
+let noteEdit n (form: T) =
+    { form with
+          Note = form.Note |> TextInput.setText noteValidator n }
+
+let noteLoseFocus (form: T) =
+    { form with
+          Note = form.Note |> TextInput.loseFocus Note.normalizer }
 
 let scheduleComplete (form: T) = { form with Schedule = RelativeSchedule.Completed }
 
@@ -145,6 +156,8 @@ type T with
     member this.ItemNameLoseFocus() = this |> itemNameLoseFocus
     member this.QuantityEdit(n) = this |> quantityEdit n
     member this.QuantityLoseFocus() = this |> quantityLoseFocus
+    member this.NoteEdit(n) = this |> noteEdit n
+    member this.NoteLoseFocus() = this |> noteLoseFocus
     member this.ScheduleComplete() = this |> scheduleComplete
     member this.ScheduleOnlyOnce() = this |> scheduleOnlyOnce
     member this.ScheduleRepeat(d) = this |> scheduleRepeat d
