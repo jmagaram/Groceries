@@ -26,7 +26,28 @@ type T =
       ItemName: TextInput<ItemName, StringError>
       Quantity: TextInput<Quantity, StringError>
       Schedule: RelativeSchedule
-      RepeatIntervalChoices: int<days> list }
+      RepeatIntervalChoices: int<days> list
+      Stores: ItemAvailability list }
+
+type StoreAvailabilitySummary =
+    | SoldEverywhere
+    | NotSoldAnywhere
+    | SoldOnlyAt of Store
+    | SoldEverywhereExcept of Store
+    | VariedAvailability
+
+let availabilitySummary (availList:ItemAvailability seq) = 
+    let soldAt = availList |> Seq.choose (fun i -> if i.IsSold then Some i.Store else None) |> Set.ofSeq
+    let notSoldAt = availList |> Seq.choose (fun i -> if i.IsSold = false then Some i.Store else None) |> Set.ofSeq
+    match soldAt.Count, notSoldAt.Count with
+    | x, 0 -> SoldEverywhere
+    | 0, x when x >= 1 -> NotSoldAnywhere
+    | 1, x when x >= 1 -> SoldOnlyAt (soldAt |> Seq.head)
+    | x, 1 when x >= 1 -> SoldEverywhereExcept (notSoldAt |> Seq.head)
+    | _, _ -> VariedAvailability    
+    
+// stores
+// list all stores and availability of each
 
 let repeatIntervalNormalize d = d |> max (Repeat.rules.Max) |> min Repeat.rules.Min
 
@@ -58,24 +79,46 @@ let repeatIntervalDeserialize s =
 let itemNameValidator = ItemName.tryParse >> Result.mapError List.head
 let quantityValidator = Quantity.tryParse >> Result.mapError List.head
 
+let stores =
+    [ ("QFC", true)
+      ("Whole Foods", false)
+      ("Trader Joe's", true)
+      ("Cosco", true) ]
+    |> List.map (fun (name, isAvailable) ->
+        { Store =
+              { StoreId = Id.create StoreId
+                StoreName = StoreName.tryParse name |> Result.okOrThrow }
+          IsSold = isAvailable })
+
 let createNew =
     { ItemId = Id.create ItemId
-      ItemName = TextInput.init itemNameValidator ItemName.normalizer  ""
+      ItemName = TextInput.init itemNameValidator ItemName.normalizer ""
       Quantity = TextInput.init quantityValidator Quantity.normalizer ""
       Schedule = RelativeSchedule.Once
-      RepeatIntervalChoices = Repeat.commonIntervals }
+      RepeatIntervalChoices = Repeat.commonIntervals
+      Stores = stores }
 
-let itemNameEdit n (form : T) =
+let setStoreAvailability s b (form: T) =
+    { form with
+          Stores =
+              form.Stores
+              |> List.map (fun i -> if i.Store.StoreId = s then { i with IsSold = b } else i) }
+
+let itemNameEdit n (form: T) =
     { form with
           ItemName = form.ItemName |> TextInput.setText itemNameValidator n }
 
-let itemNameLoseFocus (form: T) = { form with ItemName = form.ItemName |> TextInput.loseFocus ItemName.normalizer }
+let itemNameLoseFocus (form: T) =
+    { form with
+          ItemName = form.ItemName |> TextInput.loseFocus ItemName.normalizer }
 
-let quantityEdit n (form:T) =
+let quantityEdit n (form: T) =
     { form with
           Quantity = form.Quantity |> TextInput.setText quantityValidator n }
 
-let quantityLoseFocus (form: T) = { form with Quantity = form.Quantity |> TextInput.loseFocus Quantity.normalizer }
+let quantityLoseFocus (form: T) =
+    { form with
+          Quantity = form.Quantity |> TextInput.loseFocus Quantity.normalizer }
 
 let scheduleComplete (form: T) = { form with Schedule = RelativeSchedule.Completed }
 
@@ -112,4 +155,6 @@ type T with
     member this.ScheduleOnlyOnce() = this |> scheduleOnlyOnce
     member this.ScheduleRepeat(d) = this |> scheduleRepeat d
     member this.SchedulePostpone(d) = this |> schedulePostpone d
+    member this.SetStoreAvailability(s,b) = this |> setStoreAvailability s b
+    member this.StoreSummary() = this.Stores |> availabilitySummary
     member this.RepeatIntervalAsText(d) = d |> repeatIntervalAsText

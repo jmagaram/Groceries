@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
+using Models;
 using static Models.ItemEditFormModule;
 
 namespace WebApp.Pages {
@@ -12,13 +13,20 @@ namespace WebApp.Pages {
 
         public string Testing { get; set; }
         public T Form { get; private set; }
-        protected void OnItemNameChange(ChangeEventArgs e) => Form = Form.ItemNameEdit((string)e.Value);
+        protected void OnItemNameChange(ChangeEventArgs e) =>
+            Form = Form.ItemNameEdit((string)e.Value);
 
-        protected void OnItemNameFocusOut(FocusEventArgs e) => Form = Form.ItemNameLoseFocus();
+        protected void OnItemNameFocusOut(FocusEventArgs e) =>
+            Form = Form.ItemNameLoseFocus();
 
-        protected void OnQuantityChange(ChangeEventArgs e) => Form = Form.QuantityEdit((string)e.Value);
+        protected void OnQuantityChange(ChangeEventArgs e) =>
+            Form = Form.QuantityEdit((string)e.Value);
 
-        protected void OnQuantityFocusOut(FocusEventArgs e) => Form = Form.QuantityLoseFocus();
+        protected void OnQuantityFocusOut(FocusEventArgs e) =>
+            Form = Form.QuantityLoseFocus();
+
+        protected void OnStoreChange(ChangeEventArgs e, StateTypes.StoreId store) =>
+            Form = Form.SetStoreAvailability(store, (bool)e.Value);
 
         protected void OnRepeatChange(ChangeEventArgs e) {
             if (int.TryParse((string)(e.Value), out int d)) {

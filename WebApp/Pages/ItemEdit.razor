@@ -25,7 +25,7 @@
         <label>
             Repeat:
             <select @onchange="OnRepeatChange">
-                @{ 
+                @{
                     int repeatInterval = Form.Schedule switch
                     {
                         RelativeSchedule.Repeat r => r.Item.Interval,
@@ -40,6 +40,17 @@
                     <option selected="@isSelected" value="@key">@description</option>
                 }
             </select>
+        </label>
+    </div>
+    <div>
+        <label>
+            Stores:<br />
+            @foreach (var s in Form.Stores.OrderBy(i => i.Store.StoreName)) {
+                <input type="checkbox" @oninput="e=>OnStoreChange(e,s.Store.StoreId)" id="@s.Store.StoreId" name="@s.Store.StoreId" checked="@s.IsSold">
+                <label for="vehicle1"> @s.Store.StoreName.Item</label><br>
+            }
+            @Form.StoreSummary()
+
         </label>
     </div>
 </form>
