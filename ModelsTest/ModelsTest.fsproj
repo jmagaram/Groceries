@@ -10,6 +10,7 @@
   <ItemGroup>
     <Compile Include="Generators.fs" />
     <Compile Include="CommonTests.fs" />
+    <Compile Include="StateTests.fs" />
     <Compile Include="SynchronizationTests.fs" />
     <Compile Include="ValidationTests.fs" />
     <Compile Include="ViewTests.fs" />
