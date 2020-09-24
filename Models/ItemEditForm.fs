@@ -18,54 +18,6 @@ type CategoryPickerMode =
     | ChooseExistingCategory
     | CreateNewCategory
 
-type CategoryPicker =
-    { CategoryPickerMode: CategoryPickerMode
-      CreateCategory: TextInput<CategoryName, StringError>
-      ExistingCategory: Category option
-      ExistingCategoryChoices: Category list }
-
-module CategoryPicker =
-
-    let categoryNameValidator = CategoryName.tryParse >> Result.mapError List.head
-
-    let init cats =
-        { CategoryPickerMode = NoCategory
-          CreateCategory = TextInput.init categoryNameValidator CategoryName.normalizer ""
-          ExistingCategory = None
-          ExistingCategoryChoices = cats }
-
-    let setMode mode cp = { cp with CategoryPickerMode = mode }
-
-    let newCategoryNameEdit n cp =
-        { cp with
-              CreateCategory =
-                  cp.CreateCategory
-                  |> TextInput.setText categoryNameValidator n
-              CategoryPickerMode = CreateNewCategory }
-
-    let newCategoryNameLoseFocus cp =
-        { cp with
-              CreateCategory =
-                  cp.CreateCategory
-                  |> TextInput.loseFocus CategoryName.normalizer }
-
-    let chooseExisting id cp =
-        let cat =
-            cp.ExistingCategoryChoices
-            |> List.tryFind (fun i -> i.CategoryId = id)
-
-        { cp with
-              ExistingCategory = cat
-              CategoryPickerMode = ChooseExistingCategory }
-
-type CategoryPicker with
-    member this.ModeNoCategory() = this |> CategoryPicker.setMode NoCategory
-    member this.ModeCreateNew() = this |> CategoryPicker.setMode CreateNewCategory
-    member this.ModeChooseExisting() = this |> CategoryPicker.setMode ChooseExistingCategory
-    member this.NewCategoryEdit(n) = this |> CategoryPicker.newCategoryNameEdit n
-    member this.NewCategoryLoseFocus() = this |> CategoryPicker.newCategoryNameLoseFocus
-    member this.ChooseExisting(id) = this |> CategoryPicker.chooseExisting (CategoryId id)
-
 type T =
     { ItemId: ItemId
       ItemName: TextInput<ItemName, StringError>
@@ -74,7 +26,10 @@ type T =
       Schedule: RelativeSchedule
       RepeatIntervalChoices: int<days> list
       Stores: ItemAvailability list
-      Category: CategoryPicker }
+      CategoryPickerMode: CategoryPickerMode
+      NewCategory: TextInput<CategoryName, StringError>
+      ExistingCategory: Category option
+      ExistingCategoryChoices: Category list }
 
 type StoreAvailabilitySummary =
     | SoldEverywhere
@@ -82,6 +37,32 @@ type StoreAvailabilitySummary =
     | SoldOnlyAt of Store
     | SoldEverywhereExcept of Store
     | VariedAvailability
+
+let categoryNameValidator = CategoryName.tryParse >> Result.mapError List.head
+
+let setCategoryPickerMode mode (form: T) = { form with CategoryPickerMode = mode }
+
+let newCategoryNameEdit n (form: T) =
+    { form with
+          NewCategory =
+              form.NewCategory
+              |> TextInput.setText categoryNameValidator n
+          CategoryPickerMode = CreateNewCategory }
+
+let newCategoryNameLoseFocus (form: T) =
+    { form with
+          NewCategory =
+              form.NewCategory
+              |> TextInput.loseFocus CategoryName.normalizer }
+
+let chooseExistingCategory id (form: T) =
+    let cat =
+        form.ExistingCategoryChoices
+        |> List.tryFind (fun i -> i.CategoryId = id)
+
+    { form with
+          ExistingCategory = cat
+          CategoryPickerMode = ChooseExistingCategory }
 
 let availabilitySummary (availList: ItemAvailability seq) =
     let soldAt =
@@ -159,9 +140,11 @@ let createNew =
       Note = TextInput.init noteValidator Note.normalizer ""
       Schedule = RelativeSchedule.Once
       RepeatIntervalChoices = Repeat.commonIntervals
-      Stores = stores 
-      Category = CategoryPicker.init cats 
-    }
+      Stores = stores
+      CategoryPickerMode = NoCategory
+      NewCategory = TextInput.init categoryNameValidator CategoryName.normalizer ""
+      ExistingCategory = None
+      ExistingCategoryChoices = cats }
 
 let setStoreAvailability s b (form: T) =
     { form with
@@ -233,5 +216,9 @@ type T with
     member this.SetStoreAvailability(s, b) = this |> setStoreAvailability s b
     member this.StoreSummary() = this.Stores |> availabilitySummary
     member this.RepeatIntervalAsText(d) = d |> repeatIntervalAsText
-    member this.SetCategory(c) = { this with Category = c }
-
+    member this.ModeNoCategory() = this |> setCategoryPickerMode NoCategory
+    member this.ModeCreateNew() = this |> setCategoryPickerMode CreateNewCategory
+    member this.ModeChooseExisting() = this |> setCategoryPickerMode ChooseExistingCategory
+    member this.NewCategoryEdit(n) = this |> newCategoryNameEdit n
+    member this.NewCategoryLoseFocus() = this |> newCategoryNameLoseFocus
+    member this.ChooseExistingCategory(id) = this |> chooseExistingCategory (CategoryId id)

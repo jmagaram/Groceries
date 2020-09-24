@@ -51,13 +51,12 @@ namespace WebApp.Pages {
         protected void OnExistingCategoryChange(ChangeEventArgs e) {
             if (int.TryParse((string)(e.Value), out int d)) {
                 if (d == -1) {
-                    Form = Form.SetCategory(Form.Category.ModeNoCategory());
+                    Form = Form.ModeNoCategory();
                 }
             }
             else {
                 if (Guid.TryParse((string)e.Value, out Guid g)) {
-                    Form = Form.SetCategory(Form.Category.ChooseExisting(g));
-
+                    Form = Form.ChooseExistingCategory(g);
                 }
                 else {
 
