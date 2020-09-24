@@ -34,6 +34,12 @@ namespace WebApp.Pages {
         protected void OnNoteFocusOut(FocusEventArgs e) =>
             Form = Form.NoteLoseFocus();
 
+        protected void OnNewCategoryNameChange(ChangeEventArgs e) =>
+            Form = Form.NewCategoryEdit((string)e.Value);
+
+        protected void OnNewCategoryNameFocusOut(FocusEventArgs e) =>
+            Form = Form.NewCategoryLoseFocus();
+
         protected void OnStoreChange(ChangeEventArgs e, StateTypes.StoreId store) =>
             Form = Form.SetStoreAvailability(store, (bool)e.Value);
 
@@ -52,6 +58,9 @@ namespace WebApp.Pages {
             if (int.TryParse((string)(e.Value), out int d)) {
                 if (d == -1) {
                     Form = Form.ModeNoCategory();
+                }
+                else if (d == -2) {
+                    Form = Form.ModeCreateNew();
                 }
             }
             else {

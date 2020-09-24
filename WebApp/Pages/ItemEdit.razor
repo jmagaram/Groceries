@@ -61,8 +61,18 @@
                     bool isSelected = Form.ExistingCategory.IsSome() && i.CategoryId.Equals(Form.ExistingCategory.Value.CategoryId);
                     <option selected="@isSelected" value="@key">@description</option>
                 }
+                <option selected="@Form.CategoryPickerMode.IsCreateNewCategory" value="-2">New category...</option>
+                }
             </select>
         </label>
+        @if (Form.CategoryPickerMode.IsCreateNewCategory) {
+            <div>
+                <input @oninput="OnNewCategoryNameChange" @onfocusout="OnNewCategoryNameFocusOut" placeholder="Category name" value="@Form.NewCategory.Value" />
+                @if (Form.NewCategory.ValidationResult.IsError) {
+                    <span>Error: @Form.NewCategory.ValidationResult.ErrorValue</span>
+                }
+            </div>
+        }
     </div>
     <div>
         Stores:<br />
