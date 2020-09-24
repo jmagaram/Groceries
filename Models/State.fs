@@ -14,6 +14,7 @@ module Id =
 module ItemName =
 
     let rules = singleLine 3<chars> 50<chars>
+    let normalizer = String.trim
     let tryParse = parser ItemName rules
     let asText (ItemName s) = s
 
@@ -28,6 +29,7 @@ module Note =
 module Quantity =
 
     let rules = singleLine 1<chars> 30<chars>
+    let normalizer = String.trim
     let tryParse = parser Quantity rules
     let asText (Quantity s) = s
 

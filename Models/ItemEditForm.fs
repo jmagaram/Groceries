@@ -4,6 +4,7 @@ module Models.ItemEditForm
 open Models
 open Models.StateTypes
 open Models.ValidationTypes
+open Models.FormsTypes
 
 type ItemAvailability = { Store: Store; IsSold: bool }
 
@@ -12,37 +13,28 @@ type RelativeSchedule =
     | Completed
     | Repeat of {| Interval: int<days>; PostponeDays: int<days> option |}
 
-type ListItem<'T> =
-    { Value : 'T 
-      Key : string
-      IsSelected : bool }
+type ListItem<'T> = { Value: 'T; Key: string; IsSelected: bool }
 
-//type CategoryEditForm = 
+//type CategoryEditForm =
 //    { CategoryId : CategoryId
-//      CategoryName : string 
+//      CategoryName : string
 //      CategoryNameError : StringError option
 //    }
 
 type T =
     { ItemId: ItemId
-      ItemName: string
-      ItemNameError: (StringError list) option
-      Quantity: string
-      QuantityError: (StringError list) option
+      ItemName: TextInput<ItemName, StringError>
+      Quantity: TextInput<Quantity, StringError>
       Schedule: RelativeSchedule
-      RepeatIntervalChoices: int<days> list 
-      //Category : Category option // figure out later if new or existing
-      //NewCategory : string
-      //NewCategoryError : string option
-
-    }
+      RepeatIntervalChoices: int<days> list }
 
 let repeatIntervalNormalize d = d |> max (Repeat.rules.Max) |> min Repeat.rules.Min
 
 let repeatIntervalAsText (d: int<days>) =
     let d = d |> int
-    let monthsExactly = if d / 30 > 0 && d % 30 = 0 then Some (d / 30) else None
-    let weeksExactly = if d / 7 > 0 && d % 7 = 0 then Some (d / 7) else None
+    let monthsExactly = if d / 30 > 0 && d % 30 = 0 then Some(d / 30) else None
+    let weeksExactly = if d / 7 > 0 && d % 7 = 0 then Some(d / 7) else None
+
     match monthsExactly with
     | Some m -> if m = 1 then "Monthly" else sprintf "Every %i months" m
     | None ->
@@ -63,28 +55,27 @@ let repeatIntervalDeserialize s =
         | None -> Some 7<days>
         | Some d -> Some(d * 1<days> |> repeatIntervalNormalize)
 
+let itemNameValidator = ItemName.tryParse >> Result.mapError List.head
+let quantityValidator = Quantity.tryParse >> Result.mapError List.head
+
 let createNew =
     { ItemId = Id.create ItemId
-      ItemName = ""
-      ItemNameError = "" |> ItemName.tryParse |> Result.error
-      Quantity = ""
-      QuantityError = "" |> Quantity.tryParse |> Result.error
+      ItemName = TextInput.init itemNameValidator ItemName.normalizer  ""
+      Quantity = TextInput.init quantityValidator Quantity.normalizer ""
       Schedule = RelativeSchedule.Once
       RepeatIntervalChoices = Repeat.commonIntervals }
 
-let itemNameEdit n form =
+let itemNameEdit n (form : T) =
     { form with
-          ItemName = n
-          ItemNameError = n |> String.trim |> ItemName.tryParse |> Result.error }
+          ItemName = form.ItemName |> TextInput.setText itemNameValidator n }
 
-let itemNameLoseFocus (form: T) = { form with ItemName = form.ItemName |> String.trim }
+let itemNameLoseFocus (form: T) = { form with ItemName = form.ItemName |> TextInput.loseFocus ItemName.normalizer }
 
-let quantityEdit n form =
+let quantityEdit n (form:T) =
     { form with
-          Quantity = n
-          QuantityError = n |> String.trim |> Quantity.tryParse |> Result.error }
+          Quantity = form.Quantity |> TextInput.setText quantityValidator n }
 
-let quantityLoseFocus (form: T) = { form with Quantity = form.Quantity |> String.trim }
+let quantityLoseFocus (form: T) = { form with Quantity = form.Quantity |> TextInput.loseFocus Quantity.normalizer }
 
 let scheduleComplete (form: T) = { form with Schedule = RelativeSchedule.Completed }
 

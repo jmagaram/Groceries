@@ -7,17 +7,17 @@
 <form>
     <div>
         <label>
-            Name: <input @oninput="OnItemNameChange" @onfocusout="OnItemNameFocusOut" placeholder="Apples, Canned Tuna, ..." value="@Form.ItemName" />
-            @if (Form.ItemNameError.IsSome()) {
-                <span>Error: @Form.ItemNameError.Value</span>
+            Name: <input @oninput="OnItemNameChange" @onfocusout="OnItemNameFocusOut" placeholder="Apples, Canned Tuna, ..." value="@Form.ItemName.Value" />
+            @if (Form.ItemName.ValidationResult.IsError) {
+                <span>Error: @Form.ItemName.ValidationResult.ErrorValue</span>
             }
         </label>
     </div>
     <div>
         <label>
-            Quantity: <input @oninput="OnQuantityChange" @onfocusout="OnQuantityFocusOut" placeholder="3, Lots!, 2 lb., 1 jar, ..." value="@Form.Quantity" />
-            @if (Form.QuantityError.IsSome()) {
-                <span>Error: @Form.QuantityError.Value</span>
+            Quantity: <input @oninput="OnQuantityChange" @onfocusout="OnQuantityFocusOut" placeholder="3, Lots!, 2 lb., 1 jar, ..." value="@Form.Quantity.Value" />
+            @if (Form.Quantity.ValidationResult.IsError) {
+                <span>Error: @Form.Quantity.ValidationResult.ErrorValue</span>
             }
         </label>
     </div>
