@@ -264,9 +264,7 @@ type T with
     member this.ChooseExistingCategory(id) = this |> chooseExistingCategory (CategoryId id)
     member this.PostponeChoices() = this |> postponeChoices // should this be a property? safer binding?
     member this.PostponeDurationAsText(d) = d |> durationAsText
-
     member this.PostponeDuration =
         match this.Schedule with
         | Repeat r -> r.PostponeDays
         | _ -> None
-// extension methods instead?
