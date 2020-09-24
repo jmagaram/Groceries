@@ -12,7 +12,9 @@ namespace WebApp.Pages {
         }
 
         public string Testing { get; set; }
+
         public T Form { get; private set; }
+
         protected void OnItemNameChange(ChangeEventArgs e) =>
             Form = Form.ItemNameEdit((string)e.Value);
 

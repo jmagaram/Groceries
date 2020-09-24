@@ -15,12 +15,6 @@ type RelativeSchedule =
 
 type ListItem<'T> = { Value: 'T; Key: string; IsSelected: bool }
 
-//type CategoryEditForm =
-//    { CategoryId : CategoryId
-//      CategoryName : string
-//      CategoryNameError : StringError option
-//    }
-
 type T =
     { ItemId: ItemId
       ItemName: TextInput<ItemName, StringError>

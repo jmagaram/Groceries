@@ -43,14 +43,36 @@
         </label>
     </div>
     <div>
-        <label>
-            Stores:<br />
-            @foreach (var s in Form.Stores.OrderBy(i => i.Store.StoreName)) {
-                <input type="checkbox" @oninput="e=>OnStoreChange(e,s.Store.StoreId)" id="@s.Store.StoreId" name="@s.Store.StoreId" checked="@s.IsSold">
-                <label for="vehicle1"> @s.Store.StoreName.Item</label><br>
+        Stores:<br />
+        @foreach (var st in Form.Stores.OrderBy(i => i.Store.StoreName)) {
+            var id = st.Store.StoreId;
+            var name = st.Store.StoreName.Item;
+            <div>
+                <label>
+                    <input type="checkbox" @oninput="e => OnStoreChange(e, st.Store.StoreId)" id="@id" name="@id" checked="@st.IsSold">&nbsp;@name
+                </label>
+            </div>
+        }
+        @{
+            var summary = Form.StoreSummary();
+            if (summary is Models.ItemEditFormModule.StoreAvailabilitySummary.SoldEverywhereExcept everywhereExcept) {
+                <p>Sold everywhere EXCEPT @everywhereExcept.Item.StoreName.Item</p>
             }
-            @Form.StoreSummary()
-
-        </label>
+            else if (summary is Models.ItemEditFormModule.StoreAvailabilitySummary.SoldOnlyAt onlyAt) {
+                <p>Sold ONLY at @onlyAt.Item.StoreName.Item</p>
+            }
+            else if (summary.IsNotSoldAnywhere) {
+                <p>Not sold anywhere!</p>
+            }
+            else if (summary.IsSoldEverywhere) {
+                <p>Sold everywhere</p>
+            }
+            else if (summary.IsVariedAvailability) {
+                <p>Varied availability</p>
+            }
+            else {
+                throw new NotImplementedException("Did not handle a store summary");
+            }
+        }
     </div>
 </form>
