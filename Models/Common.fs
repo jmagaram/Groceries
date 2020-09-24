@@ -88,6 +88,12 @@ module String =
 
     let isNullOrWhiteSpace s = String.IsNullOrWhiteSpace(s)
 
+    let isNotNullOrWhiteSpace = isNullOrWhiteSpace >> not
+
+    let isEmpty s = s = ""
+
+    let isNotEmpty = isEmpty >> not
+
     let tryParseWith (tryParseFunc: string -> bool * _) = tryParseFunc >> function
         | true, v    -> Some v
         | false, _   -> None

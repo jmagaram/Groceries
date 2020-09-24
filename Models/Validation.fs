@@ -28,7 +28,7 @@ module StringValidation =
 
     let lengthAtMost max s = (String.length s) <= (max |> int)
 
-    let existsIfRequired min s = 
+    let existsIfRequired min s =
         let isRequired = (min |> int) > 0
         let isEmpty = s |> String.isNullOrWhiteSpace
         isRequired && not isEmpty
@@ -55,6 +55,7 @@ module StringValidation =
 
             fun s -> regex.IsMatch(s) |> not
 
+    // name of this is not good, or other one below parser, needs to change
     let createValidator (r: StringRules) =
         let vs =
             [ (r.MinLength |> existsIfRequired, IsRequired)
@@ -66,7 +67,13 @@ module StringValidation =
             vs
             |> Seq.choose (fun (p, err) -> if p s then None else Some err)
 
-    let parser tag rules =
+    // createParser?
+    // and "tag" is not proper name
+    // could separate the tag part and use Result.map
+    // pass in normalizer?
+    // lose the normalized version in the error
+    // s >> normalize >> validate >> map
+    let parser<'T> tag rules: StringValidator<'T, StringError list> =
         let validator = rules |> createValidator
 
         fun s ->
@@ -79,6 +86,12 @@ module StringValidation =
                 match errors with
                 | [] -> s |> tag |> Ok
                 | _ -> Error errors
+
+    let createOptionalParser<'T, 'Error> (validator: StringValidator<'T, 'Error>) s =
+        Some s
+        |> Option.filter (String.isNotEmpty)
+        |> Option.map (validator >> Result.map Some)
+        |> Option.defaultValue (Result.Ok None)
 
 module RangeValidation =
 

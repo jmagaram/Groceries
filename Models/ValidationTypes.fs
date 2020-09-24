@@ -23,6 +23,8 @@ type StringError =
     | TooShort
     | InvalidCharacters
 
+type StringValidator<'T,'Error> = string -> Result<'T,'Error>
+
 type Range<'T> = { Min: 'T; Max: 'T }
 
 type RangeError =

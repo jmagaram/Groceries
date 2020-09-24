@@ -26,7 +26,7 @@ type T =
     { ItemId: ItemId
       ItemName: TextInput<ItemName, StringError>
       Quantity: TextInput<Quantity, StringError>
-      Note: TextInput<Note, StringError>
+      Note: TextInput<Note option, StringError>
       Schedule: RelativeSchedule
       RepeatIntervalChoices: int<days> list
       Stores: ItemAvailability list
@@ -119,6 +119,8 @@ let quantityValidator = Quantity.tryParse >> Result.mapError List.head
 
 let noteValidator = Note.tryParse >> Result.mapError List.head
 
+let optionalNoteValidator = noteValidator |> StringValidation.createOptionalParser
+
 let stores =
     [ ("QFC", true)
       ("Whole Foods", false)
@@ -140,7 +142,7 @@ let createNew =
     { ItemId = Id.create ItemId
       ItemName = TextInput.init itemNameValidator ItemName.normalizer ""
       Quantity = TextInput.init quantityValidator Quantity.normalizer ""
-      Note = TextInput.init noteValidator Note.normalizer ""
+      Note = TextInput.init optionalNoteValidator Note.normalizer ""
       Schedule = RelativeSchedule.Once
       RepeatIntervalChoices = Repeat.commonIntervals
       Stores = stores
@@ -173,7 +175,7 @@ let quantityLoseFocus (form: T) =
 
 let noteEdit n (form: T) =
     { form with
-          Note = form.Note |> TextInput.setText noteValidator n }
+          Note = form.Note |> TextInput.setText optionalNoteValidator n }
 
 let noteLoseFocus (form: T) =
     { form with
