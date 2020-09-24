@@ -17,17 +17,7 @@ module ItemName =
     let rules = singleLine 3<chars> 50<chars>
     let normalizer = String.trim
     let validator = rules |> StringValidation.createValidator
-
-    let tryParse s =
-        s
-        |> normalizer
-        |> fun s ->
-            match validator s |> Seq.toList with
-            | [] -> Ok s
-            | errors -> Error errors
-        |> Result.mapError List.head
-        |> Result.map ItemName
-
+    let tryParse = StringValidation.createParser normalizer validator ItemName
     let asText (ItemName s) = s
 
 [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
@@ -36,24 +26,7 @@ module Note =
     let rules = multipleLine 3<chars> 200<chars>
     let normalizer = String.trim
     let validator = rules |> StringValidation.createValidator
-
-    let tryParse s =
-        s
-        |> normalizer
-        |> fun s ->
-            match validator s |> Seq.toList with
-            | [] -> Ok s
-            | errors -> Error errors
-        |> Result.mapError List.head
-        |> Result.map Note
-
-    let tryParseOptional s =
-        Some(normalizer s)
-        |> Option.filter String.isNotEmpty
-        |> Option.map tryParse
-        |> Option.map (Result.map Some)
-        |> Option.defaultValue (Ok None)
-
+    let tryParse = StringValidation.createParser normalizer validator Note
     let asText (Note s) = s
 
 [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
@@ -62,24 +35,7 @@ module Quantity =
     let rules = singleLine 1<chars> 30<chars>
     let normalizer = String.trim
     let validator = rules |> StringValidation.createValidator
-
-    let tryParse s =
-        s
-        |> normalizer
-        |> fun s ->
-            match validator s |> Seq.toList with
-            | [] -> Ok s
-            | errors -> Error errors
-        |> Result.mapError List.head
-        |> Result.map Quantity
-
-    let tryParseOptional s =
-        Some(normalizer s)
-        |> Option.filter String.isNotEmpty
-        |> Option.map tryParse
-        |> Option.map (Result.map Some)
-        |> Option.defaultValue (Ok None)
-
+    let tryParse = StringValidation.createParser normalizer validator Quantity
     let asText (Quantity s) = s
 
     type private KnownUnit = { OneOf: string; ManyOf: string }
@@ -173,17 +129,7 @@ module CategoryName =
     let rules = singleLine 3<chars> 30<chars>
     let normalizer = String.trim
     let validator = rules |> StringValidation.createValidator
-
-    let tryParse s =
-        s
-        |> normalizer
-        |> fun s ->
-            match validator s |> Seq.toList with
-            | [] -> Ok s
-            | errors -> Error errors
-        |> Result.mapError List.head
-        |> Result.map CategoryName
-
+    let tryParse = StringValidation.createParser normalizer validator CategoryName
     let asText (CategoryName s) = s
 
 [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
@@ -192,17 +138,7 @@ module StoreName =
     let rules = singleLine 3<chars> 30<chars>
     let normalizer = String.trim
     let validator = rules |> StringValidation.createValidator
-
-    let tryParse s =
-        s
-        |> normalizer
-        |> fun s ->
-            match validator s |> Seq.toList with
-            | [] -> Ok s
-            | errors -> Error errors
-        |> Result.mapError List.head
-        |> Result.map StoreName
-
+    let tryParse = StringValidation.createParser normalizer validator StoreName
     let asText (StoreName s) = s
 
 [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
