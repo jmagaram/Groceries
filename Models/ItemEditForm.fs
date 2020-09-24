@@ -8,11 +8,15 @@ open Models.FormsTypes
 
 type ItemAvailability = { Store: Store; IsSold: bool }
 
+type RelativeRepeat = { Interval: int<days>; PostponeDays: int<days> option }
+
 type RelativeSchedule =
     | Once
     | Completed
-    | Repeat of {| Interval: int<days>; PostponeDays: int<days> option |}
+    | Repeat of RelativeRepeat
 
+// The RelativeSchedule approach is a little easier to grok than this Advantage
+// here is keeping the details of the various category choices when switch mode.
 type CategoryPickerMode =
     | NoCategory
     | ChooseExistingCategory
@@ -82,9 +86,6 @@ let availabilitySummary (availList: ItemAvailability seq) =
     | x, 1 when x >= 1 -> SoldEverywhereExcept(notSoldAt |> Seq.head)
     | _, _ -> VariedAvailability
 
-// stores
-// list all stores and availability of each
-
 let repeatIntervalNormalize d = d |> max (Repeat.rules.Max) |> min Repeat.rules.Min
 
 let repeatIntervalAsText (d: int<days>) =
@@ -113,7 +114,9 @@ let repeatIntervalDeserialize s =
         | Some d -> Some(d * 1<days> |> repeatIntervalNormalize)
 
 let itemNameValidator = ItemName.tryParse >> Result.mapError List.head
+
 let quantityValidator = Quantity.tryParse >> Result.mapError List.head
+
 let noteValidator = Note.tryParse >> Result.mapError List.head
 
 let stores =
@@ -185,9 +188,9 @@ let scheduleRepeat (d: int<days>) (form: T) =
 
     let schedule =
         match form.Schedule with
-        | Once -> Repeat {| Interval = d; PostponeDays = None |}
-        | Completed -> Repeat {| Interval = d; PostponeDays = None |}
-        | Repeat r -> Repeat {| r with Interval = d |}
+        | Once -> Repeat { Interval = d; PostponeDays = None }
+        | Completed -> Repeat { Interval = d; PostponeDays = None }
+        | Repeat r -> Repeat { r with Interval = d }
 
     { form with
           Schedule = schedule
@@ -196,11 +199,19 @@ let scheduleRepeat (d: int<days>) (form: T) =
 let schedulePostpone (d: int<days>) (form: T) =
     let schedule =
         match form.Schedule with
-        | Once -> Repeat {| Interval = 7<days>; PostponeDays = Some d |}
-        | Completed -> Repeat {| Interval = 7<days>; PostponeDays = Some d |}
-        | Repeat r -> Repeat {| r with PostponeDays = Some d |}
+        | Once -> Repeat { Interval = 7<days>; PostponeDays = Some d }
+        | Completed -> Repeat { Interval = 7<days>; PostponeDays = Some d }
+        | Repeat r -> Repeat { r with PostponeDays = Some d }
 
     { form with Schedule = schedule }
+
+let removePostpone (form: T) =
+    match form.Schedule with
+    | Once -> form
+    | Completed -> form
+    | Repeat r ->
+        { form with
+              Schedule = Repeat { r with PostponeDays = None } }
 
 type T with
     member this.ItemNameEdit(n) = this |> itemNameEdit n
@@ -213,6 +224,7 @@ type T with
     member this.ScheduleOnlyOnce() = this |> scheduleOnlyOnce
     member this.ScheduleRepeat(d) = this |> scheduleRepeat d
     member this.SchedulePostpone(d) = this |> schedulePostpone d
+    member this.RemovePostpone(d) = this |> removePostpone
     member this.SetStoreAvailability(s, b) = this |> setStoreAvailability s b
     member this.StoreSummary() = this.Stores |> availabilitySummary
     member this.RepeatIntervalAsText(d) = d |> repeatIntervalAsText
