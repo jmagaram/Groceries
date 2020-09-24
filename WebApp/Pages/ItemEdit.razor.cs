@@ -54,22 +54,20 @@ namespace WebApp.Pages {
             }
         }
 
-        protected void OnExistingCategoryChange(ChangeEventArgs e) {
-            if (int.TryParse((string)(e.Value), out int d)) {
-                if (d == -1) {
-                    Form = Form.ModeNoCategory();
-                }
-                else if (d == -2) {
-                    Form = Form.ModeCreateNew();
-                }
-            }
-            else {
-                if (Guid.TryParse((string)e.Value, out Guid g)) {
-                    Form = Form.ChooseExistingCategory(g);
-                }
-                else {
+        const string chooseUncategorized = "chooseUncategorized";
+        const string chooseCreateNewCategory = "chooseNewCategory";
 
-                }
+        protected void OnExistingCategoryChange(ChangeEventArgs e) {
+            string value = (string)(e.Value);
+            if (value == chooseUncategorized) {
+                Form = Form.ModeNoCategory();
+            }
+            else if (value == chooseCreateNewCategory) {
+                Form = Form.ModeCreateNew();
+            }
+            else if (Guid.TryParse(value, out Guid categoryId)) {
+                Form = Form.ChooseExistingCategory(categoryId);
+
             }
         }
     }

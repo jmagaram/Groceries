@@ -54,14 +54,14 @@
         <label>
             Category:
             <select @onchange="OnExistingCategoryChange">
-                <option selected="@Form.ExistingCategory.IsNone()" value="-1">Uncategorized</option>
+                <option selected="@Form.ExistingCategory.IsNone()" value="@chooseUncategorized">Uncategorized</option>
                 @foreach (var i in Form.ExistingCategoryChoices) {
                     string description = i.CategoryName.Item;
                     string key = i.CategoryId.Item.ToString();
                     bool isSelected = Form.ExistingCategory.IsSome() && i.CategoryId.Equals(Form.ExistingCategory.Value.CategoryId);
                     <option selected="@isSelected" value="@key">@description</option>
                 }
-                <option selected="@Form.CategoryPickerMode.IsCreateNewCategory" value="-2">New category...</option>
+                <option selected="@Form.CategoryPickerMode.IsCreateNewCategory" value="@chooseCreateNewCategory">New category...</option>
                 }
             </select>
         </label>
