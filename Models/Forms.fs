@@ -3,22 +3,22 @@ open Models.FormsTypes
 
 module TextInput =
 
-    let init validate normalize value = { Value = value; ValidationResult = value |> normalize |> validate }
+    let init tryParse normalize value = { Value = value; ValidationResult = value |> normalize |> tryParse }
 
-    let setText validate value ti =
+    let setText tryParse value ti =
         { ti with
               Value = value
-              ValidationResult = value |> validate }
+              ValidationResult = value |> tryParse }
 
     let loseFocus normalize ti =
         { ti with
               TextInput.Value = ti.Value |> normalize }
 
-    let handleMessage validate normalize msg ti =
+    let handleMessage tryParse normalize msg ti =
         match msg with
         | GainFocus -> ti
         | LoseFocus -> ti |> loseFocus normalize
-        | TypeText s -> ti |> setText validate s
+        | TypeText s -> ti |> setText tryParse s
 
 module ChooseOne =
 
