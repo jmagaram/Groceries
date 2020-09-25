@@ -1,12 +1,12 @@
 ﻿using Microsoft.FSharp.Core;
-using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Threading.Tasks;
 
 namespace WebApp.Common {
     public static class OptionExtensions {
         public static bool IsSome<T>(this FSharpOption<T> o) => FSharpOption<T>.get_IsSome(o);
+
+        public static bool IsSomeValue<T>(this FSharpOption<T> o, T value) => o.IsSome() && o.Value.Equals(value);
 
         public static bool IsNone<T>(this FSharpOption<T> o) => FSharpOption<T>.get_IsNone(o);
 
