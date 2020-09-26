@@ -1,4 +1,5 @@
 ﻿namespace Models
+
 open System
 
 [<AutoOpen>]
@@ -10,24 +11,35 @@ module Common =
 
     let newGuid () = System.Guid.NewGuid()
 
-    let memoizeLast<'X, 'Result when 'Result : equality> (f: 'X -> 'Result, isEqual: 'X -> 'X -> bool) =
-        let mutable cache = None
+    let memoize<'Cache, 'X, 'Y when 'Y: equality> empty tryFind (add: 'X -> 'Y -> 'Cache -> 'Cache) f =
+        let mutable cache = empty
 
         let f' x =
-            match cache with
+            match cache |> tryFind x with
+            | Some y -> y
             | None ->
-                let result = f x
-                cache <- Some(x, result)
-                result
-            | Some (cachedX, result) ->
-                if (isEqual cachedX x) then
-                    result
-                else
-                    let result = f x
-                    cache <- Some(x, result)
-                    result
+                let y = f x
+                cache <- add x y cache
+                y
 
         f'
+
+    let memoizeAll f =
+        let empty = Map.empty
+        let tryFind = Map.tryFind
+        let add = Map.add
+        memoize empty tryFind add f
+
+    let memoizeLast (f, isEqual) =
+        let empty = None
+
+        let tryFind x' cache =
+            cache
+            |> Option.filter (fun (x, _) -> isEqual x x')
+            |> Option.map (fun (_, y) -> y)
+
+        let add x y cache = Some(x, y)
+        memoize empty tryFind add f
 
 [<AutoOpen>]
 module Seq =
@@ -42,30 +54,31 @@ module Seq =
             |> Seq.choose id
 
     let zeroOrOne s =
-        let result =
-            s
-            |> takeAtMost 2
-            |> Seq.toList
+        let result = s |> takeAtMost 2 |> Seq.toList
+
         match result with
         | [] -> None
-        | [x] -> Some x
+        | [ x ] -> Some x
         | _ -> failwith "Too many items in the sequence. Expected zero or one."
 
     let chunk create add source =
         seq {
             let mutable chunk = None
+
             for i in source do
-                let (chunk', isComplete) = 
+                let (chunk', isComplete) =
                     chunk
-                    |> Option.map (fun c -> 
-                            match c |> add i with
-                            | None -> (i |> create, true)
-                            | Some c -> (c, false))
-                    |> Option.defaultWith(fun () -> (i |> create, false))
-                if isComplete then
-                    yield chunk
+                    |> Option.map (fun c ->
+                        match c |> add i with
+                        | None -> (i |> create, true)
+                        | Some c -> (c, false))
+                    |> Option.defaultWith (fun () -> (i |> create, false))
+
+                if isComplete then yield chunk
                 chunk <- Some chunk'
-            yield chunk }
+
+            yield chunk
+        }
         |> Seq.choose id
 
     let leftJoin xs ys f =
@@ -94,9 +107,11 @@ module String =
 
     let isNotEmpty = isEmpty >> not
 
-    let tryParseWith (tryParseFunc: string -> bool * _) = tryParseFunc >> function
-        | true, v    -> Some v
-        | false, _   -> None
+    let tryParseWith (tryParseFunc: string -> bool * _) =
+        tryParseFunc
+        >> function
+        | true, v -> Some v
+        | false, _ -> None
 
     let tryParseInt = tryParseWith System.Int32.TryParse
 
@@ -118,7 +133,7 @@ module Result =
         | Ok _ -> true
         | Error _ -> false
 
-    let error r = 
+    let error r =
         match r with
         | Ok v -> None
         | Error e -> Some e
