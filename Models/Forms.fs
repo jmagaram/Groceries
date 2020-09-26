@@ -38,11 +38,11 @@ module Modes3 =
 
     let init tag m1 m2 = { CurrentMode = tag; Mode1 = m1; Mode2 = m2 }
 
-    let (|Mode1|Mode2|) (m: Modes3<_, _, _>) =
+    let (|Mode1|Mode2|Mode3|) (m: Modes3<_, _, _>) =
         match m.CurrentMode with
         | Mode1Of3Tag -> Mode1 m.Mode1
         | Mode2Of3Tag -> Mode2 m.Mode2
-        | Mode3Of3Tag -> Mode2 m.Mode3
+        | Mode3Of3Tag -> Mode3 m.Mode3
 
     let setMode t (m: Modes3<_, _, _>) = { m with CurrentMode = t }
     let mapMode1 f (m: Modes3<_, _, _>) = { m with Mode1 = f m.Mode1 }
@@ -52,6 +52,8 @@ module Modes3 =
 module ChooseZeroOrOne =
 
     let init items = { Choices = items; Selected = None}
+
+    let selectNothing c = { c with Selected = None }
 
     let selectFirst p c = { c with Selected = c.Choices |> List.tryFind p }
 
