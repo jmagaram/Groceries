@@ -2,10 +2,31 @@
 
 type TextInput<'T, 'Error> = { Value: string; ValidationResult: Result<'T, 'Error> }
 
+// when is this needed? why not just call or pass the function to change the input?
 type TextInputMessage =
     | LoseFocus
     | GainFocus
     | TypeText of string
+
+type Modes2Tag =
+    | Mode1Of2Tag
+    | Mode2Of2Tag
+
+type Modes2<'T1, 'T2> = { CurrentMode: Modes2Tag; Mode1: 'T1; Mode2: 'T2 }
+
+type Modes3Tag =
+    | Mode1Of3Tag
+    | Mode2Of3Tag
+    | Mode3Of3Tag
+
+type Modes3<'T1, 'T2, 'T3> =
+    { CurrentMode: Modes3Tag
+      Mode1: 'T1
+      Mode2: 'T2
+      Mode3: 'T3 }
+
+type ChooseZeroOrOne<'T> = { Choices: 'T list; Selected: 'T option }
+
 
 // most input can just be a value plus an error message
 // but a combo box and choose one specific item and enable others
@@ -41,17 +62,15 @@ type TextInputMessage =
 // after selected, get the key
 // or use an index, like selected index
 
-type ChooseOneItem<'T> = { Value: 'T; IsSelected: bool; Key: string }
+//type ChooseOneItem<'T> = { Value: 'T; IsSelected: bool; Key: string }
 
 // is there a nothing selected?
-type ChooseOne<'T when 'T: comparison> =
-    { Choices: 'T list
-      Selected: 'T } // what if this is not in the list?
+//type ChooseOne<'T when 'T: comparison> = { Choices: 'T list; Selected: 'T } // what if this is not in the list?
 
 //type EditShoppingItemCommand =
 //    | IncreaseQuantity
 //    | DecreaseQuantity
-//    | Delete           
+//    | Delete
 
 //module EditItemForm =
 //    open StateTypes
@@ -64,8 +83,8 @@ type ChooseOne<'T when 'T: comparison> =
 //    type T =
 //        { ItemName : TextInput<ItemName, ValidationTypes.StringError>
 //          Category : TextInput<CategoryName, ValidationTypes.StringError>
-        
-        
+
+
 
 // enabled, disabled, invisible
 
