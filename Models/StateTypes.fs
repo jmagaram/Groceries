@@ -19,7 +19,7 @@ type Note = Note of string
 type Quantity = Quantity of string
 
 type Repeat =
-    { Interval: int<days>
+    { Frequency: int<days>
       PostponedUntil: DateTimeOffset option }
 
 type Schedule =

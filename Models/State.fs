@@ -17,7 +17,10 @@ module ItemName =
     let rules = singleLine 3<chars> 50<chars>
     let normalizer = String.trim
     let validator = rules |> StringValidation.createValidator
-    let tryParse = StringValidation.createParser normalizer validator ItemName List.head
+
+    let tryParse =
+        StringValidation.createParser normalizer validator ItemName List.head
+
     let asText (ItemName s) = s
 
 [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
@@ -26,7 +29,13 @@ module Note =
     let rules = multipleLine 3<chars> 200<chars>
     let normalizer = String.trim
     let validator = rules |> StringValidation.createValidator
-    let tryParse = StringValidation.createParser normalizer validator Note List.head
+
+    let tryParse =
+        StringValidation.createParser normalizer validator Note List.head
+
+    let tryParseOptional s =
+        if s |> String.isNullOrWhiteSpace then s |> tryParse |> Result.map Some else Ok None
+
     let asText (Note s) = s
 
 [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
@@ -35,7 +44,13 @@ module Quantity =
     let rules = singleLine 1<chars> 30<chars>
     let normalizer = String.trim
     let validator = rules |> StringValidation.createValidator
-    let tryParse = StringValidation.createParser normalizer validator Quantity List.head
+
+    let tryParse =
+        StringValidation.createParser normalizer validator Quantity List.head
+
+    let tryParseOptional s =
+        if s |> String.isNullOrWhiteSpace then s |> tryParse |> Result.map Some else Ok None
+
     let asText (Quantity s) = s
 
     type private KnownUnit = { OneOf: string; ManyOf: string }
@@ -129,7 +144,13 @@ module CategoryName =
     let rules = singleLine 3<chars> 30<chars>
     let normalizer = String.trim
     let validator = rules |> StringValidation.createValidator
-    let tryParse = StringValidation.createParser normalizer validator CategoryName List.head
+
+    let tryParse =
+        StringValidation.createParser normalizer validator CategoryName List.head
+
+    let tryParseOptional s =
+        if s |> String.isNullOrWhiteSpace then s |> tryParse |> Result.map Some else Ok None
+
     let asText (CategoryName s) = s
 
 [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
@@ -138,23 +159,38 @@ module StoreName =
     let rules = singleLine 3<chars> 30<chars>
     let normalizer = String.trim
     let validator = rules |> StringValidation.createValidator
-    let tryParse = StringValidation.createParser normalizer validator StoreName List.head
+
+    let tryParse =
+        StringValidation.createParser normalizer validator StoreName List.head
+
     let asText (StoreName s) = s
 
 [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
 module Repeat =
 
-    let rules = { Min = 1<days>; Max = 365<days> }
+    let frequencyRules = { Min = 1<days>; Max = 365<days> }
+    let validator = RangeValidation.createValidator frequencyRules
+    let toResult = RangeValidation.toResult id validator id id
 
-    let commonIntervals =
+    let commonFrequencies =
         [ 1; 3; 7; 14; 30; 60; 90 ]
         |> List.map (fun i -> i * 1<days>)
 
     let create interval postponedUntil =
         interval
-        |> RangeValidation.createValidator rules
+        |> RangeValidation.createValidator frequencyRules
         |> Option.map Error
-        |> Option.defaultValue (Ok { Interval = interval; PostponedUntil = postponedUntil })
+        |> Option.defaultValue (Ok { Frequency = interval; PostponedUntil = postponedUntil })
+
+    let postponeRelative (clock:Clock) (postponeUntil:DateTimeOffset option) =
+        match postponeUntil with
+        | None -> None
+        | Some postponeUntil ->
+            let dueIn = postponeUntil - clock()
+            truncate (dueIn.TotalDays) // overdue is forgiving, future is urgent 
+            |> int
+            |> (*) 1<days>
+            |> Some
 
 [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
 module Settings =

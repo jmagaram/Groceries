@@ -65,7 +65,7 @@ let availabilitySummary (availList: ItemAvailability seq) =
     | x, 1 when x >= 1 -> SoldEverywhereExcept(notSoldAt |> Seq.head)
     | _, _ -> VariedAvailability
 
-let repeatIntervalNormalize d = Repeat.rules |> RangeValidation.forceIntoBounds d
+let repeatIntervalNormalize d = Repeat.frequencyRules |> RangeValidation.forceIntoBounds d
 
 let repeatIntervalAsText (d: int<days>) =
     let d = d |> int
@@ -139,7 +139,7 @@ let createNew =
       Quantity = TextBox.init quantityParser Quantity.normalizer ""
       Note = TextBox.init noteParser Note.normalizer ""
       Schedule = RelativeSchedule.Once
-      RepeatIntervalChoices = Repeat.commonIntervals
+      RepeatIntervalChoices = Repeat.commonFrequencies
       Stores = stores
       CategoryPicker = newCategoryPicker }
 
@@ -176,7 +176,7 @@ let scheduleRepeat (d: int<days>) (form: T) =
 
     { form with
           Schedule = schedule
-          RepeatIntervalChoices = d :: Repeat.commonIntervals |> List.distinct |> List.sort }
+          RepeatIntervalChoices = d :: Repeat.commonFrequencies |> List.distinct |> List.sort }
 
 let schedulePostpone (d: int<days>) (form: T) =
     let schedule =
