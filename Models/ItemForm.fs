@@ -4,7 +4,6 @@ open System
 
 module ItemFormTypes =
     open StateTypes
-    open ValidationTypes
 
     type ScheduleKind =
         | Once
