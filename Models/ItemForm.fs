@@ -15,8 +15,6 @@ module ItemFormTypes =
         | ChooseExisting
         | CreateNew
 
-    type Availability = { Store: Store; IsSold: bool }
-
     type Form =
         { ItemId: ItemId option
           ItemName: string
@@ -29,7 +27,7 @@ module ItemFormTypes =
           NewCategoryName: string
           CategoryChoice: Category option
           CategoryChoiceList: Category list
-          Stores: Availability list }
+          Stores: QueryTypes.ItemAvailability list }
 
     type ItemFormMessage =
         | ItemNameSet of string
@@ -139,7 +137,9 @@ module ItemForm =
           CategoryChoiceList = cats |> List.sortBy (fun i -> i.CategoryName)
           Stores =
               stores
-              |> Seq.map (fun i -> { Availability.Store = i; IsSold = true })
+              |> Seq.map (fun i ->
+                  { QueryTypes.ItemAvailability.Store = i
+                    QueryTypes.ItemAvailability.IsSold = true })
               |> Seq.sortBy (fun i -> i.Store.StoreName)
               |> List.ofSeq }
 
@@ -172,12 +172,7 @@ module ItemForm =
           CategoryChoiceList = cats |> List.sortBy (fun i -> i.CategoryName)
           Stores =
               i.Availability
-              |> Seq.map (fun (s, a) ->
-                  { Store = s
-                    IsSold =
-                        match a with
-                        | QueryTypes.ItemIsAvailable -> true
-                        | _ -> false })
+              |> Seq.sortBy (fun i -> i.Store.StoreName)
               |> List.ofSeq }
 
     let hasErrors f =

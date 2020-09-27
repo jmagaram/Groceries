@@ -4,13 +4,13 @@ open Models
 open Models.QueryTypes
 open Models.StateTypes
 
-let itemAvailability (s: Store) (i: Item) state =
+let isItemSold (s: Store) (i: Item) state =
     if state
        |> State.notSoldItemsTable
        |> DataTable.currentContainsKey { ItemId = i.ItemId; StoreId = s.StoreId } then
-        ItemIsNotSold
+        false
     else
-        ItemIsAvailable
+        true
 
 let itemQry (item: Item) state =
     { ItemQry.ItemId = item.ItemId
@@ -24,7 +24,9 @@ let itemQry (item: Item) state =
       Availability =
           state
           |> State.stores
-          |> Seq.map (fun s -> (s, itemAvailability s item state)) }
+          |> Seq.map (fun s ->
+              { ItemAvailability.Store = s
+                IsSold = isItemSold s item state }) }
 
 let categoryQry (cat: Category option) state =
     { Category = cat
@@ -43,7 +45,9 @@ let categoryQry (cat: Category option) state =
                 Availability =
                     state
                     |> State.stores
-                    |> Seq.map (fun s -> (s, itemAvailability s i state)) }) }
+                    |> Seq.map (fun s ->
+                        { ItemAvailability.Store = s
+                          IsSold = isItemSold s i state }) }) }
 
 let shoppingListQry s =
     let sf =
@@ -60,6 +64,7 @@ let shoppingListQry s =
               sf
               |> Option.map (fun sf ->
                   i.Availability
-                  |> Seq.exists (fun (s, a) -> s = sf && a = ItemIsAvailable))
+                  |> Seq.exists (fun sa -> sa.Store = sf && sa.IsSold))
+
               |> Option.defaultValue true)
           |> List.ofSeq }
