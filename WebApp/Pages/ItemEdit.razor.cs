@@ -4,6 +4,7 @@ using Models;
 using System;
 using static Models.FormsTypes;
 using static Models.ItemEditFormModule;
+
 namespace WebApp.Pages {
     public partial class ItemEdit : ComponentBase {
 
@@ -14,23 +15,21 @@ namespace WebApp.Pages {
 
         public T Form { get; private set; }
 
-        protected void OnItemNameChange(ChangeEventArgs e) =>
-            Form = Form.ItemNameEdit((string)e.Value);
+        private void ProcessMessage(ItemEditFormModule.Message msg) {
+            Form = processMessage(msg, Form);
+        }
 
-        protected void OnItemNameFocusOut(FocusEventArgs e) =>
-            Form = Form.ItemNameLoseFocus();
+        protected void OnItemNameChange(ChangeEventArgs e) => ProcessMessage(Message.NewItemNameEdit((string)e.Value));
 
-        protected void OnQuantityChange(ChangeEventArgs e) =>
-            Form = Form.QuantityEdit((string)e.Value);
+        protected void OnItemNameFocusOut(FocusEventArgs e) => ProcessMessage(Message.ItemNameLoseFocus);
 
-        protected void OnQuantityFocusOut(FocusEventArgs e) =>
-            Form = Form.QuantityLoseFocus();
+        protected void OnQuantityChange(ChangeEventArgs e) => ProcessMessage(Message.NewQuantityEdit((string)e.Value));
 
-        protected void OnNoteChange(ChangeEventArgs e) =>
-            Form = Form.NoteEdit((string)e.Value);
+        protected void OnQuantityFocusOut(FocusEventArgs e) => ProcessMessage(Message.QuantityLoseFocus);
 
-        protected void OnNoteFocusOut(FocusEventArgs e) =>
-            Form = Form.NoteLoseFocus();
+        protected void OnNoteChange(ChangeEventArgs e) => ProcessMessage(Message.NewNoteEdit((string)e.Value));
+
+        protected void OnNoteFocusOut(FocusEventArgs e) => ProcessMessage(Message.NoteLoseFocus);
 
         protected void OnStoreChange(ChangeEventArgs e, StateTypes.StoreId store) =>
             Form = Form.SetStoreAvailability(store, (bool)e.Value);

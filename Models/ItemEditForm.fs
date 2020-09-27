@@ -31,6 +31,9 @@ type CategorySelector =
       CreateNewCategory: TextInput<CategoryName, StringError>
       ChooseExistingCategory: ChooseZeroOrOne<Category> }
 
+//type CategoryPicker = 
+//    | NewCategory of TextInput<CategoryName, StringError>
+//    | SelectExistingCategory of ChooseZeroOrOne<Category>
 
 type T =
     { ItemId: ItemId
@@ -233,6 +236,12 @@ let durationAsText (d: int<days>) =
         | None -> if d = 1 then "1 day" else sprintf "%i days" d
 
 type Message =
+    | ItemNameEdit of string
+    | ItemNameLoseFocus
+    | QuantityEdit of string
+    | QuantityLoseFocus
+    | NoteEdit of string
+    | NoteLoseFocus
     | StartCreatingNewCategory
     | NewCategoryMessage of TextInputMessage
     | ExistingCategoryMessage of ChooseZeroOrOneMessage<System.Guid>
@@ -241,6 +250,12 @@ let mapCategory f (form: T) = { form with CategorySelector = f form.CategorySele
 
 let processMessage (m: Message) (f: T) =
     match m with
+    | ItemNameEdit s -> f |> itemNameEdit s
+    | ItemNameLoseFocus -> f |> itemNameLoseFocus
+    | QuantityEdit s -> f |> quantityEdit s
+    | QuantityLoseFocus -> f |> quantityLoseFocus
+    | NoteEdit s -> f |> noteEdit s
+    | NoteLoseFocus -> f |> noteLoseFocus
     | StartCreatingNewCategory ->
         { f with
               CategorySelector =
@@ -272,12 +287,6 @@ let processMessage (m: Message) (f: T) =
                         CategorySelectorMode = CreateNewCategory } }
 
 type T with
-    member this.ItemNameEdit(n) = this |> itemNameEdit n
-    member this.ItemNameLoseFocus() = this |> itemNameLoseFocus
-    member this.QuantityEdit(n) = this |> quantityEdit n
-    member this.QuantityLoseFocus() = this |> quantityLoseFocus
-    member this.NoteEdit(n) = this |> noteEdit n
-    member this.NoteLoseFocus() = this |> noteLoseFocus
     member this.ScheduleComplete() = this |> scheduleComplete
     member this.ScheduleOnlyOnce() = this |> scheduleOnlyOnce
     member this.ScheduleRepeat(d) = this |> scheduleRepeat d
