@@ -54,6 +54,10 @@ namespace WebApp.Pages {
         protected void OnNewCategoryNameChange(ChangeEventArgs e) =>
             Process(Message.NewCategoryMessage(CategoryMessage.NewNewCategoryMessage(TextBoxMessage.NewTypeText((string)e.Value))));
 
+        protected void OnNewCategoryNameChange2(ChangeEventArgs e) =>
+            Process(Message.NewCategoryMessage(CategoryMessage.NewNewCategoryMessage(TextBoxMessage.NewTypeText((string)e.Value))));
+
+
         protected void OnNewCategoryNameFocusOut(FocusEventArgs e) =>
             Process(Message.NewCategoryMessage(CategoryMessage.NewNewCategoryMessage(TextBoxMessage.LoseFocus)));
 

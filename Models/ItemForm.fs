@@ -45,6 +45,7 @@ type ItemFormMessage =
     | NewCategoryNameSet of string
     | NewCategoryNameBlur
     | StoresSetAvailability of store: StateTypes.StoreId * isSold: bool
+    | Transaction of ItemFormMessage seq
 
 let itemNameValidation f = f.ItemName |> ItemName.tryParse
 let itemNameChange s f = { f with ItemName = s }
@@ -66,7 +67,7 @@ let categoryNameChange s f = { f with NewCategoryName = s }
 
 let categoryNameBlur f =
     { f with
-            NewCategoryName = f.NewCategoryName |> CategoryName.normalizer }
+          NewCategoryName = f.NewCategoryName |> CategoryName.normalizer }
 
 let scheduleOnce f = { f with ScheduleKind = Once }
 let scheduleCompleted f = { f with ScheduleKind = Completed }
@@ -105,16 +106,16 @@ let chooseCategoryUncategorized f = { f with CategoryChoice = None }
 
 let chooseCategory i f =
     { f with
-            CategoryChoice =
-                f.CategoryChoiceList
-                |> List.find (fun j -> j.CategoryId = StateTypes.CategoryId i)
-                |> Some }
+          CategoryChoice =
+              f.CategoryChoiceList
+              |> List.find (fun j -> j.CategoryId = StateTypes.CategoryId i)
+              |> Some }
 
 let storesSetAvailability id isSold f =
     { f with
-            Stores =
-                f.Stores
-                |> List.map (fun a -> if a.Store.StoreId = id then { a with IsSold = isSold } else a) }
+          Stores =
+              f.Stores
+              |> List.map (fun a -> if a.Store.StoreId = id then { a with IsSold = isSold } else a) }
 
 let createNewItem stores cats =
     { ItemId = None
@@ -180,7 +181,7 @@ let hasErrors f =
     && (f |> noteValidation |> Result.isOk)
     && (f |> categoryNameValidation |> Result.isOk)
 
-let handleMessage msg (f: Form) =
+let rec handleMessage msg (f: Form) =
     match msg with
     | ItemNameSet s -> f |> itemNameChange s
     | ItemNameBlur -> f |> itemNameBlur
@@ -201,6 +202,7 @@ let handleMessage msg (f: Form) =
     | NewCategoryNameSet s -> f |> categoryNameChange s
     | NewCategoryNameBlur -> f |> categoryNameBlur
     | StoresSetAvailability (id: StateTypes.StoreId, isSold: bool) -> f |> storesSetAvailability id isSold
+    | Transaction msgs -> msgs |> Seq.fold (fun f m -> handleMessage m f) f
 
 type Form with
     member me.ItemNameValidation = me |> itemNameValidation
