@@ -2,7 +2,7 @@
 @using Common
 @using Microsoft.FSharp.Core;
 @using static Models.ItemEditFormModule
-
+ 
 <h1>Edit item</h1>
 <form>
     <div>
@@ -72,22 +72,23 @@
         <label>
             Category:
             <select @onchange="OnExistingCategoryChange">
-                <option selected="@Form.ExistingCategory.IsNone()" value="@chooseUncategorized">Uncategorized</option>
-                @foreach (var i in Form.ExistingCategoryChoices) {
+                <option selected="@(Form.CategorySelector.CategorySelectorMode.IsChooseCategoryOrUncategorized && Form.CategorySelector.ChooseExistingCategory.Selected.IsNone())" value="@chooseUncategorized">Uncategorized</option>
+                @foreach (var i in Form.CategorySelector.ChooseExistingCategory.Choices) {
                     string description = i.CategoryName.Item;
                     string key = i.CategoryId.Item.ToString();
-                    bool isSelected = Form.ExistingCategory.IsSome() && i.CategoryId.Equals(Form.ExistingCategory.Value.CategoryId);
+                    bool isSelected = Form.CategorySelector.CategorySelectorMode.IsChooseCategoryOrUncategorized && Form.CategorySelector.ChooseExistingCategory.Selected.IsSomeValue(i);
                     <option selected="@isSelected" value="@key">@description</option>
                 }
-                <option selected="@Form.CategoryPickerMode.IsCreateNewCategory" value="@chooseCreateNewCategory">New category...</option>
+                <option selected="@Form.CategorySelector.CategorySelectorMode.IsCreateNewCategory" value="@chooseCreateNewCategory">New category...</option>
                 }
             </select>
         </label>
-        @if (Form.CategoryPickerMode.IsCreateNewCategory) {
-            <div>
-                <input @oninput="OnNewCategoryNameChange" @onfocusout="OnNewCategoryNameFocusOut" placeholder="Category name" value="@Form.NewCategory.Value" />
-                @if (Form.NewCategory.ValidationResult.IsError) {
-                    <span>Error: @Form.NewCategory.ValidationResult.ErrorValue</span>
+        @if (Form.CategorySelector.CategorySelectorMode.IsCreateNewCategory) {
+            var i = Form.CategorySelector.CreateNewCategory;
+            <div> 
+                <input value="@i.Value" @oninput="OnNewCategoryNameChange" @onfocusout="OnNewCategoryNameFocusOut" placeholder="Category name"  />
+                @if (i.ValidationResult.IsError) {
+                    <span>Error: @i.ValidationResult.ErrorValue</span>
                 }
             </div>
         }

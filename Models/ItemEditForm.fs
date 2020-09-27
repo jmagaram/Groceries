@@ -15,12 +15,22 @@ type RelativeSchedule =
     | Completed
     | Repeat of RelativeRepeat
 
-// The RelativeSchedule approach is a little easier to grok than this Advantage
-// here is keeping the details of the various category choices when switch mode.
-type CategoryPickerMode =
-    | NoCategory
-    | ChooseExistingCategory
+// Does the parser AND normalizer both normalize? If yes, why does TextInput.init need both?
+// Radio
+// Combo?
+
+// choose from list...
+// if list is empty,
+
+type CategorySelectorMode =
     | CreateNewCategory
+    | ChooseCategoryOrUncategorized
+
+type CategorySelector =
+    { CategorySelectorMode: CategorySelectorMode
+      CreateNewCategory: TextInput<CategoryName, StringError>
+      ChooseExistingCategory: ChooseZeroOrOne<Category> }
+
 
 type T =
     { ItemId: ItemId
@@ -30,10 +40,7 @@ type T =
       Schedule: RelativeSchedule
       RepeatIntervalChoices: int<days> list
       Stores: ItemAvailability list
-      CategoryPickerMode: CategoryPickerMode
-      NewCategory: TextInput<CategoryName, StringError>
-      ExistingCategory: Category option
-      ExistingCategoryChoices: Category list }
+      CategorySelector: CategorySelector }
 
 type StoreAvailabilitySummary =
     | SoldEverywhere
@@ -42,29 +49,7 @@ type StoreAvailabilitySummary =
     | SoldEverywhereExcept of Store
     | VariedAvailability
 
-let setCategoryPickerMode mode (form: T) = { form with CategoryPickerMode = mode }
-
-let newCategoryNameEdit n (form: T) =
-    { form with
-          NewCategory =
-              form.NewCategory
-              |> TextInput.setText CategoryName.tryParse n
-          CategoryPickerMode = CreateNewCategory }
-
-let newCategoryNameLoseFocus (form: T) =
-    { form with
-          NewCategory =
-              form.NewCategory
-              |> TextInput.loseFocus CategoryName.normalizer }
-
-let chooseExistingCategory id (form: T) =
-    let cat =
-        form.ExistingCategoryChoices
-        |> List.tryFind (fun i -> i.CategoryId = id)
-
-    { form with
-          ExistingCategory = cat
-          CategoryPickerMode = ChooseExistingCategory }
+// rename TextInput.init validate to "parser"
 
 let availabilitySummary (availList: ItemAvailability seq) =
     let soldAt =
@@ -135,6 +120,7 @@ let (noteParser, quantityParser) =
         |> Option.map tryParse
         |> Option.map (Result.map Some)
         |> Option.defaultValue (Ok None)
+
     let noteParser = tryParseOptional Note.normalizer Note.tryParse
     let quantityParser = tryParseOptional Quantity.normalizer Quantity.tryParse
     (noteParser, quantityParser)
@@ -147,10 +133,15 @@ let createNew =
       Schedule = RelativeSchedule.Once
       RepeatIntervalChoices = Repeat.commonIntervals
       Stores = stores
-      CategoryPickerMode = NoCategory
-      NewCategory = TextInput.init CategoryName.tryParse CategoryName.normalizer ""
-      ExistingCategory = None
-      ExistingCategoryChoices = cats }
+      CategorySelector =
+          let chooseCategory = ChooseZeroOrOne.init cats |> ChooseZeroOrOne.selectNothing
+
+          let createCategory =
+              TextInput.init CategoryName.tryParse CategoryName.normalizer ""
+
+          { CategorySelector.CategorySelectorMode = ChooseCategoryOrUncategorized
+            CategorySelector.ChooseExistingCategory = chooseCategory
+            CategorySelector.CreateNewCategory = createCategory } }
 
 let setStoreAvailability s b (form: T) =
     { form with
@@ -241,6 +232,45 @@ let durationAsText (d: int<days>) =
         | Some w -> if w = 1 then "1 week" else sprintf "%i weeks" w
         | None -> if d = 1 then "1 day" else sprintf "%i days" d
 
+type Message =
+    | StartCreatingNewCategory
+    | NewCategoryMessage of TextInputMessage
+    | ExistingCategoryMessage of ChooseZeroOrOneMessage<System.Guid>
+
+let mapCategory f (form: T) = { form with CategorySelector = f form.CategorySelector }
+
+let processMessage (m: Message) (f: T) =
+    match m with
+    | StartCreatingNewCategory ->
+        { f with
+              CategorySelector =
+                  { f.CategorySelector with
+                        CategorySelectorMode = CreateNewCategory } }
+    | ExistingCategoryMessage msg ->
+        let handle =
+            ChooseZeroOrOne.handleMessage (fun (i: Category) ->
+                match i.CategoryId with
+                | CategoryId x -> x)
+
+        let choose = f.CategorySelector.ChooseExistingCategory |> handle msg
+
+        { f with
+              CategorySelector =
+                  { f.CategorySelector with
+                        ChooseExistingCategory = choose
+                        CategorySelectorMode = ChooseCategoryOrUncategorized } }
+    | NewCategoryMessage msg ->
+        let handle =
+            TextInput.handleMessage CategoryName.tryParse CategoryName.normalizer
+
+        let ti = f.CategorySelector.CreateNewCategory |> handle msg
+
+        { f with
+              CategorySelector =
+                  { f.CategorySelector with
+                        CreateNewCategory = ti
+                        CategorySelectorMode = CreateNewCategory } }
+
 type T with
     member this.ItemNameEdit(n) = this |> itemNameEdit n
     member this.ItemNameLoseFocus() = this |> itemNameLoseFocus
@@ -256,14 +286,9 @@ type T with
     member this.SetStoreAvailability(s, b) = this |> setStoreAvailability s b
     member this.StoreSummary() = this.Stores |> availabilitySummary
     member this.RepeatIntervalAsText(d) = d |> repeatIntervalAsText
-    member this.ModeNoCategory() = this |> setCategoryPickerMode NoCategory
-    member this.ModeCreateNew() = this |> setCategoryPickerMode CreateNewCategory
-    member this.ModeChooseExisting() = this |> setCategoryPickerMode ChooseExistingCategory
-    member this.NewCategoryEdit(n) = this |> newCategoryNameEdit n
-    member this.NewCategoryLoseFocus() = this |> newCategoryNameLoseFocus
-    member this.ChooseExistingCategory(id) = this |> chooseExistingCategory (CategoryId id)
     member this.PostponeChoices() = this |> postponeChoices // should this be a property? safer binding?
     member this.PostponeDurationAsText(d) = d |> durationAsText
+
     member this.PostponeDuration =
         match this.Schedule with
         | Repeat r -> r.PostponeDays

@@ -2,8 +2,8 @@
 using Microsoft.AspNetCore.Components.Web;
 using Models;
 using System;
+using static Models.FormsTypes;
 using static Models.ItemEditFormModule;
-
 namespace WebApp.Pages {
     public partial class ItemEdit : ComponentBase {
 
@@ -11,8 +11,6 @@ namespace WebApp.Pages {
             base.OnInitialized();
             Form = createNew;
         }
-
-        public string Testing { get; set; }
 
         public T Form { get; private set; }
 
@@ -34,12 +32,6 @@ namespace WebApp.Pages {
         protected void OnNoteFocusOut(FocusEventArgs e) =>
             Form = Form.NoteLoseFocus();
 
-        protected void OnNewCategoryNameChange(ChangeEventArgs e) =>
-            Form = Form.NewCategoryEdit((string)e.Value);
-
-        protected void OnNewCategoryNameFocusOut(FocusEventArgs e) =>
-            Form = Form.NewCategoryLoseFocus();
-
         protected void OnStoreChange(ChangeEventArgs e, StateTypes.StoreId store) =>
             Form = Form.SetStoreAvailability(store, (bool)e.Value);
 
@@ -54,20 +46,32 @@ namespace WebApp.Pages {
             }
         }
 
+        protected void OnNewCategoryNameChange(ChangeEventArgs e) {
+            var msg = Message.NewNewCategoryMessage(TextInputMessage.NewTypeText((string)e.Value));
+            Form = processMessage(msg, Form);
+        }
+
+        protected void OnNewCategoryNameFocusOut(FocusEventArgs e) {
+            var msg = Message.NewNewCategoryMessage(TextInputMessage.LoseFocus);
+            Form = processMessage(msg, Form);
+        }
+
         const string chooseUncategorized = "chooseUncategorized";
         const string chooseCreateNewCategory = "chooseNewCategory";
 
         protected void OnExistingCategoryChange(ChangeEventArgs e) {
             string value = (string)(e.Value);
             if (value == chooseUncategorized) {
-                Form = Form.ModeNoCategory();
+                var msg = Message.NewExistingCategoryMessage(ChooseZeroOrOneMessage<Guid>.ClearSelection);
+                Form = processMessage(msg, Form);
             }
             else if (value == chooseCreateNewCategory) {
-                Form = Form.ModeCreateNew();
+                var msg = Message.StartCreatingNewCategory;
+                Form = processMessage(msg, Form);
             }
             else if (Guid.TryParse(value, out Guid categoryId)) {
-                Form = Form.ChooseExistingCategory(categoryId);
-
+                var msg = Message.NewExistingCategoryMessage(ChooseZeroOrOneMessage<Guid>.NewChooseByKey(categoryId));
+                Form = processMessage(msg, Form);
             }
         }
 
@@ -76,7 +80,7 @@ namespace WebApp.Pages {
         protected void OnPostponeChange(ChangeEventArgs e) {
             string value = (string)(e.Value);
             if (value == notPostponed) {
-                Form = Form.ModeNoCategory();
+                Form = Form.RemovePostpone();
             }
             else if (int.TryParse(value, out int days)) {
                 Form = Form.SchedulePostpone(days);
