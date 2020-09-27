@@ -31,9 +31,11 @@ type CategorySelector =
       CreateNewCategory: TextInput<CategoryName, StringError>
       ChooseExistingCategory: ChooseZeroOrOne<Category> }
 
-//type CategoryPicker = 
-//    | NewCategory of TextInput<CategoryName, StringError>
-//    | SelectExistingCategory of ChooseZeroOrOne<Category>
+type CategoryPicker = 
+    | NewCategory of TextInput<CategoryName, StringError>
+    | SelectExistingCategory of ChooseZeroOrOne<Category>
+
+
 
 type T =
     { ItemId: ItemId
@@ -152,13 +154,9 @@ let setStoreAvailability s b (form: T) =
               form.Stores
               |> List.map (fun i -> if i.Store.StoreId = s then { i with IsSold = b } else i) }
 
-let itemNameEdit n (form: T) =
-    { form with
-          ItemName = form.ItemName |> TextInput.setText ItemName.tryParse n }
-
-let itemNameLoseFocus (form: T) =
-    { form with
-          ItemName = form.ItemName |> TextInput.loseFocus ItemName.normalizer }
+let processItemNameMessage msg (f:T) = 
+    let handler = TextInput.handleMessage ItemName.tryParse ItemName.normalizer
+    { f with ItemName = f.ItemName |> handler msg }
 
 let quantityEdit n (form: T) =
     { form with
@@ -168,6 +166,10 @@ let quantityLoseFocus (form: T) =
     { form with
           Quantity = form.Quantity |> TextInput.loseFocus Quantity.normalizer }
 
+let processQuantityMessage msg (f:T) = 
+    let handler = TextInput.handleMessage quantityParser Quantity.normalizer
+    { f with Quantity = f.Quantity |> handler msg }
+
 let noteEdit n (form: T) =
     { form with
           Note = form.Note |> TextInput.setText noteParser n }
@@ -175,6 +177,10 @@ let noteEdit n (form: T) =
 let noteLoseFocus (form: T) =
     { form with
           Note = form.Note |> TextInput.loseFocus Note.normalizer }
+
+let processNoteMessage msg (f:T) = 
+    let handler = TextInput.handleMessage noteParser Note.normalizer
+    { f with Note = f.Note |> handler msg }
 
 let scheduleComplete (form: T) = { form with Schedule = RelativeSchedule.Completed }
 
@@ -236,26 +242,27 @@ let durationAsText (d: int<days>) =
         | None -> if d = 1 then "1 day" else sprintf "%i days" d
 
 type Message =
-    | ItemNameEdit of string
-    | ItemNameLoseFocus
-    | QuantityEdit of string
-    | QuantityLoseFocus
-    | NoteEdit of string
-    | NoteLoseFocus
+    | ItemNameMessage of TextInputMessage
+    | QuantityMessage of TextInputMessage
+    | NoteMessage of TextInputMessage
     | StartCreatingNewCategory
     | NewCategoryMessage of TextInputMessage
     | ExistingCategoryMessage of ChooseZeroOrOneMessage<System.Guid>
+    | ItemName of TextInputMessage
+
+
+//type CategoryPicker = 
+//    | NewCategory of TextInput<CategoryName, StringError>
+//    | SelectExistingCategory of ChooseZeroOrOne<Category>
+
 
 let mapCategory f (form: T) = { form with CategorySelector = f form.CategorySelector }
 
 let processMessage (m: Message) (f: T) =
     match m with
-    | ItemNameEdit s -> f |> itemNameEdit s
-    | ItemNameLoseFocus -> f |> itemNameLoseFocus
-    | QuantityEdit s -> f |> quantityEdit s
-    | QuantityLoseFocus -> f |> quantityLoseFocus
-    | NoteEdit s -> f |> noteEdit s
-    | NoteLoseFocus -> f |> noteLoseFocus
+    | ItemNameMessage m -> f |> processItemNameMessage m
+    | QuantityMessage m -> f |> processQuantityMessage m
+    | NoteMessage m -> f |> processNoteMessage m
     | StartCreatingNewCategory ->
         { f with
               CategorySelector =

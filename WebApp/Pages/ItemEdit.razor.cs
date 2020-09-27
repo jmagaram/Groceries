@@ -15,21 +15,27 @@ namespace WebApp.Pages {
 
         public T Form { get; private set; }
 
-        private void ProcessMessage(ItemEditFormModule.Message msg) {
+        private void Process(Message msg) {
             Form = processMessage(msg, Form);
         }
 
-        protected void OnItemNameChange(ChangeEventArgs e) => ProcessMessage(Message.NewItemNameEdit((string)e.Value));
+        protected void OnItemNameChange(ChangeEventArgs e) =>
+            Process(Message.NewItemNameMessage(TextInputMessage.NewTypeText((string)e.Value)));
 
-        protected void OnItemNameFocusOut(FocusEventArgs e) => ProcessMessage(Message.ItemNameLoseFocus);
+        protected void OnItemNameFocusOut(FocusEventArgs e) =>
+            Process(Message.NewItemNameMessage(TextInputMessage.LoseFocus));
 
-        protected void OnQuantityChange(ChangeEventArgs e) => ProcessMessage(Message.NewQuantityEdit((string)e.Value));
+        protected void OnNoteChange(ChangeEventArgs e) =>
+            Process(Message.NewNoteMessage(TextInputMessage.NewTypeText((string)e.Value)));
 
-        protected void OnQuantityFocusOut(FocusEventArgs e) => ProcessMessage(Message.QuantityLoseFocus);
+        protected void OnNoteFocusOut(FocusEventArgs e) =>
+            Process(Message.NewNoteMessage(TextInputMessage.LoseFocus));
 
-        protected void OnNoteChange(ChangeEventArgs e) => ProcessMessage(Message.NewNoteEdit((string)e.Value));
+        protected void OnQuantityChange(ChangeEventArgs e) =>
+            Process(Message.NewQuantityMessage(TextInputMessage.NewTypeText((string)e.Value)));
 
-        protected void OnNoteFocusOut(FocusEventArgs e) => ProcessMessage(Message.NoteLoseFocus);
+        protected void OnQuantityFocusOut(FocusEventArgs e) =>
+            Process(Message.NewQuantityMessage(TextInputMessage.LoseFocus));
 
         protected void OnStoreChange(ChangeEventArgs e, StateTypes.StoreId store) =>
             Form = Form.SetStoreAvailability(store, (bool)e.Value);
