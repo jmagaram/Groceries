@@ -28,20 +28,18 @@ type CategorySelectorMode =
 
 type CategorySelector =
     { CategorySelectorMode: CategorySelectorMode
-      CreateNewCategory: TextInput<CategoryName, StringError>
+      CreateNewCategory: TextBox<CategoryName, StringError>
       ChooseExistingCategory: ChooseZeroOrOne<Category> }
 
 type CategoryPicker = 
-    | NewCategory of TextInput<CategoryName, StringError>
-    | SelectExistingCategory of ChooseZeroOrOne<Category>
-
-
+    | NewCategory of TextBox<CategoryName, StringError>
+    | ChooseExistingCategoryOrUncategorized of ChooseZeroOrOne<Category>
 
 type T =
     { ItemId: ItemId
-      ItemName: TextInput<ItemName, StringError>
-      Quantity: TextInput<Quantity option, StringError>
-      Note: TextInput<Note option, StringError>
+      ItemName: TextBox<ItemName, StringError>
+      Quantity: TextBox<Quantity option, StringError>
+      Note: TextBox<Note option, StringError>
       Schedule: RelativeSchedule
       RepeatIntervalChoices: int<days> list
       Stores: ItemAvailability list
@@ -132,9 +130,9 @@ let (noteParser, quantityParser) =
 
 let createNew =
     { ItemId = Id.create ItemId
-      ItemName = TextInput.init ItemName.tryParse ItemName.normalizer ""
-      Quantity = TextInput.init quantityParser Quantity.normalizer ""
-      Note = TextInput.init noteParser Note.normalizer ""
+      ItemName = TextBox.init ItemName.tryParse ItemName.normalizer ""
+      Quantity = TextBox.init quantityParser Quantity.normalizer ""
+      Note = TextBox.init noteParser Note.normalizer ""
       Schedule = RelativeSchedule.Once
       RepeatIntervalChoices = Repeat.commonIntervals
       Stores = stores
@@ -142,7 +140,7 @@ let createNew =
           let chooseCategory = ChooseZeroOrOne.init cats |> ChooseZeroOrOne.selectNothing
 
           let createCategory =
-              TextInput.init CategoryName.tryParse CategoryName.normalizer ""
+              TextBox.init CategoryName.tryParse CategoryName.normalizer ""
 
           { CategorySelector.CategorySelectorMode = ChooseCategoryOrUncategorized
             CategorySelector.ChooseExistingCategory = chooseCategory
@@ -155,31 +153,31 @@ let setStoreAvailability s b (form: T) =
               |> List.map (fun i -> if i.Store.StoreId = s then { i with IsSold = b } else i) }
 
 let processItemNameMessage msg (f:T) = 
-    let handler = TextInput.handleMessage ItemName.tryParse ItemName.normalizer
+    let handler = TextBox.handleMessage ItemName.tryParse ItemName.normalizer
     { f with ItemName = f.ItemName |> handler msg }
 
 let quantityEdit n (form: T) =
     { form with
-          Quantity = form.Quantity |> TextInput.setText quantityParser n }
+          Quantity = form.Quantity |> TextBox.setText quantityParser n }
 
 let quantityLoseFocus (form: T) =
     { form with
-          Quantity = form.Quantity |> TextInput.loseFocus Quantity.normalizer }
+          Quantity = form.Quantity |> TextBox.loseFocus Quantity.normalizer }
 
 let processQuantityMessage msg (f:T) = 
-    let handler = TextInput.handleMessage quantityParser Quantity.normalizer
+    let handler = TextBox.handleMessage quantityParser Quantity.normalizer
     { f with Quantity = f.Quantity |> handler msg }
 
 let noteEdit n (form: T) =
     { form with
-          Note = form.Note |> TextInput.setText noteParser n }
+          Note = form.Note |> TextBox.setText noteParser n }
 
 let noteLoseFocus (form: T) =
     { form with
-          Note = form.Note |> TextInput.loseFocus Note.normalizer }
+          Note = form.Note |> TextBox.loseFocus Note.normalizer }
 
 let processNoteMessage msg (f:T) = 
-    let handler = TextInput.handleMessage noteParser Note.normalizer
+    let handler = TextBox.handleMessage noteParser Note.normalizer
     { f with Note = f.Note |> handler msg }
 
 let scheduleComplete (form: T) = { form with Schedule = RelativeSchedule.Completed }
@@ -242,14 +240,12 @@ let durationAsText (d: int<days>) =
         | None -> if d = 1 then "1 day" else sprintf "%i days" d
 
 type Message =
-    | ItemNameMessage of TextInputMessage
-    | QuantityMessage of TextInputMessage
-    | NoteMessage of TextInputMessage
+    | ItemNameMessage of TextBoxMessage
+    | QuantityMessage of TextBoxMessage
+    | NoteMessage of TextBoxMessage
     | StartCreatingNewCategory
-    | NewCategoryMessage of TextInputMessage
+    | NewCategoryMessage of TextBoxMessage
     | ExistingCategoryMessage of ChooseZeroOrOneMessage<System.Guid>
-    | ItemName of TextInputMessage
-
 
 //type CategoryPicker = 
 //    | NewCategory of TextInput<CategoryName, StringError>
@@ -283,7 +279,7 @@ let processMessage (m: Message) (f: T) =
                         CategorySelectorMode = ChooseCategoryOrUncategorized } }
     | NewCategoryMessage msg ->
         let handle =
-            TextInput.handleMessage CategoryName.tryParse CategoryName.normalizer
+            TextBox.handleMessage CategoryName.tryParse CategoryName.normalizer
 
         let ti = f.CategorySelector.CreateNewCategory |> handle msg
 

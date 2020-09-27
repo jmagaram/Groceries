@@ -1,9 +1,9 @@
 ﻿module Models.FormsTypes
 
-type TextInput<'T, 'Error> = { Value: string; ValidationResult: Result<'T, 'Error> }
+type TextBox<'T, 'Error> = { Value: string; ValidationResult: Result<'T, 'Error> }
 
 // when is this needed? why not just call or pass the function to change the input?
-type TextInputMessage =
+type TextBoxMessage =
     | TypeText of string
     | GainFocus
     | LoseFocus

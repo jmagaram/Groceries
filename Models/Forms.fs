@@ -2,7 +2,7 @@
 
 open Models.FormsTypes
 
-module TextInput =
+module TextBox =
 
     let init tryParse normalize value =
         { Value = value
@@ -13,7 +13,7 @@ module TextInput =
               Value = value
               ValidationResult = value |> tryParse }
 
-    let loseFocus normalize ti = { ti with TextInput.Value = ti.Value |> normalize }
+    let loseFocus normalize ti = { ti with TextBox.Value = ti.Value |> normalize }
 
     let handleMessage tryParse normalize msg ti =
         match msg with

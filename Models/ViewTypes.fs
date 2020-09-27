@@ -16,8 +16,8 @@ type FormattedText = FormattedText of TextSpan list
 type Highlighter = SearchTerm -> string -> FormattedText
 
 type ItemEditForm = 
-    { ItemName : TextInput<ItemName, StringError list> 
+    { ItemName : TextBox<ItemName, StringError list> 
     } 
 
 type ItemEditFormMessage = 
-    | ItemNameMessage of TextInputMessage
+    | ItemNameMessage of TextBoxMessage

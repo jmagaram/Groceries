@@ -20,22 +20,22 @@ namespace WebApp.Pages {
         }
 
         protected void OnItemNameChange(ChangeEventArgs e) =>
-            Process(Message.NewItemNameMessage(TextInputMessage.NewTypeText((string)e.Value)));
+            Process(Message.NewItemNameMessage(TextBoxMessage.NewTypeText((string)e.Value)));
 
         protected void OnItemNameFocusOut(FocusEventArgs e) =>
-            Process(Message.NewItemNameMessage(TextInputMessage.LoseFocus));
+            Process(Message.NewItemNameMessage(TextBoxMessage.LoseFocus));
 
         protected void OnNoteChange(ChangeEventArgs e) =>
-            Process(Message.NewNoteMessage(TextInputMessage.NewTypeText((string)e.Value)));
+            Process(Message.NewNoteMessage(TextBoxMessage.NewTypeText((string)e.Value)));
 
         protected void OnNoteFocusOut(FocusEventArgs e) =>
-            Process(Message.NewNoteMessage(TextInputMessage.LoseFocus));
+            Process(Message.NewNoteMessage(TextBoxMessage.LoseFocus));
 
         protected void OnQuantityChange(ChangeEventArgs e) =>
-            Process(Message.NewQuantityMessage(TextInputMessage.NewTypeText((string)e.Value)));
+            Process(Message.NewQuantityMessage(TextBoxMessage.NewTypeText((string)e.Value)));
 
         protected void OnQuantityFocusOut(FocusEventArgs e) =>
-            Process(Message.NewQuantityMessage(TextInputMessage.LoseFocus));
+            Process(Message.NewQuantityMessage(TextBoxMessage.LoseFocus));
 
         protected void OnStoreChange(ChangeEventArgs e, StateTypes.StoreId store) =>
             Form = Form.SetStoreAvailability(store, (bool)e.Value);
@@ -52,12 +52,12 @@ namespace WebApp.Pages {
         }
 
         protected void OnNewCategoryNameChange(ChangeEventArgs e) {
-            var msg = Message.NewNewCategoryMessage(TextInputMessage.NewTypeText((string)e.Value));
+            var msg = Message.NewNewCategoryMessage(TextBoxMessage.NewTypeText((string)e.Value));
             Form = processMessage(msg, Form);
         }
 
         protected void OnNewCategoryNameFocusOut(FocusEventArgs e) {
-            var msg = Message.NewNewCategoryMessage(TextInputMessage.LoseFocus);
+            var msg = Message.NewNewCategoryMessage(TextBoxMessage.LoseFocus);
             Form = processMessage(msg, Form);
         }
 
