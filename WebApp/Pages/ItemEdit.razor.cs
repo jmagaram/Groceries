@@ -38,7 +38,7 @@ namespace WebApp.Pages {
             Process(Message.NewQuantityMessage(TextBoxMessage.LoseFocus));
 
         protected void OnStoreChange(ChangeEventArgs e, StateTypes.StoreId store) =>
-            Form = Form.SetStoreAvailability(store, (bool)e.Value);
+            Process(Message.NewStoreAvailability(store, (bool)e.Value));
 
         protected void OnRepeatChange(ChangeEventArgs e) {
             if (int.TryParse((string)(e.Value), out int d)) {

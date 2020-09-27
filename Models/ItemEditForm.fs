@@ -249,6 +249,7 @@ type Message =
     | QuantityMessage of TextBoxMessage
     | NoteMessage of TextBoxMessage
     | CategoryMessage of CategoryMessage
+    | StoreAvailability of store:StoreId * isAvailable:bool
 
 let processMessage (m: Message) (f: T) =
     match m with
@@ -256,6 +257,7 @@ let processMessage (m: Message) (f: T) =
     | QuantityMessage m -> f |> processQuantityMessage m
     | NoteMessage m -> f |> processNoteMessage m
     | CategoryMessage m -> f |> processCategoryPickerMessage m
+    | StoreAvailability (s,a) -> f |> setStoreAvailability s a
 
 type T with
     member this.ScheduleComplete() = this |> scheduleComplete
@@ -263,7 +265,6 @@ type T with
     member this.ScheduleRepeat(d) = this |> scheduleRepeat d
     member this.SchedulePostpone(d) = this |> schedulePostpone d
     member this.RemovePostpone() = this |> removePostpone
-    member this.SetStoreAvailability(s, b) = this |> setStoreAvailability s b
     member this.StoreSummary() = this.Stores |> availabilitySummary
     member this.RepeatIntervalAsText(d) = d |> repeatIntervalAsText
     member this.PostponeChoices() = this |> postponeChoices // should this be a property? safer binding?
