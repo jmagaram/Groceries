@@ -34,7 +34,7 @@ module Note =
         StringValidation.createParser normalizer validator Note List.head
 
     let tryParseOptional s =
-        if s |> String.isNullOrWhiteSpace then s |> tryParse |> Result.map Some else Ok None
+        if s |> String.isNullOrWhiteSpace then Ok None else s |> tryParse |> Result.map Some
 
     let asText (Note s) = s
 
@@ -49,7 +49,7 @@ module Quantity =
         StringValidation.createParser normalizer validator Quantity List.head
 
     let tryParseOptional s =
-        if s |> String.isNullOrWhiteSpace then s |> tryParse |> Result.map Some else Ok None
+        if s |> String.isNullOrWhiteSpace then Ok None else s |> tryParse |> Result.map Some
 
     let asText (Quantity s) = s
 
@@ -182,12 +182,13 @@ module Repeat =
         |> Option.map Error
         |> Option.defaultValue (Ok { Frequency = interval; PostponedUntil = postponedUntil })
 
-    let postponeRelative (clock:Clock) (postponeUntil:DateTimeOffset option) =
+    let postponeRelative (clock: Clock) (postponeUntil: DateTimeOffset option) =
         match postponeUntil with
         | None -> None
         | Some postponeUntil ->
-            let dueIn = postponeUntil - clock()
-            truncate (dueIn.TotalDays) // overdue is forgiving, future is urgent 
+            let dueIn = postponeUntil - clock ()
+
+            truncate (dueIn.TotalDays) // overdue is forgiving, future is urgent
             |> int
             |> (*) 1<days>
             |> Some

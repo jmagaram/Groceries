@@ -15,6 +15,8 @@ namespace WebApp.Data {
             ShoppingListQry = _stateObs.Select(Query.shoppingListQry);
         }
 
+        public State Current => _state.Value;
+
         public void Update(StateMessage msg) {
             var state = _state.Value;
             state = StateModule.update(msg, state);

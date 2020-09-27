@@ -1,0 +1,32 @@
+﻿@using Microsoft.FSharp.Core;
+@using static Models.ItemForm;
+ 
+<h3>The edit form!</h3>
+
+<form>
+    <div>
+        <label>
+            Name: <input @oninput="OnItemNameChange" @onfocusout="OnItemNameFocusOut" placeholder="Apples, Canned Tuna, ..." value="@Form.ItemName" />
+            @if (Form.ItemNameValidation.IsError) {
+                <span>Error: @Form.ItemNameValidation.ErrorValue</span>
+            }
+        </label>
+    </div>
+    <div>
+        <label>
+            Quantity: <input @oninput="OnQuantityChange" @onfocusout="OnQuantityFocusOut" placeholder="several, 2 lb., lots, ..." value="@Form.Quantity" />
+            @if (Form.QuantityValidation.IsError) {
+                <span>Error: @Form.QuantityValidation.ErrorValue</span>
+            }
+        </label>
+    </div>
+    <div>
+        <label>
+            Note: <textarea rows="3" @oninput="OnNoteChange" @onfocusout="OnNoteFocusOut" placeholder="preferred brand, extra soft!, ..." value="@Form.Note" />
+            @if (Form.NoteValidation.IsError) {
+                <span>Error: @Form.NoteValidation.ErrorValue</span>
+            }
+        </label>
+    </div>
+
+</form>
