@@ -16,19 +16,6 @@ type RelativeSchedule =
     | Completed
     | Repeat of RelativeRepeat
 
-// Does the parser AND normalizer both normalize? If yes, why does TextInput.init need both?
-// Radio
-// Combo?
-
-// choose from list...
-// if list is empty,
-
-let cats =
-    [ "Food"; "Frozen"; "Dry"; "Dairy" ]
-    |> List.map (fun i ->
-        { CategoryId = Id.create CategoryId
-          CategoryName = i |> CategoryName.tryParse |> Result.okOrThrow })
-
 type CategoryMode =
     | CreateNewMode
     | ExistingOrUncategorizedMode
@@ -129,9 +116,15 @@ let (noteParser, quantityParser) =
     let quantityParser = tryParseOptional Quantity.normalizer Quantity.tryParse
     (noteParser, quantityParser)
 
+let sampleCats =
+    [ "Food"; "Frozen"; "Dry"; "Dairy" ]
+    |> List.map (fun i ->
+        { CategoryId = Id.create CategoryId
+          CategoryName = i |> CategoryName.tryParse |> Result.okOrThrow })
+
 let newCategoryPicker =
     let defaultMode = CategoryMode.ExistingOrUncategorizedMode
-    let choices = ChooseZeroOrOne.init cats |> ChooseZeroOrOne.selectNothing
+    let choices = ChooseZeroOrOne.init sampleCats |> ChooseZeroOrOne.selectNothing
 
     let createNew =
         TextBox.init CategoryName.tryParse CategoryName.normalizer ""

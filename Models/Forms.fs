@@ -4,6 +4,7 @@ open Models.FormsTypes
 
 module TextBox =
 
+    // Does the parser AND normalizer both normalize? If yes, why does TextInput.init need both?
     let init tryParse normalize value =
         { Value = value
           ValidationResult = value |> normalize |> tryParse }
@@ -23,20 +24,22 @@ module TextBox =
 
 module ChooseZeroOrOne =
 
-    let init items = { Choices = items; Selected = None}
+    let init items = { Choices = items; Selected = None }
 
     let selectNothing c = { c with Selected = None }
 
     let selectFirst p c = { c with Selected = c.Choices |> List.tryFind p }
 
-    let selectByKey keyOf k c = { c with Selected = c.Choices |> List.find (fun i -> keyOf i = k) |> Some }
+    let selectByKey keyOf k c =
+        { c with
+              Selected = c.Choices |> List.find (fun i -> keyOf i = k) |> Some }
 
-    let select i c = 
+    let select i c =
         match c.Choices |> List.contains i with
         | true -> { c with Selected = Some i }
         | false -> failwith "The item is not in the available choices."
 
-    let handleMessage keyOf msg c = 
+    let handleMessage keyOf msg c =
         match msg with
         | ClearSelection -> c |> selectNothing
-        | ChooseByKey k ->  c |> selectByKey keyOf k
+        | ChooseByKey k -> c |> selectByKey keyOf k
