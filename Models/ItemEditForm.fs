@@ -1,6 +1,7 @@
 ﻿[<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
 module Models.ItemEditForm
 
+open System
 open Models
 open Models.StateTypes
 open Models.ValidationTypes
@@ -22,18 +23,25 @@ type RelativeSchedule =
 // choose from list...
 // if list is empty,
 
-type CategorySelectorMode =
-    | CreateNewCategory
-    | ChooseCategoryOrUncategorized
+let cats =
+    [ "Food"; "Frozen"; "Dry"; "Dairy" ]
+    |> List.map (fun i ->
+        { CategoryId = Id.create CategoryId
+          CategoryName = i |> CategoryName.tryParse |> Result.okOrThrow })
 
-type CategorySelector =
-    { CategorySelectorMode: CategorySelectorMode
+type CategoryMode =
+    | CreateNewMode
+    | ExistingOrUncategorizedMode
+
+type CategoryPicker =
+    { Mode: CategoryMode
       CreateNewCategory: TextBox<CategoryName, StringError>
-      ChooseExistingCategory: ChooseZeroOrOne<Category> }
+      ExistingOrUncategorized: ChooseZeroOrOne<Category> }
 
-type CategoryPicker = 
-    | NewCategory of TextBox<CategoryName, StringError>
-    | ChooseExistingCategoryOrUncategorized of ChooseZeroOrOne<Category>
+type CategoryMessage =
+    | NewCategoryMessage of TextBoxMessage
+    | SelectorMessage of ChooseZeroOrOneMessage<Guid>
+    | SetMode of CategoryMode
 
 type T =
     { ItemId: ItemId
@@ -43,7 +51,7 @@ type T =
       Schedule: RelativeSchedule
       RepeatIntervalChoices: int<days> list
       Stores: ItemAvailability list
-      CategorySelector: CategorySelector }
+      CategoryPicker: CategoryPicker }
 
 type StoreAvailabilitySummary =
     | SoldEverywhere
@@ -51,8 +59,6 @@ type StoreAvailabilitySummary =
     | SoldOnlyAt of Store
     | SoldEverywhereExcept of Store
     | VariedAvailability
-
-// rename TextInput.init validate to "parser"
 
 let availabilitySummary (availList: ItemAvailability seq) =
     let soldAt =
@@ -110,11 +116,6 @@ let stores =
                 StoreName = StoreName.tryParse name |> Result.okOrThrow }
           IsSold = isAvailable })
 
-let cats =
-    [ "Food"; "Frozen"; "Dry"; "Dairy" ]
-    |> List.map (fun i ->
-        { CategoryId = Id.create CategoryId
-          CategoryName = i |> CategoryName.tryParse |> Result.okOrThrow })
 
 let (noteParser, quantityParser) =
     let tryParseOptional normalizer tryParse s =
@@ -128,6 +129,17 @@ let (noteParser, quantityParser) =
     let quantityParser = tryParseOptional Quantity.normalizer Quantity.tryParse
     (noteParser, quantityParser)
 
+let newCategoryPicker =
+    let defaultMode = CategoryMode.ExistingOrUncategorizedMode
+    let choices = ChooseZeroOrOne.init cats |> ChooseZeroOrOne.selectNothing
+
+    let createNew =
+        TextBox.init CategoryName.tryParse CategoryName.normalizer ""
+
+    { Mode = defaultMode
+      ExistingOrUncategorized = choices
+      CreateNewCategory = createNew }
+
 let createNew =
     { ItemId = Id.create ItemId
       ItemName = TextBox.init ItemName.tryParse ItemName.normalizer ""
@@ -136,15 +148,7 @@ let createNew =
       Schedule = RelativeSchedule.Once
       RepeatIntervalChoices = Repeat.commonIntervals
       Stores = stores
-      CategorySelector =
-          let chooseCategory = ChooseZeroOrOne.init cats |> ChooseZeroOrOne.selectNothing
-
-          let createCategory =
-              TextBox.init CategoryName.tryParse CategoryName.normalizer ""
-
-          { CategorySelector.CategorySelectorMode = ChooseCategoryOrUncategorized
-            CategorySelector.ChooseExistingCategory = chooseCategory
-            CategorySelector.CreateNewCategory = createCategory } }
+      CategoryPicker = newCategoryPicker }
 
 let setStoreAvailability s b (form: T) =
     { form with
@@ -152,31 +156,15 @@ let setStoreAvailability s b (form: T) =
               form.Stores
               |> List.map (fun i -> if i.Store.StoreId = s then { i with IsSold = b } else i) }
 
-let processItemNameMessage msg (f:T) = 
+let processItemNameMessage msg (f: T) =
     let handler = TextBox.handleMessage ItemName.tryParse ItemName.normalizer
     { f with ItemName = f.ItemName |> handler msg }
 
-let quantityEdit n (form: T) =
-    { form with
-          Quantity = form.Quantity |> TextBox.setText quantityParser n }
-
-let quantityLoseFocus (form: T) =
-    { form with
-          Quantity = form.Quantity |> TextBox.loseFocus Quantity.normalizer }
-
-let processQuantityMessage msg (f:T) = 
+let processQuantityMessage msg (f: T) =
     let handler = TextBox.handleMessage quantityParser Quantity.normalizer
     { f with Quantity = f.Quantity |> handler msg }
 
-let noteEdit n (form: T) =
-    { form with
-          Note = form.Note |> TextBox.setText noteParser n }
-
-let noteLoseFocus (form: T) =
-    { form with
-          Note = form.Note |> TextBox.loseFocus Note.normalizer }
-
-let processNoteMessage msg (f:T) = 
+let processNoteMessage msg (f: T) =
     let handler = TextBox.handleMessage noteParser Note.normalizer
     { f with Note = f.Note |> handler msg }
 
@@ -239,55 +227,42 @@ let durationAsText (d: int<days>) =
         | Some w -> if w = 1 then "1 week" else sprintf "%i weeks" w
         | None -> if d = 1 then "1 day" else sprintf "%i days" d
 
+let processCategoryPickerMessage msg f =
+    let rec go msg cp =
+        let processCatMessage =
+            TextBox.handleMessage CategoryName.tryParse CategoryName.normalizer
+
+        let processCatExisting =
+            ChooseZeroOrOne.handleMessage (fun (c: Category) ->
+                match c.CategoryId with
+                | CategoryId id -> id)
+
+        match msg with
+        | NewCategoryMessage msg ->
+            { cp with
+                  CreateNewCategory = cp.CreateNewCategory |> processCatMessage msg }
+            |> go (SetMode CategoryMode.CreateNewMode)
+        | SelectorMessage msg ->
+            { cp with
+                  ExistingOrUncategorized = cp.ExistingOrUncategorized |> processCatExisting msg }
+            |> go (SetMode CategoryMode.ExistingOrUncategorizedMode)
+        | SetMode mode -> { cp with Mode = mode }
+
+    let cp' = go msg f.CategoryPicker
+    { f with CategoryPicker = cp' }
+
 type Message =
     | ItemNameMessage of TextBoxMessage
     | QuantityMessage of TextBoxMessage
     | NoteMessage of TextBoxMessage
-    | StartCreatingNewCategory
-    | NewCategoryMessage of TextBoxMessage
-    | ExistingCategoryMessage of ChooseZeroOrOneMessage<System.Guid>
-
-//type CategoryPicker = 
-//    | NewCategory of TextInput<CategoryName, StringError>
-//    | SelectExistingCategory of ChooseZeroOrOne<Category>
-
-
-let mapCategory f (form: T) = { form with CategorySelector = f form.CategorySelector }
+    | CategoryMessage of CategoryMessage
 
 let processMessage (m: Message) (f: T) =
     match m with
     | ItemNameMessage m -> f |> processItemNameMessage m
     | QuantityMessage m -> f |> processQuantityMessage m
     | NoteMessage m -> f |> processNoteMessage m
-    | StartCreatingNewCategory ->
-        { f with
-              CategorySelector =
-                  { f.CategorySelector with
-                        CategorySelectorMode = CreateNewCategory } }
-    | ExistingCategoryMessage msg ->
-        let handle =
-            ChooseZeroOrOne.handleMessage (fun (i: Category) ->
-                match i.CategoryId with
-                | CategoryId x -> x)
-
-        let choose = f.CategorySelector.ChooseExistingCategory |> handle msg
-
-        { f with
-              CategorySelector =
-                  { f.CategorySelector with
-                        ChooseExistingCategory = choose
-                        CategorySelectorMode = ChooseCategoryOrUncategorized } }
-    | NewCategoryMessage msg ->
-        let handle =
-            TextBox.handleMessage CategoryName.tryParse CategoryName.normalizer
-
-        let ti = f.CategorySelector.CreateNewCategory |> handle msg
-
-        { f with
-              CategorySelector =
-                  { f.CategorySelector with
-                        CreateNewCategory = ti
-                        CategorySelectorMode = CreateNewCategory } }
+    | CategoryMessage m -> f |> processCategoryPickerMessage m
 
 type T with
     member this.ScheduleComplete() = this |> scheduleComplete

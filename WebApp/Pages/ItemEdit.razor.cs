@@ -51,15 +51,11 @@ namespace WebApp.Pages {
             }
         }
 
-        protected void OnNewCategoryNameChange(ChangeEventArgs e) {
-            var msg = Message.NewNewCategoryMessage(TextBoxMessage.NewTypeText((string)e.Value));
-            Form = processMessage(msg, Form);
-        }
+        protected void OnNewCategoryNameChange(ChangeEventArgs e) =>
+            Process(Message.NewCategoryMessage(CategoryMessage.NewNewCategoryMessage(TextBoxMessage.NewTypeText((string)e.Value))));
 
-        protected void OnNewCategoryNameFocusOut(FocusEventArgs e) {
-            var msg = Message.NewNewCategoryMessage(TextBoxMessage.LoseFocus);
-            Form = processMessage(msg, Form);
-        }
+        protected void OnNewCategoryNameFocusOut(FocusEventArgs e) =>
+            Process(Message.NewCategoryMessage(CategoryMessage.NewNewCategoryMessage(TextBoxMessage.LoseFocus)));
 
         const string chooseUncategorized = "chooseUncategorized";
         const string chooseCreateNewCategory = "chooseNewCategory";
@@ -67,16 +63,16 @@ namespace WebApp.Pages {
         protected void OnExistingCategoryChange(ChangeEventArgs e) {
             string value = (string)(e.Value);
             if (value == chooseUncategorized) {
-                var msg = Message.NewExistingCategoryMessage(ChooseZeroOrOneMessage<Guid>.ClearSelection);
-                Form = processMessage(msg, Form);
+                var msg = Message.NewCategoryMessage(CategoryMessage.NewSelectorMessage(ChooseZeroOrOneMessage<Guid>.ClearSelection));
+                Process(msg);
             }
             else if (value == chooseCreateNewCategory) {
-                var msg = Message.StartCreatingNewCategory;
-                Form = processMessage(msg, Form);
+                var msg = Message.NewCategoryMessage(CategoryMessage.NewSetMode(CategoryMode.CreateNewMode));
+                Process(msg);
             }
             else if (Guid.TryParse(value, out Guid categoryId)) {
-                var msg = Message.NewExistingCategoryMessage(ChooseZeroOrOneMessage<Guid>.NewChooseByKey(categoryId));
-                Form = processMessage(msg, Form);
+                var msg = Message.NewCategoryMessage(CategoryMessage.NewSelectorMessage(ChooseZeroOrOneMessage<Guid>.NewChooseByKey(categoryId)));
+                Process(msg);
             }
         }
 
