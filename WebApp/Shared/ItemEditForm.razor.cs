@@ -75,15 +75,15 @@ namespace WebApp.Shared {
 
         const string notPostponed = "notPostponed";
 
-        //protected void OnPostponeChange(ChangeEventArgs e) {
-        //    string value = (string)(e.Value);
-        //    if (value == notPostponed) {
-        //        Form = Form.RemovePostpone();
-        //    }
-        //    else if (int.TryParse(value, out int days)) {
-        //        Form = Form.SchedulePostpone(days);
-        //    }
-        //}
+        protected void OnPostponeChange(ChangeEventArgs e) {
+            string value = (string)(e.Value);
+            //if (value == notPostponed) {
+            //    Form = Form.RemovePostpone();
+            //}
+            if (int.TryParse(value, out int days)) {
+                Process(ItemForm.ItemFormMessage.NewPostponeSet(days));
+            }
+        }
 
         protected void OnStoreChange(ChangeEventArgs e, StateTypes.StoreId store) =>
             Process(ItemForm.ItemFormMessage.NewStoresSetAvailability(store, (bool)e.Value));

@@ -46,12 +46,13 @@
     <div>
         <label>
             Postpone:
-            <select @onchange="OnRepeatChange">
-                @foreach (var i in Form.FrequencyChoices) {
-                    string description = Models.ItemForm.frequencyAsText(i);
+            <select @onchange="OnPostponeChange">
+                <option selected="@Form.Postpone.IsNone()" value="@notPostponed">No; on shopping list now</option>
+                @foreach (var i in Form.PostponeChoices) {
+                    string description = Models.ItemForm.postponeDurationAsText(i);
                     string key = i.ToString();
-                    bool isSelected = i == Form.Frequency;
-                    <option selected="@isSelected" value="@key">@description</option>
+                    bool isSelected = Form.Postpone.IsSomeValue(i);
+                    <option selected="@isSelected" value="@key">+ @description</option>
                 }
             </select>
         </label>

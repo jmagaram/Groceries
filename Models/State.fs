@@ -176,6 +176,10 @@ module Repeat =
         [ 1; 3; 7; 14; 30; 60; 90 ]
         |> List.map (fun i -> i * 1<days>)
 
+    let commonPostponeDays =
+        [ 1; 3; 7; 14; 30; 60; 90 ]
+        |> List.map (fun i -> i * 1<days>)
+
     let create interval postponedUntil =
         interval
         |> RangeValidation.createValidator frequencyRules

@@ -110,6 +110,14 @@ let postponeDurationAsText (d: int<StateTypes.days>) =
         match weeksExactly with
         | Some w -> if w = 1 then "1 week" else sprintf "%i weeks" w
         | None -> if d = 1 then "1 day" else sprintf "%i days" d
+let postponeChoices (f: Form) =
+    f.Postpone
+    :: (Repeat.commonPostponeDays |> List.map Some)
+    |> Seq.choose id
+    |> Seq.map frequencyCoerceIntoBounds
+    |> Seq.distinct
+    |> Seq.sort
+    |> List.ofSeq
 
 let categoryModeIsChooseExisting f = { f with CategoryMode = ChooseExisting }
 let categoryModeIsCreateNew f = { f with CategoryMode = CreateNew }
@@ -221,5 +229,6 @@ type Form with
     member me.NoteValidation = me |> noteValidation
     member me.QuantityValidation = me |> quantityValidation
     member me.FrequencyChoices = me |> frequencyChoices
+    member me.PostponeChoices = me |> postponeChoices
     member me.CategoryNameValidation = me |> categoryNameValidation
     member me.HasErrors = me |> hasErrors
