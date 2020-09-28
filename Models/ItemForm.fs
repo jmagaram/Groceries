@@ -105,6 +105,7 @@ let frequencyChoices (f: Form) =
     f.Frequency
     :: Repeat.commonFrequencies
     |> Seq.map frequencyCoerceIntoBounds
+    |> Seq.distinct
     |> Seq.sort
     |> List.ofSeq
 
