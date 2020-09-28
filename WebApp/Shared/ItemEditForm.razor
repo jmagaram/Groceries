@@ -81,7 +81,7 @@
             <label>
                 Postpone:
                 <select @onchange="OnPostponeChange">
-                    <option selected="@Form.Postpone.IsNone()" value="@notPostponed">No; on shopping list now</option>
+                    <option selected="@Form.Postpone.IsNone()" value="@notPostponed">On shopping list now (not postponed)</option>
                     @foreach (var i in Form.PostponeChoices) {
                         string description = Models.ItemForm.postponeDurationAsText(i);
                         string key = i.ToString();
@@ -92,7 +92,7 @@
             </label>
         </div>
     }
-    @if (!Form.Stores.IsEmpty) {
+    @if (!Form.Stores.IsEmpty && !Form.ScheduleKind.IsCompleted) {
         <div>
             Stores:<br />
             @foreach (var i in Form.Stores) {
