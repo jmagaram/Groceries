@@ -275,9 +275,7 @@ let asItemFormResult (now: DateTimeOffset) (f: Form) =
               | Once -> StateTypes.Schedule.Once
               | Repeat ->
                   { StateTypes.Repeat.Frequency = f.Frequency
-                    StateTypes.Repeat.PostponedUntil =
-                        f.Postpone
-                        |> Option.map (fun d -> now.AddDays(d |> float)) }
+                    StateTypes.Repeat.PostponedUntil = f.Postpone |> Option.map (fun d -> now.AddDays(d |> float)) }
                   |> StateTypes.Repeat }
 
     let notSold =
@@ -298,3 +296,31 @@ type Form with
     member me.CategoryNameValidation = me |> categoryNameValidation
     member me.HasErrors = me |> hasErrors
     member me.ItemFormResult(now) = me |> asItemFormResult now
+
+open StateTypes
+
+let itemFormResultAsTransaction (r: ItemFormResult) (s: State) =
+    let insertCategory =
+        r.InsertCategory
+        |> Option.map (InsertCategory >> CategoryMessage)
+
+    let upsertItem = r.Item |> (UpsertItem >> ItemMessage)
+
+    let syncNotSold =
+        Seq.leftJoin (s |> State.stores) (r.NotSold |> Seq.ofList) (fun a b -> a.StoreId = b)
+        |> Seq.map (fun (a, b) ->
+            let isNotSold = b |> Seq.tryHead |> Option.isSome
+            let f = if isNotSold then UpsertNotSoldItem else DeleteNotSoldItem
+
+            let ns =
+                { StateTypes.NotSoldItem.StoreId = a.StoreId
+                  StateTypes.NotSoldItem.ItemId = r.Item.ItemId }
+
+            ns |> f |> NotSoldItemMessage)
+
+    seq {
+        yield! insertCategory |> Option.toList
+        yield upsertItem
+        //yield! syncNotSold
+    }
+    |> StateMessage.Transaction

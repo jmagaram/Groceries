@@ -253,14 +253,16 @@ module State =
 
         (go DataTable.insert, go DataTable.update, go DataTable.upsert)
 
-    let insertNotSoldItem (nsi: NotSoldItem) s =
-        let item = s.Items |> DataTable.tryFindCurrent nsi.ItemId
-        let store = s.Stores |> DataTable.tryFindCurrent nsi.StoreId
+    let (insertNotSoldItem, upsertNotSoldItem) =
+        let go f (nsi: NotSoldItem) s =
+            let item = s.Items |> DataTable.tryFindCurrent nsi.ItemId
+            let store = s.Stores |> DataTable.tryFindCurrent nsi.StoreId
 
-        match item, store with
-        | Some _, Some _ -> s |> mapNotSoldItems (DataTable.insert nsi)
-        | None, _ -> failwith "A store is referenced that does not exist."
-        | _, None -> failwith "An item is referenced that does not exist."
+            match item, store with
+            | Some _, Some _ -> s |> mapNotSoldItems (f nsi)
+            | None, _ -> failwith "A store is referenced that does not exist."
+            | _, None -> failwith "An item is referenced that does not exist."
+        (go DataTable.insert, go DataTable.upsert)
 
     let updateSettingsStoreFilter k s =
         let isStoreReferenceValid =
@@ -402,6 +404,7 @@ module State =
             match msg with
             | InsertItem i -> s |> insertItem i
             | UpdateItem i -> s |> updateItem i
+            | UpsertItem i -> s |> upsertItem i
             | DeleteItem k -> s |> deleteItem k
         | StoreMessage msg ->
             match msg with
@@ -414,6 +417,7 @@ module State =
         | NotSoldItemMessage msg ->
             match msg with
             | InsertNotSoldItem i -> s |> insertNotSoldItem i
+            | UpsertNotSoldItem i -> s |> upsertNotSoldItem i
             | DeleteNotSoldItem i -> s |> deleteNotSoldItem i
         | SettingsMessage msg ->
             match msg with

@@ -17,7 +17,8 @@ namespace WebApp.Pages {
         public Models.ItemForm.Form Form { get; private set; }
 
         protected void OnClickOk(ItemForm.ItemFormResult r) {
-
+            var transaction = ItemForm.itemFormResultAsTransaction(r, StateService.Current);
+            StateService.Update(transaction);
         }
     }
 }

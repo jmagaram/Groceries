@@ -89,6 +89,7 @@ type State =
 type ItemMessage =
     | InsertItem of Item
     | UpdateItem of Item
+    | UpsertItem of Item
     | DeleteItem of ItemId
 
 type CategoryMessage = 
@@ -101,6 +102,7 @@ type StoreMessage =
 
 type NotSoldItemMessage =
     | InsertNotSoldItem of NotSoldItem
+    | UpsertNotSoldItem of NotSoldItem
     | DeleteNotSoldItem of NotSoldItem
 
 type SettingsMessage =
