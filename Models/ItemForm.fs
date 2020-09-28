@@ -57,6 +57,17 @@ let noteChange s f = { f with Note = s }
 let noteValidation f = f.Note |> Note.tryParseOptional
 let noteBlur f = { f with Note = f.Note |> Note.normalizer }
 
+let categoryModeIsChooseExisting f = { f with CategoryMode = ChooseExisting }
+let categoryModeIsCreateNew f = { f with CategoryMode = CreateNew }
+let chooseCategoryUncategorized f = { f with CategoryChoice = None }
+
+let chooseCategory i f =
+    { f with
+          CategoryChoice =
+              f.CategoryChoiceList
+              |> List.find (fun j -> j.CategoryId = StateTypes.CategoryId i)
+              |> Some }
+
 let categoryNameValidation f =
     if f.CategoryMode = CategoryMode.ChooseExisting then
         None |> Ok
@@ -65,9 +76,22 @@ let categoryNameValidation f =
 
 let categoryNameChange s f = { f with NewCategoryName = s }
 
-let categoryNameBlur f =
-    { f with
-          NewCategoryName = f.NewCategoryName |> CategoryName.normalizer }
+let categoryNameBlur (f: Form) =
+    let normalized = f.NewCategoryName |> CategoryName.normalizer
+
+    let exists =
+        f.CategoryChoiceList
+        |> Seq.tryFind (fun i ->
+            String.Equals
+                (i.CategoryName |> CategoryName.asText, normalized, StringComparison.InvariantCultureIgnoreCase))
+
+    match exists with
+    | None -> { f with NewCategoryName = normalized }
+    | Some c ->
+        { f with
+              CategoryMode = ChooseExisting
+              CategoryChoice = Some c 
+              NewCategoryName = "" }
 
 let scheduleOnce f = { f with ScheduleKind = Once }
 let scheduleCompleted f = { f with ScheduleKind = Completed }
@@ -99,6 +123,7 @@ let frequencyAsText (d: int<StateTypes.days>) =
 let postponeSet v f = { f with Postpone = Some v }
 let postponeClear f = { f with Postpone = None }
 let postponeDefault = None
+
 let postponeDurationAsText (d: int<StateTypes.days>) =
     let d = d |> int
     let monthsExactly = if d / 30 > 0 && d % 30 = 0 then Some(d / 30) else None
@@ -110,6 +135,7 @@ let postponeDurationAsText (d: int<StateTypes.days>) =
         match weeksExactly with
         | Some w -> if w = 1 then "1 week" else sprintf "%i weeks" w
         | None -> if d = 1 then "1 day" else sprintf "%i days" d
+
 let postponeChoices (f: Form) =
     f.Postpone
     :: (Repeat.commonPostponeDays |> List.map Some)
@@ -118,18 +144,6 @@ let postponeChoices (f: Form) =
     |> Seq.distinct
     |> Seq.sort
     |> List.ofSeq
-
-let categoryModeIsChooseExisting f = { f with CategoryMode = ChooseExisting }
-let categoryModeIsCreateNew f = { f with CategoryMode = CreateNew }
-
-let chooseCategoryUncategorized f = { f with CategoryChoice = None }
-
-let chooseCategory i f =
-    { f with
-          CategoryChoice =
-              f.CategoryChoiceList
-              |> List.find (fun j -> j.CategoryId = StateTypes.CategoryId i)
-              |> Some }
 
 let storesSetAvailability id isSold f =
     { f with
