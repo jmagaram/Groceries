@@ -29,6 +29,33 @@
             }
         </label>
     </div>
+
+    <div>
+        <label>
+            Frequency:
+            <select @onchange="OnRepeatChange">
+                @foreach (var i in Form.FrequencyChoices) {
+                    string description = Models.ItemForm.frequencyAsText(i);
+                    string key = i.ToString();
+                    bool isSelected = i == Form.Frequency;
+                    <option selected="@isSelected" value="@key">@description</option>
+                }
+            </select>
+        </label>
+    </div>
+    <div>
+        <label>
+            Postpone:
+            <select @onchange="OnRepeatChange">
+                @foreach (var i in Form.FrequencyChoices) {
+                    string description = Models.ItemForm.frequencyAsText(i);
+                    string key = i.ToString();
+                    bool isSelected = i == Form.Frequency;
+                    <option selected="@isSelected" value="@key">@description</option>
+                }
+            </select>
+        </label>
+    </div>
     <div>
         <label>
             Category:
@@ -73,4 +100,5 @@
             </div>
         }
     </div>
+    <button class="btn btn-primary" type="button" @onclick="e=>OnSubmitCallback.InvokeAsync(e)" disabled="@(!Form.HasErrors)">Submit</button>
 </form>

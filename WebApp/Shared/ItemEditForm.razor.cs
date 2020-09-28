@@ -64,8 +64,31 @@ namespace WebApp.Shared {
             }
         }
 
+        protected void OnRepeatChange(ChangeEventArgs e) {
+            if (int.TryParse((string)(e.Value), out int d)) {
+                //if (d == -1) {
+                //    Form = Form.ScheduleOnlyOnce();
+                //}
+                Process(ItemForm.ItemFormMessage.NewFrequencySet(d));
+            }
+        }
+
+        const string notPostponed = "notPostponed";
+
+        //protected void OnPostponeChange(ChangeEventArgs e) {
+        //    string value = (string)(e.Value);
+        //    if (value == notPostponed) {
+        //        Form = Form.RemovePostpone();
+        //    }
+        //    else if (int.TryParse(value, out int days)) {
+        //        Form = Form.SchedulePostpone(days);
+        //    }
+        //}
+
         protected void OnStoreChange(ChangeEventArgs e, StateTypes.StoreId store) =>
             Process(ItemForm.ItemFormMessage.NewStoresSetAvailability(store, (bool)e.Value));
 
+        [Parameter]
+        public EventCallback<MouseEventArgs> OnSubmitCallback { get; set; }
     }
 }
