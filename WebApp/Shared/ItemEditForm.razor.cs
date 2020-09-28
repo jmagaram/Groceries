@@ -93,7 +93,7 @@ namespace WebApp.Shared {
             Process(ItemForm.ItemFormMessage.NewStoresSetAvailability(store, (bool)e.Value));
 
         [Parameter]
-        public EventCallback<MouseEventArgs> OnSubmitCallback { get; set; }
+        public EventCallback<ItemForm.ItemFormResult> OnClickOkCallback { get; set; }
 
         [Parameter]
         public EventCallback<MouseEventArgs> OnDeleteCallback { get; set; }

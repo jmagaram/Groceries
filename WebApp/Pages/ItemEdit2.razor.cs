@@ -15,5 +15,9 @@ namespace WebApp.Pages {
         public Data.ApplicationStateService StateService { get; set; }
 
         public Models.ItemForm.Form Form { get; private set; }
+
+        protected void OnClickOk(ItemForm.ItemFormResult r) {
+
+        }
     }
 }
