@@ -1,23 +1,22 @@
 ﻿@using Common
 
 <p>
-    <span>@ItemQry.ItemName.Item</span>
+    <a href="./ItemEdit2/@ItemQry.ItemId.Item">@ItemQry.ItemName.Item</a>
     @if (ItemQry.Category.IsSome()) {
         var category = ItemQry.Category.Value.CategoryName;
         <text>&nbsp;| &nbsp;</text>@ItemQry.Category.Value.CategoryName.Item
     }
     @if (ItemQry.Quantity.IsSome()) {
         var quantity = ItemQry.Quantity.Value;
-        <text>&nbsp;| &nbsp;</text>@ItemQry.Quantity.Value
+        <text>&nbsp;| &nbsp;</text>@ItemQry.Quantity.Value.Item
     }
     @if (ItemQry.Note.IsSome()) {
         var note = ItemQry.Note.Value;
-        <text>&nbsp;| &nbsp;</text>@ItemQry.Note.Value
+        <text>&nbsp;| &nbsp;</text>@ItemQry.Note.Value.Item
     }
     <text>&nbsp;|&nbsp;</text><button class="btn btn-outline-secondary btn-sm" @onclick:preventDefault @onclick="@(async () => { await OnClickDelete.InvokeAsync(ItemQry.ItemId); })">
         Delete
     </button>
-    <a class="btn btn-outline-secondary btn-sm" href="./ItemEdit2/@ItemQry.ItemId.Item">Edit</a>
 </p>
 
 @code {
