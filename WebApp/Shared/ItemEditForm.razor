@@ -112,5 +112,8 @@
             }
         </label>
     </div>
+    @if (Form.ItemId.IsSome()) {
+        <button class="btn btn-outline-secondary" type="button" @onclick="e=>OnDeleteCallback.InvokeAsync(e)">Delete</button>
+    }
     <button class="btn btn-primary" type="button" @onclick="e=>OnSubmitCallback.InvokeAsync(e)" disabled="@(!Form.HasErrors)">Submit</button>
 </form>

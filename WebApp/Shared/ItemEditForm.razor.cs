@@ -94,5 +94,9 @@ namespace WebApp.Shared {
 
         [Parameter]
         public EventCallback<MouseEventArgs> OnSubmitCallback { get; set; }
+
+        [Parameter]
+        public EventCallback<MouseEventArgs> OnDeleteCallback { get; set; }
+
     }
 }
