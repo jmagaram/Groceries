@@ -33,10 +33,14 @@ namespace WebApp.Shared {
         protected void OnNewCategoryNameChange(ChangeEventArgs e) =>
             Process(ItemForm.ItemFormMessage.NewNewCategoryNameSet((string)e.Value));
 
-        protected void OnNewCategoryNameChange2(ChangeEventArgs e) {
+        protected void OnScheduleOnce(ChangeEventArgs e) =>
+            Process(ItemForm.ItemFormMessage.ScheduleOnce);
 
-            Process(ItemForm.ItemFormMessage.NewNewCategoryNameSet((string)e.Value));
-        }
+        protected void OnScheduleRepeat(ChangeEventArgs e) =>
+            Process(ItemForm.ItemFormMessage.ScheduleRepeat);
+
+        protected void OnScheduleCompleted(ChangeEventArgs e) =>
+            Process(ItemForm.ItemFormMessage.ScheduleCompleted);
 
         protected void OnNewCategoryNameFocusOut(FocusEventArgs e) =>
             Process(ItemForm.ItemFormMessage.NewCategoryNameBlur);
