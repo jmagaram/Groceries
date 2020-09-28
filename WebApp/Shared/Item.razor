@@ -14,10 +14,10 @@
         var note = ItemQry.Note.Value;
         <text>&nbsp;| &nbsp;</text>@ItemQry.Note.Value
     }
-    <text>&nbsp;|&nbsp;</text><button class="btn btn-secondary btn-sm" @onclick:preventDefault @onclick="@(async () => { await OnClickDelete.InvokeAsync(ItemQry.ItemId); })">
+    <text>&nbsp;|&nbsp;</text><button class="btn btn-outline-secondary btn-sm" @onclick:preventDefault @onclick="@(async () => { await OnClickDelete.InvokeAsync(ItemQry.ItemId); })">
         Delete
     </button>
-    <a href="./ItemEdit2/@ItemQry.ItemId.Item">edit</a>
+    <a class="btn btn-outline-secondary btn-sm" href="./ItemEdit2/@ItemQry.ItemId.Item">Edit</a>
 </p>
 
 @code {
