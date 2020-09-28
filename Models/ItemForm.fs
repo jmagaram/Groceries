@@ -25,6 +25,11 @@ type Form =
       CategoryChoiceList: StateTypes.Category list
       Stores: QueryTypes.ItemAvailability list }
 
+type ItemFormResult =
+    { Item: StateTypes.Item
+      InsertCategory: StateTypes.Category option
+      NotSold: StateTypes.StoreId list }
+
 type ItemFormMessage =
     | ItemNameSet of string
     | ItemNameBlur
@@ -90,7 +95,7 @@ let categoryNameBlur (f: Form) =
     | Some c ->
         { f with
               CategoryMode = ChooseExisting
-              CategoryChoice = Some c 
+              CategoryChoice = Some c
               NewCategoryName = "" }
 
 let scheduleOnce f = { f with ScheduleKind = Once }
@@ -239,6 +244,51 @@ let rec handleMessage msg (f: Form) =
     | StoresSetAvailability (id: StateTypes.StoreId, isSold: bool) -> f |> storesSetAvailability id isSold
     | Transaction msgs -> msgs |> Seq.fold (fun f m -> handleMessage m f) f
 
+let asItemFormResult (now: DateTimeOffset) (f: Form) =
+    let insertCategory =
+        match f.CategoryMode with
+        | ChooseExisting -> None
+        | CreateNew ->
+            Some
+                { StateTypes.Category.CategoryName =
+                      f
+                      |> categoryNameValidation
+                      |> Result.okOrThrow
+                      |> Option.get
+                  StateTypes.Category.CategoryId = Id.create StateTypes.CategoryId }
+
+    let item =
+        { StateTypes.Item.ItemId =
+              f.ItemId
+              |> Option.defaultWith (fun () -> Id.create StateTypes.ItemId)
+          StateTypes.Item.ItemName = f |> itemNameValidation |> Result.okOrThrow
+          StateTypes.Item.CategoryId =
+              match f.CategoryMode with
+              | ChooseExisting -> f.CategoryChoice
+              | CreateNew -> insertCategory
+              |> Option.map (fun i -> i.CategoryId)
+          StateTypes.Item.Quantity = f |> quantityValidation |> Result.okOrThrow
+          StateTypes.Item.Note = f |> noteValidation |> Result.okOrThrow
+          StateTypes.Item.Schedule =
+              match f.ScheduleKind with
+              | Completed -> StateTypes.Schedule.Completed
+              | Once -> StateTypes.Schedule.Once
+              | Repeat ->
+                  { StateTypes.Repeat.Frequency = f.Frequency
+                    StateTypes.Repeat.PostponedUntil =
+                        f.Postpone
+                        |> Option.map (fun d -> now.AddDays(d |> float)) }
+                  |> StateTypes.Repeat }
+
+    let notSold =
+        f.Stores
+        |> Seq.choose (fun i -> if i.IsSold = false then Some i.Store.StoreId else None)
+        |> List.ofSeq
+
+    { Item = item
+      InsertCategory = insertCategory
+      NotSold = notSold }
+
 type Form with
     member me.ItemNameValidation = me |> itemNameValidation
     member me.NoteValidation = me |> noteValidation
@@ -247,3 +297,4 @@ type Form with
     member me.PostponeChoices = me |> postponeChoices
     member me.CategoryNameValidation = me |> categoryNameValidation
     member me.HasErrors = me |> hasErrors
+    member me.ItemFormResult(now) = me |> asItemFormResult now
