@@ -7,7 +7,6 @@
   <ItemGroup>
     <Compile Include="CommonTypes.fs" />
     <Compile Include="Common.fs" />
-    <Compile Include="Contacts.fs" />
     <Compile Include="SynchronizationTypes.fs" />
     <Compile Include="Synchronization.fs" />
     <Compile Include="ValidationTypes.fs" />
