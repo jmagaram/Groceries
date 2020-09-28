@@ -91,15 +91,17 @@
             }
         </label>
     </div>
-    <div>
-        Stores:<br />
-        @foreach (var i in Form.Stores) {
-            <div>
-                <label>
-                    <input type="checkbox" @oninput="e =>OnStoreChange(e, i.Store.StoreId)" id="@i.Store.StoreId" name="@i.Store.StoreId" checked="@i.IsSold">&nbsp;@i.Store.StoreName.Item
-                </label>
-            </div>
-        }
-    </div>
+    @if (!Form.Stores.IsEmpty) {
+        <div>
+            Stores:<br />
+            @foreach (var i in Form.Stores) {
+                <div>
+                    <label>
+                        <input type="checkbox" @oninput="e =>OnStoreChange(e, i.Store.StoreId)" id="@i.Store.StoreId" name="@i.Store.StoreId" checked="@i.IsSold">&nbsp;@i.Store.StoreName.Item
+                    </label>
+                </div>
+            }
+        </div>
+    }
     <button class="btn btn-primary" type="button" @onclick="e=>OnSubmitCallback.InvokeAsync(e)" disabled="@(!Form.HasErrors)">Submit</button>
 </form>
