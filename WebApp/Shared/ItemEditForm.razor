@@ -54,13 +54,17 @@
                 }
             </select>
         </label>
-        @if (Form.CategoryMode.IsCreateNew) {
-            <input value="@Form.NewCategoryName" @oninput="OnNewCategoryNameChange" @onfocusout="OnNewCategoryNameFocusOut" placeholder="Category name" />
-            @if (Form.CategoryNameValidation.IsError) {
-                <span>Error: @Form.CategoryNameValidation.ErrorValue</span>
-            }
-        }
     </div>
+    @if (Form.CategoryMode.IsCreateNew) {
+        <div>
+            <label>
+                <input style="margin-left:30px" value="@Form.NewCategoryName" @oninput="OnNewCategoryNameChange" @onfocusout="OnNewCategoryNameFocusOut" placeholder="Category name" />
+                @if (Form.CategoryNameValidation.IsError) {
+                    <span>Error: @Form.CategoryNameValidation.ErrorValue</span>
+                }
+            </label>
+        </div>
+    }
     @if (Form.ScheduleKind.IsRepeat) {
         <div>
             <label>
