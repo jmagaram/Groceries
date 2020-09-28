@@ -1,4 +1,5 @@
-﻿using Models;
+﻿using Microsoft.FSharp.Core;
+using Models;
 using System;
 using System.Reactive.Linq;
 using System.Reactive.Subjects;
@@ -13,6 +14,8 @@ namespace WebApp.Data {
             _state = new BehaviorSubject<State>(StateModule.createSampleData);
             _stateObs = _state;
             ShoppingListQry = _stateObs.Select(Query.shoppingListQry);
+            Converter<Unit, DateTimeOffset> clock = (x => DateTimeOffset.Now);
+            Clock = FuncConvert.ToFSharpFunc(clock);
         }
 
         public State Current => _state.Value;
@@ -22,6 +25,8 @@ namespace WebApp.Data {
             state = StateModule.update(msg, state);
             _state.OnNext(state);
         }
+
+        public FSharpFunc<Unit, DateTimeOffset> Clock { get; private set; }
 
         public IObservable<QueryTypes.ShoppingListQry> ShoppingListQry { get; }
     }
