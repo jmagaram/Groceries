@@ -300,27 +300,36 @@ type Form with
 open StateTypes
 
 let itemFormResultAsTransaction (r: ItemFormResult) (s: State) =
-    let insertCategory =
-        r.InsertCategory
-        |> Option.map (InsertCategory >> CategoryMessage)
-
-    let upsertItem = r.Item |> (UpsertItem >> ItemMessage)
-
-    let syncNotSold =
-        Seq.leftJoin (s |> State.stores) (r.NotSold |> Seq.ofList) (fun a b -> a.StoreId = b)
-        |> Seq.map (fun (a, b) ->
-            let isNotSold = b |> Seq.tryHead |> Option.isSome
-            let f = if isNotSold then UpsertNotSoldItem else DeleteNotSoldItem
-
-            let ns =
-                { StateTypes.NotSoldItem.StoreId = a.StoreId
-                  StateTypes.NotSoldItem.ItemId = r.Item.ItemId }
-
-            ns |> f |> NotSoldItemMessage)
-
     seq {
-        yield! insertCategory |> Option.toList
-        yield upsertItem
-        //yield! syncNotSold
+        yield!
+            r.InsertCategory
+            |> Option.map (InsertCategory >> CategoryMessage)
+            |> Option.toList
+
+        yield r.Item |> (UpsertItem >> ItemMessage)
+
+        let nsExpected = r.NotSold
+
+        let nsCurrent =
+            s
+            |> State.notSoldItems
+            |> Seq.choose (fun i -> if i.ItemId = r.Item.ItemId then Some i.StoreId else None)
+
+        let nsToRemove = nsCurrent |> Seq.except nsExpected
+        let nsToAdd = nsExpected |> Seq.except nsCurrent
+
+        yield!
+            nsToAdd
+            |> Seq.map (fun s ->
+                { StateTypes.NotSoldItem.StoreId = s
+                  StateTypes.NotSoldItem.ItemId = r.Item.ItemId }
+                |> (InsertNotSoldItem >> NotSoldItemMessage))
+
+        yield!
+            nsToRemove
+            |> Seq.map (fun s ->
+                { StateTypes.NotSoldItem.StoreId = s
+                  StateTypes.NotSoldItem.ItemId = r.Item.ItemId }
+                |> (DeleteNotSoldItem >> NotSoldItemMessage))
     }
     |> StateMessage.Transaction

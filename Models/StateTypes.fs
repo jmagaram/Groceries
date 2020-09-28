@@ -102,7 +102,6 @@ type StoreMessage =
 
 type NotSoldItemMessage =
     | InsertNotSoldItem of NotSoldItem
-    | UpsertNotSoldItem of NotSoldItem
     | DeleteNotSoldItem of NotSoldItem
 
 type SettingsMessage =
