@@ -1,10 +1,11 @@
-﻿@page "/itemedit2"
+﻿@page "/itemedit2/{ID:guid}"
+@page "/itemedit2"
 @using Common
 @using Microsoft.FSharp.Core;
-@using Models; 
-@using static Models.ItemForm; 
+@using Models;
+@using static Models.ItemForm;
 
-@if(Form.ItemId.IsSome()) {
+@if (Form.ItemId.IsSome()) {
     <h1>Edit item</h1>
 }
 else {

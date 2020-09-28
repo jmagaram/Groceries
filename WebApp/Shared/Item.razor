@@ -17,6 +17,7 @@
     <text>&nbsp;|&nbsp;</text><button class="btn btn-secondary btn-sm" @onclick:preventDefault @onclick="@(async () => { await OnClickDelete.InvokeAsync(ItemQry.ItemId); })">
         Delete
     </button>
+    <a href="./ItemEdit2/@ItemQry.ItemId.Item">edit</a>
 </p>
 
 @code {

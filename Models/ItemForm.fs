@@ -215,6 +215,10 @@ let editItem (clock: Clock) cats (i: QueryTypes.ItemQry) =
           |> Seq.sortBy (fun i -> i.Store.StoreName)
           |> List.ofSeq }
 
+let editItemFromGuid (itemId:Guid) (clock:Clock) (s:StateTypes.State) = 
+    let itemQry = s |> Query.itemQryFromGuid itemId
+    editItem clock (s |> State.categories) itemQry
+
 let hasErrors f =
     (f |> itemNameValidation |> Result.isOk)
     && (f |> quantityValidation |> Result.isOk)

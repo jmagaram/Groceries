@@ -1,5 +1,6 @@
 ﻿module Models.Query
 
+open System
 open Models
 open Models.QueryTypes
 open Models.StateTypes
@@ -27,6 +28,10 @@ let itemQry (item: Item) state =
           |> Seq.map (fun s ->
               { ItemAvailability.Store = s
                 IsSold = isItemSold s item state }) }
+
+let itemQryFromGuid (itemId: Guid) state =
+    let item = state |> State.itemsTable |> DataTable.findCurrent (ItemId itemId)
+    itemQry item state
 
 let categoryQry (cat: Category option) state =
     { Category = cat
