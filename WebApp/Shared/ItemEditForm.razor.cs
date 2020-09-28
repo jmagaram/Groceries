@@ -63,5 +63,9 @@ namespace WebApp.Shared {
                 Process(trans);
             }
         }
+
+        protected void OnStoreChange(ChangeEventArgs e, StateTypes.StoreId store) =>
+            Process(ItemForm.ItemFormMessage.NewStoresSetAvailability(store, (bool)e.Value));
+
     }
 }

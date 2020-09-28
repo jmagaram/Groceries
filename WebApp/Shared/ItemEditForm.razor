@@ -1,5 +1,4 @@
 ﻿@using Microsoft.FSharp.Core;
-@using Microsoft.FSharp.Core;
 @using static Models.ItemForm;
 @using static Common.OptionExtensions;
 
@@ -40,8 +39,8 @@
                     string key = i.CategoryId.Item.ToString();
                     bool isSelected = Form.CategoryMode.IsChooseExisting && Form.CategoryChoice.IsSomeValue(i);
                     <option selected="@isSelected" value="@key">
-                    @description
-                </option>
+                        @description
+                    </option>
                 }
                 <option selected="@Form.CategoryMode.IsCreateNew" value="@chooseCreateNewCategory">New category...</option>
                 }
@@ -56,5 +55,22 @@
             </div>
         }
     </div>
-
+    <div>
+        <label>
+            Note: <textarea rows="3" @oninput="OnNoteChange" @onfocusout="OnNoteFocusOut" placeholder="preferred brand, extra soft!, ..." value="@Form.Note" />
+            @if (Form.NoteValidation.IsError) {
+                <span>Error: @Form.NoteValidation.ErrorValue</span>
+            }
+        </label>
+    </div>
+    <div>
+        Stores:<br />
+        @foreach (var i in Form.Stores) {
+            <div>
+                <label>
+                    <input type="checkbox" @oninput="e =>OnStoreChange(e, i.Store.StoreId)" id="@i.Store.StoreId" name="@i.Store.StoreId" checked="@i.IsSold">&nbsp;@i.Store.StoreName.Item
+                </label>
+            </div>
+        }
+    </div>
 </form>
