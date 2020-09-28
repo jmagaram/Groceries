@@ -4,6 +4,10 @@
 @using Models; 
 @using static Models.ItemForm; 
 
- 
-<h1>Edit item</h1>
+@if(Form.ItemId.IsSome()) {
+    <h1>Edit item</h1>
+}
+else {
+    <h1>New item</h1>
+}
 <ItemEditForm Form="@Form"></ItemEditForm>
