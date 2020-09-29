@@ -2,8 +2,7 @@
 @using Common
 @using Microsoft.FSharp.Core;
 
-<h1>Shopping List</h1>
-<select @onchange="OnStoreFilterChange">
+<select style="font-size:200%; margin-bottom:12px" @onchange="OnStoreFilterChange">
     <option value="@Guid.Empty" selected="@(StoreFilter==Guid.Empty)">All Stores</option>
     @foreach (var s in StoreFilterChoices) {
         Guid key = s.StoreId.Item;
@@ -12,9 +11,9 @@
         <option selected="@isSelected" value="@key.ToString()">@description</option>
     }
 </select>
-<a href="editstore">new store</a>
+&nbsp;<a href="editstore">new store</a>
 @if (StoreFilter != Guid.Empty) {
-    <text>&nbsp;| &nbsp;</text><a href="editstore/@StoreFilter">edit store</a>
+    <text>&nbsp;|&nbsp;</text><a href="editstore/@StoreFilter">edit store</a>
 }
 
 @foreach (var cat in Items.Select(j => j.Category).Distinct().OrderBy(i => i)) {
