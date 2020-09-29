@@ -14,10 +14,3 @@ type SearchTerm = SearchTerm of string
 type FormattedText = FormattedText of TextSpan list
 
 type Highlighter = SearchTerm -> string -> FormattedText
-
-type ItemEditForm = 
-    { ItemName : TextBox<ItemName, StringError list> 
-    } 
-
-type ItemEditFormMessage = 
-    | ItemNameMessage of TextBoxMessage
