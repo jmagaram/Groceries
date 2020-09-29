@@ -198,6 +198,15 @@ module Repeat =
             |> Some
 
 [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
+module Item =
+
+    let markComplete (i:Item) =
+        match i.Schedule with
+        | Completed -> i
+        | Once -> { i with Schedule = Completed }
+        | Repeat r -> { i with Schedule = Repeat { r with PostponedUntil = None }}
+
+[<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
 module Settings =
 
     let create = { Settings.StoreFilter = None }
@@ -410,12 +419,21 @@ module State =
             |> insertCategory { CategoryId = Id.create CategoryId; CategoryName = n }
         | CategoryFormMessage.UpdateCategory i -> s |> updateCategory i
 
+    let markItemComplete id s = 
+        let item =
+            s 
+            |> itemsTable 
+            |> DataTable.findCurrent id
+            |> Item.markComplete
+        s |> mapItems (DataTable.update item)
+
     let rec update msg s =
         match msg with
         | SubmitStoreForm msg -> s |> submitStoreForm msg
         | SubmitCategoryForm msg -> s |> submitCategoryForm msg
         | ItemMessage msg ->
             match msg with
+            | MarkComplete i -> s |> markItemComplete i
             | InsertItem i -> s |> insertItem i
             | UpdateItem i -> s |> updateItem i
             | UpsertItem i -> s |> upsertItem i

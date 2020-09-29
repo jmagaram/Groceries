@@ -96,6 +96,7 @@ type State =
       Settings: SettingsRow }
 
 type ItemMessage =
+    | MarkComplete of ItemId
     | InsertItem of Item
     | UpdateItem of Item
     | UpsertItem of Item

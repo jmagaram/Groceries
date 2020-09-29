@@ -1,22 +1,40 @@
 ﻿@using Common
 
+<style>
+    .divider {
+        color: lightgray
+    }
+
+    .completed {
+        text-decoration: line-through
+    }
+</style>
 <p>
-    <a href="./ItemEdit2/@ItemQry.ItemId.Item">@ItemQry.ItemName.Item</a>
+    @{
+        var itemNameClass = ItemQry.Schedule.IsCompleted ? "completed" : "";
+    }
+    <a href="./ItemEdit2/@ItemQry.ItemId.Item">
+        <span class="@itemNameClass">@ItemQry.ItemName.Item</span>
+    </a>
     @if (ItemQry.Category.IsSome()) {
         var category = ItemQry.Category.Value.CategoryName;
-        <text>&nbsp;| &nbsp;</text>@ItemQry.Category.Value.CategoryName.Item
+        <span class="divider">&nbsp;|&nbsp;</span>@ItemQry.Category.Value.CategoryName.Item
     }
     @if (ItemQry.Quantity.IsSome()) {
         var quantity = ItemQry.Quantity.Value;
-        <text>&nbsp;| &nbsp;</text>@ItemQry.Quantity.Value.Item
+        <span class="divider">&nbsp;|&nbsp;</span>@ItemQry.Quantity.Value.Item
     }
     @if (ItemQry.Note.IsSome()) {
         var note = ItemQry.Note.Value;
-        <text>&nbsp;| &nbsp;</text>@ItemQry.Note.Value.Item
+        <span class="divider">&nbsp;|&nbsp;</span>@ItemQry.Note.Value.Item
     }
-    <text>&nbsp;|&nbsp;</text><button class="btn btn-outline-secondary btn-sm" @onclick:preventDefault @onclick="@(async () => { await OnClickDelete.InvokeAsync(ItemQry.ItemId); })">
-        Delete
-    </button>
+    <span class="divider">&nbsp;|&nbsp;</span><a href="." @onclick:preventDefault @onclick="@(async () => { await OnClickDelete.InvokeAsync(ItemQry.ItemId); })">
+        delete
+    </a>
+    @if(!ItemQry.Schedule.IsCompleted) {
+    <span class="divider">&nbsp;|&nbsp;</span><a href="." @onclick:preventDefault @onclick="@(async () => { await OnClickComplete.InvokeAsync(ItemQry.ItemId); })">complete
+</a>}
+
 </p>
 
 @code {
@@ -25,4 +43,7 @@
 
     [Parameter]
     public EventCallback<Models.StateTypes.ItemId> OnClickDelete { get; set; }
+
+    [Parameter]
+    public EventCallback<Models.StateTypes.ItemId> OnClickComplete { get; set; }
 }
