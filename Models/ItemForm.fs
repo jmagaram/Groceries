@@ -43,8 +43,8 @@ type ItemFormMessage =
     | FrequencySet of int<StateTypes.days>
     | PostponeSet of int<StateTypes.days>
     | PostponeClear
-    | CategoryModeIsChooseExisting
-    | CategoryModeIsCreateNew
+    | CategoryModeChooseExisting
+    | CategoryModeCreateNew
     | ChooseCategoryUncategorized
     | ChooseCategory of Guid
     | NewCategoryNameSet of string
@@ -62,8 +62,8 @@ let noteChange s f = { f with Note = s }
 let noteValidation f = f.Note |> Note.tryParseOptional
 let noteBlur f = { f with Note = f.Note |> Note.normalizer }
 
-let categoryModeIsChooseExisting f = { f with CategoryMode = ChooseExisting }
-let categoryModeIsCreateNew f = { f with CategoryMode = CreateNew }
+let categoryModeChooseExisting f = { f with CategoryMode = ChooseExisting }
+let categoryModeCreateNew f = { f with CategoryMode = CreateNew }
 let chooseCategoryUncategorized f = { f with CategoryChoice = None }
 
 let chooseCategory i f =
@@ -239,8 +239,8 @@ let rec handleMessage msg (f: Form) =
     | FrequencySet v -> f |> frequencySet v
     | PostponeSet d -> f |> postponeSet d
     | PostponeClear -> f |> postponeClear
-    | CategoryModeIsChooseExisting -> f |> categoryModeIsChooseExisting
-    | CategoryModeIsCreateNew -> f |> categoryModeIsCreateNew
+    | CategoryModeChooseExisting -> f |> categoryModeChooseExisting
+    | CategoryModeCreateNew -> f |> categoryModeCreateNew
     | ChooseCategoryUncategorized -> f |> chooseCategoryUncategorized
     | ChooseCategory g -> f |> chooseCategory g
     | NewCategoryNameSet s -> f |> categoryNameChange s

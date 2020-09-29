@@ -52,17 +52,17 @@ namespace WebApp.Shared {
             string value = (string)(e.Value);
             if (value == chooseUncategorized) {
                 var chooseUncategorized = ItemForm.ItemFormMessage.ChooseCategoryUncategorized;
-                var modeIsChoose = ItemForm.ItemFormMessage.CategoryModeIsChooseExisting;
+                var modeIsChoose = ItemForm.ItemFormMessage.CategoryModeChooseExisting;
                 var trans = ItemForm.ItemFormMessage.NewTransaction(new List<ItemForm.ItemFormMessage> { modeIsChoose, chooseUncategorized });
                 Process(trans);
             }
             else if (value == chooseCreateNewCategory) {
-                var modeIsCreateNew = ItemForm.ItemFormMessage.CategoryModeIsCreateNew;
+                var modeIsCreateNew = ItemForm.ItemFormMessage.CategoryModeCreateNew;
                 Process(modeIsCreateNew);
             }
             else if (Guid.TryParse(value, out Guid categoryId)) {
                 var chooseSomeCat = ItemForm.ItemFormMessage.NewChooseCategory(categoryId);
-                var modeIsChoose = ItemForm.ItemFormMessage.CategoryModeIsChooseExisting;
+                var modeIsChoose = ItemForm.ItemFormMessage.CategoryModeChooseExisting;
                 var trans = ItemForm.ItemFormMessage.NewTransaction(new List<ItemForm.ItemFormMessage> { modeIsChoose, chooseSomeCat });
                 Process(trans);
             }
