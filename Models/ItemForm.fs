@@ -220,10 +220,10 @@ let editItemFromGuid (itemId:Guid) (clock:Clock) (s:StateTypes.State) =
     editItem clock (s |> State.categories) itemQry
 
 let hasErrors f =
-    (f |> itemNameValidation |> Result.isOk)
-    && (f |> quantityValidation |> Result.isOk)
-    && (f |> noteValidation |> Result.isOk)
-    && (f |> categoryNameValidation |> Result.isOk)
+    (f |> itemNameValidation |> Result.isError)
+    || (f |> quantityValidation |> Result.isError)
+    || (f |> noteValidation |> Result.isError)
+    || (f |> categoryNameValidation |> Result.isError)
 
 let rec handleMessage msg (f: Form) =
     match msg with
