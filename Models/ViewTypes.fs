@@ -1,7 +1,6 @@
 ﻿module Models.ViewTypes
 open Models.StateTypes
 open Models.ValidationTypes
-open Models.FormsTypes
 
 type TextFormat =
     | Highlight

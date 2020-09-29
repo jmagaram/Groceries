@@ -15,8 +15,6 @@
     <Compile Include="State.fs" />
     <Compile Include="QueryTypes.fs" />
     <Compile Include="Query.fs" />
-    <Compile Include="FormsTypes.fs" />
-    <Compile Include="Forms.fs" />
     <Compile Include="ViewTypes.fs" />
     <Compile Include="View.fs" />
     <Compile Include="ItemForm.fs" />
