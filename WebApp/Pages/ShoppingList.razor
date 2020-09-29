@@ -19,8 +19,15 @@
 
 @foreach (var cat in Items.Select(j => j.Category).Distinct().OrderBy(i => i)) {
     var categoryName = cat.IsNone() ? "(Uncategorized)" : cat.Value.CategoryName.Item;
-    <h4>@categoryName</h4>
-    @foreach (var item in Items.Where(i => i.Category.Equals(cat))) {
+    @if (cat.IsSome()) {
+        <h4>@categoryName&nbsp;<a style="font-size:unset" href="categoryedit/@cat.Value.CategoryId.Item">edit category</a></h4>
+    }
+    else {
+        <h4>
+            @categoryName
+        </h4>
+    }
+    @foreach (var item in Items.Where(i => object.Equals(i.Category, cat))) {
         <WebApp.Shared.Item OnClickDelete="OnClickDelete" ItemQry="@item" />
     }
 }

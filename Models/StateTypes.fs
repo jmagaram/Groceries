@@ -67,9 +67,14 @@ type NotSoldItem =
     interface IKey<NotSoldItem> with
         member this.Key = this
 
+// Issue of GUID values being created but not logged anywhere; impure function
 type StoreFormMessage =
     | InsertStore of StoreName
     | UpdateStore of Store
+
+type CategoryFormMessage =
+    | InsertCategory of CategoryName
+    | UpdateCategory of Category
 
 // include "show empty categories"
 type Settings = 
@@ -114,6 +119,7 @@ type SettingsMessage =
 
 type StateMessage =
     | SubmitStoreForm of StoreFormMessage
+    | SubmitCategoryForm of CategoryFormMessage
     | ItemMessage of ItemMessage
     | StoreMessage of StoreMessage
     | CategoryMessage of CategoryMessage

@@ -403,9 +403,17 @@ module State =
             |> insertStore { StoreId = Id.create StoreId; StoreName = n }
         | StoreFormMessage.UpdateStore i -> s |> updateStore i
 
+    let submitCategoryForm msg s =
+        match msg with
+        | CategoryFormMessage.InsertCategory n ->
+            s
+            |> insertCategory { CategoryId = Id.create CategoryId; CategoryName = n }
+        | CategoryFormMessage.UpdateCategory i -> s |> updateCategory i
+
     let rec update msg s =
         match msg with
         | SubmitStoreForm msg -> s |> submitStoreForm msg
+        | SubmitCategoryForm msg -> s |> submitCategoryForm msg
         | ItemMessage msg ->
             match msg with
             | InsertItem i -> s |> insertItem i

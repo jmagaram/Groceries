@@ -1,0 +1,75 @@
+﻿@page "/categoryedit"
+@page "/categoryedit/{ID:guid}"
+
+@using Microsoft.FSharp.Core;
+@using Models
+@using static Common.OptionExtensions;
+@using static Models.CategoryForm
+
+@if (Form.Mode.IsCreateCategoryMode) {
+    <h3>New category</h3>
+}
+else {
+    <h3>Edit category</h3>
+}
+
+<form>
+    <div>
+        <label>
+            Name: <input @oninput="OnNameChange" @onfocusout="OnNameFocusOut" value="@Form.CategoryName" />
+            @if (Form.CategoryNameValidation.IsError) {
+                <span>Error: @Form.CategoryNameValidation.ErrorValue</span>
+            }
+        </label>
+    </div>
+    @if (Form.Mode.IsEditCategoryMode) {
+        <button class="btn btn-outline-secondary" type="button" @onclick="e=>OnDelete()">Delete</button>
+    }
+    <button class="btn btn-primary" type="button" @onclick="OnSubmit" disabled="@(Form.HasErrors)">Submit</button>
+</form>
+
+@code {
+
+    protected override void OnInitialized() {
+        if (Id.HasValue) {
+            Form = CategoryForm.editExistingFromGuid(Id.Value, StateService.Current);
+        }
+        else {
+            Form = CategoryForm.createNew;
+        }
+    }
+
+    [Inject]
+    public Data.ApplicationStateService StateService { get; set; }
+
+    [Inject]
+    NavigationManager Navigation { get; set; }
+
+    [Parameter]
+    public Guid? Id { get; set; }
+
+    protected Form Form { get; set; }
+
+    private void Process(CategoryFormMessage msg) {
+        Form = handle(msg, Form);
+    }
+
+    protected void OnNameChange(ChangeEventArgs e) =>
+        Process(CategoryFormMessage.NewCategoryNameSet((string)e.Value));
+
+
+    protected void OnNameFocusOut(FocusEventArgs e) =>
+        Process(CategoryFormMessage.CategoryNameBlur);
+
+    protected void OnDelete() {
+        var msg = StateTypes.StateMessage.NewCategoryMessage(StateTypes.CategoryMessage.NewDeleteCategory(Form.CategoryId.Value));
+        StateService.Update(msg);
+        Navigation.NavigateTo("shoppinglist");
+    }
+
+    protected void OnSubmit() {
+        var msg = StateTypes.StateMessage.NewSubmitCategoryForm(Form.CategoryFormResult());
+        StateService.Update(msg);
+        Navigation.NavigateTo("shoppinglist");
+    }
+}
