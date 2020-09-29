@@ -1,0 +1,75 @@
+﻿@page "/editstore"
+@page "/editstore/{ID:guid}"
+
+@using Microsoft.FSharp.Core;
+@using Models
+@using static Common.OptionExtensions;
+@using static Models.StoreForm
+
+@if (Form.Mode.IsCreateStoreMode) {
+    <h3>New store</h3>
+}
+else {
+    <h3>Edit store</h3>
+}
+
+<form>
+    <div>
+        <label>
+            Name: <input @oninput="OnNameChange" @onfocusout="OnNameFocusOut" value="@Form.StoreName" />
+            @if (Form.StoreNameValidation.IsError) {
+                <span>Error: @Form.StoreNameValidation.ErrorValue</span>
+            }
+        </label>
+    </div>
+    @if (Form.Mode.IsEditStoreMode) {
+        <button class="btn btn-outline-secondary" type="button" @onclick="e=>OnDelete()">Delete</button>
+    }
+    <button class="btn btn-primary" type="button" @onclick="OnSubmit" disabled="@(Form.HasErrors)">Submit</button>
+</form>
+
+@code {
+
+    protected override void OnInitialized() {
+        if (Id.HasValue) {
+            Form = StoreForm.editExistingFromGuid(Id.Value, StateService.Current);
+        }
+        else {
+            Form = StoreForm.createNew;
+        }
+    }
+
+    [Inject]
+    public Data.ApplicationStateService StateService { get; set; }
+
+    [Inject]
+    NavigationManager Navigation { get; set; }
+
+    [Parameter]
+    public Guid? Id { get; set; }
+
+    protected Form Form { get; set; }
+
+    private void Process(StoreFormMessage msg) {
+        Form = handle(msg, Form);
+    }
+
+    protected void OnNameChange(ChangeEventArgs e) =>
+        Process(StoreFormMessage.NewStoreNameSet((string)e.Value));
+
+
+    protected void OnNameFocusOut(FocusEventArgs e) =>
+        Process(StoreFormMessage.StoreNameBlur);
+
+    protected void OnDelete() {
+        var msg = StateTypes.StateMessage.NewStoreMessage(StateTypes.StoreMessage.NewDeleteStore(Form.StoreId.Value));
+        StateService.Update(msg);
+        Navigation.NavigateTo("shoppinglist");
+    }
+
+    protected void OnSubmit() {
+        var msg = StateTypes.StateMessage.NewSubmitStoreForm(Form.StoreFormResult());
+        StateService.Update(msg);
+        Navigation.NavigateTo("shoppinglist");
+    }
+}

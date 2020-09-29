@@ -12,6 +12,10 @@
         <option selected="@isSelected" value="@key.ToString()">@description</option>
     }
 </select>
+<a href="editstore">new store</a>
+@if (StoreFilter != Guid.Empty) {
+    <text>&nbsp;| &nbsp;</text><a href="editstore/@StoreFilter">edit store</a>
+}
 
 @foreach (var cat in Items.Select(j => j.Category).Distinct().OrderBy(i => i)) {
     var categoryName = cat.IsNone() ? "(Uncategorized)" : cat.Value.CategoryName.Item;

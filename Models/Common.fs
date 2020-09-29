@@ -135,6 +135,8 @@ module Result =
         | Ok _ -> true
         | Error _ -> false
 
+    let isError r = r |> isOk |> not
+
     let error r =
         match r with
         | Ok v -> None

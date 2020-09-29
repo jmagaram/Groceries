@@ -396,8 +396,16 @@ module State =
         |> doesNotSellItem "QFC" "Dried flax seeds"
         |> doesNotSellItem "Costco" "Chocolate bars"
 
+    let submitStoreForm msg s =
+        match msg with
+        | StoreFormMessage.InsertStore n ->
+            s
+            |> insertStore { StoreId = Id.create StoreId; StoreName = n }
+        | StoreFormMessage.UpdateStore i -> s |> updateStore i
+
     let rec update msg s =
         match msg with
+        | SubmitStoreForm msg -> s |> submitStoreForm msg
         | ItemMessage msg ->
             match msg with
             | InsertItem i -> s |> insertItem i

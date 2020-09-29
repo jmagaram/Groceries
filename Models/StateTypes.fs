@@ -67,6 +67,10 @@ type NotSoldItem =
     interface IKey<NotSoldItem> with
         member this.Key = this
 
+type StoreFormMessage =
+    | InsertStore of StoreName
+    | UpdateStore of Store
+
 // include "show empty categories"
 type Settings = 
     { StoreFilter: StoreId option }
@@ -109,6 +113,7 @@ type SettingsMessage =
     | SetStoreFilterTo of StoreId
 
 type StateMessage =
+    | SubmitStoreForm of StoreFormMessage
     | ItemMessage of ItemMessage
     | StoreMessage of StoreMessage
     | CategoryMessage of CategoryMessage
