@@ -1,4 +1,5 @@
 ﻿@using Common
+@using static Common.OptionExtensions
 
 <style>
     .divider {
@@ -16,9 +17,9 @@
     <a href="./ItemEdit2/@ItemQry.ItemId.Item">
         <span class="@itemNameClass">@ItemQry.ItemName.Item</span>
     </a>
-    @if (ItemQry.Category.IsSome()) {
-        var category = ItemQry.Category.Value.CategoryName;
-        <span class="divider">&nbsp;|&nbsp;</span>@ItemQry.Category.Value.CategoryName.Item
+    @if (!HideCategory) {
+        var catName = ItemQry.Category.AsEnumerable().Select(i => i.CategoryName.Item).SingleOrDefault() ?? "(Uncategorized)";
+        <span class="divider">&nbsp;|&nbsp;</span>@catName
     }
     @if (ItemQry.Quantity.IsSome()) {
         var quantity = ItemQry.Quantity.Value;
@@ -31,15 +32,19 @@
     <span class="divider">&nbsp;|&nbsp;</span><a href="." @onclick:preventDefault @onclick="@(async () => { await OnClickDelete.InvokeAsync(ItemQry.ItemId); })">
         delete
     </a>
-    @if(!ItemQry.Schedule.IsCompleted) {
-    <span class="divider">&nbsp;|&nbsp;</span><a href="." @onclick:preventDefault @onclick="@(async () => { await OnClickComplete.InvokeAsync(ItemQry.ItemId); })">complete
-</a>}
+    @if (!ItemQry.Schedule.IsCompleted) {
+        <span class="divider">&nbsp;|&nbsp;</span><a href="." @onclick:preventDefault @onclick="@(async () => { await OnClickComplete.InvokeAsync(ItemQry.ItemId); })">
+            complete
+        </a>}
 
 </p>
 
 @code {
     [Parameter]
     public Models.QueryTypes.ItemQry ItemQry { get; set; }
+
+    [Parameter]
+    public bool HideCategory { get; set; } = false;
 
     [Parameter]
     public EventCallback<Models.StateTypes.ItemId> OnClickDelete { get; set; }

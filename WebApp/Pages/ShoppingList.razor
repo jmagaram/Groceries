@@ -27,7 +27,7 @@
         }
     </div>
     @foreach (var item in Items.Where(i => object.Equals(i.Category, cat))) {
-        <WebApp.Shared.Item OnClickDelete="OnClickDelete" OnClickComplete="OnClickComplete" ItemQry="@item" />
+        <WebApp.Shared.Item HideCategory="true" OnClickDelete="OnClickDelete" OnClickComplete="OnClickComplete" ItemQry="@item" />
     }
 }
 <a class="btn btn-primary" href="itemedit2">New item</a>
