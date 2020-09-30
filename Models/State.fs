@@ -199,7 +199,7 @@ module Repeat =
         |> Option.map (fun future ->
             let duration = future - now
 
-            truncate (duration.TotalDays)
+            round (duration.TotalDays)
             |> int
             |> (*) 1<StateTypes.days>)
 
