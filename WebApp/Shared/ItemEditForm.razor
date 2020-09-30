@@ -70,8 +70,8 @@
                 <select @onchange="OnRepeatChange">
                     @foreach (var i in Form.FrequencyChoices) {
                         string description = Models.ItemForm.frequencyAsText(i);
-                        string key = i.ToString();
-                        bool isSelected = i == Form.Frequency;
+                        string key = i.Item.ToString();
+                        bool isSelected = i.Equals(Form.Frequency);
                         <option selected="@isSelected" value="@key">@description</option>
                     }
                 </select>

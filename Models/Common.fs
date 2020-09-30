@@ -44,6 +44,16 @@ module Common =
         memoize empty tryFind add f
 
 [<AutoOpen>]
+module Math =
+    let divRem divisor dividend =
+        if divisor = 0 then
+            None
+        else
+            Some
+                {| Quotient = dividend / divisor
+                   Remainder = dividend % divisor |}
+
+[<AutoOpen>]
 module Seq =
 
     let takeAtMost n source =

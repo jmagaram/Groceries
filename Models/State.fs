@@ -166,25 +166,35 @@ module StoreName =
     let asText (StoreName s) = s
 
 [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
-module Repeat =
+module Frequency =
 
-    let frequencyRules = { Min = 1<days>; Max = 365<days> }
-    let validator = RangeValidation.createValidator frequencyRules
-    let toResult = RangeValidation.toResult id validator id id
+    let rules = { Min = 1<days>; Max = 365<days> }
 
-    let commonFrequencies =
+    let create =
+        let normalizer = id
+        let validator = RangeValidation.createValidator rules
+        let onSuccess = Frequency
+        let onFailure = id
+        RangeValidation.toResult normalizer validator onSuccess onFailure
+
+    let goodDefault = 7<days> |> create |> Result.okOrThrow 
+
+    let common =
         [ 1; 3; 7; 14; 30; 60; 90 ]
-        |> List.map (fun i -> i * 1<days>)
+        |> List.map (fun i -> i * 1<days> |> create |> Result.okOrThrow)
+
+    let days (Frequency v) = v
+
+[<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
+module Repeat =
 
     let commonPostponeDays =
         [ 1; 3; 7; 14; 30; 60; 90 ]
         |> List.map (fun i -> i * 1<days>)
 
-    let create interval postponedUntil =
-        interval
-        |> RangeValidation.createValidator frequencyRules
-        |> Option.map Error
-        |> Option.defaultValue (Ok { Frequency = interval; PostponedUntil = postponedUntil })
+    let create frequency postponedUntil =
+        { Frequency = frequency
+          PostponedUntil = postponedUntil }
 
     let postponeRelative (clock: Clock) (postponeUntil: DateTimeOffset option) =
         match postponeUntil with
@@ -200,11 +210,13 @@ module Repeat =
 [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
 module Item =
 
-    let markComplete (i:Item) =
+    let markComplete (i: Item) =
         match i.Schedule with
         | Completed -> i
         | Once -> { i with Schedule = Completed }
-        | Repeat r -> { i with Schedule = Repeat { r with PostponedUntil = None }}
+        | Repeat r ->
+            { i with
+                  Schedule = Repeat { r with PostponedUntil = None } }
 
 [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
 module Settings =
@@ -362,9 +374,10 @@ module State =
 
             s |> mapItems (DataTable.update item)
 
-        let makeRepeat n days postpone (s: State) =
+        let makeRepeat n freq postpone (s: State) =
+            let freq = Frequency.create freq |> Result.okOrThrow 
             let postpone = postpone |> Option.map (fun d -> now.AddDays(d |> float))
-            let repeat = Repeat.create days postpone |> Result.okOrThrow
+            let repeat = Repeat.create freq postpone
 
             let item =
                 s
@@ -419,12 +432,13 @@ module State =
             |> insertCategory { CategoryId = Id.create CategoryId; CategoryName = n }
         | CategoryFormMessage.UpdateCategory i -> s |> updateCategory i
 
-    let markItemComplete id s = 
+    let markItemComplete id s =
         let item =
-            s 
-            |> itemsTable 
+            s
+            |> itemsTable
             |> DataTable.findCurrent id
             |> Item.markComplete
+
         s |> mapItems (DataTable.update item)
 
     let rec update msg s =

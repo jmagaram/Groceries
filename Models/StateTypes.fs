@@ -6,6 +6,12 @@ open SynchronizationTypes
 [<Measure>]
 type days
 
+[<Measure>]
+type wks
+
+[<Measure>]
+type mnth 
+
 [<Struct>]
 type ItemId = ItemId of Guid
 
@@ -18,8 +24,11 @@ type Note = Note of string
 [<Struct>]
 type Quantity = Quantity of string
 
+[<Struct>]
+type Frequency = Frequency of int<days>
+
 type Repeat =
-    { Frequency: int<days>
+    { Frequency: Frequency
       PostponedUntil: DateTimeOffset option }
 
 type Schedule =

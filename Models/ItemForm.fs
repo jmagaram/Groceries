@@ -17,7 +17,7 @@ type Form =
       Quantity: string
       Note: string
       ScheduleKind: ScheduleKind
-      Frequency: int<StateTypes.days>
+      Frequency: StateTypes.Frequency
       Postpone: int<StateTypes.days> option
       CategoryMode: CategoryMode
       NewCategoryName: string
@@ -102,22 +102,37 @@ let scheduleOnce f = { f with ScheduleKind = Once }
 let scheduleCompleted f = { f with ScheduleKind = Completed }
 let scheduleRepeat f = { f with ScheduleKind = Repeat }
 
-let frequencyCoerceIntoBounds d = Repeat.frequencyRules |> RangeValidation.forceIntoBounds d
-let frequencySet v f = { f with Frequency = v |> frequencyCoerceIntoBounds }
-let frequencyDefault = 7<StateTypes.days> |> frequencyCoerceIntoBounds
+let frequencyCoerceIntoBounds d = Frequency.rules |> RangeValidation.forceIntoBounds d
+
+let frequencySet v f =
+    { f with
+          Frequency =
+              v
+              |> frequencyCoerceIntoBounds
+              |> Frequency.create
+              |> Result.okOrThrow }
 
 let frequencyChoices (f: Form) =
     f.Frequency
-    :: Repeat.commonFrequencies
-    |> Seq.map frequencyCoerceIntoBounds
+    :: Frequency.common
     |> Seq.distinct
     |> Seq.sort
     |> List.ofSeq
 
-let frequencyAsText (d: int<StateTypes.days>) =
-    let d = d |> int
-    let monthsExactly = if d / 30 > 0 && d % 30 = 0 then Some(d / 30) else None
-    let weeksExactly = if d / 7 > 0 && d % 7 = 0 then Some(d / 7) else None
+let frequencyAsText (d: StateTypes.Frequency) =
+    let d = d |> Frequency.days |> int
+
+    let monthsExactly =
+        d
+        |> divRem 30
+        |> Option.filter (fun i -> i.Quotient >= 1 && i.Remainder = 0)
+        |> Option.map (fun i -> i.Quotient)
+
+    let weeksExactly =
+        d
+        |> divRem 7
+        |> Option.filter (fun i -> i.Quotient >= 1 && i.Remainder = 0)
+        |> Option.map (fun i -> i.Quotient)
 
     match monthsExactly with
     | Some m -> if m = 1 then "Monthly" else sprintf "Every %i months" m
@@ -163,7 +178,7 @@ let createNewItem stores cats =
       Quantity = ""
       Note = ""
       ScheduleKind = ScheduleKind.Once
-      Frequency = frequencyDefault
+      Frequency = Frequency.goodDefault
       Postpone = postponeDefault
       CategoryMode = CategoryMode.ChooseExisting
       NewCategoryName = ""
@@ -195,8 +210,8 @@ let editItem (clock: Clock) cats (i: QueryTypes.ItemQry) =
           | StateTypes.Schedule.Repeat _ -> Repeat
       Frequency =
           match i.Schedule with
-          | StateTypes.Schedule.Completed -> frequencyDefault
-          | StateTypes.Schedule.Once -> frequencyDefault
+          | StateTypes.Schedule.Completed -> Frequency.goodDefault
+          | StateTypes.Schedule.Once -> Frequency.goodDefault
           | StateTypes.Schedule.Repeat r -> r.Frequency
       Postpone =
           match i.Schedule with
@@ -215,7 +230,7 @@ let editItem (clock: Clock) cats (i: QueryTypes.ItemQry) =
           |> Seq.sortBy (fun i -> i.Store.StoreName)
           |> List.ofSeq }
 
-let editItemFromGuid (itemId:Guid) (clock:Clock) (s:StateTypes.State) = 
+let editItemFromGuid (itemId: Guid) (clock: Clock) (s: StateTypes.State) =
     let itemQry = s |> Query.itemQryFromGuid itemId
     editItem clock (s |> State.categories) itemQry
 
