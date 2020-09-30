@@ -3,16 +3,14 @@
 @using static Common.OptionExtensions;
 <style>
     .nav-pills li {
-        margin-right:5px;
+        margin-right: 5px;
     }
 </style>
 <form>
-    <button class="btn btn-outline-light btn-sm" type="button" @onclick="_=>OnSaveChanges()" disabled="@Form.HasErrors"><span class="oi oi-chevron-left" aria-hidden="true"></span></button>
     <h4 style="display:inline-block">
         @if (Form.ItemId.IsSome()) {<span>Edit item</span>}
         else { <span>New item</span>}
     </h4>
-
     @if (Form.ScheduleKind.IsRepeat && Form.Postpone.IsSome()) {
         string daysAway = Models.ItemForm.postponeDurationAsText(Form.Postpone.Value);
         <div class="alert alert-info" role="alert">
@@ -112,46 +110,42 @@
             }
         </label>
     </div>
-    <hr />
     <ul class="nav nav-pills">
         <li>
+            @*Delete*@
             @if (Form.CanDelete) {
-                <button class="btn btn-outline-secondary" type="button" @onclick="_=>OnDelete()"><span class="oi oi-trash" aria-hidden="true"></span></button>
+                <button class="btn btn-secondary" type="button" @onclick="_=>OnDelete()"><span class="oi oi-trash" aria-hidden="true"></span></button>
             }
-        </li>        @*SUBMIT CHANGES*@
-    <li>
-        <button class="btn btn-primary" type="button" @onclick="_=>OnSaveChanges()" disabled="@Form.HasErrors"><span class="oi oi-chevron-left" aria-hidden="true"></span></button>
-    </li>
-        @*COMPLETE AND SCHEDULE NEXT*@
-    <li>
-        @if (Form.ScheduleKind.IsRepeat) {
-            <button type="button" disabled="@Form.HasErrors" class="btn btn-primary" @onclick="OnSubmitPurchased"><span class="oi oi-check" aria-hidden="true"></span>&nbsp;Complete</button>
-        }
-    </li>
-        @*POSTPONE X DAYS AND SUBMIT*@
-    <li>
-        @if (Form.ScheduleKind.IsRepeat && Form.Postpone.IsNone()) {
-            <div class="dropdown">
-                <button disabled="@Form.HasErrors" class="btn btn-primary dropdown-toggle" role="button" id="dropdownMenuLink" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                    <span class="oi oi-calendar" aria-hidden="true"></span>&nbsp;Postpone
-                </button>
-                <div class="dropdown-menu" aria-labelledby="dropdownMenuLink">
-                    @foreach (var i in Form.PostponeChoices) {
-                        <button class="dropdown-item" @onclick="@(_=>OnSubmitPostponed(i))" type="button">@Models.ItemForm.postponeDurationAsText(i)</button>
-                    }
+        </li>
+        <li>
+            @*Save changes*@
+            <button class="btn btn-secondary" type="button" @onclick="_=>OnSaveChanges()" disabled="@Form.HasErrors"><span class="oi oi-pencil" aria-hidden="true"></span>&nbsp;Save</button>
+        </li>
+        <li>
+            @*Postpone X days and submit*@
+            @if (Form.ScheduleKind.IsRepeat && Form.Postpone.IsNone()) {
+                <div class="dropdown">
+                    <button disabled="@Form.HasErrors" class="btn btn-primary dropdown-toggle" role="button" id="dropdownMenuLink" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                        <span class="oi oi-calendar" aria-hidden="true"></span>&nbsp;Postpone
+                    </button>
+                    <div class="dropdown-menu" aria-labelledby="dropdownMenuLink">
+                        @foreach (var i in Form.PostponeChoices) {
+                            <button class="dropdown-item" @onclick="@(_=>OnSubmitPostponed(i))" type="button">@Models.ItemForm.postponeDurationAsText(i)</button>
+                        }
+                    </div>
                 </div>
-            </div>
-        }
-    </li>
-        @*MARK COMPLETE AND TOTALLY DONE*@
-    <li>
-        @if (Form.ScheduleKind.IsOnce) {
-            <button type="button" disabled="@Form.HasErrors" class="btn btn-primary" @onclick="OnSubmitPurchased"><span class="oi oi-check" aria-hidden="true"></span>&nbsp;Complete</button>
-        }
-    </li>
-        @*CANCEL*@
-    <li>
-        <button type="button" class="btn btn-primary" @onclick="OnCancel"><span class="oi oi-action-undo" aria-hidden="true"></span></button>
-    </li>    </ul>
+            }
+        </li>
+        <li>
+            @*Purchased! (for repeating and only-once)*@
+            @if (!Form.ScheduleKind.IsCompleted) {
+                <button type="button" disabled="@Form.HasErrors" class="btn btn-primary" @onclick="OnSubmitPurchased"><span class="oi oi-check" aria-hidden="true"></span>&nbsp;Complete</button>
+            }
+        </li>
+        @*To cancel can just Go Back for now
+            <li>
+                <button type="button" class="btn btn-primary" @onclick="OnCancel"><span class="oi oi-action-undo" aria-hidden="true"></span></button>
+            </li>*@
+    </ul>
 
 </form>
