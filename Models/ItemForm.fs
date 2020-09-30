@@ -126,20 +126,17 @@ let frequencyAsText (d: StateTypes.Frequency) =
         d
         |> divRem 30
         |> Option.filter (fun i -> i.Quotient >= 1 && i.Remainder = 0)
-        |> Option.map (fun i -> i.Quotient)
+        |> Option.map (fun i -> if i.Quotient = 1 then "Monthly" else sprintf "Every %i months" i.Quotient)
 
     let weeksExactly =
         d
         |> divRem 7
         |> Option.filter (fun i -> i.Quotient >= 1 && i.Remainder = 0)
-        |> Option.map (fun i -> i.Quotient)
+        |> Option.map (fun i -> if i.Quotient = 1 then "Weekly" else sprintf "Every %i weeks" i.Quotient)
 
-    match monthsExactly with
-    | Some m -> if m = 1 then "Monthly" else sprintf "Every %i months" m
-    | None ->
-        match weeksExactly with
-        | Some w -> if w = 1 then "Weekly" else sprintf "Every %i weeks" w
-        | None -> if d = 1 then "Daily" else sprintf "Every %i days" d
+    monthsExactly
+    |> Option.orElse weeksExactly
+    |> Option.defaultWith (fun () -> if d = 1 then "Daily" else sprintf "Every %i days" d)
 
 let postponeSet v f = { f with Postpone = Some v }
 let postponeClear f = { f with Postpone = None }
