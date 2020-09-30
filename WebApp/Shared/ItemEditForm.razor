@@ -3,22 +3,29 @@
 @using static Common.OptionExtensions;
 
 <form>
-    <div>
-        <div>
-            <input @oninput="OnScheduleOnce" checked="@Form.ScheduleKind.IsOnce" type="radio" id="setOnce" name="status" value="once">
-            <label for="setOnce">Once</label>
+    @if (Form.ScheduleKind.IsRepeat && Form.Postpone.IsSome()) {
+        string daysAway = Models.ItemForm.postponeDurationAsText(Form.Postpone.Value);
+        <div class="alert alert-info" role="alert">
+            Postponed for
+            <div class="dropdown">
+                <button class="btn btn-link dropdown-toggle" role="button" id="dropdownMenuLink" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                    +@($"{daysAway}")
+                </button>
+                <div class="dropdown-menu" aria-labelledby="dropdownMenuLink">
+                    @foreach (var i in Form.PostponeChoices) {
+                        <button class="dropdown-item" @onclick="@(e=>OnPostponeClick(i))" type="button">@Models.ItemForm.postponeDurationAsText(i)</button>
+                    }
+                    <div class="dropdown-divider"></div>
+                    <button class="dropdown-item" type="button" @onclick="@(e=>OnPostponeClear())">Add to shopping list now</button>
+                </div>
+            </div>
         </div>
-
-        <div>
-            <input @oninput="OnScheduleRepeat" checked="@Form.ScheduleKind.IsRepeat" type="radio" id="setRepeat" name="status" value="repeat">
-            <label for="setRepeat">Repeat</label>
+    }
+    @if (Form.ScheduleKind.IsCompleted) {
+        <div class="alert alert-success" role="alert">
+            Complete! <button type="button" class="btn btn-link" role="button" @onclick="@(e => OnClickScheduleOnce())">Add to shopping list again</button>
         </div>
-
-        <div>
-            <input @oninput="OnScheduleCompleted" checked="@Form.ScheduleKind.IsCompleted" type="radio" id="setComplete" name="status" value="complete">
-            <label for="setComplete">Complete</label>
-        </div>
-    </div>
+    }
     <div>
         <label>
             Name: <input @oninput="OnItemNameChange" @onfocusout="OnItemNameFocusOut" placeholder="Apples, Canned Tuna, ..." value="@Form.ItemName" />
@@ -63,7 +70,7 @@
             </label>
         </div>
     }
-    @if (Form.ScheduleKind.IsRepeat) {
+    @if (Form.ScheduleKind.IsOnce || Form.ScheduleKind.IsRepeat) {
         <div>
             <label>
                 Frequency:
@@ -74,20 +81,7 @@
                         bool isSelected = i.Equals(Form.Frequency);
                         <option selected="@isSelected" value="@key">@description</option>
                     }
-                </select>
-            </label>
-        </div>
-        <div>
-            <label>
-                Postpone:
-                <select @onchange="OnPostponeChange">
-                    <option selected="@Form.Postpone.IsNone()" value="@notPostponed">On shopping list now (not postponed)</option>
-                    @foreach (var i in Form.PostponeChoices) {
-                        string description = Models.ItemForm.postponeDurationAsText(i);
-                        string key = i.ToString();
-                        bool isSelected = Form.Postpone.IsSomeValue(i);
-                        <option selected="@isSelected" value="@key">+ @description</option>
-                    }
+                    <option selected="@(!Form.ScheduleKind.IsRepeat)" value="@notRepeating">(just once; does not repeat)</option>
                 </select>
             </label>
         </div>
@@ -112,8 +106,39 @@
             }
         </label>
     </div>
-    @if (Form.ItemId.IsSome()) {
-        <button class="btn btn-outline-secondary" type="button" @onclick="e=>OnDeleteCallback.InvokeAsync(e)">Delete</button>
+    <hr />
+    @*DELETE*@
+    @if (Form.CanDelete) {
+        <button class="btn btn-outline-secondary" type="button" @onclick="_=>OnDelete()">Delete</button>
     }
-    <button class="btn btn-primary" type="button" @onclick="e=>OnClickOkCallback.InvokeAsync(Form.ItemFormResult(DateTimeOffset.Now))" disabled="@Form.HasErrors">Submit</button>
+    @*SUBMIT CHANGES*@
+    <button class="btn btn-primary" type="button" @onclick="_=>OnSaveChanges()" disabled="@Form.HasErrors">Submit</button>
+
+    @*COMPLETE AND SCHEDULE NEXT*@
+    @if (Form.ScheduleKind.IsRepeat) {
+        <button type="button" disabled="@Form.HasErrors" class="btn btn-primary" @onclick="OnSubmitPurchased">Complete (this one)</button>
+    }
+
+    @*POSTPONE X DAYS AND SUBMIT*@
+    @if (Form.ScheduleKind.IsRepeat && Form.Postpone.IsNone()) {
+        <div class="dropdown">
+            <button disabled="@Form.HasErrors" class="btn btn-primary dropdown-toggle" role="button" id="dropdownMenuLink" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                Postpone
+            </button>
+            <div class="dropdown-menu" aria-labelledby="dropdownMenuLink">
+                @foreach (var i in Form.PostponeChoices) {
+                    <button class="dropdown-item" @onclick="@(_=>OnSubmitPostponed(i))" type="button">@Models.ItemForm.postponeDurationAsText(i)</button>
+                }
+            </div>
+        </div>
+    }
+
+    @*MARK COMPLETE AND TOTALLY DONE*@
+    @if (Form.ScheduleKind.IsOnce) {
+        <button type="button" disabled="@Form.HasErrors" class="btn btn-primary" @onclick="OnSubmitPurchased">Complete</button>
+    }
+
+    @*CANCEL*@
+    <button type="button" class="btn btn-primary" @onclick="OnCancel">Cancel</button>
+
 </form>

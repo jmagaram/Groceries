@@ -50,6 +50,7 @@ type ItemFormMessage =
     | NewCategoryNameSet of string
     | NewCategoryNameBlur
     | StoresSetAvailability of store: StateTypes.StoreId * isSold: bool
+    | Purchased
     | Transaction of ItemFormMessage seq
 
 let itemNameValidation f = f.ItemName |> ItemName.tryParse
@@ -139,8 +140,15 @@ let frequencyAsText (d: StateTypes.Frequency) =
     |> Option.defaultWith (fun () -> if d = 1 then "Daily" else sprintf "Every %i days" d)
 
 let postponeSet v f = { f with Postpone = Some v }
+let postponeUntilFrequency f = { f with Postpone = f.Frequency |> Frequency.days |> Some }
 let postponeClear f = { f with Postpone = None }
 let postponeDefault = None
+
+let purchased f =
+    match f.ScheduleKind with
+    | Once -> f |> scheduleCompleted
+    | Repeat -> f |> postponeUntilFrequency
+    | Completed -> f
 
 let postponeDurationAsText (d: int<StateTypes.days>) =
     let d = d |> int
@@ -168,6 +176,8 @@ let storesSetAvailability id isSold f =
           Stores =
               f.Stores
               |> List.map (fun a -> if a.Store.StoreId = id then { a with IsSold = isSold } else a) }
+
+let canDelete (f:Form) = f.ItemId.IsSome
 
 let createNewItem stores cats =
     { ItemId = None
@@ -214,7 +224,7 @@ let editItem (clock: Clock) cats (i: QueryTypes.ItemQry) =
           match i.Schedule with
           | StateTypes.Schedule.Completed -> postponeDefault
           | StateTypes.Schedule.Once -> postponeDefault
-          | StateTypes.Schedule.Repeat r -> r |> Repeat.due (clock())
+          | StateTypes.Schedule.Repeat r -> r |> Repeat.due (clock ())
       CategoryMode = CategoryMode.ChooseExisting
       NewCategoryName = ""
       CategoryChoice = i.Category
@@ -258,6 +268,7 @@ let rec handleMessage msg (f: Form) =
     | NewCategoryNameSet s -> f |> categoryNameChange s
     | NewCategoryNameBlur -> f |> categoryNameBlur
     | StoresSetAvailability (id: StateTypes.StoreId, isSold: bool) -> f |> storesSetAvailability id isSold
+    | Purchased -> f |> purchased
     | Transaction msgs -> msgs |> Seq.fold (fun f m -> handleMessage m f) f
 
 let asItemFormResult (now: DateTimeOffset) (f: Form) =
@@ -303,6 +314,29 @@ let asItemFormResult (now: DateTimeOffset) (f: Form) =
       InsertCategory = insertCategory
       NotSold = notSold }
 
+// Delete and CanDelete
+// Submit (if no errors)
+// 
+
+//Add to shopping list again
+//ONLY IF Completed
+
+//Mark complete and schedule next and submit
+//ONLY IF Repeating AND CanSubmit
+
+//Postpone x days (without commit)
+//ONLY if postponed
+
+//Remove recurrence and add to shopping list now (without commit)
+//ONLY IF repeat and postponed
+
+//Postpone x days (with commit)
+//ONLY IF repeating and not postponed
+
+//Mark complete and done
+//ONLY IF can submit and Once
+
+
 type Form with
     member me.ItemNameValidation = me |> itemNameValidation
     member me.NoteValidation = me |> noteValidation
@@ -312,6 +346,7 @@ type Form with
     member me.CategoryNameValidation = me |> categoryNameValidation
     member me.HasErrors = me |> hasErrors
     member me.ItemFormResult(now) = me |> asItemFormResult now
+    member me.CanDelete = me |> canDelete
 
 open StateTypes
 

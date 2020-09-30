@@ -33,5 +33,7 @@ namespace WebApp.Pages {
             StateService.Update(transaction);
             Navigation.NavigateTo("shoppinglist");
         }
+
+        protected void OnCancel() => Navigation.NavigateTo("shoppinglist");
     }
 }

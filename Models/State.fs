@@ -185,6 +185,8 @@ module Frequency =
 
     let days (Frequency v) = v
 
+    let fromNow (now: DateTimeOffset) f = now.AddDays(f |> days |> float)
+
 [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
 module Repeat =
 
@@ -199,17 +201,11 @@ module Repeat =
         |> Option.map (fun future ->
             let duration = future - now
 
-            round (duration.TotalDays)
-            |> int
-            |> (*) 1<StateTypes.days>)
+            round (duration.TotalDays) |> int |> (*) 1<StateTypes.days>)
 
     let completeOne (now: DateTimeOffset) r =
         { r with
-              PostponedUntil =
-                  r.Frequency
-                  |> Frequency.days
-                  |> int
-                  |> fun d -> now.AddDays(float d) |> Some }
+              PostponedUntil = r.Frequency |> Frequency.fromNow now |> Some }
 
 [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
 module Item =

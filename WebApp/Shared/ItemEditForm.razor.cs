@@ -36,11 +36,28 @@ namespace WebApp.Shared {
         protected void OnScheduleOnce(ChangeEventArgs e) =>
             Process(ItemForm.ItemFormMessage.ScheduleOnce);
 
+        protected void OnClickScheduleOnce() =>
+            Process(ItemForm.ItemFormMessage.ScheduleOnce);
+
         protected void OnScheduleRepeat(ChangeEventArgs e) =>
             Process(ItemForm.ItemFormMessage.ScheduleRepeat);
 
         protected void OnScheduleCompleted(ChangeEventArgs e) =>
             Process(ItemForm.ItemFormMessage.ScheduleCompleted);
+
+        protected void OnSaveChanges() {
+            OnSaveChangesCallback.InvokeAsync(Form.ItemFormResult(DateTimeOffset.Now));
+        }
+
+        protected void OnSubmitPurchased() {
+            Process(ItemForm.ItemFormMessage.Purchased);
+            OnClickOkCallback.InvokeAsync(Form.ItemFormResult(DateTimeOffset.Now));
+        }
+
+        protected void OnSubmitPostponed(int days) {
+            Process(ItemForm.ItemFormMessage.NewPostponeSet(days));
+            OnClickOkCallback.InvokeAsync(Form.ItemFormResult(DateTimeOffset.Now));
+        }
 
         protected void OnNewCategoryNameFocusOut(FocusEventArgs e) =>
             Process(ItemForm.ItemFormMessage.NewCategoryNameBlur);
@@ -68,12 +85,22 @@ namespace WebApp.Shared {
             }
         }
 
+        const int notRepeating = -1;
+
         protected void OnRepeatChange(ChangeEventArgs e) {
             if (int.TryParse((string)(e.Value), out int d)) {
-                //if (d == -1) {
-                //    Form = Form.ScheduleOnlyOnce();
-                //}
-                Process(ItemForm.ItemFormMessage.NewFrequencySet(d));
+                if (d == notRepeating) {
+                    var removePostpone = ItemForm.ItemFormMessage.PostponeClear;
+                    var scheduleOnce = ItemForm.ItemFormMessage.ScheduleOnce;
+                    var trans = ItemForm.ItemFormMessage.NewTransaction(new List<ItemForm.ItemFormMessage> { removePostpone, scheduleOnce });
+                    Process(trans);
+                }
+                else {
+                    var scheduleIsRepeat = ItemForm.ItemFormMessage.ScheduleRepeat;
+                    var setFrequency = ItemForm.ItemFormMessage.NewFrequencySet(d);
+                    var trans = ItemForm.ItemFormMessage.NewTransaction(new List<ItemForm.ItemFormMessage> { scheduleIsRepeat, setFrequency });
+                    Process(trans);
+                }
             }
         }
 
@@ -81,13 +108,23 @@ namespace WebApp.Shared {
 
         protected void OnPostponeChange(ChangeEventArgs e) {
             string value = (string)(e.Value);
-            //if (value == notPostponed) {
-            //    Form = Form.RemovePostpone();
-            //}
-            if (int.TryParse(value, out int days)) {
+            if (value == notPostponed) {
+                Process(ItemForm.ItemFormMessage.PostponeClear);
+            }
+            else if (int.TryParse(value, out int days)) {
                 Process(ItemForm.ItemFormMessage.NewPostponeSet(days));
             }
         }
+
+        protected void OnPostponeClick(int days) =>
+            Process(ItemForm.ItemFormMessage.NewPostponeSet(days));
+
+        protected void OnPostponeClear() =>
+            Process(ItemForm.ItemFormMessage.PostponeClear);
+
+        protected void OnCancel() => OnCancelCallback.InvokeAsync(null);
+
+        protected void OnDelete() => OnDeleteCallback.InvokeAsync(Form.ItemId.Value);
 
         protected void OnStoreChange(ChangeEventArgs e, StateTypes.StoreId store) =>
             Process(ItemForm.ItemFormMessage.NewStoresSetAvailability(store, (bool)e.Value));
@@ -96,7 +133,13 @@ namespace WebApp.Shared {
         public EventCallback<ItemForm.ItemFormResult> OnClickOkCallback { get; set; }
 
         [Parameter]
-        public EventCallback<MouseEventArgs> OnDeleteCallback { get; set; }
+        public EventCallback<StateTypes.ItemId> OnDeleteCallback { get; set; }
+
+        [Parameter]
+        public EventCallback OnCancelCallback { get; set; }
+
+        [Parameter]
+        public EventCallback<ItemForm.ItemFormResult> OnSaveChangesCallback { get; set; }
 
     }
 }
