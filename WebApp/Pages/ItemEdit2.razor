@@ -5,10 +5,4 @@
 @using Models;
 @using static Models.ItemForm;
 
-@if (Form.ItemId.IsSome()) {
-    <h1>Edit item</h1>
-}
-else {
-    <h1>New item</h1>
-}
 <ItemEditForm OnCancelCallback="@OnCancel" OnClickOkCallback="@OnClickOk" Form="@Form"></ItemEditForm>
