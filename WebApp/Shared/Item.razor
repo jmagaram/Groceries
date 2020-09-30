@@ -19,11 +19,14 @@
     @if (ItemQry.Schedule.IsRepeat) {
         @if (ItemQry.Schedule is Schedule.Repeat r && r.Item.PostponedUntil.IsSome()) {
             var daysAway = RepeatModule.due(DateTimeOffset.Now, r.Item).Value;
-            if (daysAway >= 7) {
-                <span class="badge badge-secondary">@($"{daysAway}d")</span>
+            if (daysAway >= 30) {
+                <span class="badge badge-secondary">@($"{daysAway/30}m")</span>
+            }
+            else if (daysAway >= 7) {
+                <span class="badge badge-dark">@($"{daysAway/7}w")</span>
             }
             else if (daysAway > 0) {
-                <span class="badge badge-primary">@($"{daysAway}d")</span>
+                <span class="badge badge-success">@($"{daysAway}d")</span>
             }
             else {
                 <span class="badge badge-warning">@($"{-daysAway}d ago")</span>
