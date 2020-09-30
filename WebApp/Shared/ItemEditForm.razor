@@ -60,11 +60,11 @@
         </label>
     </div>
     @if (Form.CategoryMode.IsCreateNew) {
-        <div class="form-group" style="margin-left:30px; width:200px;" >
-                <input class="form-control" value="@Form.NewCategoryName" @oninput="OnNewCategoryNameChange" @onfocusout="OnNewCategoryNameFocusOut" placeholder="Category name" />
-                @if (Form.CategoryNameValidation.IsError) {
-                    <span class="text-danger">@Form.CategoryNameValidation.ErrorValue</span>
-                }
+        <div class="form-group" style="margin-left:30px; width:200px;">
+            <input class="form-control" value="@Form.NewCategoryName" @oninput="OnNewCategoryNameChange" @onfocusout="OnNewCategoryNameFocusOut" placeholder="Category name" />
+            @if (Form.CategoryNameValidation.IsError) {
+                <span class="text-danger">@Form.CategoryNameValidation.ErrorValue</span>
+            }
         </div>
     }
     @if (Form.ScheduleKind.IsOnce || Form.ScheduleKind.IsRepeat) {
@@ -88,7 +88,7 @@
             Stores<br />
             @foreach (var i in Form.Stores) {
                 <div class="form-check">
-                    <input class="form-check-input" type="checkbox" @oninput="e =>OnStoreChange(e, i.Store.StoreId)" id="@i.Store.StoreId" name="@i.Store.StoreId" checked="@i.IsSold"/>
+                    <input class="form-check-input" type="checkbox" @oninput="e =>OnStoreChange(e, i.Store.StoreId)" id="@i.Store.StoreId" name="@i.Store.StoreId" checked="@i.IsSold" />
                     <label class="form-check-label" for="@i.Store.StoreId">@i.Store.StoreName.Item</label>
                 </div>
             }
@@ -105,21 +105,21 @@
     <hr />
     @*DELETE*@
     @if (Form.CanDelete) {
-        <button class="btn btn-outline-secondary" type="button" @onclick="_=>OnDelete()">Delete</button>
+        <button class="btn btn-outline-secondary" type="button" @onclick="_=>OnDelete()"><span class="oi oi-trash" aria-hidden="true"></span></button>
     }
     @*SUBMIT CHANGES*@
-    <button class="btn btn-primary" type="button" @onclick="_=>OnSaveChanges()" disabled="@Form.HasErrors">Submit</button>
+    <button class="btn btn-primary" type="button" @onclick="_=>OnSaveChanges()" disabled="@Form.HasErrors"><span class="oi oi-chevron-left" aria-hidden="true"></span></button>
 
     @*COMPLETE AND SCHEDULE NEXT*@
     @if (Form.ScheduleKind.IsRepeat) {
-        <button type="button" disabled="@Form.HasErrors" class="btn btn-primary" @onclick="OnSubmitPurchased">Complete (this one)</button>
+        <button type="button" disabled="@Form.HasErrors" class="btn btn-primary" @onclick="OnSubmitPurchased"><span class="oi oi-check" aria-hidden="true"></span>&nbsp;Complete</button>
     }
 
     @*POSTPONE X DAYS AND SUBMIT*@
     @if (Form.ScheduleKind.IsRepeat && Form.Postpone.IsNone()) {
         <div class="dropdown">
             <button disabled="@Form.HasErrors" class="btn btn-primary dropdown-toggle" role="button" id="dropdownMenuLink" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                Postpone
+                <span class="oi oi-calendar" aria-hidden="true"></span>&nbsp;Postpone
             </button>
             <div class="dropdown-menu" aria-labelledby="dropdownMenuLink">
                 @foreach (var i in Form.PostponeChoices) {
@@ -131,10 +131,10 @@
 
     @*MARK COMPLETE AND TOTALLY DONE*@
     @if (Form.ScheduleKind.IsOnce) {
-        <button type="button" disabled="@Form.HasErrors" class="btn btn-primary" @onclick="OnSubmitPurchased">Complete</button>
+<button type="button" disabled="@Form.HasErrors" class="btn btn-primary" @onclick="OnSubmitPurchased"><span class="oi oi-check" aria-hidden="true"></span>&nbsp;Complete</button>
     }
 
     @*CANCEL*@
-    <button type="button" class="btn btn-primary" @onclick="OnCancel">Cancel</button>
+<button type="button" class="btn btn-primary" @onclick="OnCancel"><span class="oi oi-action-undo" aria-hidden="true"></span></button>
 
 </form>
