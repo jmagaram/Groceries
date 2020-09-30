@@ -6,10 +6,9 @@
     @if (Form.ScheduleKind.IsRepeat && Form.Postpone.IsSome()) {
         string daysAway = Models.ItemForm.postponeDurationAsText(Form.Postpone.Value);
         <div class="alert alert-info" role="alert">
-            Postponed for
-            <div class="dropdown">
+            <div style="display:inline-block" class="dropdown">
                 <button class="btn btn-link dropdown-toggle" role="button" id="dropdownMenuLink" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                    +@($"{daysAway}")
+                    Postponed +@($"{daysAway}")
                 </button>
                 <div class="dropdown-menu" aria-labelledby="dropdownMenuLink">
                     @foreach (var i in Form.PostponeChoices) {
@@ -26,26 +25,26 @@
             Complete! <button type="button" class="btn btn-link" role="button" @onclick="@(e => OnClickScheduleOnce())">Add to shopping list again</button>
         </div>
     }
-    <div>
+    <div class="form-group">
         <label>
-            Name: <input @oninput="OnItemNameChange" @onfocusout="OnItemNameFocusOut" placeholder="Apples, Canned Tuna, ..." value="@Form.ItemName" />
+            Item <input class="form-control" @oninput="OnItemNameChange" @onfocusout="OnItemNameFocusOut" placeholder="Apples, Canned Tuna, ..." value="@Form.ItemName" />
             @if (Form.ItemNameValidation.IsError) {
-                <span>Error: @Form.ItemNameValidation.ErrorValue</span>
+                <small class="form-text text-muted">Error: @Form.ItemNameValidation.ErrorValue</small>
             }
         </label>
     </div>
-    <div>
+    <div class="form-group">
         <label>
-            Quantity: <input @oninput="OnQuantityChange" @onfocusout="OnQuantityFocusOut" placeholder="several, 2 lb., lots, ..." value="@Form.Quantity" />
+            Quantity <input class="form-control" @oninput="OnQuantityChange" @onfocusout="OnQuantityFocusOut" placeholder="several, 2 lb., lots, ..." value="@Form.Quantity" />
             @if (Form.QuantityValidation.IsError) {
-                <span>Error: @Form.QuantityValidation.ErrorValue</span>
+                <small class="form-text text-danger">@Form.QuantityValidation.ErrorValue</small>
             }
         </label>
     </div>
-    <div>
+    <div class="form-group">
         <label>
-            Category:
-            <select @onchange="OnExistingCategoryChange">
+            Category
+            <select class="form-control" @onchange="OnExistingCategoryChange">
                 <option selected="@(Form.CategoryMode.IsChooseExisting && Form.CategoryChoice.IsNone())" value="@chooseUncategorized">Uncategorized</option>
                 @foreach (var i in Form.CategoryChoiceList) {
                     string description = i.CategoryName.Item;
@@ -61,20 +60,18 @@
         </label>
     </div>
     @if (Form.CategoryMode.IsCreateNew) {
-        <div>
-            <label>
-                <input style="margin-left:30px" value="@Form.NewCategoryName" @oninput="OnNewCategoryNameChange" @onfocusout="OnNewCategoryNameFocusOut" placeholder="Category name" />
+        <div class="form-group" style="margin-left:30px; width:200px;" >
+                <input class="form-control" value="@Form.NewCategoryName" @oninput="OnNewCategoryNameChange" @onfocusout="OnNewCategoryNameFocusOut" placeholder="Category name" />
                 @if (Form.CategoryNameValidation.IsError) {
-                    <span>Error: @Form.CategoryNameValidation.ErrorValue</span>
+                    <span class="text-danger">@Form.CategoryNameValidation.ErrorValue</span>
                 }
-            </label>
         </div>
     }
     @if (Form.ScheduleKind.IsOnce || Form.ScheduleKind.IsRepeat) {
-        <div>
+        <div class="form-group">
             <label>
-                Frequency:
-                <select @onchange="OnRepeatChange">
+                Frequency
+                <select class="form-control" @onchange="OnRepeatChange">
                     @foreach (var i in Form.FrequencyChoices) {
                         string description = Models.ItemForm.frequencyAsText(i);
                         string key = i.Item.ToString();
@@ -87,22 +84,21 @@
         </div>
     }
     @if (!Form.Stores.IsEmpty && !Form.ScheduleKind.IsCompleted) {
-        <div>
-            Stores:<br />
+        <div class="form-group">
+            Stores<br />
             @foreach (var i in Form.Stores) {
-                <div>
-                    <label>
-                        <input type="checkbox" @oninput="e =>OnStoreChange(e, i.Store.StoreId)" id="@i.Store.StoreId" name="@i.Store.StoreId" checked="@i.IsSold">&nbsp;@i.Store.StoreName.Item
-                    </label>
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" @oninput="e =>OnStoreChange(e, i.Store.StoreId)" id="@i.Store.StoreId" name="@i.Store.StoreId" checked="@i.IsSold"/>
+                    <label class="form-check-label" for="@i.Store.StoreId">@i.Store.StoreName.Item</label>
                 </div>
             }
         </div>
     }
-    <div>
+    <div class="form-group">
         <label>
-            Note: <textarea rows="3" @oninput="OnNoteChange" @onfocusout="OnNoteFocusOut" placeholder="preferred brand, extra soft!, ..." value="@Form.Note" />
+            Note<textarea class="form-control" style="width:400px" rows="3" @oninput="OnNoteChange" @onfocusout="OnNoteFocusOut" placeholder="preferred brand, extra soft!, ..." value="@Form.Note" />
             @if (Form.NoteValidation.IsError) {
-                <span>Error: @Form.NoteValidation.ErrorValue</span>
+                <span>@Form.NoteValidation.ErrorValue</span>
             }
         </label>
     </div>
