@@ -148,9 +148,6 @@ module CategoryName =
     let tryParse =
         StringValidation.createParser normalizer validator CategoryName List.head
 
-    let tryParseOptional s =
-        if s |> String.isNullOrWhiteSpace then Ok None else s |> tryParse |> Result.map Some
-
     let asText (CategoryName s) = s
 
 [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]

@@ -66,6 +66,7 @@ let noteBlur f = { f with Note = f.Note |> Note.normalizer }
 let categoryModeChooseExisting f = { f with CategoryMode = ChooseExisting }
 let categoryModeCreateNew f = { f with CategoryMode = CreateNew }
 let chooseCategoryUncategorized f = { f with CategoryChoice = None }
+let categoryModeIsCreateNew f = match f.CategoryMode with | CreateNew -> true | _ -> false
 
 let chooseCategory i f =
     { f with
@@ -74,11 +75,7 @@ let chooseCategory i f =
               |> List.find (fun j -> j.CategoryId = StateTypes.CategoryId i)
               |> Some }
 
-let categoryNameValidation f =
-    if f.CategoryMode = CategoryMode.ChooseExisting then
-        None |> Ok
-    else
-        f.NewCategoryName |> CategoryName.tryParseOptional
+let categoryNameValidation f = f.NewCategoryName |> CategoryName.tryParse
 
 let categoryNameChange s f = { f with NewCategoryName = s }
 
@@ -177,7 +174,7 @@ let storesSetAvailability id isSold f =
               f.Stores
               |> List.map (fun a -> if a.Store.StoreId = id then { a with IsSold = isSold } else a) }
 
-let canDelete (f:Form) = f.ItemId.IsSome
+let canDelete (f: Form) = f.ItemId.IsSome
 
 let createNewItem stores cats =
     { ItemId = None
@@ -245,7 +242,7 @@ let hasErrors f =
     (f |> itemNameValidation |> Result.isError)
     || (f |> quantityValidation |> Result.isError)
     || (f |> noteValidation |> Result.isError)
-    || (f |> categoryNameValidation |> Result.isError)
+    || ((f |> categoryModeIsCreateNew) && (f |> categoryNameValidation |> Result.isError))
 
 let rec handleMessage msg (f: Form) =
     match msg with
@@ -276,13 +273,10 @@ let asItemFormResult (now: DateTimeOffset) (f: Form) =
         match f.CategoryMode with
         | ChooseExisting -> None
         | CreateNew ->
-            Some
-                { StateTypes.Category.CategoryName =
-                      f
-                      |> categoryNameValidation
-                      |> Result.okOrThrow
-                      |> Option.get
-                  StateTypes.Category.CategoryId = Id.create StateTypes.CategoryId }
+            f
+            |> categoryNameValidation
+            |> Result.okOrThrow
+            |> fun c -> Some { StateTypes.Category.CategoryName = c; StateTypes.Category.CategoryId = Id.create StateTypes.CategoryId }
 
     let item =
         { StateTypes.Item.ItemId =
@@ -316,7 +310,7 @@ let asItemFormResult (now: DateTimeOffset) (f: Form) =
 
 // Delete and CanDelete
 // Submit (if no errors)
-// 
+//
 
 //Add to shopping list again
 //ONLY IF Completed
