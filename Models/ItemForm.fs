@@ -214,7 +214,7 @@ let editItem (clock: Clock) cats (i: QueryTypes.ItemQry) =
           match i.Schedule with
           | StateTypes.Schedule.Completed -> postponeDefault
           | StateTypes.Schedule.Once -> postponeDefault
-          | StateTypes.Schedule.Repeat r -> r.PostponedUntil |> Repeat.postponeRelative clock
+          | StateTypes.Schedule.Repeat r -> r |> Repeat.due (clock())
       CategoryMode = CategoryMode.ChooseExisting
       NewCategoryName = ""
       CategoryChoice = i.Category

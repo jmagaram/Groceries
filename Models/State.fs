@@ -177,7 +177,7 @@ module Frequency =
         let onFailure = id
         RangeValidation.toResult normalizer validator onSuccess onFailure
 
-    let goodDefault = 7<days> |> create |> Result.okOrThrow 
+    let goodDefault = 7<days> |> create |> Result.okOrThrow
 
     let common =
         [ 1; 3; 7; 14; 30; 60; 90 ]
@@ -192,31 +192,33 @@ module Repeat =
         [ 1; 3; 7; 14; 30; 60; 90 ]
         |> List.map (fun i -> i * 1<days>)
 
-    let create frequency postponedUntil =
-        { Frequency = frequency
-          PostponedUntil = postponedUntil }
+    let create frequency postponedUntil = { Frequency = frequency; PostponedUntil = postponedUntil }
 
-    let postponeRelative (clock: Clock) (postponeUntil: DateTimeOffset option) =
-        match postponeUntil with
-        | None -> None
-        | Some postponeUntil ->
-            let dueIn = postponeUntil - clock ()
+    let due (now: DateTimeOffset) r =
+        r.PostponedUntil
+        |> Option.map (fun future ->
+            let duration = future - now
 
-            truncate (dueIn.TotalDays) // overdue is forgiving, future is urgent
+            truncate (duration.TotalDays)
             |> int
-            |> (*) 1<days>
-            |> Some
+            |> (*) 1<StateTypes.days>)
+
+    let completeOne (now: DateTimeOffset) r =
+        { r with
+              PostponedUntil =
+                  r.Frequency
+                  |> Frequency.days
+                  |> int
+                  |> fun d -> now.AddDays(float d) |> Some }
 
 [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
 module Item =
 
-    let markComplete (i: Item) =
+    let markComplete (now: DateTimeOffset) (i: Item) =
         match i.Schedule with
         | Completed -> i
         | Once -> { i with Schedule = Completed }
-        | Repeat r ->
-            { i with
-                  Schedule = Repeat { r with PostponedUntil = None } }
+        | Repeat r -> { i with Schedule = r |> Repeat.completeOne now |> Repeat }
 
 [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
 module Settings =
@@ -375,7 +377,7 @@ module State =
             s |> mapItems (DataTable.update item)
 
         let makeRepeat n freq postpone (s: State) =
-            let freq = Frequency.create freq |> Result.okOrThrow 
+            let freq = Frequency.create freq |> Result.okOrThrow
             let postpone = postpone |> Option.map (fun d -> now.AddDays(d |> float))
             let repeat = Repeat.create freq postpone
 
@@ -432,12 +434,12 @@ module State =
             |> insertCategory { CategoryId = Id.create CategoryId; CategoryName = n }
         | CategoryFormMessage.UpdateCategory i -> s |> updateCategory i
 
-    let markItemComplete id s =
+    let markItemComplete now id s =
         let item =
             s
             |> itemsTable
             |> DataTable.findCurrent id
-            |> Item.markComplete
+            |> Item.markComplete now
 
         s |> mapItems (DataTable.update item)
 
@@ -447,7 +449,7 @@ module State =
         | SubmitCategoryForm msg -> s |> submitCategoryForm msg
         | ItemMessage msg ->
             match msg with
-            | MarkComplete i -> s |> markItemComplete i
+            | MarkComplete i -> s |> markItemComplete DateTimeOffset.Now i
             | InsertItem i -> s |> insertItem i
             | UpdateItem i -> s |> updateItem i
             | UpsertItem i -> s |> upsertItem i

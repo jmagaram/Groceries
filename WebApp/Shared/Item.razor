@@ -1,4 +1,5 @@
 ﻿@using Common
+@using Models
 @using static Models.StateTypes 
 @using static Common.OptionExtensions
 
@@ -16,7 +17,19 @@
         var itemNameClass = ItemQry.Schedule.IsCompleted ? "completed" : "";
     }
     @if (ItemQry.Schedule.IsRepeat) {
-        <span class="oi oi-loop-circular" aria-hidden="true"></span><text>&nbsp;</text>
+        @if (ItemQry.Schedule is Schedule.Repeat r && r.Item.PostponedUntil.IsSome()) {
+            var daysAway = RepeatModule.due(DateTimeOffset.Now, r.Item).Value;
+            if (daysAway >= 7) {
+                <span class="badge badge-secondary">@($"{daysAway}d")</span>
+            }
+            else if (daysAway > 0) {
+                <span class="badge badge-primary">@($"{daysAway}d")</span>
+            }
+            else {
+                <span class="badge badge-warning">@($"{-daysAway}d ago")</span>
+            }
+        }
+        <text>&nbsp;</text><span class="oi oi-loop-circular" aria-hidden="true"></span><text>&nbsp;</text>
     }
     <a href="./ItemEdit2/@ItemQry.ItemId.Item">
         <span class="@itemNameClass">@ItemQry.ItemName.Item</span>
