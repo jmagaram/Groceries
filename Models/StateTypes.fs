@@ -109,6 +109,7 @@ type State =
 type ItemMessage =
     | MarkComplete of ItemId
     | BuyAgain of ItemId
+    | RemovePostpone of ItemId
     | InsertItem of Item
     | UpdateItem of Item
     | UpsertItem of Item

@@ -45,6 +45,9 @@
             @if (ItemQry.Schedule.IsCompleted) {
                 <button class="dropdown-item" @onclick="@(async () => { await OnClickBuyAgain.InvokeAsync(ItemQry.ItemId); })" type="button">Buy again</button>
             }
+            @if (ScheduleModule.isPostponed(ItemQry.Schedule)) {
+                <button class="dropdown-item" @onclick="@(async () => { await OnClickRemovePostpone.InvokeAsync(ItemQry.ItemId); })" type="button">Add to shopping list</button>
+            }
             <a class="dropdown-item" href="./ItemEdit2/@ItemQry.ItemId.Item">Details...</a>
             <button class="dropdown-item" @onclick="@(async () => { await OnClickDelete.InvokeAsync(ItemQry.ItemId); })" type="button">Delete</button>
         </div>
@@ -78,5 +81,8 @@
 
     [Parameter]
     public EventCallback<Models.StateTypes.ItemId> OnClickBuyAgain { get; set; }
+
+    [Parameter]
+    public EventCallback<Models.StateTypes.ItemId> OnClickRemovePostpone { get; set; }
 
 }

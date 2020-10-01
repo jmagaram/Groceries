@@ -47,7 +47,7 @@
     </div>
 
     foreach (var item in Items.Where(i => object.Equals(i.Category, cat)).OrderBy(j=>ScheduleModule.due(now,j.Schedule)).ThenBy(j=>j.ItemName)) {
-        <WebApp.Shared.Item HideCategory="true" OnClickBuyAgain="OnClickBuyAgain" OnClickDelete="OnClickDelete" OnClickComplete="OnClickComplete" ItemQry="@item" />
+        <WebApp.Shared.Item HideCategory="true" OnClickRemovePostpone="OnClickRemovePostpone" OnClickBuyAgain="OnClickBuyAgain" OnClickDelete="OnClickDelete" OnClickComplete="OnClickComplete" ItemQry="@item" />
     }
 }
 <a class="btn btn-primary" href="itemedit2">New item</a>
