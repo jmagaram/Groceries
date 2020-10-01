@@ -48,6 +48,11 @@
             @if (ScheduleModule.isPostponed(ItemQry.Schedule)) {
                 <button class="dropdown-item" @onclick="@(async () => { await OnClickRemovePostpone.InvokeAsync(ItemQry.ItemId); })" type="button">Add to list now</button>
             }
+            @if (ItemQry.Schedule is Schedule.Repeat) {
+                <button class="dropdown-item" @onclick="@(async () => { await OnClickPostpone.InvokeAsync((ItemQry.ItemId, 3)); })" type="button">Postpone +3 days</button>
+                <button class="dropdown-item" @onclick="@(async () => { await OnClickPostpone.InvokeAsync((ItemQry.ItemId, 7)); })" type="button">Postpone +1 week</button>
+                <button class="dropdown-item" @onclick="@(async () => { await OnClickPostpone.InvokeAsync((ItemQry.ItemId, 14)); })" type="button">Postpone +2 weeks</button>
+            }
             <a class="dropdown-item" href="./ItemEdit2/@ItemQry.ItemId.Item">Details...</a>
             <button class="dropdown-item" @onclick="@(async () => { await OnClickDelete.InvokeAsync(ItemQry.ItemId); })" type="button">Delete</button>
         </div>
@@ -85,5 +90,6 @@
     [Parameter]
     public EventCallback<Models.StateTypes.ItemId> OnClickRemovePostpone { get; set; }
 
-    public EventCallback<(Models.StateTypes.ItemId,int)> OnClickPostpone { get; set; }
+    [Parameter]
+    public EventCallback<(Models.StateTypes.ItemId, int)> OnClickPostpone { get; set; }
 }

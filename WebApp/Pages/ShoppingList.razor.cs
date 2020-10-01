@@ -66,6 +66,9 @@ namespace WebApp.Pages {
         private void OnClickRemovePostpone(ItemId itemId) =>
             StateService.Update(StateMessage.NewItemMessage(ItemMessage.NewRemovePostpone(itemId)));
 
+        private void OnClickPostpone((ItemId itemId, int days) i) =>
+            StateService.Update(StateMessage.NewItemMessage(ItemMessage.NewPostpone(i.itemId, i.days)));
+
         private void ShowPostponedWithinNext(int days) {
             StateService.Update(StateMessage.NewSettingsMessage(SettingsMessage.NewSetPostponedViewHorizon(days)));
         }

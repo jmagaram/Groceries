@@ -282,6 +282,13 @@ module Item =
                   Schedule = Repeat { r with PostponedUntil = None } }
         | _ -> i
 
+    let postpone (now:DateTimeOffset) (d:int<days>) (i:Item) =
+        match i.Schedule with
+        | Repeat r -> 
+            let r = { r with PostponedUntil = now.AddDays(d |> float) |> Some }
+            { i with Schedule = Repeat r}
+        | _ -> failwith "A non-repeating item can not be postponed."
+
 [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
 module Settings =
 
@@ -548,6 +555,15 @@ module State =
 
         s |> mapItems (DataTable.update item)
 
+    let postponeItem now id d s =
+        let item =
+            s
+            |> itemsTable
+            |> DataTable.findCurrent id
+            |> Item.postpone now d 
+
+        s |> mapItems (DataTable.update item)
+
     let buyAgain id s =
         let item =
             s
@@ -558,13 +574,15 @@ module State =
         s |> mapItems (DataTable.update item)
 
     let rec update msg s =
+        let now = DateTimeOffset.Now
         match msg with
         | SubmitStoreForm msg -> s |> submitStoreForm msg
         | SubmitCategoryForm msg -> s |> submitCategoryForm msg
         | ItemMessage msg ->
             match msg with
-            | MarkComplete i -> s |> markItemComplete DateTimeOffset.Now i
+            | MarkComplete i -> s |> markItemComplete now i
             | RemovePostpone i -> s |> removePostpone i
+            | Postpone (id, d) -> s |> postponeItem now id d
             | BuyAgain i -> s |> buyAgain i
             | InsertItem i -> s |> insertItem i
             | UpdateItem i -> s |> updateItem i
