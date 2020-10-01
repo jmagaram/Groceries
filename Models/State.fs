@@ -5,6 +5,7 @@ open System.Text.RegularExpressions
 open ValidationTypes
 open StringValidation
 open StateTypes
+open System.Collections.Generic
 
 [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
 module Id =
@@ -209,6 +210,25 @@ module Repeat =
     let completeOne (now: DateTimeOffset) r =
         { r with
               PostponedUntil = r.Frequency |> Frequency.fromNow now |> Some }
+
+[<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
+module Schedule =
+
+    let due (now:DateTimeOffset) s = 
+        match s with
+        | Once -> now
+        | Completed -> DateTimeOffset.MaxValue
+        | Repeat r ->
+            r.PostponedUntil
+            |> Option.defaultValue now
+
+    let effectiveDueDateComparer (now:DateTimeOffset) : IComparer<Schedule> =
+        { new IComparer<Schedule> with
+                member this.Compare(x,y) =
+                    let xDue = x |> due now
+                    let yDue = y |> due now
+                    DateTimeOffset.Compare(xDue, yDue)
+        }
 
 [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
 module Item =

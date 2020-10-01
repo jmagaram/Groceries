@@ -68,7 +68,6 @@ namespace WebApp.Pages {
         }
 
         private void ShowCompleted() {
-
         }
 
         private void HideCompleted() {

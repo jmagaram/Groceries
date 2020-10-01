@@ -1,9 +1,10 @@
 ﻿@page "/shoppinglist"
+@using Models 
 @using Common
 @using Microsoft.FSharp.Core;
 
 <div class="dropdown" style="margin-bottom:20px;">
-    @{ 
+    @{
         var currentStoreName = StoreFilterChoices.FirstOrDefault(i => i.StoreId.Item == StoreFilter)?.StoreName.Item ?? "All Stores";
     }
     <button class="btn btn-outline-dark btn-lg dropdown-toggle" style="font-weight:bold" type="button" id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
@@ -30,20 +31,22 @@
     </div>
 </div>
 @foreach (var cat in Items.Select(j => j.Category).Distinct().OrderBy(i => i)) {
+    var now = DateTimeOffset.Now;
     var categoryName = cat.IsNone() ? "(Uncategorized)" : cat.Value.CategoryName.Item;
-<div>
-    @if (cat.IsSome()) {
-        <h4 @onclick="e=>OnNavigateToCategory(cat.Value.CategoryId)" style="display:inline-block; cursor:pointer">
-            @categoryName
-        </h4>
-    }
-    else {
-        <h4 style="display:inline-block">
-            @categoryName
-        </h4>
-    }
-</div>
-    @foreach (var item in Items.Where(i => object.Equals(i.Category, cat))) {
+    <div>
+        @if (cat.IsSome()) {
+            <h4 @onclick="e=>OnNavigateToCategory(cat.Value.CategoryId)" style="display:inline-block; cursor:pointer">
+                @categoryName
+            </h4>
+        }
+        else {
+            <h4 style="display:inline-block">
+                @categoryName
+            </h4>
+        }
+    </div>
+
+    foreach (var item in Items.Where(i => object.Equals(i.Category, cat)).OrderBy(j=>ScheduleModule.due(now,j.Schedule)).ThenBy(j=>j.ItemName)) {
         <WebApp.Shared.Item HideCategory="true" OnClickBuyAgain="OnClickBuyAgain" OnClickDelete="OnClickDelete" OnClickComplete="OnClickComplete" ItemQry="@item" />
     }
 }
