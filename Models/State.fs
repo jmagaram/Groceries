@@ -200,6 +200,12 @@ module Repeat =
 
             round (duration.TotalDays) |> int |> (*) 1<StateTypes.days>)
 
+    let dueWithin (now:DateTimeOffset) (d:int<days>) r =
+        r
+        |> due now
+        |> Option.map (fun d' -> d' <= d)
+        |> Option.defaultValue true
+
     let completeOne (now: DateTimeOffset) r =
         { r with
               PostponedUntil = r.Frequency |> Frequency.fromNow now |> Some }
@@ -222,7 +228,7 @@ module Item =
 [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
 module Settings =
 
-    let create = { Settings.StoreFilter = None }
+    let create = { Settings.StoreFilter = None; PostponedViewHorizon = 7<days> }
 
     let setStoreFilter f s = { s with StoreFilter = f }
 
@@ -293,6 +299,8 @@ module State =
         match isStoreReferenceValid with
         | false -> failwith "A store is referenced that does not exist."
         | true -> mapSettings (DataRow.mapCurrent (Settings.setStoreFilter k)) s
+
+    let setPostponedViewHorizon d s = s |> mapSettings (DataRow.mapCurrent (fun i -> { i with PostponedViewHorizon = d }))
 
     let deleteStore k s =
         s
@@ -478,4 +486,5 @@ module State =
             match msg with
             | ClearStoreFilter -> s |> updateSettingsStoreFilter None
             | SetStoreFilterTo id -> s |> updateSettingsStoreFilter (Some id)
+            | SetPostponedViewHorizon d -> s |> setPostponedViewHorizon d
         | Transaction msgs -> msgs |> Seq.fold (fun t i -> t |> update i) s

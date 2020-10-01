@@ -63,6 +63,18 @@ namespace WebApp.Pages {
         private void OnClickBuyAgain(ItemId itemId) =>
             StateService.Update(StateMessage.NewItemMessage(ItemMessage.NewBuyAgain(itemId)));
 
+        private void ShowPostponedWithinNext(int days) {
+            StateService.Update(StateMessage.NewSettingsMessage(SettingsMessage.NewSetPostponedViewHorizon(days)));
+        }
+
+        private void ShowCompleted() {
+
+        }
+
+        private void HideCompleted() {
+
+        }
+
         protected Guid StoreFilter { get; private set; }
 
         protected IEnumerable<QueryTypes.ItemQry> Items { get; private set; }

@@ -86,8 +86,10 @@ type CategoryFormMessage =
     | UpdateCategory of Category
 
 // include "show empty categories"
+
 type Settings = 
-    { StoreFilter: StoreId option }
+    { StoreFilter: StoreId option 
+      PostponedViewHorizon : int<days> }
     interface IKey<string> with
         member this.Key = "singleton"
 
@@ -127,6 +129,7 @@ type NotSoldItemMessage =
 type SettingsMessage =
     | ClearStoreFilter
     | SetStoreFilterTo of StoreId
+    | SetPostponedViewHorizon of int<days>
 
 type StateMessage =
     | SubmitStoreForm of StoreFormMessage

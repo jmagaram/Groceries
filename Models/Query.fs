@@ -8,7 +8,9 @@ open Models.StateTypes
 let isItemSold (s: Store) (i: Item) state =
     if state
        |> State.notSoldItemsTable
-       |> DataTable.currentContainsKey { ItemId = i.ItemId; StoreId = s.StoreId } then
+       |> DataTable.currentContainsKey
+           { ItemId = i.ItemId
+             StoreId = s.StoreId } then
         false
     else
         true
@@ -21,7 +23,10 @@ let itemQry (item: Item) state =
       Schedule = item.Schedule
       Category =
           item.CategoryId
-          |> Option.map (fun c -> state |> State.categoriesTable |> DataTable.findCurrent c)
+          |> Option.map (fun c ->
+              state
+              |> State.categoriesTable
+              |> DataTable.findCurrent c)
       Availability =
           state
           |> State.stores
@@ -30,7 +35,11 @@ let itemQry (item: Item) state =
                 IsSold = isItemSold s item state }) }
 
 let itemQryFromGuid (itemId: Guid) state =
-    let item = state |> State.itemsTable |> DataTable.findCurrent (ItemId itemId)
+    let item =
+        state
+        |> State.itemsTable
+        |> DataTable.findCurrent (ItemId itemId)
+
     itemQry item state
 
 let categoryQry (cat: Category option) state =
@@ -54,10 +63,15 @@ let categoryQry (cat: Category option) state =
                         { ItemAvailability.Store = s
                           IsSold = isItemSold s i state }) }) }
 
-let shoppingListQry s =
+let shoppingListQry (now: DateTimeOffset) s =
+    let settings = s |> State.settings
+
     let sf =
-        (s |> State.settings).StoreFilter
-        |> Option.map (fun storeId -> s |> State.storesTable |> DataTable.findCurrent storeId)
+        settings.StoreFilter
+        |> Option.map (fun storeId ->
+            s
+            |> State.storesTable
+            |> DataTable.findCurrent storeId)
 
     { Stores = s |> State.stores |> List.ofSeq
       StoreFilter = sf
@@ -66,10 +80,21 @@ let shoppingListQry s =
           |> State.items
           |> Seq.map (fun i -> itemQry i s)
           |> Seq.filter (fun i ->
-              sf
-              |> Option.map (fun sf ->
-                  i.Availability
-                  |> Seq.exists (fun sa -> sa.Store = sf && sa.IsSold))
+              let isStoreFilterSatisfied =
+                  sf
+                  |> Option.map (fun sf ->
+                      i.Availability
+                      |> Seq.exists (fun sa -> sa.Store = sf && sa.IsSold))
 
-              |> Option.defaultValue true)
+                  |> Option.defaultValue true
+
+              let isPostponedViewHorizonSatisfied =
+                  match i.Schedule with
+                  | Repeat r ->
+                      r
+                      |> Repeat.dueWithin now settings.PostponedViewHorizon
+                  | _ -> true
+
+              isStoreFilterSatisfied
+              && isPostponedViewHorizonSatisfied)
           |> List.ofSeq }

@@ -13,7 +13,7 @@ namespace WebApp.Data {
         public ApplicationStateService() {
             _state = new BehaviorSubject<State>(StateModule.createSampleData);
             _stateObs = _state;
-            ShoppingListQry = _stateObs.Select(Query.shoppingListQry);
+            ShoppingListQry = _stateObs.Select(x => Query.shoppingListQry(DateTimeOffset.Now,x));
             Converter<Unit, DateTimeOffset> clock = (x => DateTimeOffset.Now);
             Clock = FuncConvert.ToFSharpFunc(clock);
         }
