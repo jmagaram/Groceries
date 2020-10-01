@@ -12,20 +12,6 @@
         text-decoration: line-through
     }
 </style>
-<div class="dropdown">
-    <button style="display:inline-block" class="btn btn-secondary dropdown-toggle" type="button" id="dropdownMenu2" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-        <span class="oi oi-caret-bottom" aria-hidden="true"></span>
-    </button>
-    <div class="dropdown-menu" aria-labelledby="dropdownMenu2">
-        <button class="dropdown-item" @onclick="@(async () => { await OnClickDelete.InvokeAsync(ItemQry.ItemId); })" type="button">Delete</button>
-        @if (!ItemQry.Schedule.IsCompleted) {
-            <button class="dropdown-item" @onclick="@(async () => { await OnClickComplete.InvokeAsync(ItemQry.ItemId); })" type="button">Complete</button>
-        }
-        @if (ItemQry.Schedule.IsCompleted) {
-            <button class="dropdown-item" @onclick="@(async () => { await OnClickBuyAgain.InvokeAsync(ItemQry.ItemId); })" type="button">Buy again</button>
-        }
-    </div>
-</div>
 <p>
     @{
         var itemNameClass = ItemQry.Schedule.IsCompleted ? "completed" : "";
@@ -48,9 +34,20 @@
         }
         <text>&nbsp;</text><span class="oi oi-loop-circular" aria-hidden="true"></span><text>&nbsp;</text>
     }
-    <a href="./ItemEdit2/@ItemQry.ItemId.Item">
-        <span class="@itemNameClass">@ItemQry.ItemName.Item</span>
-    </a>
+    <div class="dropdown" style="display:inline-block">
+        <a @onclick:preventDefault href="#" class="dropdown-toggle" data-toggle="dropdown">
+            <span class="@itemNameClass">@ItemQry.ItemName.Item</span>
+        </a>
+        <div class="dropdown-menu" aria-labelledby="dropdownMenu2">
+            <button class="dropdown-item" @onclick="@(async () => { await OnClickDelete.InvokeAsync(ItemQry.ItemId); })" type="button">Delete</button>
+            @if (!ItemQry.Schedule.IsCompleted) {
+                <button class="dropdown-item" @onclick="@(async () => { await OnClickComplete.InvokeAsync(ItemQry.ItemId); })" type="button">Complete</button>
+            }
+            @if (ItemQry.Schedule.IsCompleted) {
+                <button class="dropdown-item" @onclick="@(async () => { await OnClickBuyAgain.InvokeAsync(ItemQry.ItemId); })" type="button">Buy again</button>
+            }
+        </div>
+    </div>
     @if (!HideCategory) {
         var catName = ItemQry.Category.AsEnumerable().Select(i => i.CategoryName.Item).SingleOrDefault() ?? "(Uncategorized)";
         <span class="divider">&nbsp;|&nbsp;</span>@catName
