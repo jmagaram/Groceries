@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Components.Web;
 using Models;
 using System;
 using System.Collections.Generic;
+using WebApp.Common;
 
 namespace WebApp.Shared {
     public partial class ItemEditForm : ComponentBase {
@@ -121,6 +122,15 @@ namespace WebApp.Shared {
 
         protected void OnPostponeClear() =>
             Process(ItemForm.ItemFormMessage.PostponeClear);
+
+        protected void OnPostponeToggle() {
+            if (Form.Postpone.IsNone()) {
+                Process(ItemForm.ItemFormMessage.NewPostponeSet(7));
+            }
+            else {
+                Process(ItemForm.ItemFormMessage.PostponeClear);
+            }
+        }
 
         protected void OnCancel() => OnCancelCallback.InvokeAsync(null);
 
