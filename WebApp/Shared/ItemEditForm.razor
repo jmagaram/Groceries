@@ -7,6 +7,12 @@
     }
 </style>
 <form>
+    @if (Form.ItemId.IsNone()) {
+        <h4>New item</h4>
+    }
+    else {
+        <h4>Edit item</h4>
+    }
     <div class="form-group">
         <label for="itemNameInput">Item</label>
         <input id="itemNameInput" class="form-control" @oninput="OnItemNameChange" @onfocusout="OnItemNameFocusOut" placeholder="Apples, Canned Tuna, ..." value="@Form.ItemName" />
@@ -87,7 +93,7 @@
                 </select>
             </div>
         }
-    </div>    
+    </div>
     @if (!Form.Stores.IsEmpty) {
         <div class="form-group">
             <label style="margin-top:15px">Stores</label>
