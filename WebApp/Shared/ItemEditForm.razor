@@ -11,11 +11,6 @@
         @if (Form.ItemId.IsSome()) {<span>Edit item</span>}
         else { <span>New item</span>}
     </h4>
-    @if (Form.ScheduleKind.IsCompleted) {
-        <div class="alert alert-primary" role="alert">
-            Is complete; <a href="return false;" class="alert-link" @onclick="@(e => OnClickScheduleOnce())">add to shopping list again</a>. Give it a click if you like.
-        </div>
-    }
     <div class="form-group">
         <label for="itemNameInput">Item</label>
         <input id="itemNameInput" class="form-control" @oninput="OnItemNameChange" @onfocusout="OnItemNameFocusOut" placeholder="Apples, Canned Tuna, ..." value="@Form.ItemName" />
@@ -26,9 +21,9 @@
     <div class="form-group">
         <label for="quantityInput">Quantity</label>
         <input id="quantityInput" class="form-control" @oninput="OnQuantityChange" @onfocusout="OnQuantityFocusOut" placeholder="several, 2 lb., lots, ..." value="@Form.Quantity" />
-            @if (Form.QuantityValidation.IsError) {
-                <small class="form-text text-danger">@Form.QuantityValidation.ErrorValue</small>
-            }        
+        @if (Form.QuantityValidation.IsError) {
+            <small class="form-text text-danger">@Form.QuantityValidation.ErrorValue</small>
+        }
     </div>
     <div class="form-row">
         <div class="form-group col-auto">
@@ -58,27 +53,25 @@
         }
     </div>
     <div class="form-row align-items-center">
-        @if (Form.ScheduleKind.IsOnce || Form.ScheduleKind.IsRepeat) {
-            <div class="col-auto">
-                <label for="selectFrequency">Frequency</label>
-                <select class="form-control" @onchange="OnRepeatChange" id="selectFrequency">
-                    @foreach (var i in Form.FrequencyChoices) {
-                        string description = Models.ItemForm.frequencyAsText(i);
-                        string key = i.Item.ToString();
-                        bool isSelected = i.Equals(Form.Frequency);
-                        <option selected="@isSelected" value="@key">@description</option>
-                    }
-                    <option selected="@(!Form.ScheduleKind.IsRepeat)" value="@notRepeating">Only once</option>
-                </select>
-            </div>
-        }
+        <div class="col-auto">
+            <label for="selectFrequency">Frequency</label>
+            <select class="form-control" @onchange="OnRepeatChange" id="selectFrequency">
+                @foreach (var i in Form.FrequencyChoices) {
+                    string description = Models.ItemForm.frequencyAsText(i);
+                    string key = i.Item.ToString();
+                    bool isSelected = i.Equals(Form.Frequency);
+                    <option selected="@isSelected" value="@key">@description</option>
+                }
+                <option selected="@(!Form.ScheduleKind.IsRepeat)" value="@notRepeating">Only once</option>
+            </select>
+        </div>
         @if (Form.ScheduleKind.IsRepeat) {
             <div class="col-auto">
                 <label>&nbsp;</label>
                 <div class="form-check" style="margin-left: 5px;">
                     <input @onchange="OnPostponeToggle" checked="@Form.Postpone.IsSome()" class="form-check-input" type="checkbox" value="" id="postponeToggle" required>
                     <label class="form-check-label" for="postponeToggle">
-                        Postpone next
+                        Postpone
                     </label>
                 </div>
             </div>
@@ -93,14 +86,14 @@
                         string description = Models.ItemForm.postponeDurationAsText(i);
                         string key = i.ToString();
                         bool isSelected = Form.Postpone.IsSomeValue(i);
-                        <option selected="@isSelected" value="@key">@description</option>
+                        <option selected="@isSelected" value="@key">+@description</option>
                     }
                 </select>
             </div>
         }
     </div>    @if (!Form.Stores.IsEmpty && !Form.ScheduleKind.IsCompleted) {
         <div class="form-group">
-            Stores<br />
+            <label>Stores</label>
             @foreach (var i in Form.Stores) {
                 <div class="form-check">
                     <input class="form-check-input" type="checkbox" @oninput="e =>OnStoreChange(e, i.Store.StoreId)" id="@i.Store.StoreId" name="@i.Store.StoreId" checked="@i.IsSold" />
@@ -110,49 +103,35 @@
         </div>
     }
     <div class="form-group">
-        <label>
-            Note<textarea class="form-control" style="width:400px" rows="3" @oninput="OnNoteChange" @onfocusout="OnNoteFocusOut" placeholder="preferred brand, extra soft!, ..." value="@Form.Note" />
-            @if (Form.NoteValidation.IsError) {
-                <small class="form-text text-danger">@Form.NoteValidation.ErrorValue</small>
-            }
-        </label>
+        <label for="noteTextArea">Note</label>
+        <textarea id="noteTextArea" class="form-control" style="width:400px" rows="3" @oninput="OnNoteChange" @onfocusout="OnNoteFocusOut" placeholder="preferred brand, extra soft!, ..." value="@Form.Note" />
+        @if (Form.NoteValidation.IsError) {
+            <small class="form-text text-danger">@Form.NoteValidation.ErrorValue</small>
+        }
     </div>
     <ul class="nav nav-pills">
-        <li>
-            @*Delete*@
-            @if (Form.CanDelete) {
+        @if (Form.CanDelete) {
+            <li>
+                @*Delete*@
                 <button class="btn btn-secondary" type="button" @onclick="_=>OnDelete()"><span class="oi oi-trash" aria-hidden="true"></span></button>
-            }
-        </li>
+            </li>
+        }
         <li>
             @*Save changes*@
-            <button class="btn btn-secondary" type="button" @onclick="_=>OnSaveChanges()" disabled="@Form.HasErrors"><span class="oi oi-pencil" aria-hidden="true"></span>&nbsp;Save</button>
+            <button class="btn btn-secondary" type="button" @onclick="_=>OnSaveChanges()" disabled="@Form.HasErrors">Save</button>
         </li>
-        <li>
-            @*Postpone X days and submit*@
-            @if (Form.ScheduleKind.IsRepeat && Form.Postpone.IsNone()) {
-                <div class="dropdown">
-                    <button disabled="@Form.HasErrors" class="btn btn-primary dropdown-toggle" role="button" id="dropdownMenuLink" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                        <span class="oi oi-calendar" aria-hidden="true"></span>&nbsp;Postpone
-                    </button>
-                    <div class="dropdown-menu" aria-labelledby="dropdownMenuLink">
-                        @foreach (var i in Form.PostponeChoices) {
-                            <button class="dropdown-item" @onclick="@(_=>OnSubmitPostponed(i))" type="button">@Models.ItemForm.postponeDurationAsText(i)</button>
-                        }
-                    </div>
-                </div>
-            }
-        </li>
-        <li>
-            @*Purchased! (for repeating and only-once)*@
-            @if (!Form.ScheduleKind.IsCompleted) {
-                <button type="button" disabled="@Form.HasErrors" class="btn btn-primary" @onclick="OnSubmitPurchased"><span class="oi oi-check" aria-hidden="true"></span>&nbsp;Complete</button>
-            }
-        </li>
-        @*To cancel can just Go Back for now
+        @if (!Form.ScheduleKind.IsCompleted) {
             <li>
-                <button type="button" class="btn btn-primary" @onclick="OnCancel"><span class="oi oi-action-undo" aria-hidden="true"></span></button>
-            </li>*@
+                @*Purchased! (for repeating and only-once)*@
+                <button type="button" disabled="@Form.HasErrors" class="btn btn-primary" @onclick="OnSubmitPurchased"><span class="oi oi-check" aria-hidden="true"></span>&nbsp;Complete</button>
+            </li>
+        }
+        @if (Form.ScheduleKind.IsCompleted) {
+            <li>
+                @*Add to shopping list again*@
+                <button type="button" disabled="@Form.HasErrors" class="btn btn-primary" @onclick="AddToShoppingListAgain"><span class="oi oi-cart" aria-hidden="true"></span>&nbsp;Add to shopping list (again)</button>
+            </li>
+        }
     </ul>
 
 </form>

@@ -52,12 +52,17 @@ namespace WebApp.Shared {
 
         protected void OnSubmitPurchased() {
             Process(ItemForm.ItemFormMessage.Purchased);
-            OnClickOkCallback.InvokeAsync(Form.ItemFormResult(DateTimeOffset.Now));
+            OnSaveChangesCallback.InvokeAsync(Form.ItemFormResult(DateTimeOffset.Now));
         }
 
         protected void OnSubmitPostponed(int days) {
             Process(ItemForm.ItemFormMessage.NewPostponeSet(days));
-            OnClickOkCallback.InvokeAsync(Form.ItemFormResult(DateTimeOffset.Now));
+            OnSaveChangesCallback.InvokeAsync(Form.ItemFormResult(DateTimeOffset.Now));
+        }
+
+        protected void AddToShoppingListAgain() {
+            Process(ItemForm.ItemFormMessage.ScheduleOnce);
+            OnSaveChangesCallback.InvokeAsync(Form.ItemFormResult(DateTimeOffset.Now));
         }
 
         protected void OnNewCategoryNameFocusOut(FocusEventArgs e) =>
@@ -138,9 +143,6 @@ namespace WebApp.Shared {
 
         protected void OnStoreChange(ChangeEventArgs e, StateTypes.StoreId store) =>
             Process(ItemForm.ItemFormMessage.NewStoresSetAvailability(store, (bool)e.Value));
-
-        [Parameter]
-        public EventCallback<ItemForm.ItemFormResult> OnClickOkCallback { get; set; }
 
         [Parameter]
         public EventCallback<StateTypes.ItemId> OnDeleteCallback { get; set; }
