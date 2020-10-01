@@ -59,6 +59,9 @@ namespace WebApp.Pages {
         private void OnClickComplete(ItemId itemId) =>
             StateService.Update(StateMessage.NewItemMessage(ItemMessage.NewMarkComplete(itemId)));
 
+        private void OnClickBuyAgain(ItemId itemId) =>
+            StateService.Update(StateMessage.NewItemMessage(ItemMessage.NewBuyAgain(itemId)));
+
         protected Guid StoreFilter { get; private set; }
 
         protected IEnumerable<QueryTypes.ItemQry> Items { get; private set; }

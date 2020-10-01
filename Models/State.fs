@@ -213,6 +213,12 @@ module Item =
         | Once -> { i with Schedule = Completed }
         | Repeat r -> { i with Schedule = r |> Repeat.completeOne now |> Repeat }
 
+    let buyAgain (i:Item) =
+        match i.Schedule with
+        | Completed -> { i with Schedule = Once }
+        | Once -> i
+        | Repeat _ -> i
+
 [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
 module Settings =
 
@@ -436,6 +442,14 @@ module State =
 
         s |> mapItems (DataTable.update item)
 
+    let buyAgain id s =
+        let item =
+            s
+            |> itemsTable
+            |> DataTable.findCurrent id
+            |> Item.buyAgain
+        s |> mapItems (DataTable.update item)
+
     let rec update msg s =
         match msg with
         | SubmitStoreForm msg -> s |> submitStoreForm msg
@@ -443,6 +457,7 @@ module State =
         | ItemMessage msg ->
             match msg with
             | MarkComplete i -> s |> markItemComplete DateTimeOffset.Now i
+            | BuyAgain i -> s |> buyAgain i
             | InsertItem i -> s |> insertItem i
             | UpdateItem i -> s |> updateItem i
             | UpsertItem i -> s |> upsertItem i

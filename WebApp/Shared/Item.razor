@@ -1,6 +1,6 @@
 ﻿@using Common
 @using Models
-@using static Models.StateTypes 
+@using static Models.StateTypes
 @using static Common.OptionExtensions
 
 <style>
@@ -12,6 +12,20 @@
         text-decoration: line-through
     }
 </style>
+<div class="dropdown">
+    <button style="display:inline-block" class="btn btn-secondary dropdown-toggle" type="button" id="dropdownMenu2" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+        <span class="oi oi-caret-bottom" aria-hidden="true"></span>
+    </button>
+    <div class="dropdown-menu" aria-labelledby="dropdownMenu2">
+        <button class="dropdown-item" @onclick="@(async () => { await OnClickDelete.InvokeAsync(ItemQry.ItemId); })" type="button">Delete</button>
+        @if (!ItemQry.Schedule.IsCompleted) {
+            <button class="dropdown-item" @onclick="@(async () => { await OnClickComplete.InvokeAsync(ItemQry.ItemId); })" type="button">Complete</button>
+        }
+        @if (ItemQry.Schedule.IsCompleted) {
+            <button class="dropdown-item" @onclick="@(async () => { await OnClickBuyAgain.InvokeAsync(ItemQry.ItemId); })" type="button">Buy again</button>
+        }
+    </div>
+</div>
 <p>
     @{
         var itemNameClass = ItemQry.Schedule.IsCompleted ? "completed" : "";
@@ -49,13 +63,6 @@
         var note = ItemQry.Note.Value;
         <span class="divider">&nbsp;|&nbsp;</span>@ItemQry.Note.Value.Item
     }
-    <span class="divider">&nbsp;|&nbsp;</span><a href="." @onclick:preventDefault @onclick="@(async () => { await OnClickDelete.InvokeAsync(ItemQry.ItemId); })">
-        delete
-    </a>
-    @if (!ItemQry.Schedule.IsCompleted) {
-        <span class="divider">&nbsp;|&nbsp;</span><a href="." @onclick:preventDefault @onclick="@(async () => { await OnClickComplete.InvokeAsync(ItemQry.ItemId); })">
-            complete
-        </a>}
 </p>
 
 @code {
@@ -70,4 +77,8 @@
 
     [Parameter]
     public EventCallback<Models.StateTypes.ItemId> OnClickComplete { get; set; }
+
+    [Parameter]
+    public EventCallback<Models.StateTypes.ItemId> OnClickBuyAgain { get; set; }
+
 }
