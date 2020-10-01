@@ -16,8 +16,8 @@
     @{
         var itemNameClass = ItemQry.Schedule.IsCompleted ? "completed" : "";
     }
-    @if (ItemQry.Schedule.IsRepeat) {
-        @if (ItemQry.Schedule is Schedule.Repeat r && r.Item.PostponedUntil.IsSome()) {
+    @if (ItemQry.Schedule is Schedule.Repeat r) {
+        @if (r.Item.PostponedUntil.IsSome()) {
             var daysAway = RepeatModule.due(DateTimeOffset.Now, r.Item).Value;
             if (daysAway >= 30) {
                 <span class="badge badge-secondary">@($"{daysAway/30}m")</span>
@@ -85,4 +85,5 @@
     [Parameter]
     public EventCallback<Models.StateTypes.ItemId> OnClickRemovePostpone { get; set; }
 
+    public EventCallback<(Models.StateTypes.ItemId,int)> OnClickPostpone { get; set; }
 }
