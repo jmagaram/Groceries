@@ -39,13 +39,14 @@
             <span class="@itemNameClass">@ItemQry.ItemName.Item</span>
         </a>
         <div class="dropdown-menu" aria-labelledby="dropdownMenu2">
-            <button class="dropdown-item" @onclick="@(async () => { await OnClickDelete.InvokeAsync(ItemQry.ItemId); })" type="button">Delete</button>
             @if (!ItemQry.Schedule.IsCompleted) {
                 <button class="dropdown-item" @onclick="@(async () => { await OnClickComplete.InvokeAsync(ItemQry.ItemId); })" type="button">Complete</button>
             }
             @if (ItemQry.Schedule.IsCompleted) {
                 <button class="dropdown-item" @onclick="@(async () => { await OnClickBuyAgain.InvokeAsync(ItemQry.ItemId); })" type="button">Buy again</button>
             }
+            <a class="dropdown-item" href="./ItemEdit2/@ItemQry.ItemId.Item">Details...</a>
+            <button class="dropdown-item" @onclick="@(async () => { await OnClickDelete.InvokeAsync(ItemQry.ItemId); })" type="button">Delete</button>
         </div>
     </div>
     @if (!HideCategory) {
