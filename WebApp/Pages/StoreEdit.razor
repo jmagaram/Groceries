@@ -20,7 +20,7 @@ else {
 <form>
     <div class="form-group">
         <label for="storeNameInput">Store name</label>
-        <input id="storeNameInput" @oninput="OnNameChange" @onfocusout="OnNameFocusOut" value="@Form.StoreName" />
+        <input id="storeNameInput" class="form-control" @oninput="OnNameChange" @onfocusout="OnNameFocusOut" value="@Form.StoreName" />
         @if (Form.StoreNameValidation.IsError) {
             <small class="form-text text-danger">@Form.StoreNameValidation.ErrorValue</small>
         }

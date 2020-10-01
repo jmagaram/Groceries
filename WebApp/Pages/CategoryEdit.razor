@@ -5,6 +5,11 @@
 @using Models
 @using static Common.OptionExtensions;
 @using static Models.CategoryForm
+<style>
+    .nav-pills li {
+        margin-right: 5px;
+    }
+</style>
 
 @if (Form.Mode.IsCreateCategoryMode) {
     <h3>New category</h3>
@@ -14,18 +19,26 @@ else {
 }
 
 <form>
-    <div>
-        <label>
-            Name: <input @oninput="OnNameChange" @onfocusout="OnNameFocusOut" value="@Form.CategoryName" />
-            @if (Form.CategoryNameValidation.IsError) {
-                <span>Error: @Form.CategoryNameValidation.ErrorValue</span>
-            }
-        </label>
+    <div class="form-group">
+        <label for="categoryNameInput">Category name</label>
+        <input id="categoryNameInput" class="form-control" @oninput="OnNameChange" @onfocusout="OnNameFocusOut" value="@Form.CategoryName" />
+        @if (Form.CategoryNameValidation.IsError) {
+            <small class="form-text text-danger">
+                @Form.CategoryNameValidation.ErrorValue
+            </small>
+        }
     </div>
-    @if (Form.Mode.IsEditCategoryMode) {
-        <button class="btn btn-outline-secondary" type="button" @onclick="e=>OnDelete()">Delete</button>
-    }
-    <button class="btn btn-primary" type="button" @onclick="OnSubmit" disabled="@(Form.HasErrors)">Submit</button>
+
+    <ul class="nav nav-pills">
+        @if (Form.Mode.IsEditCategoryMode) {
+            <li>
+                <button class="btn btn-secondary" type="button" @onclick="e=>OnDelete()"><span class="oi oi-trash" aria-hidden="true"></span></button>
+            </li>
+        }
+        <li>
+            <button class="btn btn-primary" type="button" @onclick="OnSubmit" disabled="@(Form.HasErrors)">Submit</button>
+        </li>
+    </ul>
 </form>
 
 @code {
