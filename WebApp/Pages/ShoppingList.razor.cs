@@ -42,16 +42,11 @@ namespace WebApp.Pages {
             .DistinctUntilChanged()
             .Subscribe(i => Items = i.ToList());
 
-        private void OnStoreFilterChange(ChangeEventArgs e) {
-            Guid.TryParse((string)e.Value, out Guid selectedStore);
-            var store = StoreFilterChoices.FirstOrDefault(i => i.StoreId.Item == selectedStore);
-            if (store == null) {
-                StateService.Update(StateMessage.NewSettingsMessage(SettingsMessage.ClearStoreFilter));
-            }
-            else {
-                StateService.Update(StateMessage.NewSettingsMessage(SettingsMessage.NewSetStoreFilterTo(store.StoreId)));
-            }
-        }
+        private void OnStoreFilterClear() => 
+            StateService.Update(StateMessage.NewSettingsMessage(SettingsMessage.ClearStoreFilter));
+
+        private void OnStoreFilter(StoreId id) => 
+            StateService.Update(StateMessage.NewSettingsMessage(SettingsMessage.NewSetStoreFilterTo(id)));
 
         private void OnClickDelete(ItemId itemId) =>
             StateService.Update(StateMessage.NewItemMessage(ItemMessage.NewDeleteItem(itemId)));

@@ -2,20 +2,26 @@
 @using Common
 @using Microsoft.FSharp.Core;
 
-<select style="font-size:200%; margin-bottom:12px" @onchange="OnStoreFilterChange">
-    <option value="@Guid.Empty" selected="@(StoreFilter==Guid.Empty)">All Stores</option>
-    @foreach (var s in StoreFilterChoices) {
-        Guid key = s.StoreId.Item;
-        bool isSelected = key == StoreFilter;
-        string description = s.StoreName.Item;
-        <option selected="@isSelected" value="@key.ToString()">@description</option>
+<div class="dropdown" style="margin-bottom:20px;">
+    @{ 
+        var currentStoreName = StoreFilterChoices.FirstOrDefault(i => i.StoreId.Item == StoreFilter)?.StoreName.Item ?? "All Stores";
     }
-</select>
-&nbsp;<a href="editstore">new store</a>
-@if (StoreFilter != Guid.Empty) {
-    <text>&nbsp;|&nbsp;</text><a href="editstore/@StoreFilter">edit store</a>
-}
-
+    <button class="btn btn-outline-dark btn-lg dropdown-toggle" style="font-weight:bold" type="button" id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+        @currentStoreName
+    </button>
+    <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+        <a class="dropdown-item" href="#" @onclick="e=>OnStoreFilterClear()" @onclick:preventDefault>All Stores</a>
+        <div class="dropdown-divider"></div>
+        @foreach (var s in StoreFilterChoices) {
+            string description = s.StoreName.Item;
+            <a class="dropdown-item" href="#" @onclick="e=>OnStoreFilter(s.StoreId)" @onclick:preventDefault>@description</a>
+        }
+        @if (StoreFilter != Guid.Empty) {
+            <div class="dropdown-divider"></div>
+            <a class="dropdown-item" href="editstore/@StoreFilter">Edit @currentStoreName...</a>
+        }
+    </div>
+</div>
 @foreach (var cat in Items.Select(j => j.Category).Distinct().OrderBy(i => i)) {
     var categoryName = cat.IsNone() ? "(Uncategorized)" : cat.Value.CategoryName.Item;
     <div>
