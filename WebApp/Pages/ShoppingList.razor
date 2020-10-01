@@ -24,14 +24,18 @@
 </div>
 @foreach (var cat in Items.Select(j => j.Category).Distinct().OrderBy(i => i)) {
     var categoryName = cat.IsNone() ? "(Uncategorized)" : cat.Value.CategoryName.Item;
-    <div>
+<div>
+    @if (cat.IsSome()) {
+        <h4 @onclick="e=>OnNavigateToCategory(cat.Value.CategoryId)" style="display:inline-block; cursor:pointer">
+            @categoryName
+        </h4>
+    }
+    else {
         <h4 style="display:inline-block">
             @categoryName
         </h4>
-        @if (cat.IsSome()) {
-            <text>&nbsp;</text><a href="categoryedit/@cat.Value.CategoryId.Item">edit</a>
-        }
-    </div>
+    }
+</div>
     @foreach (var item in Items.Where(i => object.Equals(i.Category, cat))) {
         <WebApp.Shared.Item HideCategory="true" OnClickBuyAgain="OnClickBuyAgain" OnClickDelete="OnClickDelete" OnClickComplete="OnClickComplete" ItemQry="@item" />
     }

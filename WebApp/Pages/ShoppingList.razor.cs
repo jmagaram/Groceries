@@ -42,6 +42,12 @@ namespace WebApp.Pages {
             .DistinctUntilChanged()
             .Subscribe(i => Items = i.ToList());
 
+        [Inject]
+        NavigationManager Navigation { get; set; }
+
+        private void OnNavigateToCategory(CategoryId id) =>
+            Navigation.NavigateTo($"categoryedit/{id.Item}");
+
         private void OnStoreFilterClear() => 
             StateService.Update(StateMessage.NewSettingsMessage(SettingsMessage.ClearStoreFilter));
 
