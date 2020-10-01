@@ -5,27 +5,36 @@
 @using Models
 @using static Common.OptionExtensions;
 @using static Models.StoreForm
+<style>
+    .nav-pills li {
+        margin-right: 5px;
+    }
+</style>
 
 @if (Form.Mode.IsCreateStoreMode) {
-    <h3>New store</h3>
+    <h4>New store</h4>
 }
 else {
-    <h3>Edit store</h3>
+    <h4>Edit store</h4>
 }
-
 <form>
-    <div>
-        <label>
-            Name: <input @oninput="OnNameChange" @onfocusout="OnNameFocusOut" value="@Form.StoreName" />
-            @if (Form.StoreNameValidation.IsError) {
-                <span>Error: @Form.StoreNameValidation.ErrorValue</span>
-            }
-        </label>
+    <div class="form-group">
+        <label for="storeNameInput">Store name</label>
+        <input id="storeNameInput" @oninput="OnNameChange" @onfocusout="OnNameFocusOut" value="@Form.StoreName" />
+        @if (Form.StoreNameValidation.IsError) {
+            <small class="form-text text-danger">@Form.StoreNameValidation.ErrorValue</small>
+        }
     </div>
-    @if (Form.Mode.IsEditStoreMode) {
-        <button class="btn btn-outline-secondary" type="button" @onclick="e=>OnDelete()">Delete</button>
-    }
-    <button class="btn btn-primary" type="button" @onclick="OnSubmit" disabled="@(Form.HasErrors)">Submit</button>
+    <ul class="nav nav-pills">
+        @if (Form.Mode.IsEditStoreMode) {
+            <li>
+                <button class="btn btn-secondary" type="button" @onclick="e=>OnDelete()"><span class="oi oi-trash" aria-hidden="true"></span></button>
+            </li>
+        }
+        <li>
+            <button class="btn btn-primary" type="button" @onclick="OnSubmit" disabled="@(Form.HasErrors)">Submit</button>
+        </li>
+    </ul>
 </form>
 
 @code {
