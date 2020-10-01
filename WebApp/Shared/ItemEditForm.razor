@@ -7,10 +7,6 @@
     }
 </style>
 <form>
-    <h4 style="display:inline-block">
-        @if (Form.ItemId.IsSome()) {<span>Edit item</span>}
-        else { <span>New item</span>}
-    </h4>
     <div class="form-group">
         <label for="itemNameInput">Item</label>
         <input id="itemNameInput" class="form-control" @oninput="OnItemNameChange" @onfocusout="OnItemNameFocusOut" placeholder="Apples, Canned Tuna, ..." value="@Form.ItemName" />
@@ -91,9 +87,10 @@
                 </select>
             </div>
         }
-    </div>    @if (!Form.Stores.IsEmpty && !Form.ScheduleKind.IsCompleted) {
+    </div>    
+    @if (!Form.Stores.IsEmpty) {
         <div class="form-group">
-            <label>Stores</label>
+            <label style="margin-top:15px">Stores</label>
             @foreach (var i in Form.Stores) {
                 <div class="form-check">
                     <input class="form-check-input" type="checkbox" @oninput="e =>OnStoreChange(e, i.Store.StoreId)" id="@i.Store.StoreId" name="@i.Store.StoreId" checked="@i.IsSold" />
@@ -123,15 +120,14 @@
         @if (!Form.ScheduleKind.IsCompleted) {
             <li>
                 @*Purchased! (for repeating and only-once)*@
-                <button type="button" disabled="@Form.HasErrors" class="btn btn-primary" @onclick="OnSubmitPurchased"><span class="oi oi-check" aria-hidden="true"></span>&nbsp;Complete</button>
+                <button type="button" disabled="@Form.HasErrors" class="btn btn-primary" @onclick="OnSubmitPurchased">Complete</button>
             </li>
         }
         @if (Form.ScheduleKind.IsCompleted) {
             <li>
                 @*Add to shopping list again*@
-                <button type="button" disabled="@Form.HasErrors" class="btn btn-primary" @onclick="AddToShoppingListAgain"><span class="oi oi-cart" aria-hidden="true"></span>&nbsp;Add to shopping list (again)</button>
+                <button type="button" disabled="@Form.HasErrors" class="btn btn-primary" @onclick="AddToShoppingListAgain">Add to shopping list (again)</button>
             </li>
         }
     </ul>
-
 </form>
