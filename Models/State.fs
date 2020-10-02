@@ -12,14 +12,27 @@ module Id =
 
     let create tag = newGuid () |> tag
 
+    let itemIdToGuid (i: ItemId) =
+        match i with
+        | ItemId s -> s
+
+    let storeIdToGuid (i: StoreId) =
+        match i with
+        | StoreId s -> s
+
+    let categoryIdToGuid (i: CategoryId) =
+        match i with
+        | CategoryId s -> s
+
+    let serialize (id: Guid) = id.ToString()
+
 [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
 module ItemName =
 
     let rules = singleLine 3<chars> 50<chars>
     let normalizer = String.trim
 
-    let validator =
-        rules |> StringValidation.createValidator
+    let validator = rules |> StringValidation.createValidator
 
     let tryParse =
         StringValidation.createParser normalizer validator ItemName List.head
@@ -32,8 +45,7 @@ module Note =
     let rules = multipleLine 3<chars> 200<chars>
     let normalizer = String.trim
 
-    let validator =
-        rules |> StringValidation.createValidator
+    let validator = rules |> StringValidation.createValidator
 
     let tryParse =
         StringValidation.createParser normalizer validator Note List.head
@@ -49,8 +61,7 @@ module Quantity =
     let rules = singleLine 1<chars> 30<chars>
     let normalizer = String.trim
 
-    let validator =
-        rules |> StringValidation.createValidator
+    let validator = rules |> StringValidation.createValidator
 
     let tryParse =
         StringValidation.createParser normalizer validator Quantity List.head
@@ -72,13 +83,11 @@ module Quantity =
           { OneOf = "bunch"; ManyOf = "bunches" }
           { OneOf = "pack"; ManyOf = "packs" }
           { OneOf = "bag"; ManyOf = "bags" }
-          { OneOf = "package"
-            ManyOf = "packages" }
+          { OneOf = "package"; ManyOf = "packages" }
           { OneOf = "box"; ManyOf = "boxes" }
           { OneOf = "pint"; ManyOf = "pints" }
           { OneOf = "gallon"; ManyOf = "gallons" }
-          { OneOf = "container"
-            ManyOf = "containers" } ]
+          { OneOf = "container"; ManyOf = "containers" } ]
 
     let private manyOf u =
         knownUnits
@@ -94,8 +103,7 @@ module Quantity =
         |> Seq.tryHead
         |> Option.defaultValue u
 
-    let private grammar =
-        new Regex("^\s*(\d+)\s*(.*)", RegexOptions.Compiled)
+    let private grammar = new Regex("^\s*(\d+)\s*(.*)", RegexOptions.Compiled)
 
     type private ParsedQuantity = { Quantity: int; Units: string }
 
@@ -123,10 +131,7 @@ module Quantity =
             | Some i ->
                 let qty = i.Quantity + 1
 
-                let result =
-                    { Quantity = qty
-                      Units = i.Units |> manyOf }
-                    |> format
+                let result = { Quantity = qty; Units = i.Units |> manyOf } |> format
 
                 Some result
 
@@ -149,11 +154,9 @@ module Quantity =
 
                 Some result
 
-    let increaseQty qty =
-        qty |> asText |> increase |> Option.map Quantity // not good logic; Quantity.create makes a Result
+    let increaseQty qty = qty |> asText |> increase |> Option.map Quantity // not good logic; Quantity.create makes a Result
 
-    let decreaseQty qty =
-        qty |> asText |> decrease |> Option.map Quantity
+    let decreaseQty qty = qty |> asText |> decrease |> Option.map Quantity
 
 [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
 module CategoryName =
@@ -161,8 +164,7 @@ module CategoryName =
     let rules = singleLine 3<chars> 30<chars>
     let normalizer = String.trim
 
-    let validator =
-        rules |> StringValidation.createValidator
+    let validator = rules |> StringValidation.createValidator
 
     let tryParse =
         StringValidation.createParser normalizer validator CategoryName List.head
@@ -175,8 +177,7 @@ module StoreName =
     let rules = singleLine 3<chars> 30<chars>
     let normalizer = String.trim
 
-    let validator =
-        rules |> StringValidation.createValidator
+    let validator = rules |> StringValidation.createValidator
 
     let tryParse =
         StringValidation.createParser normalizer validator StoreName List.head
@@ -212,18 +213,14 @@ module Repeat =
         [ 1; 3; 7; 14; 30; 60; 90 ]
         |> List.map (fun i -> i * 1<days>)
 
-    let create frequency postponedUntil =
-        { Frequency = frequency
-          PostponedUntil = postponedUntil }
+    let create frequency postponedUntil = { Frequency = frequency; PostponedUntil = postponedUntil }
 
     let due (now: DateTimeOffset) r =
         r.PostponedUntil
         |> Option.map (fun future ->
             let duration = future - now
 
-            round (duration.TotalDays)
-            |> int
-            |> (*) 1<StateTypes.days>)
+            round (duration.TotalDays) |> int |> (*) 1<StateTypes.days>)
 
     let dueWithin (now: DateTimeOffset) (d: int<days>) r =
         r
@@ -256,7 +253,7 @@ module Schedule =
         | Repeat { PostponedUntil = Some _ } -> true
         | _ -> false
 
-    let isCompleted s = 
+    let isCompleted s =
         match s with
         | Completed -> true
         | _ -> false
@@ -268,9 +265,7 @@ module Item =
         match i.Schedule with
         | Completed -> i
         | Once -> { i with Schedule = Completed }
-        | Repeat r ->
-            { i with
-                  Schedule = r |> Repeat.completeOne now |> Repeat }
+        | Repeat r -> { i with Schedule = r |> Repeat.completeOne now |> Repeat }
 
     let buyAgain (i: Item) =
         match i.Schedule with
@@ -292,9 +287,7 @@ module Item =
     let postpone (now: DateTimeOffset) (d: int<days>) (i: Item) =
         match i.Schedule with
         | Repeat r ->
-            let r =
-                { r with
-                      PostponedUntil = now.AddDays(d |> float) |> Some }
+            let r = { r with PostponedUntil = now.AddDays(d |> float) |> Some }
 
             { i with Schedule = Repeat r }
         | _ -> failwith "A non-repeating item can not be postponed."
@@ -335,9 +328,7 @@ module State =
     let mapStores f s = { s with Stores = f s.Stores }
     let mapItems f s = { s with Items = f s.Items }
 
-    let mapNotSoldItems f s =
-        { s with
-              NotSoldItems = f s.NotSoldItems }
+    let mapNotSoldItems f s = { s with NotSoldItems = f s.NotSoldItems }
 
     let mapSettings f s = { s with Settings = f s.Settings }
 
@@ -363,11 +354,9 @@ module State =
         (go DataTable.insert, go DataTable.update, go DataTable.upsert)
 
     let insertNotSoldItem (nsi: NotSoldItem) s =
-        let item =
-            s.Items |> DataTable.tryFindCurrent nsi.ItemId
+        let item = s.Items |> DataTable.tryFindCurrent nsi.ItemId
 
-        let store =
-            s.Stores |> DataTable.tryFindCurrent nsi.StoreId
+        let store = s.Stores |> DataTable.tryFindCurrent nsi.StoreId
 
         match item, store with
         | Some _, Some _ -> s |> mapNotSoldItems (DataTable.insert nsi)
@@ -398,8 +387,7 @@ module State =
         |> mapNotSoldItems (DataTable.deleteIf (fun i -> i.StoreId = k))
         |> mapSettings (DataRow.mapCurrent (Settings.clearStoreFilterIf k))
 
-    let deleteNotSoldItem k s =
-        s |> mapNotSoldItems (DataTable.delete k)
+    let deleteNotSoldItem k s = s |> mapNotSoldItems (DataTable.delete k)
 
     let deleteItem k s = s |> mapItems (DataTable.delete k)
 
@@ -434,8 +422,7 @@ module State =
                   StoreName = n |> StoreName.tryParse |> Result.okOrThrow }
 
         let findCategory n (s: State) =
-            let n =
-                CategoryName.tryParse n |> Result.okOrThrow
+            let n = CategoryName.tryParse n |> Result.okOrThrow
 
             s.Categories
             |> DataTable.current
@@ -460,38 +447,22 @@ module State =
             |> insertItem
                 { Item.ItemId = Id.create ItemId
                   ItemName = name |> ItemName.tryParse |> Result.okOrThrow
-                  Quantity =
-                      if qty = "" then
-                          None
-                      else
-                          qty
-                          |> Quantity.tryParse
-                          |> Result.okOrThrow
-                          |> Some
-                  Note =
-                      if note = ""
-                      then None
-                      else note |> Note.tryParse |> Result.okOrThrow |> Some
+                  Quantity = if qty = "" then None else qty |> Quantity.tryParse |> Result.okOrThrow |> Some
+                  Note = if note = "" then None else note |> Note.tryParse |> Result.okOrThrow |> Some
                   Item.Schedule = Schedule.Once
                   Item.CategoryId = if cat = "" then None else Some (findCategory cat s).CategoryId }
 
         let now = System.DateTimeOffset.Now
 
         let markComplete n (s: State) =
-            let item =
-                s
-                |> findItem n
-                |> fun i -> { i with Schedule = Completed }
+            let item = s |> findItem n |> fun i -> { i with Schedule = Completed }
 
             s |> mapItems (DataTable.update item)
 
         let makeRepeat n freq postpone (s: State) =
-            let freq =
-                Frequency.create freq |> Result.okOrThrow
+            let freq = Frequency.create freq |> Result.okOrThrow
 
-            let postpone =
-                postpone
-                |> Option.map (fun d -> now.AddDays(d |> float))
+            let postpone = postpone |> Option.map (fun d -> now.AddDays(d |> float))
 
             let repeat = Repeat.create freq postpone
 
@@ -539,18 +510,14 @@ module State =
         match msg with
         | StoreFormMessage.InsertStore n ->
             s
-            |> insertStore
-                { StoreId = Id.create StoreId
-                  StoreName = n }
+            |> insertStore { StoreId = Id.create StoreId; StoreName = n }
         | StoreFormMessage.UpdateStore i -> s |> updateStore i
 
     let submitCategoryForm msg s =
         match msg with
         | CategoryFormMessage.InsertCategory n ->
             s
-            |> insertCategory
-                { CategoryId = Id.create CategoryId
-                  CategoryName = n }
+            |> insertCategory { CategoryId = Id.create CategoryId; CategoryName = n }
         | CategoryFormMessage.UpdateCategory i -> s |> updateCategory i
 
     let markItemComplete now id s =
@@ -581,11 +548,7 @@ module State =
         s |> mapItems (DataTable.update item)
 
     let buyAgain id s =
-        let item =
-            s
-            |> itemsTable
-            |> DataTable.findCurrent id
-            |> Item.buyAgain
+        let item = s |> itemsTable |> DataTable.findCurrent id |> Item.buyAgain
 
         s |> mapItems (DataTable.update item)
 

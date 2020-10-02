@@ -54,9 +54,9 @@ namespace WebApp.Pages {
 
         private async Task AddItemsToContainerAsync() {
             var partitionKey = new PartitionKey(_userId);
-            await AddItemsOfType(partitionKey, CosmosExperiment.items(_userId, StateService.Current), i => i.ItemId);
-            await AddItemsOfType(partitionKey, CosmosExperiment.categories(_userId, StateService.Current), i => i.CategoryId);
-            await AddItemsOfType(partitionKey, CosmosExperiment.stores(_userId, StateService.Current), i => i.StoreId);
+            await AddItemsOfType(partitionKey, CosmosExperiment.items(_userId, StateService.Current), i => IdModule.serialize(i.ItemId));
+            await AddItemsOfType(partitionKey, CosmosExperiment.categories(_userId, StateService.Current), i => IdModule.serialize(i.CategoryId));
+            await AddItemsOfType(partitionKey, CosmosExperiment.stores(_userId, StateService.Current), i => IdModule.serialize(i.StoreId));
             await AddItemsOfType(partitionKey, CosmosExperiment.notSoldItems(_userId, StateService.Current), i => i.Id);
         }
 
