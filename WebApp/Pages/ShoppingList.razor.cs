@@ -48,10 +48,10 @@ namespace WebApp.Pages {
         private void OnNavigateToCategory(CategoryId id) =>
             Navigation.NavigateTo($"categoryedit/{id.Item}");
 
-        private void OnStoreFilterClear() => 
+        private void OnStoreFilterClear() =>
             StateService.Update(StateMessage.NewSettingsMessage(SettingsMessage.ClearStoreFilter));
 
-        private void OnStoreFilter(StoreId id) => 
+        private void OnStoreFilter(StoreId id) =>
             StateService.Update(StateMessage.NewSettingsMessage(SettingsMessage.NewSetStoreFilterTo(id)));
 
         private void OnClickDelete(ItemId itemId) =>
@@ -77,13 +77,6 @@ namespace WebApp.Pages {
 
         private void ShowPostponedWithinNext(int days) {
             StateService.Update(StateMessage.NewSettingsMessage(SettingsMessage.NewSetPostponedViewHorizon(days)));
-        }
-
-        private void ShowCompleted() {
-        }
-
-        private void HideCompleted() {
-
         }
 
         protected Guid StoreFilter { get; private set; }
