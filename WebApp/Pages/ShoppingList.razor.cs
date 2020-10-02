@@ -69,6 +69,12 @@ namespace WebApp.Pages {
         private void OnClickPostpone((ItemId itemId, int days) i) =>
             StateService.Update(StateMessage.NewItemMessage(ItemMessage.NewPostpone(i.itemId, i.days)));
 
+        private void OnClickHideCompletedItems() =>
+            StateService.Update(StateMessage.NewSettingsMessage(SettingsMessage.NewHideCompletedItems(true)));
+
+        private void OnClickShowCompletedItems() =>
+            StateService.Update(StateMessage.NewSettingsMessage(SettingsMessage.NewHideCompletedItems(false)));
+
         private void ShowPostponedWithinNext(int days) {
             StateService.Update(StateMessage.NewSettingsMessage(SettingsMessage.NewSetPostponedViewHorizon(days)));
         }

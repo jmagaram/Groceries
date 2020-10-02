@@ -95,6 +95,10 @@ let shoppingListQry (now: DateTimeOffset) s =
                       |> Repeat.dueWithin now settings.PostponedViewHorizon
                   | _ -> true
 
+              let isHideCompletedItemsSatisfied = 
+                  (settings.HideCompletedItems = false) || (i.Schedule |> Schedule.isCompleted |> not)
+
               isStoreFilterSatisfied
-              && isPostponedViewHorizonSatisfied)
+              && isPostponedViewHorizonSatisfied
+              && isHideCompletedItemsSatisfied )
           |> List.ofSeq }

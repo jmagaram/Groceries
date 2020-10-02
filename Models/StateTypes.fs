@@ -89,7 +89,8 @@ type CategoryFormMessage =
 
 type Settings = 
     { StoreFilter: StoreId option 
-      PostponedViewHorizon : int<days> }
+      PostponedViewHorizon : int<days> 
+      HideCompletedItems : bool }
     interface IKey<string> with
         member this.Key = "singleton"
 
@@ -132,6 +133,7 @@ type SettingsMessage =
     | ClearStoreFilter
     | SetStoreFilterTo of StoreId
     | SetPostponedViewHorizon of int<days>
+    | HideCompletedItems of bool
 
 type StateMessage =
     | SubmitStoreForm of StoreFormMessage

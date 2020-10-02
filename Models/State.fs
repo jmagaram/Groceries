@@ -256,6 +256,11 @@ module Schedule =
         | Repeat { PostponedUntil = Some _ } -> true
         | _ -> false
 
+    let isCompleted s = 
+        match s with
+        | Completed -> true
+        | _ -> false
+
 [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
 module Item =
 
@@ -273,7 +278,9 @@ module Item =
         | Once -> i
         | Repeat _ -> i
 
-    let isPostponed (i:Item) = i.Schedule |> Schedule.isPostponed
+    let isPostponed (i: Item) = i.Schedule |> Schedule.isPostponed
+
+    let isCompleted (i: Item) = i.Schedule |> Schedule.isCompleted
 
     let removePostpone (i: Item) =
         match i.Schedule with
@@ -282,11 +289,14 @@ module Item =
                   Schedule = Repeat { r with PostponedUntil = None } }
         | _ -> i
 
-    let postpone (now:DateTimeOffset) (d:int<days>) (i:Item) =
+    let postpone (now: DateTimeOffset) (d: int<days>) (i: Item) =
         match i.Schedule with
-        | Repeat r -> 
-            let r = { r with PostponedUntil = now.AddDays(d |> float) |> Some }
-            { i with Schedule = Repeat r}
+        | Repeat r ->
+            let r =
+                { r with
+                      PostponedUntil = now.AddDays(d |> float) |> Some }
+
+            { i with Schedule = Repeat r }
         | _ -> failwith "A non-repeating item can not be postponed."
 
 [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
@@ -294,7 +304,8 @@ module Settings =
 
     let create =
         { Settings.StoreFilter = None
-          PostponedViewHorizon = 7<days> }
+          PostponedViewHorizon = 7<days>
+          HideCompletedItems = true }
 
     let setStoreFilter f s = { s with StoreFilter = f }
 
@@ -376,6 +387,10 @@ module State =
     let setPostponedViewHorizon d s =
         s
         |> mapSettings (DataRow.mapCurrent (fun i -> { i with PostponedViewHorizon = d }))
+
+    let hideCompletedItems b s =
+        s
+        |> mapSettings (DataRow.mapCurrent (fun i -> { i with HideCompletedItems = b }))
 
     let deleteStore k s =
         s
@@ -510,6 +525,7 @@ module State =
         |> newItem "Dried flax seeds" "Dry" "1 bag" ""
         |> makeRepeat "Bananas" 7<days> None
         |> makeRepeat "Peanut butter" 14<days> (Some 3<days>)
+        |> makeRepeat "Apples" 14<days> (Some -3<days>)
         |> markComplete "Ice cream"
         |> newStore "QFC"
         |> newStore "Whole Foods"
@@ -560,7 +576,7 @@ module State =
             s
             |> itemsTable
             |> DataTable.findCurrent id
-            |> Item.postpone now d 
+            |> Item.postpone now d
 
         s |> mapItems (DataTable.update item)
 
@@ -575,6 +591,7 @@ module State =
 
     let rec update msg s =
         let now = DateTimeOffset.Now
+
         match msg with
         | SubmitStoreForm msg -> s |> submitStoreForm msg
         | SubmitCategoryForm msg -> s |> submitCategoryForm msg
@@ -605,4 +622,5 @@ module State =
             | ClearStoreFilter -> s |> updateSettingsStoreFilter None
             | SetStoreFilterTo id -> s |> updateSettingsStoreFilter (Some id)
             | SetPostponedViewHorizon d -> s |> setPostponedViewHorizon d
+            | HideCompletedItems b -> s |> hideCompletedItems b
         | Transaction msgs -> msgs |> Seq.fold (fun t i -> t |> update i) s

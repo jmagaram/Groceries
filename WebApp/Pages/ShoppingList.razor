@@ -28,6 +28,9 @@
         <button @onclick="_=>ShowPostponedWithinNext(7)" class="dropdown-item">+1 week</button>
         <button @onclick="_=>ShowPostponedWithinNext(14)" class="dropdown-item">+2 weeks</button>
         <button @onclick="_=>ShowPostponedWithinNext(int.MaxValue)" class="dropdown-item">All</button>
+        <h6 class="dropdown-header">COMPLETED ITEMS</h6>
+        <button @onclick="_=>OnClickShowCompletedItems()" class="dropdown-item">Show completed</button>
+        <button @onclick="_=>OnClickHideCompletedItems()" class="dropdown-item">Hide completed</button>
     </div>
 </div>
 @foreach (var cat in Items.Select(j => j.Category).Distinct().OrderBy(i => i)) {
