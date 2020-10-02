@@ -1,0 +1,14 @@
+﻿@page "/sync"
+@using Models
+@using Common
+@using Microsoft.FSharp.Core;
+
+<h1>Synchronization</h1>
+
+<button type="button" class="btn btn-outline-primary" @onclick="@(async () => await ResetToEmpty())">Reset</button>
+<button type="button" class="btn btn-outline-primary" @onclick="@(async () => await CreateDatabaseIfNotExistsAsync())">Create database</button>
+<button type="button" class="btn btn-outline-primary" @onclick="@(async () => await CreateContainerIfNotExistsAsync())">Create container</button>
+<button type="button" class="btn btn-outline-primary" @onclick="@(async () => await AddItemsToContainerAsync())">Add items</button>
+<button type="button" class="btn btn-outline-primary" @onclick="@(async () => await DeleteDatabaseAsync())">Delete database</button>
+<hr />
+<a href="https://localhost:8081/_explorer/index.html" target="_blank">Open data explorer</a>

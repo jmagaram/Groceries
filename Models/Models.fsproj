@@ -13,6 +13,8 @@
     <Compile Include="Validation.fs" />
     <Compile Include="StateTypes.fs" />
     <Compile Include="State.fs" />
+    <Compile Include="DtoTypes.fs" />
+    <Compile Include="Dto.fs" />
     <Compile Include="QueryTypes.fs" />
     <Compile Include="Query.fs" />
     <Compile Include="ViewTypes.fs" />
@@ -24,6 +26,7 @@
 
   <ItemGroup>
     <PackageReference Include="FSharp.Control.Reactive" Version="4.4.2" />
+    <PackageReference Include="Newtonsoft.Json" Version="12.0.3" />
     <PackageReference Include="System.Reactive" Version="4.4.1" />
   </ItemGroup>
 
