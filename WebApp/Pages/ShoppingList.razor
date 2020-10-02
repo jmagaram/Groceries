@@ -1,39 +1,47 @@
 ﻿@page "/shoppinglist"
-@using Models 
+@using Models
 @using Common
 @using Microsoft.FSharp.Core;
 
-<div class="dropdown" style="margin-bottom:20px;">
-    @{
-        var currentStoreName = StoreFilterChoices.FirstOrDefault(i => i.StoreId.Item == StoreFilter)?.StoreName.Item ?? "All Stores";
-    }
-    <button class="btn btn-outline-dark btn-lg dropdown-toggle" style="font-weight:bold" type="button" id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-        @currentStoreName
-    </button>
-    <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
-        <h6 class="dropdown-header">STORES</h6>
-        <a class="dropdown-item" href="#" @onclick="e=>OnStoreFilterClear()" @onclick:preventDefault>All Stores</a>
-        <div class="dropdown-divider"></div>
-        @foreach (var s in StoreFilterChoices) {
-            string description = s.StoreName.Item;
-            <a class="dropdown-item" href="#" @onclick="e=>OnStoreFilter(s.StoreId)" @onclick:preventDefault>@description</a>
+<div style="margin-bottom:20px">
+    <div class="dropdown btn-group">
+        @{
+            var currentStoreName = StoreFilterChoices.FirstOrDefault(i => i.StoreId.Item == StoreFilter)?.StoreName.Item ?? "All Stores";
         }
-        @if (StoreFilter != Guid.Empty) {
+        <button class="btn btn-outline-dark btn-lg dropdown-toggle" style="font-weight:bold" type="button" id="storeDropdown" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+            @currentStoreName
+        </button>
+        <div class="dropdown-menu" aria-labelledby="storeDropdown">
+            <a class="dropdown-item" href="#" @onclick="e=>OnStoreFilterClear()" @onclick:preventDefault>All Stores</a>
             <div class="dropdown-divider"></div>
-            <a class="dropdown-item" href="editstore/@StoreFilter">Edit @currentStoreName...</a>
-        }
-        <h6 class="dropdown-header">POSTPONED ITEMS</h6>
-        <button @onclick="_=>ShowPostponedWithinNext(0)" class="dropdown-item">Overdue only</button>
-        <button @onclick="_=>ShowPostponedWithinNext(3)" class="dropdown-item">Next few days</button>
-        <button @onclick="_=>ShowPostponedWithinNext(7)" class="dropdown-item">+1 week</button>
-        <button @onclick="_=>ShowPostponedWithinNext(14)" class="dropdown-item">+2 weeks</button>
-        <button @onclick="_=>ShowPostponedWithinNext(int.MaxValue)" class="dropdown-item">All</button>
-        <h6 class="dropdown-header">COMPLETED ITEMS</h6>
-        <button @onclick="_=>OnClickShowCompletedItems()" class="dropdown-item">Show completed</button>
-        <button @onclick="_=>OnClickHideCompletedItems()" class="dropdown-item">Hide completed</button>
+            @foreach (var s in StoreFilterChoices) {
+                string description = s.StoreName.Item;
+                <a class="dropdown-item" href="#" @onclick="e=>OnStoreFilter(s.StoreId)" @onclick:preventDefault>@description</a>
+            }
+            @if (StoreFilter != Guid.Empty) {
+                <div class="dropdown-divider"></div>
+                <a class="dropdown-item" href="editstore/@StoreFilter">Edit @currentStoreName...</a>
+            }
+        </div>
     </div>
-</div>
-@foreach (var cat in Items.Select(j => j.Category).Distinct().OrderBy(i => i)) {
+    <div class="dropdown btn-group">
+        <button class="btn btn-link btn-large dropdown-toggle" type="button" id="viewDropdown" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+            View
+        </button>
+        <div class="dropdown-menu" aria-labelledby="viewDropdown">
+            <h6 class="dropdown-header">POSTPONED ITEMS</h6>
+            <button @onclick="_=>ShowPostponedWithinNext(0)" class="dropdown-item">Overdue only</button>
+            <button @onclick="_=>ShowPostponedWithinNext(3)" class="dropdown-item">Next few days</button>
+            <button @onclick="_=>ShowPostponedWithinNext(7)" class="dropdown-item">+1 week</button>
+            <button @onclick="_=>ShowPostponedWithinNext(14)" class="dropdown-item">+2 weeks</button>
+            <button @onclick="_=>ShowPostponedWithinNext(int.MaxValue)" class="dropdown-item">All</button>
+            <div class="dropdown-divider"></div>
+            <h6 class="dropdown-header">COMPLETED ITEMS</h6>
+            <button @onclick="_=>OnClickShowCompletedItems()" class="dropdown-item">Show completed</button>
+            <button @onclick="_=>OnClickHideCompletedItems()" class="dropdown-item">Hide completed</button>
+        </div>
+    </div>
+</div>@foreach (var cat in Items.Select(j => j.Category).Distinct().OrderBy(i => i)) {
     var now = DateTimeOffset.Now;
     var categoryName = cat.IsNone() ? "(Uncategorized)" : cat.Value.CategoryName.Item;
     <div>
@@ -49,7 +57,7 @@
         }
     </div>
 
-    foreach (var item in Items.Where(i => object.Equals(i.Category, cat)).OrderBy(j=>ScheduleModule.due(now,j.Schedule)).ThenBy(j=>j.ItemName)) {
+    foreach (var item in Items.Where(i => object.Equals(i.Category, cat)).OrderBy(j => ScheduleModule.due(now, j.Schedule)).ThenBy(j => j.ItemName)) {
         <WebApp.Shared.Item HideCategory="true" OnClickPostpone="OnClickPostpone" OnClickRemovePostpone="OnClickRemovePostpone" OnClickBuyAgain="OnClickBuyAgain" OnClickDelete="OnClickDelete" OnClickComplete="OnClickComplete" ItemQry="@item" />
     }
 }
