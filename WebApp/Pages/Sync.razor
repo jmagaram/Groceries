@@ -12,6 +12,9 @@
     <hr />
     <a href="https://localhost:8081/_explorer/index.html" target="_blank">Open data explorer</a>
 }
-else {
-    <p>Initializing...</p>
+
+@if (StatusMessage != "") {
+    <br />
+    <br />
+    <p>@StatusMessage</p>
 }

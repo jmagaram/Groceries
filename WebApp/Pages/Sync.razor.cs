@@ -23,20 +23,20 @@ namespace WebApp.Pages {
         public Data.ApplicationStateService StateService { get; set; }
 
         protected override async Task OnInitializedAsync() {
-            IsReady = false;
+            StatusMessage = "Initializing...";
             _client = CreateClient();
             await CreateDatabaseIfNotExistsAsync();
             await CreateContainerIfNotExistsAsync();
-            IsReady = true;
+            StatusMessage = "";
         }
 
         private async Task ResetToEmpty() {
-            IsReady = false;
+            StatusMessage = "Resetting...";
             await CreateDatabaseIfNotExistsAsync();
             await DeleteDatabaseAsync();
             await CreateDatabaseIfNotExistsAsync();
             await CreateContainerIfNotExistsAsync();
-            IsReady = true;
+            StatusMessage = "";
         }
 
         private static CosmosClient CreateClient() =>
@@ -50,6 +50,7 @@ namespace WebApp.Pages {
 
         protected async Task PushAsync() {
             var changes = Models.Dto.pushChanges(_userId, StateService.Current);
+            StatusMessage = $"Pushing {changes.Items.Count} items...";
             var partitionKey = new PartitionKey(_userId);
             foreach (var i in changes.Items) {
                 var doc = await _container.UpsertItemAsync(i, partitionKey);
@@ -63,6 +64,7 @@ namespace WebApp.Pages {
             foreach (var i in changes.NotSoldItems) {
                 var doc = await _container.UpsertItemAsync(i, partitionKey);
             }
+            StatusMessage = "";
             StateService.Update(StateTypes.StateMessage.AcceptAllChanges);
         }
 
@@ -134,7 +136,9 @@ namespace WebApp.Pages {
         // https://github.com/Azure/azure-cosmos-dotnet-v3/blob/master/Microsoft.Azure.Cosmos.Samples/Usage/Queries/Program.cs#L154-L186
 
 
-        protected bool IsReady { get; set; }
+        protected bool IsReady => StatusMessage == "";
+
+        protected string StatusMessage { get; set; } = "";
 
         public void Dispose() => _client.Dispose();
 
