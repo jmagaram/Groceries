@@ -7,10 +7,9 @@
 
 @if (IsReady) {
     <button type="button" class="btn btn-outline-primary" @onclick="@(async () => await ResetToEmpty())">Clear database</button>
-    <button type="button" class="btn btn-outline-primary" @onclick="@(async () => await QueryItemsAsync())">Query</button>
+    <a class="btn btn-outline-primary" href="https://localhost:8081/_explorer/index.html" target="_blank">Data Explorer</a>
     <button type="button" class="btn btn-outline-primary" @onclick="@(async () => await PushAsync())">Push</button>
-    <hr />
-    <a href="https://localhost:8081/_explorer/index.html" target="_blank">Open data explorer</a>
+    <button type="button" class="btn btn-outline-primary" @onclick="@(async () => await QueryItemsAsync())">Query</button>
 }
 
 @if (StatusMessage != "") {
