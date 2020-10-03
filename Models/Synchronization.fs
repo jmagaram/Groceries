@@ -49,6 +49,17 @@ module DataRow =
         | Added v -> added (f v)
         | Deleted _ -> r
 
+    let isAddedOrModified r =
+        match r with
+        | Added v -> Some v
+        | Modified m -> Some m.Current
+        | _ -> None
+
+    let isDeleted r =
+        match r with
+        | Deleted v -> Some v
+        | _ -> None
+
     let hasChanges r =
         match r with
         | Unchanged _ -> false
@@ -136,9 +147,13 @@ module DataTable =
         |> asMap
         |> Map.exists (fun k v -> v |> DataRow.hasChanges)
 
-    let acceptChanges dt = chooseRow DataRow.acceptChanges dt
+    let acceptChanges dt = dt |> chooseRow DataRow.acceptChanges
 
-    let rejectChanges dt = chooseRow DataRow.rejectChanges dt
+    let rejectChanges dt = dt |> chooseRow DataRow.rejectChanges
+
+    let deletions dt = 
+        let chooseDeleted<'T> (r:DataRow<'T>) =
+            match r
 
     let deleteIf p dt =
         dt
