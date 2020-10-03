@@ -19,6 +19,17 @@ module Dto =
             |> Option.map Id.categoryIdToGuid
             |> Option.toNullable
 
+        match i.Schedule with
+        | StateTypes.Schedule.Once -> r.ScheduleKind <- DtoTypes.ScheduleKind.Completed
+        | StateTypes.Schedule.Completed -> r.ScheduleKind <- DtoTypes.ScheduleKind.Completed
+        | StateTypes.Schedule.Repeat rpt ->
+            r.ScheduleKind <- DtoTypes.ScheduleKind.Repeat
+
+            r.Repeat <-
+                let frequency = rpt.Frequency |> Frequency.days |> int
+                let postponedUntil = rpt.PostponedUntil |> Option.toNullable
+                DtoTypes.Repeat(Frequency = frequency, PostponedUntil = postponedUntil)
+
         r
 
     let fromCategory (userId: string) (c: StateTypes.Category) =
