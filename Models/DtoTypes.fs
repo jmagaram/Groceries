@@ -10,22 +10,23 @@ type DocumentKind =
     | Category = 3
     | NotSoldItem = 4
 
-type ScheduleKind =
-    | Undefined = 0
-    | Completed = 1
-    | Once = 2
-    | Repeat = 3
+type GroceryDocument() =
+    member val UserId = "" with get, set
+    member val DocumentType = DocumentKind.Undefined with get, set
+    member val IsDeleted = false with get, set
+    member val _eTag = "" with get, set
+    member val _ts = 0 with get, set // seconds since 1970
 
 [<AllowNullLiteral>]
 type Repeat() =
     member val Frequency = 0 with get, set
     member val PostponedUntil = Nullable<DateTimeOffset>() with get, set
 
-type GroceryDocument() =
-    member val UserId = "" with get, set
-    member val DocumentType = DocumentKind.Undefined with get, set
-    member val _eTag = "" with get, set
-    member val _ts = 0 with get, set
+type ScheduleKind =
+    | Undefined = 0
+    | Completed = 1
+    | Once = 2
+    | Repeat = 3
 
 type Item() =
     inherit GroceryDocument()
