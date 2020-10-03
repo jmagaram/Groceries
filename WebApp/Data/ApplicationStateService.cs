@@ -13,12 +13,14 @@ namespace WebApp.Data {
         public ApplicationStateService() {
             _state = new BehaviorSubject<State>(StateModule.createSampleData);
             _stateObs = _state;
-            ShoppingListQry = _stateObs.Select(x => Query.shoppingListQry(DateTimeOffset.Now,x));
+            ShoppingListQry = _stateObs.Select(x => Query.shoppingListQry(DateTimeOffset.Now, x));
             Converter<Unit, DateTimeOffset> clock = (x => DateTimeOffset.Now);
             Clock = FuncConvert.ToFSharpFunc(clock);
         }
 
         public State Current => _state.Value;
+
+        public int LastCosmosSyncTimestamp { get; set; } = int.MinValue;
 
         public void Update(StateMessage msg) {
             var state = _state.Value;

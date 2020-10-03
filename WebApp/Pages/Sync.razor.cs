@@ -3,7 +3,7 @@ using Microsoft.Azure.Cosmos;
 using Models;
 using System;
 using System.Collections.Generic;
-using System.Net;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace WebApp.Pages {
@@ -22,6 +22,12 @@ namespace WebApp.Pages {
         [Inject]
         public Data.ApplicationStateService StateService { get; set; }
 
+        private void LogMessage(string s) {
+            Log.Insert(0, s);
+        }
+
+        public List<string> Log { get; } = new List<string>();
+
         protected override async Task OnInitializedAsync() {
             StatusMessage = "Initializing...";
             _client = CreateClient();
@@ -31,6 +37,7 @@ namespace WebApp.Pages {
         }
 
         private async Task ResetToEmpty() {
+            LogMessage("Resetting...");
             StatusMessage = "Resetting...";
             await CreateDatabaseIfNotExistsAsync();
             await DeleteDatabaseAsync();
@@ -49,8 +56,9 @@ namespace WebApp.Pages {
             _container = await _database.CreateContainerIfNotExistsAsync(_containerId, _partitionKeyPath, 400);
 
         protected async Task PushAsync() {
+            StatusMessage = "Pushing...";
             var changes = Models.Dto.pushChanges(_userId, StateService.Current);
-            StatusMessage = $"Pushing {changes.Items.Count} items...";
+            LogMessage($"Pushing items:{changes.Items.Count} cats:{changes.Categories.Count} stores:{changes.Stores.Count}");
             var partitionKey = new PartitionKey(_userId);
             foreach (var i in changes.Items) {
                 var doc = await _container.UpsertItemAsync(i, partitionKey);
@@ -68,20 +76,7 @@ namespace WebApp.Pages {
             StateService.Update(StateTypes.StateMessage.AcceptAllChanges);
         }
 
-        protected async Task DeleteDatabaseAsync() {
-            DatabaseResponse response = await _database.DeleteAsync();
-        }
-
-        private async Task AddItemsOfType<T>(PartitionKey partitionKey, IEnumerable<T> items, Func<T, string> id) {
-            foreach (var i in items) {
-                try {
-                    ItemResponse<T> doc = await _container.ReadItemAsync<T>(id(i), partitionKey);
-                }
-                catch (CosmosException ex) when (ex.StatusCode == HttpStatusCode.NotFound) {
-                    ItemResponse<T> doc = await _container.CreateItemAsync(i, partitionKey);
-                }
-            }
-        }
+        protected async Task DeleteDatabaseAsync() => await _database.DeleteAsync();
 
         private async Task ReplaceItemAsync(string itemId) {
             var partitionKey = new PartitionKey(_userId);
@@ -95,7 +90,7 @@ namespace WebApp.Pages {
         private async Task QueryItemsAsync() => await QueryItemsAsyncOfType<Models.DtoTypes.Item>();
 
         private async Task QueryItemsAsyncOfType<T>() {
-            var sqlQueryText = "SELECT * FROM c WHERE c.ItemName <> \"aaa\"";
+            var sqlQueryText = "SELECT * FROM c";
             QueryDefinition queryDefinition = new QueryDefinition(sqlQueryText);
 
             var queryResultSetIterator = _container.GetItemQueryIterator<T>(queryDefinition);
@@ -107,6 +102,30 @@ namespace WebApp.Pages {
                 }
             }
         }
+
+        private async Task GetRecentChanges() {
+            var sqlQueryText = $"SELECT * FROM c WHERE c._ts > {StateService.LastCosmosSyncTimestamp}";
+            QueryDefinition queryDefinition = new QueryDefinition(sqlQueryText);
+            var queryResultSetIterator = _container.GetItemQueryIterator<DtoTypes.GroceryDocument>(queryDefinition);
+            var docs = new List<DtoTypes.GroceryDocument>();
+            while (queryResultSetIterator.HasMoreResults) {
+                var currentResultSet = await queryResultSetIterator.ReadNextAsync();
+                foreach (var doc in currentResultSet) {
+                    docs.Add(doc);
+                }
+            }
+            LogMessage($"Pulled items to process: {docs.Count}");
+            if (docs.Count > 0) {
+                StateService.LastCosmosSyncTimestamp = docs.Select(i => i._ts).Max();
+            }
+
+        }
+
+        protected bool IsReady => StatusMessage == "";
+
+        protected string StatusMessage { get; set; } = "";
+
+        public void Dispose() => _client.Dispose();
 
         //    var queryable = container
         //.GetItemLinqQueryable<IDictionary<string, object>>();
@@ -136,11 +155,17 @@ namespace WebApp.Pages {
         // https://github.com/Azure/azure-cosmos-dotnet-v3/blob/master/Microsoft.Azure.Cosmos.Samples/Usage/Queries/Program.cs#L154-L186
 
 
-        protected bool IsReady => StatusMessage == "";
+        //private async Task AddItemsOfType<T>(PartitionKey partitionKey, IEnumerable<T> items, Func<T, string> id) {
+        //    foreach (var i in items) {
+        //        try {
+        //            ItemResponse<T> doc = await _container.ReadItemAsync<T>(id(i), partitionKey);
+        //        }
+        //        catch (CosmosException ex) when (ex.StatusCode == HttpStatusCode.NotFound) {
+        //            ItemResponse<T> doc = await _container.CreateItemAsync(i, partitionKey);
+        //        }
+        //    }
+        //}
 
-        protected string StatusMessage { get; set; } = "";
-
-        public void Dispose() => _client.Dispose();
 
     }
 }
