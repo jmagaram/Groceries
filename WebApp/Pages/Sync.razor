@@ -6,12 +6,9 @@
 <h1>Synchronization</h1>
 
 @if (IsReady) {
-    <button type="button" class="btn btn-outline-primary" @onclick="@(async () => await ResetToEmpty())">Reset</button>
-    <button type="button" class="btn btn-outline-primary" @onclick="@(async () => await CreateDatabaseIfNotExistsAsync())">Create database</button>
-    <button type="button" class="btn btn-outline-primary" @onclick="@(async () => await CreateContainerIfNotExistsAsync())">Create container</button>
+    <button type="button" class="btn btn-outline-primary" @onclick="@(async () => await ResetToEmpty())">Clear database</button>
     <button type="button" class="btn btn-outline-primary" @onclick="@(async () => await QueryItemsAsync())">Query</button>
     <button type="button" class="btn btn-outline-primary" @onclick="@(async () => await PushAsync())">Push</button>
-    <button type="button" class="btn btn-outline-primary" @onclick="@(async () => await DeleteDatabaseAsync())">Delete database</button>
     <hr />
     <a href="https://localhost:8081/_explorer/index.html" target="_blank">Open data explorer</a>
 }
