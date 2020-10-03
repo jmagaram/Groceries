@@ -134,6 +134,11 @@ module DataTable =
         |> asMap
         |> Seq.choose (fun kv -> kv.Value |> DataRow.currentValue)
 
+    let hasChanges dt =
+        dt
+        |> asMap
+        |> Map.exists (fun k v -> v |> DataRow.hasChanges)
+
     let private chooseRow f dt =
         dt
         |> asMap
@@ -142,18 +147,21 @@ module DataTable =
         |> Map.ofSeq
         |> fromMap
 
-    let hasChanges dt =
-        dt
-        |> asMap
-        |> Map.exists (fun k v -> v |> DataRow.hasChanges)
-
     let acceptChanges dt = dt |> chooseRow DataRow.acceptChanges
 
     let rejectChanges dt = dt |> chooseRow DataRow.rejectChanges
 
-    let deletions dt = 
-        let chooseDeleted<'T> (r:DataRow<'T>) =
-            match r
+    let isAddedOrModified dt = 
+        dt
+        |> asMap
+        |> Map.values
+        |> Seq.choose DataRow.isAddedOrModified
+
+    let isDeleted dt = 
+        dt
+        |> asMap
+        |> Map.values
+        |> Seq.choose DataRow.isDeleted
 
     let deleteIf p dt =
         dt
