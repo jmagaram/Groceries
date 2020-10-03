@@ -1,6 +1,7 @@
 ﻿module Models.DtoTypes
 
 open System
+open System.Collections.Generic;
 open Newtonsoft.Json
 
 type DocumentKind =
@@ -12,7 +13,7 @@ type DocumentKind =
 
 type GroceryDocument() =
     member val UserId = "" with get, set
-    member val DocumentType = DocumentKind.Undefined with get, set
+    member val DocumentKind = DocumentKind.Undefined with get, set
     member val IsDeleted = false with get, set
     member val _eTag = "" with get, set
     member val _ts = 0 with get, set // seconds since 1970
@@ -65,3 +66,9 @@ type NotSoldItem() =
     [<JsonProperty("id")>]
     member me.Id =
         sprintf "(%s,%s)" (me.StoreId |> Id.serialize) (me.ItemId |> Id.serialize)
+
+type PushChanges() =
+    member val Items = List<Item>() with get, set
+    member val Categories = List<Category>() with get, set
+    member val Stores = List<Store>() with get, set
+    member val NotSoldItems = List<NotSoldItem>() with get, set

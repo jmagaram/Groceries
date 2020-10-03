@@ -1,8 +1,10 @@
 ﻿using Microsoft.AspNetCore.Components;
 using Microsoft.Azure.Cosmos;
 using Models;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Net;
 using System.Threading.Tasks;
 
@@ -26,7 +28,13 @@ namespace WebApp.Pages {
         [Inject]
         public Data.ApplicationStateService StateService { get; set; }
 
-        protected override void OnInitialized() => _client = CreateClient();
+        protected override async Task OnInitializedAsync() {
+            IsReady = false;
+            _client = CreateClient();
+            await CreateDatabaseIfNotExistsAsync();
+            await CreateContainerIfNotExistsAsync();
+            IsReady = true;
+        }
 
         private static CosmosClient CreateClient() =>
             new CosmosClient(EndpointUri, PrimaryKey, new CosmosClientOptions() { ApplicationName = _applicationName });
@@ -40,10 +48,30 @@ namespace WebApp.Pages {
             _container = await _database.CreateContainerIfNotExistsAsync(_containerId, _partitionKeyPath, 400);
 
         private async Task ResetToEmpty() {
+            IsReady = false;
             await CreateDatabaseIfNotExistsAsync();
             await DeleteDatabaseAsync();
             await CreateDatabaseIfNotExistsAsync();
             await CreateContainerIfNotExistsAsync();
+            IsReady = true;
+        }
+
+        protected async Task PushAsync() {
+            var changes = Models.Dto.pushChanges(_userId, StateService.Current);
+            var partitionKey = new PartitionKey(_userId);
+            foreach (var i in changes.Items) {
+                var doc = await _container.UpsertItemAsync(i, partitionKey);
+            }
+            foreach (var i in changes.Categories) {
+                var doc = await _container.UpsertItemAsync(i, partitionKey);
+            }
+            foreach (var i in changes.Stores) {
+                var doc = await _container.UpsertItemAsync(i, partitionKey);
+            }
+            foreach (var i in changes.NotSoldItems) {
+                var doc = await _container.UpsertItemAsync(i, partitionKey);
+            }
+            StateService.Update(StateTypes.StateMessage.AcceptAllChanges);
         }
 
         protected async Task DeleteDatabaseAsync() {
@@ -51,14 +79,6 @@ namespace WebApp.Pages {
         }
 
         static string _someId = "";
-
-        private async Task AddItemsToContainerAsync() {
-            var partitionKey = new PartitionKey(_userId);
-            await AddItemsOfType(partitionKey, CosmosExperiment.items(_userId, StateService.Current), i => IdModule.serialize(i.ItemId));
-            await AddItemsOfType(partitionKey, CosmosExperiment.categories(_userId, StateService.Current), i => IdModule.serialize(i.CategoryId));
-            await AddItemsOfType(partitionKey, CosmosExperiment.stores(_userId, StateService.Current), i => IdModule.serialize(i.StoreId));
-            await AddItemsOfType(partitionKey, CosmosExperiment.notSoldItems(_userId, StateService.Current), i => i.Id);
-        }
 
         private async Task AddItemsOfType<T>(PartitionKey partitionKey, IEnumerable<T> items, Func<T, string> id) {
             foreach (var i in items) {
@@ -84,29 +104,87 @@ namespace WebApp.Pages {
             ItemResponse<StateTypes.Item> r = await _container.DeleteItemAsync<StateTypes.Item>(_someId.ToString(), partitionKey);
         }
 
-        // <QueryItemsAsync>
-        /// <summary>
-        /// Run a query (using Azure Cosmos DB SQL syntax) against the container
-        /// Including the partition key value of lastName in the WHERE filter results in a more efficient query
-        /// </summary>
+        // store type of document in the schema so know how to deserialize it?
+        private async Task QueryItemsAsync() => await QueryItemsAsyncOfType<Models.DtoTypes.Item>();
+
+        private async Task QueryItemsAsyncOfType<T>() {
+            var sqlQueryText = "SELECT * FROM c WHERE c.ItemName <> \"aaa\"";
+            QueryDefinition queryDefinition = new QueryDefinition(sqlQueryText);
+
+            var queryResultSetIterator = _container.GetItemQueryIterator<T>(queryDefinition);
+            var docs = new List<T>();
+            while (queryResultSetIterator.HasMoreResults) {
+                var currentResultSet = await queryResultSetIterator.ReadNextAsync();
+                foreach (var doc in currentResultSet) {
+                    docs.Add(doc);
+                }
+            }
+        }
+
+
+        private void A() {
+            //_container.GetItemLinqQueryable<>
+        }
+
+        //    var queryable = container
+        //.GetItemLinqQueryable<IDictionary<string, object>>();
+        //    var oneDay = DateTime.UtcNow.AddDays(-1);
+        //    var query = queryable
+        //        .OrderByDescending(s => s["timestamp"])
+        //        .Where(s => (DateTime)s["timestamp"] > oneDay);
+        //    var iterator = query.ToFeedIterator();
+
+
         //private async Task QueryItemsAsync() {
-        //    var sqlQueryText = "SELECT * FROM c WHERE c.LastName = 'Andersen'";
-
-        //    Console.WriteLine("Running query: {0}\n", sqlQueryText);
-
+        //    var sqlQueryText = "SELECT * FROM c";
         //    QueryDefinition queryDefinition = new QueryDefinition(sqlQueryText);
-        //    FeedIterator<Family> queryResultSetIterator = this.container.GetItemQueryIterator<Family>(queryDefinition);
 
-        //    List<Family> families = new List<Family>();
-
+        //    FeedIterator<DtoTypes.GroceryDocument> queryResultSetIterator = _container.GetItemQueryIterator<DtoTypes.GroceryDocument>(queryDefinition);
+        //    List<DtoTypes.GroceryDocument> docs = new List<DtoTypes.GroceryDocument>();
         //    while (queryResultSetIterator.HasMoreResults) {
-        //        FeedResponse<Family> currentResultSet = await queryResultSetIterator.ReadNextAsync();
-        //        foreach (Family family in currentResultSet) {
-        //            families.Add(family);
-        //            Console.WriteLine("\tRead {0}\n", family);
+        //        FeedResponse<DtoTypes.GroceryDocument> currentResultSet = await queryResultSetIterator.ReadNextAsync();
+        //        foreach (DtoTypes.GroceryDocument doc in currentResultSet) {
+        //            docs.Add(doc); // does not work; returns just base class
         //        }
         //    }
         //}
+
+        // Querying a document AND mapping to specific type
+        ////https://www.annytab.com/safe-update-in-cosmos-db-with-etag-asp-net-core/
+        //public void A() {
+        //    ItemResponse<DtoTypes.GroceryDocument> a = null;
+        //    a.Resource.UserId
+        //    ResourceResponse<Document>
+        //}
+
+        // https://github.com/Azure/azure-cosmos-dotnet-v3/blob/master/Microsoft.Azure.Cosmos.Samples/Usage/Queries/Program.cs#L154-L186
+        private async Task QueryItemsAsync2() {
+            var partitionKey = new PartitionKey(_userId);
+            using (FeedIterator setIterator = _container.GetItemQueryStreamIterator(
+                         "SELECT * FROM c",
+                         requestOptions: new QueryRequestOptions()
+                         {
+                             PartitionKey = partitionKey,
+                             MaxConcurrency = 1,
+                             MaxItemCount = 1
+                         })) {
+                while (setIterator.HasMoreResults) {
+                    var r = await setIterator.ReadNextAsync();
+                    using (ResponseMessage response = await setIterator.ReadNextAsync()) {
+                        using (StreamReader sr = new StreamReader(response.Content))
+                        using (JsonTextReader jtr = new JsonTextReader(sr)) {
+                            JsonSerializer jsonSerializer = new JsonSerializer();
+                            dynamic items = jsonSerializer.Deserialize<dynamic>(jtr).Documents;
+                            dynamic item = items[0];
+                        }
+                    }
+                }
+            }
+        }
+
+        protected bool IsReady { get; set; }
+
+        //container.GetItemQueryStreamIterator
 
         //public async Task GetStartedDemoAsync() {
         //    // Create a new instance of the Cosmos Client

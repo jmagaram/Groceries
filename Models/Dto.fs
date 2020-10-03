@@ -4,6 +4,7 @@ module Dto =
 
     let fromItem (userId: string) (i: StateTypes.Item) =
         let r = DtoTypes.Item()
+        r.DocumentKind <- DtoTypes.DocumentKind.Item
         r.UserId <- userId
         r.ItemId <- i.ItemId |> Id.itemIdToGuid
         r.ItemName <- i.ItemName |> ItemName.asText
@@ -20,7 +21,7 @@ module Dto =
             |> Option.toNullable
 
         match i.Schedule with
-        | StateTypes.Schedule.Once -> r.ScheduleKind <- DtoTypes.ScheduleKind.Completed
+        | StateTypes.Schedule.Once -> r.ScheduleKind <- DtoTypes.ScheduleKind.Once
         | StateTypes.Schedule.Completed -> r.ScheduleKind <- DtoTypes.ScheduleKind.Completed
         | StateTypes.Schedule.Repeat rpt ->
             r.ScheduleKind <- DtoTypes.ScheduleKind.Repeat
@@ -34,6 +35,7 @@ module Dto =
 
     let fromCategory (userId: string) (c: StateTypes.Category) =
         let r = DtoTypes.Category()
+        r.DocumentKind <- DtoTypes.DocumentKind.Category
         r.UserId <- userId
         r.CategoryId <- c.CategoryId |> Id.categoryIdToGuid
         r.CategoryName <- c.CategoryName |> CategoryName.asText
@@ -41,6 +43,7 @@ module Dto =
 
     let fromStore (userId: string) (c: StateTypes.Store) =
         let r = DtoTypes.Store()
+        r.DocumentKind <- DtoTypes.DocumentKind.Store
         r.UserId <- userId
         r.StoreId <- c.StoreId |> Id.storeIdToGuid
         r.StoreName <- c.StoreName |> StoreName.asText
@@ -48,21 +51,41 @@ module Dto =
 
     let fromNotSoldItem (userId: string) (c: StateTypes.NotSoldItem) =
         let r = DtoTypes.NotSoldItem()
+        r.DocumentKind <- DtoTypes.DocumentKind.NotSoldItem
         r.UserId <- userId
         r.ItemId <- c.ItemId |> Id.itemIdToGuid
         r.StoreId <- c.StoreId |> Id.storeIdToGuid
 
         r
 
-module CosmosExperiment =
+    let private changes<'T, 'TKey, 'U when 'U :> DtoTypes.GroceryDocument and 'TKey: comparison> (table: SynchronizationTypes.DataTable<'TKey, 'T>)
+                                                                                                 (createDto: 'T -> 'U)
+                                                                                                 =
 
-    let items userId (s: StateTypes.State) = s |> State.items |> Seq.map (Dto.fromItem userId)
+        let toDelete =
+            table
+            |> DataTable.isDeleted
+            |> Seq.map createDto
+            |> Seq.map (fun i ->
+                i.IsDeleted <- true
+                i)
 
-    let categories userId (s: StateTypes.State) = s |> State.categories |> Seq.map (Dto.fromCategory userId)
+        let toUpsert =
+            table
+            |> DataTable.isAddedOrModified
+            |> Seq.map createDto
+            |> Seq.map (fun i ->
+                i.IsDeleted <- false
+                i)
 
-    let stores userId (s: StateTypes.State) = s |> State.stores |> Seq.map (Dto.fromStore userId)
+        System.Collections.Generic.List<_>(Seq.append toDelete toUpsert)
 
-    let notSoldItems userId (s: StateTypes.State) =
-        s
-        |> State.notSoldItems
-        |> Seq.map (Dto.fromNotSoldItem userId)
+
+    let pushChanges userId (s: Models.StateTypes.State) =
+        let c = DtoTypes.PushChanges()
+
+        c.Items <- changes (s |> State.itemsTable) (fromItem userId)
+        c.Categories <- changes (s |> State.categoriesTable) (fromCategory userId)
+        c.Stores <- changes (s |> State.storesTable) (fromStore userId)
+        c.NotSoldItems <- changes (s |> State.notSoldItemsTable) (fromNotSoldItem userId)
+        c

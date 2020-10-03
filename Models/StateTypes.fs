@@ -143,4 +143,5 @@ type StateMessage =
     | CategoryMessage of CategoryMessage
     | NotSoldItemMessage of NotSoldItemMessage 
     | SettingsMessage of SettingsMessage
+    | AcceptAllChanges
     | Transaction of StateMessage seq

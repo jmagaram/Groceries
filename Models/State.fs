@@ -552,10 +552,18 @@ module State =
 
         s |> mapItems (DataTable.update item)
 
+    let acceptAllChanges s =
+        s 
+        |> mapItems DataTable.acceptChanges
+        |> mapCategories DataTable.acceptChanges
+        |> mapStores DataTable.acceptChanges
+        |> mapNotSoldItems DataTable.acceptChanges
+
     let rec update msg s =
         let now = DateTimeOffset.Now
 
         match msg with
+        | AcceptAllChanges -> s |> acceptAllChanges
         | SubmitStoreForm msg -> s |> submitStoreForm msg
         | SubmitCategoryForm msg -> s |> submitCategoryForm msg
         | ItemMessage msg ->

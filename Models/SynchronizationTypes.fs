@@ -7,5 +7,3 @@ type DataRow<'T> =
     | Deleted of 'T
 
 type DataTable<'Key, 'T when 'Key: comparison> = DataTable of Map<'Key, DataRow<'T>>
-
-
