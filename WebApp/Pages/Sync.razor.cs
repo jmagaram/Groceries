@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Components;
 using Microsoft.Azure.Cosmos;
+using Microsoft.Azure.Cosmos.Linq;
 using Models;
 using System;
 using System.Collections.Generic;
@@ -86,7 +87,6 @@ namespace WebApp.Pages {
             item = await _container.ReplaceItemAsync(itemBody, itemBody.ItemId.ToString(), partitionKey);
         }
 
-        // store type of document in the schema so know how to deserialize it?
         private async Task QueryItemsAsync() => await QueryItemsAsyncOfType<Models.DtoTypes.Item>();
 
         private async Task QueryItemsAsyncOfType<T>() {
@@ -103,23 +103,55 @@ namespace WebApp.Pages {
             }
         }
 
-        private async Task GetRecentChanges() {
-            var sqlQueryText = $"SELECT * FROM c WHERE c._ts > {StateService.LastCosmosSyncTimestamp}";
-            QueryDefinition queryDefinition = new QueryDefinition(sqlQueryText);
-            var queryResultSetIterator = _container.GetItemQueryIterator<DtoTypes.GroceryDocument>(queryDefinition);
-            var docs = new List<DtoTypes.GroceryDocument>();
-            while (queryResultSetIterator.HasMoreResults) {
-                var currentResultSet = await queryResultSetIterator.ReadNextAsync();
-                foreach (var doc in currentResultSet) {
-                    docs.Add(doc);
+        private string QueryText(string userId, int documentKind, int timestamp) =>
+            $"SELECT * FROM c WHERE c._ts > {timestamp} AND c.ItemName = {_userId} AND c.DocumentKind = {documentKind}";
+
+        private async Task<List<T>> Changes<T>(string userId, int timestamp, DtoTypes.DocumentKind documentKind) where T : Models.DtoTypes.GroceryDocument {
+            var query = _container.GetItemLinqQueryable<T>()
+                .Where(i => i.Timestamp > timestamp)
+                .Where(i => i.UserId == _userId)
+                .Where(i => i.DocumentKind == documentKind);
+            var docs = new List<T>();
+            using (var iterator = query.ToFeedIterator()) {
+                while (iterator.HasMoreResults) {
+                    foreach (var item in await iterator.ReadNextAsync()) {
+                        docs.Add(item);
+                    }
                 }
             }
-            LogMessage($"Pulled items to process: {docs.Count}");
-            if (docs.Count > 0) {
-                StateService.LastCosmosSyncTimestamp = docs.Select(i => i.Timestamp).Max();
-            }
-
+            return docs;
         }
+
+        private async Task GetRecentChanges() {
+            var ts = StateService.LastCosmosSyncTimestamp;
+            var items = await Changes<DtoTypes.Item>(_userId, ts, DtoTypes.DocumentKind.Item);
+            var categories = await Changes<DtoTypes.Category>(_userId, ts, DtoTypes.DocumentKind.Category);
+            var stores = await Changes<DtoTypes.Store>(_userId, ts, DtoTypes.DocumentKind.Store);
+            var notSoldItems = await Changes<DtoTypes.NotSoldItem>(_userId, ts, DtoTypes.DocumentKind.NotSoldItem);
+            var newTimestamps =
+                items.Select(i => i.Timestamp)
+                .Concat(categories.Select(i => i.Timestamp))
+                .Concat(stores.Select(i => i.Timestamp))
+                .Concat(notSoldItems.Select(i => i.Timestamp))
+                .ToList();
+            if (newTimestamps.Count > 0) {
+                StateService.LastCosmosSyncTimestamp = newTimestamps.Max();
+            }
+            var changes = new DtoTypes.PushChanges { Items = items, Categories = categories, Stores = stores, NotSoldItems = notSoldItems };
+            LogMessage($"Items: {items.Count} Cats: {categories.Count} Stores: {stores.Count} NotSold : {notSoldItems.Count}");
+        }
+
+        //var sqlQueryText = $"SELECT * FROM c WHERE c._ts > {StateService.LastCosmosSyncTimestamp} AND c.ItemName = {_userId} AND c.DocumentKind = {DtoTypes.DocumentKind.Item} ";
+        //QueryDefinition queryDefinition = new QueryDefinition(sqlQueryText);
+        //var queryResultSetIterator = _container.GetItemQueryIterator<DtoTypes.GroceryDocument>(queryDefinition);
+        //var docs = new List<DtoTypes.GroceryDocument>();
+        //while (queryResultSetIterator.HasMoreResults) {
+        //    var currentResultSet = await queryResultSetIterator.ReadNextAsync();
+        //    foreach (var doc in currentResultSet) {
+        //        docs.Add(doc);
+        //    }
+        //}
+
 
         protected bool IsReady => StatusMessage == "";
 
@@ -165,7 +197,5 @@ namespace WebApp.Pages {
         //        }
         //    }
         //}
-
-
     }
 }
