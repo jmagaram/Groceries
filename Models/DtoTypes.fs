@@ -17,9 +17,9 @@ type GroceryDocument() =
     member val IsDeleted = false with get, set
     
     [<JsonProperty("_etag")>]
-    member val _etag = "" with get, set
+    member val Etag = "" with get, set
     [<JsonProperty("_ts")>]
-    member val _ts = 0 with get, set // seconds since 1970
+    member val Timestamp = 0 with get, set // seconds since 1970
 
 [<AllowNullLiteral>]
 type Repeat() =

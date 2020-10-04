@@ -61,16 +61,16 @@ namespace WebApp.Pages {
             LogMessage($"Pushing items:{changes.Items.Count} cats:{changes.Categories.Count} stores:{changes.Stores.Count}");
             var partitionKey = new PartitionKey(_userId);
             foreach (var i in changes.Items) {
-                var doc = await _container.UpsertItemAsync(i, partitionKey, new ItemRequestOptions { IfMatchEtag = i._etag });
+                var doc = await _container.UpsertItemAsync(i, partitionKey, new ItemRequestOptions { IfMatchEtag = i.Etag });
             }
             foreach (var i in changes.Categories) {
-                var doc = await _container.UpsertItemAsync(i, partitionKey, new ItemRequestOptions { IfMatchEtag = i._etag });
+                var doc = await _container.UpsertItemAsync(i, partitionKey, new ItemRequestOptions { IfMatchEtag = i.Etag });
             }
             foreach (var i in changes.Stores) {
-                var doc = await _container.UpsertItemAsync(i, partitionKey, new ItemRequestOptions { IfMatchEtag = i._etag });
+                var doc = await _container.UpsertItemAsync(i, partitionKey, new ItemRequestOptions { IfMatchEtag = i.Etag });
             }
             foreach (var i in changes.NotSoldItems) {
-                var doc = await _container.UpsertItemAsync(i, partitionKey, new ItemRequestOptions { IfMatchEtag = i._etag });
+                var doc = await _container.UpsertItemAsync(i, partitionKey, new ItemRequestOptions { IfMatchEtag = i.Etag });
             }
             StatusMessage = "";
             StateService.Update(StateTypes.StateMessage.AcceptAllChanges);
@@ -116,7 +116,7 @@ namespace WebApp.Pages {
             }
             LogMessage($"Pulled items to process: {docs.Count}");
             if (docs.Count > 0) {
-                StateService.LastCosmosSyncTimestamp = docs.Select(i => i._ts).Max();
+                StateService.LastCosmosSyncTimestamp = docs.Select(i => i.Timestamp).Max();
             }
 
         }

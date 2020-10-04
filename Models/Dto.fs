@@ -7,7 +7,7 @@ module Dto =
     let fromItem (userId: string) (i: StateTypes.Item) =
         let r = DtoTypes.Item()
         r.DocumentKind <- DtoTypes.DocumentKind.Item
-        r._etag <- i.Etag |> Option.map (Etag.tag) |> Option.defaultValue null
+        r.Etag <- i.Etag |> Option.map (Etag.tag) |> Option.defaultValue null
         r.UserId <- userId
         r.ItemId <- i.ItemId |> Id.itemIdToGuid
         r.ItemName <- i.ItemName |> ItemName.asText
@@ -44,7 +44,7 @@ module Dto =
               |> Option.ofNullable
               |> Option.map StateTypes.CategoryId
           StateTypes.Item.Note = i.Note |> Note.tryParseOptional |> Result.okOrThrow
-          StateTypes.Item.Etag = StateTypes.Etag i._etag |> Some
+          StateTypes.Item.Etag = StateTypes.Etag i.Etag |> Some
           StateTypes.Item.Quantity = i.Quantity |> Quantity.tryParseOptional |> Result.okOrThrow
           StateTypes.Item.Schedule =
               match i.ScheduleKind with
@@ -64,7 +64,7 @@ module Dto =
 
     let fromCategory (userId: string) (c: StateTypes.Category) =
         let r = DtoTypes.Category()
-        r._etag <- c.Etag |> Option.map (Etag.tag) |> Option.defaultValue null 
+        r.Etag <- c.Etag |> Option.map (Etag.tag) |> Option.defaultValue null 
         r.DocumentKind <- DtoTypes.DocumentKind.Category
         r.UserId <- userId
         r.CategoryId <- c.CategoryId |> Id.categoryIdToGuid
@@ -74,12 +74,12 @@ module Dto =
     let toCategory (c: DtoTypes.Category) =
         { StateTypes.Category.CategoryId = StateTypes.CategoryId c.CategoryId
           StateTypes.Category.CategoryName = c.CategoryName |> CategoryName.tryParse |> Result.okOrThrow
-          StateTypes.Category.Etag = StateTypes.Etag c._etag |> Some }
+          StateTypes.Category.Etag = StateTypes.Etag c.Etag |> Some }
 
     let fromStore (userId: string) (c: StateTypes.Store) =
         let r = DtoTypes.Store()
         r.DocumentKind <- DtoTypes.DocumentKind.Store
-        r._etag <- c.Etag |> Option.map (Etag.tag) |> Option.defaultValue null 
+        r.Etag <- c.Etag |> Option.map (Etag.tag) |> Option.defaultValue null 
         r.UserId <- userId
         r.StoreId <- c.StoreId |> Id.storeIdToGuid
         r.StoreName <- c.StoreName |> StoreName.asText
@@ -88,7 +88,7 @@ module Dto =
     let toStore (c: DtoTypes.Store) =
         { StateTypes.Store.StoreId = StateTypes.StoreId c.StoreId
           StateTypes.Store.StoreName = c.StoreName |> StoreName.tryParse |> Result.okOrThrow
-          StateTypes.Store.Etag = StateTypes.Etag c._etag |> Some }
+          StateTypes.Store.Etag = StateTypes.Etag c.Etag |> Some }
 
     let fromNotSoldItem (userId: string) (c: StateTypes.NotSoldItem) =
         let r = DtoTypes.NotSoldItem()
