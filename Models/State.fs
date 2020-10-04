@@ -27,6 +27,11 @@ module Id =
     let serialize (id: Guid) = id.ToString()
 
 [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
+module Etag =
+
+    let tag (Etag e) = e
+
+[<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
 module ItemName =
 
     let rules = singleLine 3<chars> 50<chars>
@@ -413,13 +418,15 @@ module State =
             s
             |> insertCategory
                 { Category.CategoryId = Id.create CategoryId
-                  CategoryName = n |> CategoryName.tryParse |> Result.okOrThrow }
+                  CategoryName = n |> CategoryName.tryParse |> Result.okOrThrow
+                  Etag = None }
 
         let newStore n s =
             s
             |> insertStore
                 { Store.StoreId = Id.create StoreId
-                  StoreName = n |> StoreName.tryParse |> Result.okOrThrow }
+                  StoreName = n |> StoreName.tryParse |> Result.okOrThrow
+                  Etag = None }
 
         let findCategory n (s: State) =
             let n = CategoryName.tryParse n |> Result.okOrThrow
@@ -447,6 +454,7 @@ module State =
             |> insertItem
                 { Item.ItemId = Id.create ItemId
                   ItemName = name |> ItemName.tryParse |> Result.okOrThrow
+                  Etag = None
                   Quantity = if qty = "" then None else qty |> Quantity.tryParse |> Result.okOrThrow |> Some
                   Note = if note = "" then None else note |> Note.tryParse |> Result.okOrThrow |> Some
                   Item.Schedule = Schedule.Once
@@ -510,14 +518,17 @@ module State =
         match msg with
         | StoreFormMessage.InsertStore n ->
             s
-            |> insertStore { StoreId = Id.create StoreId; StoreName = n }
+            |> insertStore { StoreId = Id.create StoreId; StoreName = n; Etag = None }
         | StoreFormMessage.UpdateStore i -> s |> updateStore i
 
     let submitCategoryForm msg s =
         match msg with
         | CategoryFormMessage.InsertCategory n ->
             s
-            |> insertCategory { CategoryId = Id.create CategoryId; CategoryName = n }
+            |> insertCategory
+                { CategoryId = Id.create CategoryId
+                  CategoryName = n
+                  Etag = None }
         | CategoryFormMessage.UpdateCategory i -> s |> updateCategory i
 
     let markItemComplete now id s =
@@ -553,7 +564,7 @@ module State =
         s |> mapItems (DataTable.update item)
 
     let acceptAllChanges s =
-        s 
+        s
         |> mapItems DataTable.acceptChanges
         |> mapCategories DataTable.acceptChanges
         |> mapStores DataTable.acceptChanges

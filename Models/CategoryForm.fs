@@ -3,7 +3,7 @@
 open System
 open StateTypes
 
-type Form = { CategoryId: CategoryId option; CategoryName: string }
+type Form = { CategoryId: CategoryId option; CategoryName: string; Etag : Etag option }
 
 type FormMode =
     | CreateCategoryMode
@@ -26,11 +26,12 @@ let formMode (f: Form) =
     | None -> CreateCategoryMode
     | Some _ -> EditCategoryMode
 
-let createNew = { CategoryId = None; CategoryName = "" }
+let createNew = { CategoryId = None; CategoryName = ""; Etag = None }
 
 let editExisting (s: Category) =
     { CategoryId = Some s.CategoryId
-      CategoryName = s.CategoryName |> CategoryName.asText }
+      CategoryName = s.CategoryName |> CategoryName.asText 
+      Etag = s.Etag }
 
 let editExistingFromGuid (id: Guid) (s: State) =
     match s
@@ -46,7 +47,8 @@ let catFormResult (f: Form) =
     | CreateCategoryMode -> catName |> CategoryFormMessage.InsertCategory
     | EditCategoryMode ->
         { Category.CategoryId = f.CategoryId |> Option.get
-          Category.CategoryName = catName }
+          Category.CategoryName = catName 
+          Category.Etag = f.Etag }
         |> CategoryFormMessage.UpdateCategory
 
 let handle msg (f: Form) =

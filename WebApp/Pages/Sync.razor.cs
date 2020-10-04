@@ -61,16 +61,16 @@ namespace WebApp.Pages {
             LogMessage($"Pushing items:{changes.Items.Count} cats:{changes.Categories.Count} stores:{changes.Stores.Count}");
             var partitionKey = new PartitionKey(_userId);
             foreach (var i in changes.Items) {
-                var doc = await _container.UpsertItemAsync(i, partitionKey);
+                var doc = await _container.UpsertItemAsync(i, partitionKey, new ItemRequestOptions { IfMatchEtag = i._etag });
             }
             foreach (var i in changes.Categories) {
-                var doc = await _container.UpsertItemAsync(i, partitionKey);
+                var doc = await _container.UpsertItemAsync(i, partitionKey, new ItemRequestOptions { IfMatchEtag = i._etag });
             }
             foreach (var i in changes.Stores) {
-                var doc = await _container.UpsertItemAsync(i, partitionKey);
+                var doc = await _container.UpsertItemAsync(i, partitionKey, new ItemRequestOptions { IfMatchEtag = i._etag });
             }
             foreach (var i in changes.NotSoldItems) {
-                var doc = await _container.UpsertItemAsync(i, partitionKey);
+                var doc = await _container.UpsertItemAsync(i, partitionKey, new ItemRequestOptions { IfMatchEtag = i._etag });
             }
             StatusMessage = "";
             StateService.Update(StateTypes.StateMessage.AcceptAllChanges);

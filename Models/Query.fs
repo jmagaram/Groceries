@@ -18,6 +18,7 @@ let isItemSold (s: Store) (i: Item) state =
 let itemQry (item: Item) state =
     { ItemQry.ItemId = item.ItemId
       ItemName = item.ItemName
+      Etag = item.Etag
       Note = item.Note
       Quantity = item.Quantity
       Schedule = item.Schedule

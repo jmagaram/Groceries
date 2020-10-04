@@ -14,6 +14,7 @@ type CategoryMode =
 type Form =
     { ItemId: StateTypes.ItemId option
       ItemName: string
+      Etag: StateTypes.Etag option
       Quantity: string
       Note: string
       ScheduleKind: ScheduleKind
@@ -66,7 +67,11 @@ let noteBlur f = { f with Note = f.Note |> Note.normalizer }
 let categoryModeChooseExisting f = { f with CategoryMode = ChooseExisting }
 let categoryModeCreateNew f = { f with CategoryMode = CreateNew }
 let chooseCategoryUncategorized f = { f with CategoryChoice = None }
-let categoryModeIsCreateNew f = match f.CategoryMode with | CreateNew -> true | _ -> false
+
+let categoryModeIsCreateNew f =
+    match f.CategoryMode with
+    | CreateNew -> true
+    | _ -> false
 
 let chooseCategory i f =
     { f with
@@ -111,8 +116,7 @@ let frequencySet v f =
               |> Result.okOrThrow }
 
 let frequencyChoices (f: Form) =
-    f.Frequency
-    :: Frequency.common
+    f.Frequency :: Frequency.common
     |> Seq.distinct
     |> Seq.sort
     |> List.ofSeq
@@ -160,8 +164,7 @@ let postponeDurationAsText (d: int<StateTypes.days>) =
         | None -> if d = 1 then "1 day" else sprintf "%i days" d
 
 let postponeChoices (f: Form) =
-    f.Postpone
-    :: (Repeat.commonPostponeDays |> List.map Some)
+    f.Postpone :: (Repeat.commonPostponeDays |> List.map Some)
     |> Seq.choose id
     |> Seq.map frequencyCoerceIntoBounds
     |> Seq.distinct
@@ -179,6 +182,7 @@ let canDelete (f: Form) = f.ItemId.IsSome
 let createNewItem stores cats =
     { ItemId = None
       ItemName = ""
+      Etag = None
       Quantity = ""
       Note = ""
       ScheduleKind = ScheduleKind.Once
@@ -202,6 +206,7 @@ let createNewItem stores cats =
 let editItem (clock: Clock) cats (i: QueryTypes.ItemQry) =
     { ItemId = Some i.ItemId
       ItemName = i.ItemName |> ItemName.asText
+      Etag = i.Etag
       Quantity =
           i.Quantity
           |> Option.map Quantity.asText
@@ -242,7 +247,8 @@ let hasErrors f =
     (f |> itemNameValidation |> Result.isError)
     || (f |> quantityValidation |> Result.isError)
     || (f |> noteValidation |> Result.isError)
-    || ((f |> categoryModeIsCreateNew) && (f |> categoryNameValidation |> Result.isError))
+    || ((f |> categoryModeIsCreateNew)
+        && (f |> categoryNameValidation |> Result.isError))
 
 let rec handleMessage msg (f: Form) =
     match msg with
@@ -276,13 +282,18 @@ let asItemFormResult (now: DateTimeOffset) (f: Form) =
             f
             |> categoryNameValidation
             |> Result.okOrThrow
-            |> fun c -> Some { StateTypes.Category.CategoryName = c; StateTypes.Category.CategoryId = Id.create StateTypes.CategoryId }
+            |> fun c ->
+                Some
+                    { StateTypes.Category.CategoryName = c
+                      StateTypes.Category.CategoryId = Id.create StateTypes.CategoryId
+                      StateTypes.Category.Etag = None }
 
     let item =
         { StateTypes.Item.ItemId =
               f.ItemId
               |> Option.defaultWith (fun () -> Id.create StateTypes.ItemId)
           StateTypes.Item.ItemName = f |> itemNameValidation |> Result.okOrThrow
+          StateTypes.Item.Etag = f.Etag
           StateTypes.Item.CategoryId =
               match f.CategoryMode with
               | ChooseExisting -> f.CategoryChoice

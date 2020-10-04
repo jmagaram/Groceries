@@ -48,9 +48,12 @@ type StoreId = StoreId of Guid
 [<Struct>]
 type StoreName = StoreName of string
 
+type Etag = Etag of string
+
 type Item =
     { ItemId: ItemId
       ItemName: ItemName
+      Etag : Etag option
       Note: Note option
       Quantity: Quantity option
       CategoryId: CategoryId option
@@ -60,13 +63,15 @@ type Item =
 
 type Store =
     { StoreId: StoreId
-      StoreName: StoreName }
+      StoreName: StoreName 
+      Etag : Etag option }
     interface IKey<StoreId> with
         member this.Key = this.StoreId
 
 type Category =
     { CategoryId: CategoryId
-      CategoryName: CategoryName }
+      CategoryName: CategoryName 
+      Etag : Etag option }
     interface IKey<CategoryId> with
         member this.Key = this.CategoryId
 

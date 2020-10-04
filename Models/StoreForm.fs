@@ -3,7 +3,7 @@
 open System
 open StateTypes
 
-type Form = { StoreId: StoreId option; StoreName: string }
+type Form = { StoreId: StoreId option; StoreName: string; Etag : Etag option }
 
 type FormMode =
     | CreateStoreMode
@@ -26,11 +26,13 @@ let formMode (f: Form) =
     | None -> CreateStoreMode
     | Some _ -> EditStoreMode
 
-let createNew = { StoreId = None; StoreName = "" }
+let createNew = { StoreId = None; StoreName = ""; Etag = None }
 
 let editExisting (s: Store) =
     { StoreId = Some s.StoreId
-      StoreName = s.StoreName |> StoreName.asText }
+      StoreName = s.StoreName |> StoreName.asText 
+      Etag = s.Etag
+    }
 
 let editExistingFromGuid (id: Guid) (s: State) =
     match s
@@ -46,7 +48,8 @@ let storeFormResult (f: Form) =
     | CreateStoreMode -> storeName |> StoreFormMessage.InsertStore
     | EditStoreMode ->
         { Store.StoreId = f.StoreId |> Option.get
-          Store.StoreName = storeName }
+          Store.StoreName = storeName 
+          Store.Etag = f.Etag }
         |> StoreFormMessage.UpdateStore
 
 let handle msg (f: Form) =

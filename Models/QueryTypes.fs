@@ -9,6 +9,7 @@ type ItemAvailability =
 type ItemQry =
     { ItemId: ItemId
       ItemName: ItemName
+      Etag : Etag option
       Note: Note option
       Quantity: Quantity option
       Category: Category option

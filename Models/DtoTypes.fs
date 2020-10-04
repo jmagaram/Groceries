@@ -15,7 +15,10 @@ type GroceryDocument() =
     member val UserId = "" with get, set
     member val DocumentKind = DocumentKind.Undefined with get, set
     member val IsDeleted = false with get, set
-    member val _eTag = "" with get, set
+    
+    [<JsonProperty("_etag")>]
+    member val _etag = "" with get, set
+    [<JsonProperty("_ts")>]
     member val _ts = 0 with get, set // seconds since 1970
 
 [<AllowNullLiteral>]
@@ -39,8 +42,8 @@ type Item() =
     member val Note = "" with get, set
     member val Quantity = "" with get, set
     member val CategoryId = Nullable<Guid>() with get, set
-    member val ScheduleKind = ScheduleKind.Undefined with get, set
-    member val Repeat = null with get, set
+    member val ScheduleKind = ScheduleKind.Once with get, set
+    member val Repeat : Repeat = null with get, set
 
 type Store() =
     inherit GroceryDocument()
