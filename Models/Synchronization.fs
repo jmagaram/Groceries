@@ -42,6 +42,13 @@ module DataRow =
         | Added v -> v |> Some
         | Deleted _ -> None
 
+    let originalValue r =
+        match r with
+        | Unchanged v -> v
+        | Modified m -> m.Original
+        | Added v -> v
+        | Deleted v -> v
+
     let mapCurrent f r =
         match r with
         | Unchanged v -> modified v (f v)
@@ -88,6 +95,8 @@ module DataTable =
         | DataTable dt -> dt
 
     let empty<'Key, 'T when 'Key: comparison> = Map.empty<'Key, DataRow<'T>> |> DataTable
+
+    let rowByKey k dt = dt |> asMap |> Map.tryFind k
 
     let insert v dt =
         let k = v |> keyOf
@@ -149,24 +158,29 @@ module DataTable =
 
     let acceptChanges dt = dt |> chooseRow DataRow.acceptChanges
 
+    let acceptChangesByKey k dt =
+        dt
+        |> asMap
+        |> Map.toSeq
+        |> Seq.choose (fun (k', v) ->
+            if k = k' then v |> DataRow.acceptChanges |> Option.map (fun r -> (k, r)) else Some(k', v))
+        |> Map.ofSeq
+        |> fromMap
+
     let rejectChanges dt = dt |> chooseRow DataRow.rejectChanges
 
-    let isAddedOrModified dt = 
+    let isAddedOrModified dt =
         dt
         |> asMap
         |> Map.values
         |> Seq.choose DataRow.isAddedOrModified
 
-    let isDeleted dt = 
-        dt
-        |> asMap
-        |> Map.values
-        |> Seq.choose DataRow.isDeleted
+    let isDeleted dt = dt |> asMap |> Map.values |> Seq.choose DataRow.isDeleted
 
     let deleteIf p dt =
         dt
         |> current
-        |> Seq.choose (fun v -> if p v then Some (keyOf v) else None)
+        |> Seq.choose (fun v -> if p v then Some(keyOf v) else None)
         |> Seq.fold (fun dt k -> dt |> delete k) dt
 
     let tryFindCurrent k dt =
@@ -178,3 +192,42 @@ module DataTable =
     let currentContainsKey k dt = dt |> tryFindCurrent k |> Option.isSome
 
     let findCurrent k dt = tryFindCurrent k dt |> Option.get
+
+// this belongs somewhere else
+// this logic is specific to this domain; other domains may do more robust error handling
+module SynchronizeState =
+
+    let private changeKey c =
+        match c with
+        | Upsert t -> keyOf t
+        | Delete k -> k
+
+    let merge<'T, 'Key when 'Key: comparison and 'T :> IKey<'Key> and 'T: equality> : ResolveChanges<'T, 'Key> =
+        fun cs dt ->
+            let (insert, update, delete) =
+                cs
+                |> Seq.map (fun c -> (c, dt |> DataTable.rowByKey (changeKey c)))
+                |> Seq.fold (fun (insert, update, delete) (c, r) ->
+                    match c, r with
+                    | Upsert v, None -> (v :: insert, update, delete)
+                    | Upsert v, Some r -> (insert, v :: update, delete)
+                    | Change.Delete k, None -> (insert, update, delete)
+                    | Change.Delete k, Some r -> (insert, update, k :: delete)) ([], [], [])
+
+            let foldInsert dt v =
+                dt
+                |> DataTable.insert v
+                |> DataTable.acceptChangesByKey (keyOf v)
+
+            let foldDelete dt k = dt |> DataTable.delete k |> DataTable.acceptChangesByKey k
+
+            let foldUpdate dt v =
+                dt
+                |> DataTable.update v
+                |> DataTable.acceptChangesByKey (keyOf v)
+
+            let dt = insert |> Seq.fold foldInsert dt
+            let dt = update |> Seq.fold foldUpdate dt
+            let dt = delete |> Seq.fold foldDelete dt
+
+            dt

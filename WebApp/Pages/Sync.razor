@@ -5,7 +5,7 @@
 
 <style>
     h3 {
-        margin-top:20px;
+        margin-top: 20px;
     }
 </style>
 <h1>Synchronization</h1>
@@ -15,7 +15,7 @@
     <button type="button" class="btn btn-outline-primary" @onclick="@(async () => await ResetToEmpty())">Clear database</button>
     <a class="btn btn-outline-primary" href="https://localhost:8081/_explorer/index.html" target="_blank">Data Explorer</a>
     <button type="button" class="btn btn-outline-primary" @onclick="@(async () => await PushAsync())">Push</button>
-    <button type="button" class="btn btn-outline-primary" @onclick="@(async () => await GetRecentChanges())">Pull</button>
+    <button type="button" class="btn btn-outline-primary" @onclick="@(async () => await PullAsync())">Pull</button>
     <button type="button" class="btn btn-outline-primary" @onclick="@(async () => await QueryItemsAsync())">Query</button>
 }
 

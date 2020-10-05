@@ -59,22 +59,45 @@ namespace WebApp.Pages {
         protected async Task PushAsync() {
             StatusMessage = "Pushing...";
             var changes = Models.Dto.pushChanges(_userId, StateService.Current);
-            LogMessage($"Pushing items:{changes.Items.Count} cats:{changes.Categories.Count} stores:{changes.Stores.Count}");
+            LogMessage($"PUSH items:{changes.Items.Count} cats:{changes.Categories.Count} stores:{changes.Stores.Count}");
             var partitionKey = new PartitionKey(_userId);
             foreach (var i in changes.Items) {
-                var doc = await _container.UpsertItemAsync(i, partitionKey, new ItemRequestOptions { IfMatchEtag = i.Etag });
+                await _container.UpsertItemAsync(i, partitionKey, new ItemRequestOptions { IfMatchEtag = i.Etag });
             }
             foreach (var i in changes.Categories) {
-                var doc = await _container.UpsertItemAsync(i, partitionKey, new ItemRequestOptions { IfMatchEtag = i.Etag });
+                await _container.UpsertItemAsync(i, partitionKey, new ItemRequestOptions { IfMatchEtag = i.Etag });
             }
             foreach (var i in changes.Stores) {
-                var doc = await _container.UpsertItemAsync(i, partitionKey, new ItemRequestOptions { IfMatchEtag = i.Etag });
+                await _container.UpsertItemAsync(i, partitionKey, new ItemRequestOptions { IfMatchEtag = i.Etag });
             }
             foreach (var i in changes.NotSoldItems) {
-                var doc = await _container.UpsertItemAsync(i, partitionKey, new ItemRequestOptions { IfMatchEtag = i.Etag });
+                await _container.UpsertItemAsync(i, partitionKey, new ItemRequestOptions { IfMatchEtag = i.Etag });
             }
             StatusMessage = "";
-            StateService.Update(StateTypes.StateMessage.AcceptAllChanges);
+            LogMessage("PUSH finish");
+            //StateService.Update(StateTypes.StateMessage.AcceptAllChanges);
+        }
+
+        protected async Task PullAsync() {
+            var ts = StateService.LastCosmosSyncTimestamp;
+            var items = await Changes<DtoTypes.Item>(_userId, ts, DtoTypes.DocumentKind.Item);
+            var categories = await Changes<DtoTypes.Category>(_userId, ts, DtoTypes.DocumentKind.Category);
+            var stores = await Changes<DtoTypes.Store>(_userId, ts, DtoTypes.DocumentKind.Store);
+            var notSoldItems = await Changes<DtoTypes.NotSoldItem>(_userId, ts, DtoTypes.DocumentKind.NotSoldItem);
+            var newTimestamps =
+                items.Select(i => i.Timestamp)
+                .Concat(categories.Select(i => i.Timestamp))
+                .Concat(stores.Select(i => i.Timestamp))
+                .Concat(notSoldItems.Select(i => i.Timestamp))
+                .ToList();
+            var pull = Dto.pull(items, categories, stores, notSoldItems);
+            LogMessage($"PULL items: {items.Count} cats: {categories.Count} stores: {stores.Count} notSold : {notSoldItems.Count}");
+            var s = Dto.processPull(pull, StateService.Current);
+            StateService.ReplaceState(s);
+            if (newTimestamps.Count > 0) {
+                StateService.LastCosmosSyncTimestamp = newTimestamps.Max();
+            }
+            LogMessage($"PULL done");
         }
 
         protected async Task DeleteDatabaseAsync() => await _database.DeleteAsync();
@@ -122,24 +145,24 @@ namespace WebApp.Pages {
             return docs;
         }
 
-        private async Task GetRecentChanges() {
-            var ts = StateService.LastCosmosSyncTimestamp;
-            var items = await Changes<DtoTypes.Item>(_userId, ts, DtoTypes.DocumentKind.Item);
-            var categories = await Changes<DtoTypes.Category>(_userId, ts, DtoTypes.DocumentKind.Category);
-            var stores = await Changes<DtoTypes.Store>(_userId, ts, DtoTypes.DocumentKind.Store);
-            var notSoldItems = await Changes<DtoTypes.NotSoldItem>(_userId, ts, DtoTypes.DocumentKind.NotSoldItem);
-            var newTimestamps =
-                items.Select(i => i.Timestamp)
-                .Concat(categories.Select(i => i.Timestamp))
-                .Concat(stores.Select(i => i.Timestamp))
-                .Concat(notSoldItems.Select(i => i.Timestamp))
-                .ToList();
-            if (newTimestamps.Count > 0) {
-                StateService.LastCosmosSyncTimestamp = newTimestamps.Max();
-            }
-            var changes = new DtoTypes.PushChanges { Items = items, Categories = categories, Stores = stores, NotSoldItems = notSoldItems };
-            LogMessage($"Items: {items.Count} Cats: {categories.Count} Stores: {stores.Count} NotSold : {notSoldItems.Count}");
-        }
+        //private async Task GetRecentChanges() {
+        //    var ts = StateService.LastCosmosSyncTimestamp;
+        //    var items = await Changes<DtoTypes.Item>(_userId, ts, DtoTypes.DocumentKind.Item);
+        //    var categories = await Changes<DtoTypes.Category>(_userId, ts, DtoTypes.DocumentKind.Category);
+        //    var stores = await Changes<DtoTypes.Store>(_userId, ts, DtoTypes.DocumentKind.Store);
+        //    var notSoldItems = await Changes<DtoTypes.NotSoldItem>(_userId, ts, DtoTypes.DocumentKind.NotSoldItem);
+        //    var newTimestamps =
+        //        items.Select(i => i.Timestamp)
+        //        .Concat(categories.Select(i => i.Timestamp))
+        //        .Concat(stores.Select(i => i.Timestamp))
+        //        .Concat(notSoldItems.Select(i => i.Timestamp))
+        //        .ToList();
+        //    if (newTimestamps.Count > 0) {
+        //        StateService.LastCosmosSyncTimestamp = newTimestamps.Max();
+        //    }
+        //    var changes = new DtoTypes.PushChanges { Items = items, Categories = categories, Stores = stores, NotSoldItems = notSoldItems };
+        //    LogMessage($"Items: {items.Count} Cats: {categories.Count} Stores: {stores.Count} NotSold : {notSoldItems.Count}");
+        //}
 
         //var sqlQueryText = $"SELECT * FROM c WHERE c._ts > {StateService.LastCosmosSyncTimestamp} AND c.ItemName = {_userId} AND c.DocumentKind = {DtoTypes.DocumentKind.Item} ";
         //QueryDefinition queryDefinition = new QueryDefinition(sqlQueryText);
@@ -151,7 +174,6 @@ namespace WebApp.Pages {
         //        docs.Add(doc);
         //    }
         //}
-
 
         protected bool IsReady => StatusMessage == "";
 

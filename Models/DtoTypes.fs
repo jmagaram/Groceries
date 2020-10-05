@@ -1,7 +1,7 @@
 ﻿module Models.DtoTypes
 
 open System
-open System.Collections.Generic;
+open System.Collections.Generic
 open Newtonsoft.Json
 
 type DocumentKind =
@@ -15,11 +15,12 @@ type GroceryDocument() =
     member val UserId = "" with get, set
     member val DocumentKind = DocumentKind.Undefined with get, set
     member val IsDeleted = false with get, set
-    
+
     [<JsonProperty("_etag")>]
     member val Etag = "" with get, set
+
     [<JsonProperty("_ts")>]
-    member val Timestamp = 0 with get, set // seconds since 1970
+    member val Timestamp = 0 with get, set
 
 [<AllowNullLiteral>]
 type Repeat() =
@@ -43,7 +44,7 @@ type Item() =
     member val Quantity = "" with get, set
     member val CategoryId = Nullable<Guid>() with get, set
     member val ScheduleKind = ScheduleKind.Once with get, set
-    member val Repeat : Repeat = null with get, set
+    member val Repeat: Repeat = null with get, set
 
 type Store() =
     inherit GroceryDocument()
@@ -70,8 +71,16 @@ type NotSoldItem() =
     member me.Id =
         sprintf "(%s,%s)" (me.StoreId |> Id.serialize) (me.ItemId |> Id.serialize)
 
-type PushChanges() =
+type Changes() =
     member val Items = List<Item>() with get, set
     member val Categories = List<Category>() with get, set
     member val Stores = List<Store>() with get, set
     member val NotSoldItems = List<NotSoldItem>() with get, set
+
+open SynchronizationTypes
+
+type Pull = 
+    { Items : Change<StateTypes.Item, StateTypes.ItemId> list 
+      Categories : Change<StateTypes.Category, StateTypes.CategoryId> list
+      Stores : Change<StateTypes.Store, StateTypes.StoreId> list 
+      NotSoldItems : Change<StateTypes.NotSoldItem, StateTypes.NotSoldItem> list }
