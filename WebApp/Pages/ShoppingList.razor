@@ -18,8 +18,9 @@
                 string description = s.StoreName.Item;
                 <a class="dropdown-item" href="#" @onclick="e=>OnStoreFilter(s.StoreId)" @onclick:preventDefault>@description</a>
             }
+            <div class="dropdown-divider"></div>
+            <a class="dropdown-item" href="editstore">New store...</a>
             @if (StoreFilter != Guid.Empty) {
-                <div class="dropdown-divider"></div>
                 <a class="dropdown-item" href="editstore/@StoreFilter">Edit @currentStoreName...</a>
             }
         </div>
