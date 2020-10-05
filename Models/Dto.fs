@@ -102,8 +102,8 @@ module Dto =
         let id = StateTypes.StoreId c.StoreId
 
         match c.IsDeleted with
-        | false -> Change.Delete id
-        | true ->
+        | true -> Change.Delete id
+        | false ->
             Change.Upsert
                 { StateTypes.Store.StoreId = id
                   StateTypes.Store.StoreName = c.StoreName |> StoreName.tryParse |> Result.okOrThrow
