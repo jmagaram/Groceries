@@ -84,15 +84,19 @@ module DataRowTests =
         actual |> should equal expected
 
     [<Fact>]
-    let ``when delete row a DELETED row, throw`` () =
-        let deleteTwice () =
+    let ``when delete row a DELETED row, do nothing`` () =
+        let expected = 
+            bob
+            |> DataRow.unchanged
+            |> DataRow.delete
+
+        let actual = 
             bob
             |> DataRow.unchanged
             |> DataRow.delete
             |> Option.bind DataRow.delete
-            |> ignore
 
-        deleteTwice |> shouldFail
+        actual |> should equal expected
 
 module DataTableTests =
     open SynchronizationTestHelpers

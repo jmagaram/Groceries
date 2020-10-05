@@ -26,7 +26,7 @@ module DataRow =
         | Unchanged v -> deleted v |> Some
         | Modified m -> deleted m.Original |> Some
         | Added _ -> None
-        | Deleted _ -> failwith "Deleted rows can not be deleted again."
+        | Deleted _ -> r |> Some
 
     let update v' r =
         match r with
