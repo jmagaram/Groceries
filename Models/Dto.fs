@@ -99,22 +99,36 @@ module Dto =
 
 
     let deserializeCategory (i: DtoTypes.Document<DtoTypes.Category>) =
-        let categoryId =
-            i.Id
-            |> String.tryParseWith Guid.TryParse
-            |> Option.get
-            |> StateTypes.CategoryId
+        result {
+            let! categoryId =
+                i.Id
+                |> Id.deserialize
+                |> Option.map (StateTypes.CategoryId >> Ok)
+                |> Option.defaultValue
+                    (sprintf "Could not deserialize this category GUID: %s" i.Id
+                     |> Error)
 
-        match i.IsDeleted with
-        | true -> Change.Delete categoryId
-        | false ->
-            Change.Upsert
-                { StateTypes.Category.CategoryId = categoryId
-                  StateTypes.Category.CategoryName =
-                      i.Content.CategoryName
-                      |> CategoryName.tryParse
-                      |> Result.okOrThrow
-                  StateTypes.Category.Etag = StateTypes.Etag i.Etag |> Some }
+            let! categoryName =
+                i.Content.CategoryName
+                |> CategoryName.tryParse
+                |> Result.mapError (fun e ->
+                    (sprintf "Could not deserialize '%s' as a category name; error: %A" i.Content.CategoryName e))
+
+            match i.IsDeleted with
+            | true -> return Change.Delete categoryId
+            | false ->
+                return
+                    Change.Upsert
+                        { StateTypes.Category.CategoryId = categoryId
+                          StateTypes.Category.CategoryName = categoryName
+                          StateTypes.Category.Etag = StateTypes.Etag i.Etag |> Some }
+        }
+
+    let deserializeCategories (cs: DtoTypes.Document<DtoTypes.Category> seq) =
+        cs
+        |> Seq.map deserializeCategory
+        |> Result.fromResults
+        |> Result.okOrThrow
 
     let serializeStore isDeleted (i: StateTypes.Store): DtoTypes.Document<DtoTypes.Store> =
         { Id = i.StoreId |> Id.storeIdToGuid |> toString
@@ -162,7 +176,7 @@ module Dto =
         | true -> Change.Delete id
         | false -> Change.Upsert id
 
-    let withCustomerId id (i:DtoTypes.Document<_>) = { i with CustomerId = id }
+    let withCustomerId id (i: DtoTypes.Document<_>) = { i with CustomerId = id }
 
     let changes (s: Models.StateTypes.State) =
         let collect table f =

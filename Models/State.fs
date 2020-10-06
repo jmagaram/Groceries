@@ -26,6 +26,8 @@ module Id =
 
     let serialize (id: Guid) = id.ToString()
 
+    let deserialize s = s |> String.tryParseWith Guid.TryParse
+
 [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
 module Etag =
 
@@ -502,15 +504,17 @@ module State =
             isBrokenStore || isBrokenItem)
         |> Seq.fold (fun s i -> s |> mapNotSoldItems (DataTable.delete i)) s
 
-    let removeBrokenFilterLinks (s:State) =
+    let removeBrokenFilterLinks (s: State) =
         match (s |> settings).StoreFilter with
         | None -> s
         | Some sf ->
             match s |> storesTable |> DataTable.tryFindCurrent sf with
-            | None -> s |> mapSettings (DataRow.mapCurrent (fun s -> { s with StoreFilter = None}))
+            | None ->
+                s
+                |> mapSettings (DataRow.mapCurrent (fun s -> { s with StoreFilter = None }))
             | Some _ -> s
 
-    let fixBrokenForeignKeys (s:State) = 
+    let fixBrokenForeignKeys (s: State) =
         s
         |> setBrokenItemToCategoryLinksToNone
         |> removeBrokenNotSoldItemLinks

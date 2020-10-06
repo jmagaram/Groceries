@@ -89,7 +89,7 @@ namespace WebApp.Common {
             }
             var itemChanges = items.Select(i => Dto.deserializeItem(i)).ToList();
             var storeChanges = stores.Select(i => Dto.deserializeStore(i)).ToList();
-            var categoryChanges = categories.Select(i => Dto.deserializeCategory(i)).ToList();
+            var categoryChanges = Dto.deserializeCategories(categories).ToList();
             var notSoldItemChanges = notSoldItems.Select(i => Dto.deserializeNotSoldItem(i));
             var state = Dto.processPull(itemChanges, categoryChanges, storeChanges, notSoldItemChanges, s);
             return (state, lastSyncTimestamp);
