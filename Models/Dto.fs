@@ -123,13 +123,6 @@ module Dto =
                 return (Upsert item)
         }
 
-    // maybe should take what works, not throw
-    let deserializeItems (i: DtoTypes.Document<DtoTypes.Item> seq) =
-        i
-        |> Seq.map deserializeItem
-        |> Result.fromResults
-        |> Result.okOrThrow
-
     let serializeCategory isDeleted (i: StateTypes.Category): DtoTypes.Document<DtoTypes.Category> =
         { Id = i.CategoryId |> CategoryId.serialize
           CustomerId = null
@@ -167,13 +160,6 @@ module Dto =
                           StateTypes.Category.CategoryName = categoryName
                           StateTypes.Category.Etag = StateTypes.Etag i.Etag |> Some }
         }
-
-    // maybe should take what works, not throw
-    let deserializeCategories (cs: DtoTypes.Document<DtoTypes.Category> seq) =
-        cs
-        |> Seq.map deserializeCategory
-        |> Result.fromResults
-        |> Result.okOrThrow
 
     let serializeStore isDeleted (i: StateTypes.Store): DtoTypes.Document<DtoTypes.Store> =
         { Id = i.StoreId |> StoreId.serialize
@@ -213,13 +199,6 @@ module Dto =
                           StateTypes.Store.Etag = StateTypes.Etag i.Etag |> Some }
         }
 
-    // maybe should take what works, not throw
-    let deserializeStores (cs: DtoTypes.Document<DtoTypes.Store> seq) =
-        cs
-        |> Seq.map deserializeStore
-        |> Result.fromResults
-        |> Result.okOrThrow
-
     let serializeNotSoldItem isDeleted (i: StateTypes.NotSoldItem): DtoTypes.Document<DtoTypes.NotSoldItem> =
         { Id = i |> NotSoldItem.serialize // use Json here
           CustomerId = null
@@ -238,11 +217,24 @@ module Dto =
             | false -> return id |> Change.Upsert
         }
 
-    let deserializeNotSoldItems (i: DtoTypes.Document<DtoTypes.NotSoldItem> seq) =
+    // maybe should take what works, not throw
+    let deserializeMany<'T, 'U> (f: DtoTypes.Document<'T> -> Result<'U, string>) (i: DtoTypes.Document<'T> seq) =
         i
-        |> Seq.map deserializeNotSoldItem
+        |> Seq.map f
         |> Result.fromResults
         |> Result.okOrThrow
+
+    let deserializeCategories i =
+        i |> deserializeMany<_, _> deserializeCategory
+
+    let deserializeStores i =
+        i |> deserializeMany<_, _> deserializeStore
+
+    let deserializeItems i =
+        i |> deserializeMany<_, _> deserializeItem
+
+    let deserializeNotSoldItems i =
+        i |> deserializeMany<_, _> deserializeNotSoldItem
 
     let withCustomerId id (i: DtoTypes.Document<_>) = { i with CustomerId = id }
 
