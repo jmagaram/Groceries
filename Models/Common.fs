@@ -133,6 +133,7 @@ module Result =
     type ResultBuilder() =
         member this.Return(x) = Ok x
         member this.Bind(x, f) = Result.bind f x
+        member this.ReturnFrom r = r
 
     let result = ResultBuilder()
 

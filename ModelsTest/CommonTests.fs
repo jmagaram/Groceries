@@ -163,7 +163,7 @@ module ResultTests =
     let len (String5 s) = s.Length
 
     [<Fact>]
-    let ``computation expression - when some part fails, returns error`` () =
+    let ``computation expression - let! when some part fails, return error`` () =
         let actual =
             result {
                 let! a = string5 "xx"
@@ -177,7 +177,7 @@ module ResultTests =
         actual |> should equal expected
 
     [<Fact>]
-    let ``computation expression - when each part ok, returns ok`` () =
+    let ``computation expression - let! when each part ok, return ok`` () =
         let actual =
             result {
                 let! a = string5 "xx"
@@ -188,6 +188,26 @@ module ResultTests =
             }
 
         let expected: Result<int, string> = Ok 8
+        actual |> should equal expected
+
+    [<Fact>]
+    let ``computation expression - can return! an error directly`` () =
+        let actual : Result<int,string> =
+            result {
+                return! (Error "this is the error")
+            }
+
+        let expected: Result<int, string> = Error "this is the error"
+        actual |> should equal expected
+
+    [<Fact>]
+    let ``computation expression - can return! an OK directly`` () =
+        let actual : Result<int,string> =
+            result {
+                return! (Ok 3)
+            }
+
+        let expected: Result<int, string> = Ok 3
         actual |> should equal expected
 
     [<Fact>]
