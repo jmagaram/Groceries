@@ -87,7 +87,7 @@ namespace WebApp.Common {
                     .Concat(notSoldItems.Select(i => i.Timestamp))
                     .Max();
             }
-            var itemChanges = items.Select(i => Dto.deserializeItem(i)).ToList();
+            var itemChanges = Dto.deserializeItems(items).ToList();
             var storeChanges = stores.Select(i => Dto.deserializeStore(i)).ToList();
             var categoryChanges = Dto.deserializeCategories(categories).ToList();
             var notSoldItemChanges = notSoldItems.Select(i => Dto.deserializeNotSoldItem(i));

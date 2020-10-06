@@ -42,47 +42,93 @@ module Dto =
                     | _ -> Unchecked.defaultof<DtoTypes.Repeat> } }
 
     let deserializeItem (i: DtoTypes.Document<DtoTypes.Item>) =
-        let itemId =
-            i.Id
-            |> String.tryParseWith Guid.TryParse
-            |> Option.get
-            |> StateTypes.ItemId
+        result {
+            let! itemId =
+                i.Id
+                |> ItemId.deserialize
+                |> Option.map Ok
+                |> Option.defaultValue
+                    (i.Id
+                     |> sprintf "Could not deserialize the item ID '%s'"
+                     |> Error)
 
-        match i.IsDeleted with
-        | true -> Change.Delete itemId
-        | false ->
-            Upsert
-                { StateTypes.Item.ItemId = itemId
-                  StateTypes.Item.ItemName =
-                      i.Content.ItemName
-                      |> ItemName.tryParse
-                      |> Result.okOrThrow
-                  StateTypes.Item.CategoryId =
-                      i.Content.CategoryId
-                      |> CategoryId.deserialize
-                  StateTypes.Item.Note =
-                      i.Content.Note
-                      |> Note.tryParseOptional
-                      |> Result.okOrThrow
-                  StateTypes.Item.Etag = StateTypes.Etag i.Etag |> Some
-                  StateTypes.Item.Quantity =
-                      i.Content.Quantity
-                      |> Quantity.tryParseOptional
-                      |> Result.okOrThrow
-                  StateTypes.Item.Schedule =
-                      match i.Content.ScheduleKind with
-                      | DtoTypes.ScheduleKind.Completed -> StateTypes.Schedule.Completed
-                      | DtoTypes.ScheduleKind.Once -> StateTypes.Schedule.Once
-                      | DtoTypes.ScheduleKind.Repeat ->
-                          StateTypes.Repeat
-                              { StateTypes.Repeat.Frequency =
+            match i.IsDeleted with
+            | true -> return (itemId |> Change.Delete)
+            | false ->
+                let! itemName =
+                    i.Content.ItemName
+                    |> ItemName.tryParse
+                    |> Result.mapError (fun e ->
+                        sprintf "Could not deserialize the item name '%s'; error: %A" i.Content.ItemName e)
+
+                let! categoryId =
+                    match i.Content.CategoryId |> String.isNullOrWhiteSpace with
+                    | true -> None |> Ok
+                    | false ->
+                        i.Content.CategoryId
+                        |> CategoryId.deserialize
+                        |> Option.map (Some >> Ok)
+                        |> Option.defaultValue
+                            (i.Content.CategoryId
+                             |> sprintf "Could not deserialize the category ID '%s'"
+                             |> Error)
+
+                let! note =
+                    i.Content.Note
+                    |> Note.tryParseOptional
+                    |> Result.mapError (sprintf "Could not parse the note '%s'; error %A" i.Content.Note)
+
+                let! quantity =
+                    i.Content.Quantity
+                    |> Quantity.tryParseOptional
+                    |> Result.mapError (sprintf "Could not parse the quantity '%s'; error %A" i.Content.Quantity)
+
+                let! schedule =
+                    match i.Content.ScheduleKind with
+                    | DtoTypes.ScheduleKind.Completed -> StateTypes.Schedule.Completed |> Ok
+                    | DtoTypes.ScheduleKind.Once -> StateTypes.Schedule.Once |> Ok
+                    | DtoTypes.ScheduleKind.Repeat ->
+                        let frequency =
+                            i.Content.ScheduleRepeat.Frequency
+                            |> Frequency.create
+                            |> Result.mapError (fun e ->
+                                sprintf
+                                    "Could not parse the frequency '%i'; error %A"
                                     i.Content.ScheduleRepeat.Frequency
-                                    |> Frequency.create
-                                    |> Result.okOrThrow
-                                StateTypes.Repeat.PostponedUntil =
-                                    i.Content.ScheduleRepeat.PostponedUntil
-                                    |> Option.ofNullable }
-                      | _ -> failwith "Unexpected schedule kind." }
+                                    e)
+
+                        let postponedUntil =
+                            i.Content.ScheduleRepeat.PostponedUntil
+                            |> Option.ofNullable
+
+                        frequency
+                        |> Result.map (fun f ->
+                            StateTypes.Schedule.Repeat
+                                { StateTypes.Repeat.Frequency = f
+                                  StateTypes.Repeat.PostponedUntil = postponedUntil })
+
+                    | _ ->
+                        sprintf "An unexpected schedule type was found: '%A'" i.Content.ScheduleKind
+                        |> Error
+
+                let item =
+                    { StateTypes.Item.ItemId = itemId
+                      StateTypes.Item.ItemName = itemName
+                      StateTypes.Item.CategoryId = categoryId
+                      StateTypes.Item.Note = note
+                      StateTypes.Item.Etag = StateTypes.Etag i.Etag |> Some
+                      StateTypes.Item.Quantity = quantity
+                      StateTypes.Item.Schedule = schedule }
+
+                return (Upsert item)
+        }
+
+    // maybe should take what works, not throw
+    let deserializeItems (i: DtoTypes.Document<DtoTypes.Item> seq ) =
+        i
+        |> Seq.map deserializeItem
+        |> Result.fromResults
+        |> Result.okOrThrow
 
     let serializeCategory isDeleted (i: StateTypes.Category): DtoTypes.Document<DtoTypes.Category> =
         { Id = i.CategoryId |> CategoryId.serialize
@@ -95,7 +141,6 @@ module Dto =
           IsDeleted = isDeleted
           Timestamp = Nullable<int>()
           Content = { CategoryName = i.CategoryName |> CategoryName.asText } }
-
 
     let deserializeCategory (i: DtoTypes.Document<DtoTypes.Category>) =
         result {
@@ -123,6 +168,7 @@ module Dto =
                           StateTypes.Category.Etag = StateTypes.Etag i.Etag |> Some }
         }
 
+    // maybe should take what works, not throw
     let deserializeCategories (cs: DtoTypes.Document<DtoTypes.Category> seq) =
         cs
         |> Seq.map deserializeCategory
