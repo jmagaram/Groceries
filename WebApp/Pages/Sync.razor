@@ -1,7 +1,4 @@
 ﻿@page "/sync"
-@using Models
-@using Common
-@using Microsoft.FSharp.Core;
 
 <style>
     h3 {
@@ -16,12 +13,11 @@
     <a class="btn btn-outline-primary" href="https://localhost:8081/_explorer/index.html" target="_blank">Data Explorer</a>
     <button type="button" class="btn btn-outline-primary" @onclick="@(async () => await PushAsync())">Push</button>
     <button type="button" class="btn btn-outline-primary" @onclick="@(async () => await PullAsync())">Pull</button>
-    <button type="button" class="btn btn-outline-primary" @onclick="@(async () => await QueryItemsAsync())">Query</button>
 }
 
-@if (StatusMessage != "") {
+@if (ModalStatusMessage != "") {
     <h3>Status</h3>
-    <p>@StatusMessage</p>
+    <p>@ModalStatusMessage</p>
 }
 
 <h3>Log</h3>

@@ -4,83 +4,55 @@ open System
 open System.Collections.Generic
 open Newtonsoft.Json
 
+// this is not needed when communicating to server
+// only needed from server to cosmos
+// two levels of DTO needed
+// same with userId
+
 type DocumentKind =
-    | Undefined = 0
     | Item = 1
     | Store = 2
     | Category = 3
     | NotSoldItem = 4
 
-type GroceryDocument() =
-    member val UserId = "" with get, set
-    member val DocumentKind = DocumentKind.Undefined with get, set
-    member val IsDeleted = false with get, set
+type Document<'T> =
+    { DocumentKind: DocumentKind
+      [<JsonProperty("CustomerId")>]
+      CustomerId: string
+      [<JsonProperty("_etag")>]
+      Etag: string
+      [<JsonProperty("_ts")>]
+      Timestamp: Nullable<int>
+      [<JsonProperty("id")>]
+      Id: string
+      IsDeleted: bool
+      Content: 'T }
 
-    [<JsonProperty("_etag")>]
-    member val Etag = "" with get, set
+type Item =
+    { ItemName: string
+      ScheduleKind: ScheduleKind
+      ScheduleRepeat: Repeat
+      Note: string
+      Quantity: string
+      CategoryId: Nullable<Guid> }
 
-    [<JsonProperty("_ts")>]
-    member val Timestamp = 0 with get, set
-
-[<AllowNullLiteral>]
-type Repeat() =
-    member val Frequency = 0 with get, set
-    member val PostponedUntil = Nullable<DateTimeOffset>() with get, set
-
-type ScheduleKind =
-    | Undefined = 0
+and ScheduleKind =
     | Completed = 1
     | Once = 2
     | Repeat = 3
 
-type Item() =
-    inherit GroceryDocument()
+and Repeat =
+    { Frequency: int<StateTypes.days>
+      PostponedUntil: Nullable<DateTimeOffset> }
 
-    [<JsonProperty("id")>]
-    member val ItemId: Guid = Guid.Empty with get, set
+type Store = { StoreName: string }
 
-    member val ItemName = "" with get, set
-    member val Note = "" with get, set
-    member val Quantity = "" with get, set
-    member val CategoryId = Nullable<Guid>() with get, set
-    member val ScheduleKind = ScheduleKind.Once with get, set
-    member val Repeat: Repeat = null with get, set
+type Category = { CategoryName: string }
 
-type Store() =
-    inherit GroceryDocument()
+type NotSoldItem = unit
 
-    [<JsonProperty("id")>]
-    member val StoreId = Guid.Empty with get, set
-
-    member val StoreName = "" with get, set
-
-type Category() =
-    inherit GroceryDocument()
-
-    [<JsonProperty("id")>]
-    member val CategoryId = Guid.Empty with get, set
-
-    member val CategoryName = "" with get, set
-
-type NotSoldItem() =
-    inherit GroceryDocument()
-    member val StoreId = Guid.Empty with get, set
-    member val ItemId = Guid.Empty with get, set
-
-    [<JsonProperty("id")>]
-    member me.Id =
-        sprintf "(%s,%s)" (me.StoreId |> Id.serialize) (me.ItemId |> Id.serialize)
-
-type Changes() =
-    member val Items = List<Item>() with get, set
-    member val Categories = List<Category>() with get, set
-    member val Stores = List<Store>() with get, set
-    member val NotSoldItems = List<NotSoldItem>() with get, set
-
-open SynchronizationTypes
-
-type Pull = 
-    { Items : Change<StateTypes.Item, StateTypes.ItemId> list 
-      Categories : Change<StateTypes.Category, StateTypes.CategoryId> list
-      Stores : Change<StateTypes.Store, StateTypes.StoreId> list 
-      NotSoldItems : Change<StateTypes.NotSoldItem, StateTypes.NotSoldItem> list }
+type Changes =
+    { Items: Document<Item> []
+      Categories: Document<Category> []
+      Stores: Document<Store> []
+      NotSoldItems: Document<NotSoldItem> [] }

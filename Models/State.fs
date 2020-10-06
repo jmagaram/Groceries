@@ -264,6 +264,23 @@ module Schedule =
         | _ -> false
 
 [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
+module NotSoldItem =
+
+    let private separator = '|'
+
+    let serialize (ns:NotSoldItem) = 
+        let storeId = ns.StoreId |> Id.storeIdToGuid |> toString
+        let itemId = ns.ItemId |> Id.itemIdToGuid |> toString
+        sprintf "%s%c%s" storeId separator itemId
+
+    let deserialize (s:string) =
+        let parts = s.Split(separator)
+        let storeId = parts.[0] |> String.tryParseWith Guid.TryParse |> Option.get |> StoreId
+        let itemId = parts.[1] |> String.tryParseWith Guid.TryParse |> Option.get |> ItemId
+        { NotSoldItem.StoreId = storeId
+          NotSoldItem.ItemId = itemId }
+
+[<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
 module Item =
 
     let markComplete (now: DateTimeOffset) (i: Item) =

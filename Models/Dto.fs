@@ -5,162 +5,193 @@ open SynchronizationTypes
 
 module Dto =
 
-    let fromItem (userId: string) (i: StateTypes.Item) =
-        let r = DtoTypes.Item()
-        r.DocumentKind <- DtoTypes.DocumentKind.Item
-        r.Etag <- i.Etag |> Option.map (Etag.tag) |> Option.defaultValue null
-        r.UserId <- userId
-        r.ItemId <- i.ItemId |> Id.itemIdToGuid
-        r.ItemName <- i.ItemName |> ItemName.asText
-        r.Note <- i.Note |> Option.map Note.asText |> Option.defaultValue ""
+    let serializeItem isDeleted (i: StateTypes.Item): DtoTypes.Document<DtoTypes.Item> =
+        { Id = i.ItemId |> Id.itemIdToGuid |> toString
+          CustomerId = null
+          DocumentKind = DtoTypes.DocumentKind.Item
+          Etag =
+              i.Etag
+              |> Option.map (Etag.tag)
+              |> Option.defaultValue null
+          IsDeleted = isDeleted
+          Timestamp = Nullable<int>()
+          Content =
+              { ItemName = i.ItemName |> ItemName.asText
+                CategoryId =
+                    i.CategoryId
+                    |> Option.map Id.categoryIdToGuid
+                    |> Option.toNullable
+                Note =
+                    i.Note
+                    |> Option.map Note.asText
+                    |> Option.defaultValue null
+                Quantity =
+                    i.Quantity
+                    |> Option.map Quantity.asText
+                    |> Option.defaultValue null
+                ScheduleKind =
+                    match i.Schedule with
+                    | StateTypes.Schedule.Completed -> DtoTypes.ScheduleKind.Completed
+                    | StateTypes.Schedule.Once -> DtoTypes.ScheduleKind.Once
+                    | StateTypes.Schedule.Repeat _ -> DtoTypes.ScheduleKind.Repeat
+                ScheduleRepeat =
+                    match i.Schedule with
+                    | StateTypes.Schedule.Repeat r ->
+                        { Frequency = r.Frequency |> Frequency.days
+                          PostponedUntil = r.PostponedUntil |> Option.toNullable }
+                    | _ -> Unchecked.defaultof<DtoTypes.Repeat> } }
 
-        r.Quantity <-
-            i.Quantity
-            |> Option.map Quantity.asText
-            |> Option.defaultValue ""
-
-        r.CategoryId <-
-            i.CategoryId
-            |> Option.map Id.categoryIdToGuid
-            |> Option.toNullable
-
-        match i.Schedule with
-        | StateTypes.Schedule.Once -> r.ScheduleKind <- DtoTypes.ScheduleKind.Once
-        | StateTypes.Schedule.Completed -> r.ScheduleKind <- DtoTypes.ScheduleKind.Completed
-        | StateTypes.Schedule.Repeat rpt ->
-            r.ScheduleKind <- DtoTypes.ScheduleKind.Repeat
-
-            r.Repeat <-
-                let frequency = rpt.Frequency |> Frequency.days |> int
-                let postponedUntil = rpt.PostponedUntil |> Option.toNullable
-                DtoTypes.Repeat(Frequency = frequency, PostponedUntil = postponedUntil)
-
-        r
-
-    let toItem (i: DtoTypes.Item) =
-        let itemId = StateTypes.ItemId i.ItemId
+    let deserializeItem (i: DtoTypes.Document<DtoTypes.Item>) =
+        let itemId =
+            i.Id
+            |> String.tryParseWith Guid.TryParse
+            |> Option.get
+            |> StateTypes.ItemId
 
         match i.IsDeleted with
         | true -> Change.Delete itemId
         | false ->
             Upsert
                 { StateTypes.Item.ItemId = itemId
-                  StateTypes.Item.ItemName = i.ItemName |> ItemName.tryParse |> Result.okOrThrow
+                  StateTypes.Item.ItemName =
+                      i.Content.ItemName
+                      |> ItemName.tryParse
+                      |> Result.okOrThrow
                   StateTypes.Item.CategoryId =
-                      i.CategoryId
+                      i.Content.CategoryId
                       |> Option.ofNullable
                       |> Option.map StateTypes.CategoryId
-                  StateTypes.Item.Note = i.Note |> Note.tryParseOptional |> Result.okOrThrow
+                  StateTypes.Item.Note =
+                      i.Content.Note
+                      |> Note.tryParseOptional
+                      |> Result.okOrThrow
                   StateTypes.Item.Etag = StateTypes.Etag i.Etag |> Some
-                  StateTypes.Item.Quantity = i.Quantity |> Quantity.tryParseOptional |> Result.okOrThrow
+                  StateTypes.Item.Quantity =
+                      i.Content.Quantity
+                      |> Quantity.tryParseOptional
+                      |> Result.okOrThrow
                   StateTypes.Item.Schedule =
-                      match i.ScheduleKind with
+                      match i.Content.ScheduleKind with
                       | DtoTypes.ScheduleKind.Completed -> StateTypes.Schedule.Completed
                       | DtoTypes.ScheduleKind.Once -> StateTypes.Schedule.Once
                       | DtoTypes.ScheduleKind.Repeat ->
                           StateTypes.Repeat
                               { StateTypes.Repeat.Frequency =
-                                    match i.Repeat with
-                                    | null -> failwith "Should not be null."
-                                    | r ->
-                                        (r.Frequency * 1<StateTypes.days>)
-                                        |> Frequency.create
-                                        |> Result.okOrThrow
-                                StateTypes.Repeat.PostponedUntil = i.Repeat.PostponedUntil |> Option.ofNullable }
+                                    i.Content.ScheduleRepeat.Frequency
+                                    |> Frequency.create
+                                    |> Result.okOrThrow
+                                StateTypes.Repeat.PostponedUntil =
+                                    i.Content.ScheduleRepeat.PostponedUntil
+                                    |> Option.ofNullable }
                       | _ -> failwith "Unexpected schedule kind." }
 
-    let fromCategory (userId: string) (c: StateTypes.Category) =
-        let r = DtoTypes.Category()
-        r.Etag <- c.Etag |> Option.map (Etag.tag) |> Option.defaultValue null
-        r.DocumentKind <- DtoTypes.DocumentKind.Category
-        r.UserId <- userId
-        r.CategoryId <- c.CategoryId |> Id.categoryIdToGuid
-        r.CategoryName <- c.CategoryName |> CategoryName.asText
-        r
+    let serializeCategory isDeleted (i: StateTypes.Category): DtoTypes.Document<DtoTypes.Category> =
+        { Id = i.CategoryId |> Id.categoryIdToGuid |> toString
+          CustomerId = null
+          DocumentKind = DtoTypes.DocumentKind.Category
+          Etag =
+              i.Etag
+              |> Option.map (Etag.tag)
+              |> Option.defaultValue null
+          IsDeleted = isDeleted
+          Timestamp = Nullable<int>()
+          Content = { CategoryName = i.CategoryName |> CategoryName.asText } }
 
-    let toCategory (c: DtoTypes.Category) =
-        let id = StateTypes.CategoryId c.CategoryId
 
-        match c.IsDeleted with
-        | true -> Change.Delete id
+    let deserializeCategory (i: DtoTypes.Document<DtoTypes.Category>) =
+        let categoryId =
+            i.Id
+            |> String.tryParseWith Guid.TryParse
+            |> Option.get
+            |> StateTypes.CategoryId
+
+        match i.IsDeleted with
+        | true -> Change.Delete categoryId
         | false ->
             Change.Upsert
-                { StateTypes.Category.CategoryId = id
-                  StateTypes.Category.CategoryName = c.CategoryName |> CategoryName.tryParse |> Result.okOrThrow
-                  StateTypes.Category.Etag = StateTypes.Etag c.Etag |> Some }
+                { StateTypes.Category.CategoryId = categoryId
+                  StateTypes.Category.CategoryName =
+                      i.Content.CategoryName
+                      |> CategoryName.tryParse
+                      |> Result.okOrThrow
+                  StateTypes.Category.Etag = StateTypes.Etag i.Etag |> Some }
 
-    let fromStore (userId: string) (c: StateTypes.Store) =
-        let r = DtoTypes.Store()
-        r.DocumentKind <- DtoTypes.DocumentKind.Store
-        r.Etag <- c.Etag |> Option.map (Etag.tag) |> Option.defaultValue null
-        r.UserId <- userId
-        r.StoreId <- c.StoreId |> Id.storeIdToGuid
-        r.StoreName <- c.StoreName |> StoreName.asText
-        r
+    let serializeStore isDeleted (i: StateTypes.Store): DtoTypes.Document<DtoTypes.Store> =
+        { Id = i.StoreId |> Id.storeIdToGuid |> toString
+          CustomerId = null
+          DocumentKind = DtoTypes.DocumentKind.Store
+          Etag =
+              i.Etag
+              |> Option.map (Etag.tag)
+              |> Option.defaultValue null
+          IsDeleted = isDeleted
+          Timestamp = Nullable<int>()
+          Content = { StoreName = i.StoreName |> StoreName.asText } }
 
-    let toStore (c: DtoTypes.Store) =
-        let id = StateTypes.StoreId c.StoreId
+    let deserializeStore (i: DtoTypes.Document<DtoTypes.Store>) =
+        let storeId =
+            i.Id
+            |> String.tryParseWith Guid.TryParse
+            |> Option.get
+            |> StateTypes.StoreId
 
-        match c.IsDeleted with
-        | true -> Change.Delete id
+        match i.IsDeleted with
+        | true -> Change.Delete storeId
         | false ->
             Change.Upsert
-                { StateTypes.Store.StoreId = id
-                  StateTypes.Store.StoreName = c.StoreName |> StoreName.tryParse |> Result.okOrThrow
-                  StateTypes.Store.Etag = StateTypes.Etag c.Etag |> Some }
+                { StateTypes.Store.StoreId = storeId
+                  StateTypes.Store.StoreName =
+                      i.Content.StoreName
+                      |> StoreName.tryParse
+                      |> Result.okOrThrow
+                  StateTypes.Store.Etag = StateTypes.Etag i.Etag |> Some }
 
-    let fromNotSoldItem (userId: string) (c: StateTypes.NotSoldItem) =
-        let r = DtoTypes.NotSoldItem()
-        r.DocumentKind <- DtoTypes.DocumentKind.NotSoldItem
-        r.UserId <- userId
-        r.ItemId <- c.ItemId |> Id.itemIdToGuid
-        r.StoreId <- c.StoreId |> Id.storeIdToGuid
-        r
+    let serializeNotSoldItem isDeleted (i: StateTypes.NotSoldItem): DtoTypes.Document<DtoTypes.NotSoldItem> =
+        { Id = i |> NotSoldItem.serialize // use Json here
+          CustomerId = null
+          DocumentKind = DtoTypes.DocumentKind.NotSoldItem
+          Etag = null
+          IsDeleted = isDeleted
+          Timestamp = Nullable<int>()
+          Content = () }
 
-    let toNotSoldItem (i: DtoTypes.NotSoldItem) =
-        let id =
-            { StateTypes.NotSoldItem.StoreId = StateTypes.StoreId i.StoreId
-              StateTypes.NotSoldItem.ItemId = StateTypes.ItemId i.ItemId }
+    let deserializeNotSoldItem (i: DtoTypes.Document<DtoTypes.NotSoldItem>) =
+        let id = i.Id |> NotSoldItem.deserialize
 
         match i.IsDeleted with
         | true -> Change.Delete id
         | false -> Change.Upsert id
 
-    let private changes<'T, 'TKey, 'U when 'U :> DtoTypes.GroceryDocument and 'TKey: comparison> (table: SynchronizationTypes.DataTable<'TKey, 'T>)
-                                                                                                 (createDto: 'T -> 'U)
-                                                                                                 =
-        let mapItems isDeleted source =
-            source
-            |> Seq.map createDto
-            |> Seq.map (fun i -> 
-                i.IsDeleted <- isDeleted
-                i)
+    let withCustomerId id (i:DtoTypes.Document<_>) = { i with CustomerId = id }
 
-        let toDelete = table |> DataTable.isDeleted |> mapItems true
-        let toUpsert = table |> DataTable.isAddedOrModified |> mapItems false
+    let changes (s: Models.StateTypes.State) =
+        let collect table f =
+            let upsert =
+                s
+                |> table
+                |> DataTable.isAddedOrModified
+                |> Seq.map (fun i -> (i, false))
 
-        System.Collections.Generic.List<_>(Seq.append toDelete toUpsert)
+            let delete =
+                s
+                |> table
+                |> DataTable.isDeleted
+                |> Seq.map (fun i -> (i, true))
 
-    let pushChanges userId (s: Models.StateTypes.State) =
-        let c = DtoTypes.Changes()
+            upsert
+            |> Seq.append delete
+            |> Seq.map (fun (i, isDeleted) -> f isDeleted i)
+            |> Seq.toArray
 
-        c.Items <- changes (s |> State.itemsTable) (fromItem userId)
-        c.Categories <- changes (s |> State.categoriesTable) (fromCategory userId)
-        c.Stores <- changes (s |> State.storesTable) (fromStore userId)
-        c.NotSoldItems <- changes (s |> State.notSoldItemsTable) (fromNotSoldItem userId)
-        c
+        { DtoTypes.Changes.Items = collect State.itemsTable serializeItem
+          DtoTypes.Changes.Categories = collect State.categoriesTable serializeCategory
+          DtoTypes.Changes.Stores = collect State.storesTable serializeStore
+          DtoTypes.Changes.NotSoldItems = collect State.notSoldItemsTable serializeNotSoldItem }
 
-    let pull items categories stores notSoldItems =
-        { DtoTypes.Pull.Items = items |> Seq.map toItem |> List.ofSeq
-          DtoTypes.Pull.Categories = categories |> Seq.map toCategory |> List.ofSeq
-          DtoTypes.Pull.Stores = stores |> Seq.map toStore |> List.ofSeq
-          DtoTypes.Pull.NotSoldItems = notSoldItems |> Seq.map toNotSoldItem |> List.ofSeq
-        }
-
-    let processPull (p:DtoTypes.Pull) (s:StateTypes.State) =
-        s 
-        |> State.mapItems (SynchronizeState.merge p.Items)
-        |> State.mapCategories (SynchronizeState.merge p.Categories)
-        |> State.mapStores (SynchronizeState.merge p.Stores)
-        |> State.mapNotSoldItems (SynchronizeState.merge p.NotSoldItems)
-        // then fix broken foreign keys
+    let processPull items categories stores notSoldItems (s: StateTypes.State) =
+        s
+        |> State.mapItems (SynchronizeState.merge items)
+        |> State.mapCategories (SynchronizeState.merge categories)
+        |> State.mapStores (SynchronizeState.merge stores)
+        |> State.mapNotSoldItems (SynchronizeState.merge notSoldItems)
+// then fix broken foreign keys

@@ -13,4 +13,4 @@ type Change<'T, 'Key> =
     | Delete of 'Key
 
 type ResolveChanges<'T, 'Key when 'Key: comparison> =
-    Change<'T, 'Key> list -> DataTable<'Key, 'T> -> DataTable<'Key, 'T>
+    Change<'T, 'Key> seq -> DataTable<'Key, 'T> -> DataTable<'Key, 'T>
