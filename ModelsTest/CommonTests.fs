@@ -187,3 +187,27 @@ module ResultTests =
 
         let expected: Result<int, string> = Ok 8
         actual |> should equal expected
+
+    [<Fact>]
+    let ``fromResults - return first Error, if any, or Ok list`` () =
+        let isSmallerThan5 x = if x < 5 then Ok x else Error x
+        let nums1To10 = Gen.choose (1,10)
+        let testData = 
+            Gen.choose(0,5)
+            >>= fun len -> Gen.listOfLength len nums1To10
+            |> Gen.sample 1 1000
+        let results = 
+            testData
+            |> Seq.map (fun i -> 
+                let input = i |> Seq.map isSmallerThan5 |> List.ofSeq
+                let result = input |> fromResults
+                let expected = 
+                    match input |> List.tryPick (fun i -> match i with | Error e -> Some e | _ -> None) with
+                    | None -> Ok i
+                    | Some r -> Error r 
+                {| Input = input; Expected = expected; Actual = result|})
+            |> List.ofSeq
+        let failing = 
+            results
+            |> List.filter (fun i -> i.Actual <> i.Expected)
+        failing |> Seq.isEmpty |> should equal true

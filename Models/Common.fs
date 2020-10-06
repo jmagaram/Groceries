@@ -139,3 +139,16 @@ module Result =
         member this.Bind(x, f) = Result.bind f x
 
     let result = ResultBuilder()
+
+    let fromResults rs = 
+        rs
+        |> Seq.scan (fun (vs, err) i ->
+            match i with
+            | Ok v -> (v::vs,err)
+            | Error e -> (vs, Some e)) ([], None)
+        |> Seq.takeTo (fun (vs, err) -> err.IsSome)
+        |> Seq.last
+        |> fun (vs, err) ->
+            match err with
+            | None -> vs |> List.rev |> Ok
+            | Some err -> Error err
