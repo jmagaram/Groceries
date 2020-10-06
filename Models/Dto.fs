@@ -124,7 +124,7 @@ module Dto =
         }
 
     // maybe should take what works, not throw
-    let deserializeItems (i: DtoTypes.Document<DtoTypes.Item> seq ) =
+    let deserializeItems (i: DtoTypes.Document<DtoTypes.Item> seq) =
         i
         |> Seq.map deserializeItem
         |> Result.fromResults
@@ -149,7 +149,7 @@ module Dto =
                 |> CategoryId.deserialize
                 |> Option.map Ok
                 |> Option.defaultValue
-                    (sprintf "Could not deserialize this category GUID: %s" i.Id
+                    (sprintf "Could not deserialize this category ID: %s" i.Id
                      |> Error)
 
             let! categoryName =
@@ -188,22 +188,37 @@ module Dto =
           Content = { StoreName = i.StoreName |> StoreName.asText } }
 
     let deserializeStore (i: DtoTypes.Document<DtoTypes.Store>) =
-        let storeId =
-            i.Id
-            |> String.tryParseWith Guid.TryParse
-            |> Option.get
-            |> StateTypes.StoreId
+        result {
+            let! storeId =
+                i.Id
+                |> StoreId.deserialize
+                |> Option.map Ok
+                |> Option.defaultValue
+                    (sprintf "Could not deserialize this store ID: %s" i.Id
+                     |> Error)
 
-        match i.IsDeleted with
-        | true -> Change.Delete storeId
-        | false ->
-            Change.Upsert
-                { StateTypes.Store.StoreId = storeId
-                  StateTypes.Store.StoreName =
-                      i.Content.StoreName
-                      |> StoreName.tryParse
-                      |> Result.okOrThrow
-                  StateTypes.Store.Etag = StateTypes.Etag i.Etag |> Some }
+            let! storeName =
+                i.Content.StoreName
+                |> StoreName.tryParse
+                |> Result.mapError (fun e ->
+                    (sprintf "Could not deserialize '%s' as a store name; error: %A" i.Content.StoreName e))
+
+            match i.IsDeleted with
+            | true -> return Change.Delete storeId
+            | false ->
+                return
+                    Change.Upsert
+                        { StateTypes.Store.StoreId = storeId
+                          StateTypes.Store.StoreName = storeName
+                          StateTypes.Store.Etag = StateTypes.Etag i.Etag |> Some }
+        }
+
+    // maybe should take what works, not throw
+    let deserializeStores (cs: DtoTypes.Document<DtoTypes.Store> seq) =
+        cs
+        |> Seq.map deserializeStore
+        |> Result.fromResults
+        |> Result.okOrThrow
 
     let serializeNotSoldItem isDeleted (i: StateTypes.NotSoldItem): DtoTypes.Document<DtoTypes.NotSoldItem> =
         { Id = i |> NotSoldItem.serialize // use Json here
@@ -215,11 +230,19 @@ module Dto =
           Content = () }
 
     let deserializeNotSoldItem (i: DtoTypes.Document<DtoTypes.NotSoldItem>) =
-        let id = i.Id |> NotSoldItem.deserialize
+        result {
+            let! id = i.Id |> NotSoldItem.deserialize
 
-        match i.IsDeleted with
-        | true -> Change.Delete id
-        | false -> Change.Upsert id
+            match i.IsDeleted with
+            | true -> return id |> Change.Delete
+            | false -> return id |> Change.Upsert
+        }
+
+    let deserializeNotSoldItems (i: DtoTypes.Document<DtoTypes.NotSoldItem> seq) =
+        i
+        |> Seq.map deserializeNotSoldItem
+        |> Result.fromResults
+        |> Result.okOrThrow
 
     let withCustomerId id (i: DtoTypes.Document<_>) = { i with CustomerId = id }
 

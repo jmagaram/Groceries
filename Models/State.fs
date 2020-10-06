@@ -316,16 +316,41 @@ module NotSoldItem =
         sprintf "%s%c%s" storeId separator itemId
 
     let deserialize (s: string) =
-        let parts = s.Split(separator)
+        result {
+            if s |> String.IsNullOrEmpty then
+                return!
+                    "Could not deserialize an empty or null string to a NotSoldItem"
+                    |> Error
+            else
+                let parts = s.Split(separator)
 
-        let storeId =
-            parts.[0] |> StoreId.deserialize |> Option.get
+                match parts.Length with
+                | 2 ->
+                    let! storeId =
+                        parts.[0]
+                        |> StoreId.deserialize
+                        |> Option.map Ok
+                        |> Option.defaultValue
+                            (sprintf "Could not deserialize the store ID in a NotSoldItem: %s" s
+                             |> Error)
 
-        let itemId =
-            parts.[1] |> ItemId.deserialize |> Option.get
+                    let! itemId =
+                        parts.[1]
+                        |> ItemId.deserialize
+                        |> Option.map Ok
+                        |> Option.defaultValue
+                            (sprintf "Could not deserialize the item ID in a NotSoldItem: %s" s
+                             |> Error)
 
-        { NotSoldItem.StoreId = storeId
-          NotSoldItem.ItemId = itemId }
+                    return
+                            { NotSoldItem.StoreId = storeId
+                              NotSoldItem.ItemId = itemId }
+                | _ ->
+                    return!
+                        s
+                        |> sprintf "Attempting to deserialize a NotSoldItem that does not have exactly two parts: %s"
+                        |> Error
+        }
 
 [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
 module Item =
