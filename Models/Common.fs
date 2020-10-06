@@ -56,6 +56,19 @@ module Math =
 [<AutoOpen>]
 module Seq =
 
+    /// <summary>Returns a sequence that, when iterated, yields elements of the underlying sequence until and
+    /// including the first element where the given predicate returns True, and then returns no further
+    /// elements.</summary>
+    let takeTo<'T> predicate (source: 'T seq) =
+        seq {
+            use en = source.GetEnumerator()
+            let mutable isDone = false
+
+            while isDone = false && en.MoveNext() do
+                yield en.Current
+                isDone <- predicate en.Current
+        }
+
     let zeroOrOne s =
         let result = s |> Seq.truncate 2 |> Seq.toList
 
@@ -143,6 +156,6 @@ module Result =
 
     type ResultBuilder() =
         member this.Return(x) = Ok x
-        member this.Bind(x,f) = Result.bind f x
+        member this.Bind(x, f) = Result.bind f x
 
     let result = ResultBuilder()

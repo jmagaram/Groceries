@@ -64,30 +64,6 @@ module CommonTests =
 
 module SeqTests =
 
-    [<Property>]
-    let ``takeAtMost returns min of seq size and take size`` (NonNegativeInt sourceSize) (NonNegativeInt takeSize) =
-        let sourceSize = sourceSize % 5
-        let takeSize = takeSize % 10
-        let expectedResultSize = min sourceSize takeSize
-        let source = Seq.replicate sourceSize "a"
-
-        let actual =
-            source
-            |> Seq.takeAtMost expectedResultSize
-            |> List.ofSeq
-
-        let expected =
-            source
-            |> Seq.take expectedResultSize
-            |> List.ofSeq
-
-        actual |> should equal expected
-
-    [<Property>]
-    let ``takeAtMost throws if take size is less than 0`` (NegativeInt takeSize) (s: string) =
-        let takeNegative () = s |> Seq.takeAtMost takeSize |> ignore
-        takeNegative |> shouldFail
-
     let chunkIntoListsOfSameParity =
         let createList i = [ i ]
 
@@ -149,6 +125,58 @@ module SeqTests =
     let ``zero or one - when more than one throw`` () =
         let f () = [ 1; 2; 3 ] |> zeroOrOne |> ignore
         f |> shouldFail
+
+    [<Fact>]
+    let ``takeTo - no item before the last satisfies the predicate`` () =
+        let isLessThanOrEqualTo75 x = x <= 75
+
+        let failingTests =
+            Gen.choose (0, 10)
+            >>= (fun len -> Gen.listOfLength len (Gen.choose (50, 100)))
+            |> Gen.sample 1 1000
+            |> Seq.choose (fun items ->
+                let result =
+                    items
+                    |> Seq.takeTo isLessThanOrEqualTo75
+                    |> List.ofSeq
+
+                let isOk =
+                    items
+                    |> Seq.truncate (max (result.Length - 1) 0)
+                    |> Seq.tryFind isLessThanOrEqualTo75
+                    |> Option.isNone
+
+                match isOk with
+                | true -> None
+                | false -> Some items)
+            |> List.ofSeq
+
+        failingTests |> Seq.isEmpty |> should equal true
+
+    [<Fact>]
+    let ``takeTo - the last item matches predicate or is end of source`` () =
+        let isLessThanOrEqualTo75 x = x <= 75
+
+        let failingTests =
+            Gen.choose (0, 10)
+            >>= (fun len -> Gen.listOfLength len (Gen.choose (50, 100)))
+            |> Gen.sample 1 1000
+            |> Seq.choose (fun items ->
+                let result =
+                    items
+                    |> Seq.takeTo isLessThanOrEqualTo75
+                    |> List.ofSeq
+
+                let isOk =
+                    (result.Length = items.Length)
+                    || (result |> List.last |> isLessThanOrEqualTo75)
+
+                match isOk with
+                | true -> None
+                | false -> Some items)
+            |> List.ofSeq
+
+        failingTests |> Seq.isEmpty |> should equal true
 
 module StringTests =
 
