@@ -6,7 +6,7 @@ open SynchronizationTypes
 module Dto =
 
     let serializeItem isDeleted (i: StateTypes.Item): DtoTypes.Document<DtoTypes.Item> =
-        { Id = i.ItemId |> Id.itemIdToGuid |> toString
+        { Id = i.ItemId |> Id.itemIdToGuid |> Id.serialize
           CustomerId = null
           DocumentKind = DtoTypes.DocumentKind.Item
           Etag =
@@ -86,7 +86,7 @@ module Dto =
                       | _ -> failwith "Unexpected schedule kind." }
 
     let serializeCategory isDeleted (i: StateTypes.Category): DtoTypes.Document<DtoTypes.Category> =
-        { Id = i.CategoryId |> Id.categoryIdToGuid |> toString
+        { Id = i.CategoryId |> Id.categoryIdToGuid |> Id.serialize
           CustomerId = null
           DocumentKind = DtoTypes.DocumentKind.Category
           Etag =
@@ -131,7 +131,7 @@ module Dto =
         |> Result.okOrThrow
 
     let serializeStore isDeleted (i: StateTypes.Store): DtoTypes.Document<DtoTypes.Store> =
-        { Id = i.StoreId |> Id.storeIdToGuid |> toString
+        { Id = i.StoreId |> Id.storeIdToGuid |> Id.serialize
           CustomerId = null
           DocumentKind = DtoTypes.DocumentKind.Store
           Etag =

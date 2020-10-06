@@ -289,9 +289,9 @@ module NotSoldItem =
 
     let serialize (ns: NotSoldItem) =
         let storeId =
-            ns.StoreId |> Id.storeIdToGuid |> toString
+            ns.StoreId |> Id.storeIdToGuid |> Id.serialize
 
-        let itemId = ns.ItemId |> Id.itemIdToGuid |> toString
+        let itemId = ns.ItemId |> Id.itemIdToGuid |> Id.serialize
         sprintf "%s%c%s" storeId separator itemId
 
     let deserialize (s: string) =
@@ -299,13 +299,13 @@ module NotSoldItem =
 
         let storeId =
             parts.[0]
-            |> String.tryParseWith Guid.TryParse
+            |> Id.deserialize
             |> Option.get
             |> StoreId
 
         let itemId =
             parts.[1]
-            |> String.tryParseWith Guid.TryParse
+            |> Id.deserialize
             |> Option.get
             |> ItemId
 
