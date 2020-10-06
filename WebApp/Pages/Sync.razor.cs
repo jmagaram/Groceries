@@ -38,8 +38,10 @@ namespace WebApp.Pages {
         }
 
         protected async Task PushAsync() {
+            LogMessage($"PUSH start");
             await _cosmos.CreateDatabase();
             await _cosmos.Push(StateService.Current);
+            LogMessage($"PUSH done");
         }
 
         protected async Task PullAsync() {

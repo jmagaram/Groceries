@@ -194,4 +194,4 @@ module Dto =
         |> State.mapCategories (SynchronizeState.merge categories)
         |> State.mapStores (SynchronizeState.merge stores)
         |> State.mapNotSoldItems (SynchronizeState.merge notSoldItems)
-// then fix broken foreign keys
+        |> State.fixBrokenForeignKeys
