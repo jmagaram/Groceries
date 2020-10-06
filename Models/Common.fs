@@ -56,17 +56,8 @@ module Math =
 [<AutoOpen>]
 module Seq =
 
-    let takeAtMost n source =
-        if n < 0 then
-            invalidArg "n" "The input must be non-negative."
-        else
-            source
-            |> Seq.mapi (fun index item -> if index < n then Some item else None)
-            |> Seq.takeWhile (fun i -> i.IsSome)
-            |> Seq.choose id
-
     let zeroOrOne s =
-        let result = s |> takeAtMost 2 |> Seq.toList
+        let result = s |> Seq.truncate 2 |> Seq.toList
 
         match result with
         | [] -> None
