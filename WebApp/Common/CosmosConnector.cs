@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using WebApp.Data;
 using static Models.DtoTypes;
 
 namespace WebApp.Common {
@@ -51,7 +52,7 @@ namespace WebApp.Common {
         }
 
         public async Task Push(StateTypes.State s) {
-            var changes = Models.Dto.changes(s);
+            var changes = Models.Dto.pushRequest(s);
             await PushCore(changes.Items.Select(i => Dto.withCustomerId(_customerId, i)), i => i.Etag);
             await PushCore(changes.Categories.Select(i => Dto.withCustomerId(_customerId, i)), i => i.Etag);
             await PushCore(changes.Stores.Select(i => Dto.withCustomerId(_customerId, i)), i => i.Etag);
@@ -79,20 +80,9 @@ namespace WebApp.Common {
             var stores = await PullCore<Store>(_customerId, lastSyncTimestamp, DocumentKind.Store);
             var categories = await PullCore<Category>(_customerId, lastSyncTimestamp, DocumentKind.Category);
             var notSoldItems = await PullCore<Microsoft.FSharp.Core.Unit>(_customerId, lastSyncTimestamp, DocumentKind.NotSoldItem);
-            if (items.Any() || stores.Any() || categories.Any() || notSoldItems.Any()) {
-                lastSyncTimestamp =
-                    items.Select(i => i.Timestamp)
-                    .Concat(categories.Select(i => i.Timestamp))
-                    .Concat(stores.Select(i => i.Timestamp))
-                    .Concat(notSoldItems.Select(i => i.Timestamp))
-                    .Max();
-            }
-            var itemChanges = Dto.deserializeItems(items).ToList();
-            var storeChanges = Dto.deserializeStores(stores).ToList();
-            var categoryChanges = Dto.deserializeCategories(categories).ToList();
-            var notSoldItemChanges = Dto.deserializeNotSoldItems(notSoldItems).ToList();
-            var state = Dto.processPull(itemChanges, categoryChanges, storeChanges, notSoldItemChanges, s);
-            return (state, lastSyncTimestamp);
+            var import = Dto.pullResponse(items, categories, stores, notSoldItems);
+            var state = StateModule.importChanges(import, s);
+            return (state, import.LatestTimestamp.AsNullable());
         }
 
         protected virtual void Dispose(bool disposing) {

@@ -11,6 +11,3 @@ type DataTable<'Key, 'T when 'Key: comparison> = DataTable of Map<'Key, DataRow<
 type Change<'T, 'Key> =
     | Upsert of 'T
     | Delete of 'Key
-
-type ResolveChanges<'T, 'Key when 'Key: comparison> =
-    Change<'T, 'Key> seq -> DataTable<'Key, 'T> -> DataTable<'Key, 'T>

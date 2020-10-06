@@ -4,10 +4,10 @@ open System
 open System.Collections.Generic
 open Newtonsoft.Json
 
-// this is not needed when communicating to server
-// only needed from server to cosmos
-// two levels of DTO needed
-// same with userId
+// the information sent from client to server is a subset of what is sent from
+// the server to cosmos. for example, the CustomerId is set on the server and
+// does not need to be seen by the client. for simplicity, using the exact same
+// structure for now.
 
 type DocumentKind =
     | Item = 1

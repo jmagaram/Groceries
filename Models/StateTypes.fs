@@ -44,7 +44,7 @@ type Etag = Etag of string
 type Item =
     { ItemId: ItemId
       ItemName: ItemName
-      Etag : Etag option
+      Etag: Etag option
       Note: Note option
       Quantity: Quantity option
       CategoryId: CategoryId option
@@ -54,15 +54,15 @@ type Item =
 
 type Store =
     { StoreId: StoreId
-      StoreName: StoreName 
-      Etag : Etag option }
+      StoreName: StoreName
+      Etag: Etag option }
     interface IKey<StoreId> with
         member this.Key = this.StoreId
 
 type Category =
     { CategoryId: CategoryId
-      CategoryName: CategoryName 
-      Etag : Etag option }
+      CategoryName: CategoryName
+      Etag: Etag option }
     interface IKey<CategoryId> with
         member this.Key = this.CategoryId
 
@@ -82,10 +82,10 @@ type CategoryFormMessage =
     | UpdateCategory of Category
 
 // include "show empty categories"
-type Settings = 
-    { StoreFilter: StoreId option 
-      PostponedViewHorizon : int<days> 
-      HideCompletedItems : bool }
+type Settings =
+    { StoreFilter: StoreId option
+      PostponedViewHorizon: int<days>
+      HideCompletedItems: bool }
     interface IKey<string> with
         member this.Key = "singleton"
 
@@ -102,6 +102,13 @@ type State =
       NotSoldItems: NotSoldItemTable
       Settings: SettingsRow }
 
+type ImportChanges =
+    { ItemChanges: Change<Item, ItemId> list
+      CategoryChanges: Change<Category, CategoryId> list
+      StoreChanges: Change<Store, StoreId> list
+      NotSoldItemChanges: Change<NotSoldItem, NotSoldItem> list 
+      LatestTimestamp : int option }
+
 type ItemMessage =
     | MarkComplete of ItemId
     | BuyAgain of ItemId
@@ -112,11 +119,11 @@ type ItemMessage =
     | UpsertItem of Item
     | DeleteItem of ItemId
 
-type CategoryMessage = 
+type CategoryMessage =
     | InsertCategory of Category
     | DeleteCategory of CategoryId
 
-type StoreMessage = 
+type StoreMessage =
     | InsertStore of Store
     | DeleteStore of StoreId
 
@@ -136,7 +143,7 @@ type StateMessage =
     | ItemMessage of ItemMessage
     | StoreMessage of StoreMessage
     | CategoryMessage of CategoryMessage
-    | NotSoldItemMessage of NotSoldItemMessage 
+    | NotSoldItemMessage of NotSoldItemMessage
     | SettingsMessage of SettingsMessage
     | AcceptAllChanges
     | Transaction of StateMessage seq

@@ -94,9 +94,8 @@ module DataTable =
         match dt with
         | DataTable dt -> dt
 
-    let empty<'Key, 'T when 'Key: comparison> = Map.empty<'Key, DataRow<'T>> |> DataTable
-
-    let rowByKey k dt = dt |> asMap |> Map.tryFind k
+    let empty<'Key, 'T when 'Key: comparison> =
+        Map.empty<'Key, DataRow<'T>> |> DataTable
 
     let insert v dt =
         let k = v |> keyOf
@@ -104,7 +103,11 @@ module DataTable =
 
         match dt |> rowHasKey k with
         | true -> failwith "A row with that key already exists."
-        | false -> dt |> asMap |> Map.add k (DataRow.added v) |> fromMap
+        | false ->
+            dt
+            |> asMap
+            |> Map.add k (DataRow.added v)
+            |> fromMap
 
     let update v dt =
         let k = v |> keyOf
@@ -158,15 +161,6 @@ module DataTable =
 
     let acceptChanges dt = dt |> chooseRow DataRow.acceptChanges
 
-    let acceptChangesByKey k dt =
-        dt
-        |> asMap
-        |> Map.toSeq
-        |> Seq.choose (fun (k', v) ->
-            if k = k' then v |> DataRow.acceptChanges |> Option.map (fun r -> (k, r)) else Some(k', v))
-        |> Map.ofSeq
-        |> fromMap
-
     let rejectChanges dt = dt |> chooseRow DataRow.rejectChanges
 
     let isAddedOrModified dt =
@@ -175,7 +169,11 @@ module DataTable =
         |> Map.values
         |> Seq.choose DataRow.isAddedOrModified
 
-    let isDeleted dt = dt |> asMap |> Map.values |> Seq.choose DataRow.isDeleted
+    let isDeleted dt =
+        dt
+        |> asMap
+        |> Map.values
+        |> Seq.choose DataRow.isDeleted
 
     let deleteIf p dt =
         dt
@@ -189,45 +187,18 @@ module DataTable =
         |> Map.tryFind k
         |> Option.bind DataRow.currentValue
 
-    let currentContainsKey k dt = dt |> tryFindCurrent k |> Option.isSome
-
     let findCurrent k dt = tryFindCurrent k dt |> Option.get
 
-// this belongs somewhere else
-// this logic is specific to this domain; other domains may do more robust error handling
-module SynchronizeState =
-
-    let private changeKey c =
+    // problem with exceptions on delete;
+    // problem with exceptions on upsert; it will throw but didn't know that from type signature
+    // really should return results from other functions
+    let acceptChange c dt =
         match c with
-        | Upsert t -> keyOf t
-        | Delete k -> k
-
-    let merge<'T, 'Key when 'Key: comparison and 'T :> IKey<'Key> and 'T: equality> : ResolveChanges<'T, 'Key> =
-        fun cs dt ->
-            let (insert, update, delete) =
-                cs
-                |> Seq.map (fun c -> (c, dt |> DataTable.rowByKey (changeKey c)))
-                |> Seq.fold (fun (insert, update, delete) (c, r) ->
-                    match c, r with
-                    | Upsert v, None -> (v :: insert, update, delete)
-                    | Upsert v, Some r -> (insert, v :: update, delete)
-                    | Change.Delete k, None -> (insert, update, delete)
-                    | Change.Delete k, Some r -> (insert, update, k :: delete)) ([], [], [])
-
-            let foldInsert dt v =
-                dt
-                |> DataTable.insert v
-                |> DataTable.acceptChangesByKey (keyOf v)
-
-            let foldDelete dt k = dt |> DataTable.delete k |> DataTable.acceptChangesByKey k
-
-            let foldUpdate dt v =
-                dt
-                |> DataTable.update v
-                |> DataTable.acceptChangesByKey (keyOf v)
-
-            let dt = insert |> Seq.fold foldInsert dt
-            let dt = update |> Seq.fold foldUpdate dt
-            let dt = delete |> Seq.fold foldDelete dt
-
-            dt
+        | Delete k ->
+            match dt |> asMap |> Map.tryFind k with
+            | None -> dt
+            | Some _ -> dt |> asMap |> Map.remove k |> fromMap
+        | Upsert v ->
+            let key = keyOf v
+            let row = DataRow.unchanged v
+            dt |> asMap |> Map.add key row |> fromMap

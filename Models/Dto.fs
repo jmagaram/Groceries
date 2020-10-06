@@ -217,28 +217,9 @@ module Dto =
             | false -> return id |> Change.Upsert
         }
 
-    // maybe should take what works, not throw
-    let deserializeMany<'T, 'U> (f: DtoTypes.Document<'T> -> Result<'U, string>) (i: DtoTypes.Document<'T> seq) =
-        i
-        |> Seq.map f
-        |> Result.fromResults
-        |> Result.okOrThrow
-
-    let deserializeCategories i =
-        i |> deserializeMany<_, _> deserializeCategory
-
-    let deserializeStores i =
-        i |> deserializeMany<_, _> deserializeStore
-
-    let deserializeItems i =
-        i |> deserializeMany<_, _> deserializeItem
-
-    let deserializeNotSoldItems i =
-        i |> deserializeMany<_, _> deserializeNotSoldItem
-
     let withCustomerId id (i: DtoTypes.Document<_>) = { i with CustomerId = id }
 
-    let changes (s: Models.StateTypes.State) =
+    let pushRequest (s: Models.StateTypes.State) =
         let collect table f =
             let upsert =
                 s
@@ -262,10 +243,27 @@ module Dto =
           DtoTypes.Changes.Stores = collect State.storesTable serializeStore
           DtoTypes.Changes.NotSoldItems = collect State.notSoldItemsTable serializeNotSoldItem }
 
-    let processPull items categories stores notSoldItems (s: StateTypes.State) =
-        s
-        |> State.mapItems (SynchronizeState.merge items)
-        |> State.mapCategories (SynchronizeState.merge categories)
-        |> State.mapStores (SynchronizeState.merge stores)
-        |> State.mapNotSoldItems (SynchronizeState.merge notSoldItems)
-        |> State.fixBrokenForeignKeys
+    // maybe should take what works, not throw
+    let private deserialize<'T, 'U> (f: DtoTypes.Document<'T> -> Result<'U, string>) (i: DtoTypes.Document<'T> seq) =
+        i
+        |> Seq.map f
+        |> Result.fromResults
+        |> Result.okOrThrow
+
+    let pullResponse items categories stores notSoldItems =
+        { StateTypes.ImportChanges.ItemChanges = deserialize<_, _> deserializeItem items
+          StateTypes.ImportChanges.CategoryChanges = deserialize<_, _> deserializeCategory categories
+          StateTypes.ImportChanges.StoreChanges = deserialize<_, _> deserializeStore stores
+          StateTypes.ImportChanges.NotSoldItemChanges = deserialize<_, _> deserializeNotSoldItem notSoldItems
+          StateTypes.ImportChanges.LatestTimestamp =
+              [ items
+                |> Seq.map (fun i -> i.Timestamp |> Option.ofNullable)
+                stores
+                |> Seq.map (fun i -> i.Timestamp |> Option.ofNullable)
+                categories
+                |> Seq.map (fun i -> i.Timestamp |> Option.ofNullable)
+                notSoldItems
+                |> Seq.map (fun i -> i.Timestamp |> Option.ofNullable) ]
+              |> Seq.concat
+              |> Seq.choose id
+              |> Seq.fold (fun m i -> m |> Option.map (fun m -> max m i)) None }

@@ -263,9 +263,7 @@ module Repeat =
         |> Option.map (fun future ->
             let duration = future - now
 
-            round (duration.TotalDays)
-            |> int
-            |> (*) 1<days>)
+            round (duration.TotalDays) |> int |> (*) 1<days>)
 
     let dueWithin (now: DateTimeOffset) (d: int<days>) r =
         r
@@ -343,8 +341,8 @@ module NotSoldItem =
                              |> Error)
 
                     return
-                            { NotSoldItem.StoreId = storeId
-                              NotSoldItem.ItemId = itemId }
+                        { NotSoldItem.StoreId = storeId
+                          NotSoldItem.ItemId = itemId }
                 | _ ->
                     return!
                         s
@@ -444,7 +442,10 @@ module State =
         let go f (i: Item) s =
             let isCategoryReferenceValid =
                 i.CategoryId
-                |> Option.map (fun c -> s.Categories |> DataTable.currentContainsKey c)
+                |> Option.map (fun c ->
+                    s.Categories
+                    |> DataTable.tryFindCurrent c
+                    |> Option.isSome)
                 |> Option.defaultValue true
 
             match isCategoryReferenceValid with
@@ -468,7 +469,10 @@ module State =
     let updateSettingsStoreFilter k s =
         let isStoreReferenceValid =
             k
-            |> Option.map (fun k -> s.Stores |> DataTable.currentContainsKey k)
+            |> Option.map (fun k ->
+                s.Stores
+                |> DataTable.tryFindCurrent k
+                |> Option.isSome)
             |> Option.defaultValue true
 
         match isStoreReferenceValid with
@@ -735,6 +739,22 @@ module State =
             |> Item.buyAgain
 
         s |> mapItems (DataTable.update item)
+
+    let importChanges (i: ImportChanges) (s: StateTypes.State) =
+        { s with
+              Items =
+                  i.ItemChanges
+                  |> Seq.fold (fun dt i -> dt |> DataTable.acceptChange i) s.Items
+              Categories =
+                  i.CategoryChanges
+                  |> Seq.fold (fun dt i -> dt |> DataTable.acceptChange i) s.Categories
+              Stores =
+                  i.StoreChanges
+                  |> Seq.fold (fun dt i -> dt |> DataTable.acceptChange i) s.Stores
+              NotSoldItems =
+                  i.NotSoldItemChanges
+                  |> Seq.fold (fun dt i -> dt |> DataTable.acceptChange i) s.NotSoldItems }
+        |> fixBrokenForeignKeys
 
     let acceptAllChanges s =
         s

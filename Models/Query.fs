@@ -6,14 +6,12 @@ open Models.QueryTypes
 open Models.StateTypes
 
 let isItemSold (s: Store) (i: Item) state =
-    if state
-       |> State.notSoldItemsTable
-       |> DataTable.currentContainsKey
-           { ItemId = i.ItemId
-             StoreId = s.StoreId } then
-        false
-    else
-        true
+    state
+    |> State.notSoldItemsTable
+    |> DataTable.tryFindCurrent
+        { ItemId = i.ItemId
+          StoreId = s.StoreId }
+    |> Option.isNone
 
 let itemQry (item: Item) state =
     { ItemQry.ItemId = item.ItemId
@@ -96,10 +94,11 @@ let shoppingListQry (now: DateTimeOffset) s =
                       |> Repeat.dueWithin now settings.PostponedViewHorizon
                   | _ -> true
 
-              let isHideCompletedItemsSatisfied = 
-                  (settings.HideCompletedItems = false) || (i.Schedule |> Schedule.isCompleted |> not)
+              let isHideCompletedItemsSatisfied =
+                  (settings.HideCompletedItems = false)
+                  || (i.Schedule |> Schedule.isCompleted |> not)
 
               isStoreFilterSatisfied
               && isPostponedViewHorizonSatisfied
-              && isHideCompletedItemsSatisfied )
+              && isHideCompletedItemsSatisfied)
           |> List.ofSeq }
