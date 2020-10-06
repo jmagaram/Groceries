@@ -7,6 +7,13 @@ open FsUnit.Xunit
 open FsCheck
 open FsCheck.Xunit
 
+module StateTests =
+
+    [<Fact>]
+    let ``can create sample data`` () =
+        let x = State.createSampleData ()
+        true
+
 module QuantityTests =
 
     open System
@@ -21,50 +28,54 @@ module QuantityTests =
         | CanNotDecrease
         | CanNotIncreaseOrDecrease
 
-    type QuantityAdjustmentTests () as this =
-        inherit TheoryData<string, Expectation> ()
-        do 
-           this.Add ("", CanIncrease "2")
+    type QuantityAdjustmentTests() as this =
+        inherit TheoryData<string, Expectation>()
 
-           this.Add ("1 jar", CanIncrease "2 jars")
-           this.Add ("2 jar", CanIncrease "3 jars")
-           this.Add ("3 jars", CanIncrease "4 jars")
-           this.Add ("1", CanIncrease "2")
-           this.Add ("2", CanIncrease "3")
-           this.Add ("3", CanIncrease "4")
+        do
+            this.Add("", CanIncrease "2")
 
-           this.Add("Several large", CanNotIncrease)
-           this.Add("Several large", CanNotDecrease)
-           this.Add("Lots", CanNotIncrease)
-           this.Add("Lots", CanNotDecrease)
+            this.Add("1 jar", CanIncrease "2 jars")
+            this.Add("2 jar", CanIncrease "3 jars")
+            this.Add("3 jars", CanIncrease "4 jars")
+            this.Add("1", CanIncrease "2")
+            this.Add("2", CanIncrease "3")
+            this.Add("3", CanIncrease "4")
 
-           this.Add ("1 jar", CanNotDecrease)
-           this.Add ("", CanNotDecrease)
-           this.Add ("2 jars", CanDecrease "1 jar")
-           this.Add ("3 jars", CanDecrease "2 jars")
-           this.Add ("1", CanNotDecrease)
-           this.Add ("2", CanDecrease "1")
-           this.Add ("3", CanDecrease "2")
+            this.Add("Several large", CanNotIncrease)
+            this.Add("Several large", CanNotDecrease)
+            this.Add("Lots", CanNotIncrease)
+            this.Add("Lots", CanNotDecrease)
 
-           this.Add ("1 goolash", CanIncrease "2 goolash")
-           this.Add ("2 goolash", CanDecrease "1 goolash")
-           this.Add ("1 goolash", CanNotDecrease)
+            this.Add("1 jar", CanNotDecrease)
+            this.Add("", CanNotDecrease)
+            this.Add("2 jars", CanDecrease "1 jar")
+            this.Add("3 jars", CanDecrease "2 jars")
+            this.Add("1", CanNotDecrease)
+            this.Add("2", CanDecrease "1")
+            this.Add("3", CanDecrease "2")
+
+            this.Add("1 goolash", CanIncrease "2 goolash")
+            this.Add("2 goolash", CanDecrease "1 goolash")
+            this.Add("1 goolash", CanNotDecrease)
 
     [<Theory>]
     [<ClassData(typeof<QuantityAdjustmentTests>)>]
-    let ``can adjust quantities`` (start:string) (expectedResult:Expectation) =
-        let target = {| Increase = increase; Decrease = decrease |}  
+    let ``can adjust quantities`` (start: string) (expectedResult: Expectation) =
+        let target =
+            {| Increase = increase
+               Decrease = decrease |}
+
         match expectedResult with
         | CanNotDecrease -> target.Decrease start |> should equal None
         | CanNotIncrease -> target.Increase start |> should equal None
-        | CanNotIncreaseOrDecrease -> 
+        | CanNotIncreaseOrDecrease ->
             target.Decrease start |> should equal None
             target.Increase start |> should equal None
-        | CanIncrease result -> 
+        | CanIncrease result ->
             start
             |> target.Increase
             |> should equal (Some result)
-        | CanDecrease result -> 
-            start 
+        | CanDecrease result ->
+            start
             |> target.Decrease
             |> should equal (Some result)

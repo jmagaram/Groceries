@@ -11,7 +11,7 @@ namespace WebApp.Data {
         readonly IObservable<State> _stateObs;
 
         public ApplicationStateService() {
-            _state = new BehaviorSubject<State>(StateModule.createSampleData);
+            _state = new BehaviorSubject<State>(StateModule.createSampleData());
             _stateObs = _state;
             ShoppingListQry = _stateObs.Select(x => Query.shoppingListQry(DateTimeOffset.Now, x));
             Converter<Unit, DateTimeOffset> clock = (x => DateTimeOffset.Now);

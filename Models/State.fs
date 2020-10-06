@@ -8,25 +8,46 @@ open StateTypes
 open System.Collections.Generic
 
 [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
-module Id =
+module ItemId =
 
-    let create tag = newGuid () |> tag
+    let create () = newGuid () |> ItemId
 
-    let itemIdToGuid (i: ItemId) =
+    let serialize i =
         match i with
-        | ItemId s -> s
+        | ItemId g -> g.ToString()
 
-    let storeIdToGuid (i: StoreId) =
+    let deserialize s =
+        s
+        |> String.tryParseWith Guid.TryParse
+        |> Option.map ItemId
+
+[<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
+module StoreId =
+
+    let create () = newGuid () |> StoreId
+
+    let serialize i =
         match i with
-        | StoreId s -> s
+        | StoreId g -> g.ToString()
 
-    let categoryIdToGuid (i: CategoryId) =
+    let deserialize s =
+        s
+        |> String.tryParseWith Guid.TryParse
+        |> Option.map StoreId
+
+[<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
+module CategoryId =
+
+    let create () = newGuid () |> CategoryId
+
+    let serialize i =
         match i with
-        | CategoryId s -> s
+        | CategoryId g -> g.ToString()
 
-    let serialize (id: Guid) = id.ToString()
-
-    let deserialize s = s |> String.tryParseWith Guid.TryParse
+    let deserialize s =
+        s
+        |> String.tryParseWith Guid.TryParse
+        |> Option.map CategoryId
 
 [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
 module Etag =
@@ -289,9 +310,11 @@ module NotSoldItem =
 
     let serialize (ns: NotSoldItem) =
         let storeId =
-            ns.StoreId |> Id.storeIdToGuid |> Id.serialize
+            ns.StoreId |> StoreId.serialize
 
-        let itemId = ns.ItemId |> Id.itemIdToGuid |> Id.serialize
+        let itemId =
+            ns.ItemId |> ItemId.serialize
+
         sprintf "%s%c%s" storeId separator itemId
 
     let deserialize (s: string) =
@@ -299,15 +322,13 @@ module NotSoldItem =
 
         let storeId =
             parts.[0]
-            |> Id.deserialize
+            |> StoreId.deserialize
             |> Option.get
-            |> StoreId
 
         let itemId =
             parts.[1]
-            |> Id.deserialize
+            |> ItemId.deserialize
             |> Option.get
-            |> ItemId
 
         { NotSoldItem.StoreId = storeId
           NotSoldItem.ItemId = itemId }
@@ -520,19 +541,19 @@ module State =
         |> removeBrokenNotSoldItemLinks
         |> removeBrokenFilterLinks
 
-    let createSampleData =
+    let createSampleData () =
 
         let newCategory n s =
             s
             |> insertCategory
-                { Category.CategoryId = Id.create CategoryId
+                { Category.CategoryId = CategoryId.create ()
                   CategoryName = n |> CategoryName.tryParse |> Result.okOrThrow
                   Etag = None }
 
         let newStore n s =
             s
             |> insertStore
-                { Store.StoreId = Id.create StoreId
+                { Store.StoreId = StoreId.create ()
                   StoreName = n |> StoreName.tryParse |> Result.okOrThrow
                   Etag = None }
 
@@ -561,7 +582,7 @@ module State =
         let newItem name cat qty note s =
             s
             |> insertItem
-                { Item.ItemId = Id.create ItemId
+                { Item.ItemId = ItemId.create ()
                   ItemName = name |> ItemName.tryParse |> Result.okOrThrow
                   Etag = None
                   Quantity =
@@ -644,7 +665,7 @@ module State =
         | StoreFormMessage.InsertStore n ->
             s
             |> insertStore
-                { StoreId = Id.create StoreId
+                { StoreId = StoreId.create ()
                   StoreName = n
                   Etag = None }
         | StoreFormMessage.UpdateStore i -> s |> updateStore i
@@ -654,7 +675,7 @@ module State =
         | CategoryFormMessage.InsertCategory n ->
             s
             |> insertCategory
-                { CategoryId = Id.create CategoryId
+                { CategoryId = CategoryId.create ()
                   CategoryName = n
                   Etag = None }
         | CategoryFormMessage.UpdateCategory i -> s |> updateCategory i

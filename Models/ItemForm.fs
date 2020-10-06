@@ -285,13 +285,13 @@ let asItemFormResult (now: DateTimeOffset) (f: Form) =
             |> fun c ->
                 Some
                     { StateTypes.Category.CategoryName = c
-                      StateTypes.Category.CategoryId = Id.create StateTypes.CategoryId
+                      StateTypes.Category.CategoryId = CategoryId.create ()
                       StateTypes.Category.Etag = None }
 
     let item =
         { StateTypes.Item.ItemId =
               f.ItemId
-              |> Option.defaultWith (fun () -> Id.create StateTypes.ItemId)
+              |> Option.defaultWith (fun () -> ItemId.create ())
           StateTypes.Item.ItemName = f |> itemNameValidation |> Result.okOrThrow
           StateTypes.Item.Etag = f.Etag
           StateTypes.Item.CategoryId =

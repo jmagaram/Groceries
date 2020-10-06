@@ -6,7 +6,7 @@ open SynchronizationTypes
 module Dto =
 
     let serializeItem isDeleted (i: StateTypes.Item): DtoTypes.Document<DtoTypes.Item> =
-        { Id = i.ItemId |> Id.itemIdToGuid |> Id.serialize
+        { Id = i.ItemId |> ItemId.serialize
           CustomerId = null
           DocumentKind = DtoTypes.DocumentKind.Item
           Etag =
@@ -19,8 +19,8 @@ module Dto =
               { ItemName = i.ItemName |> ItemName.asText
                 CategoryId =
                     i.CategoryId
-                    |> Option.map Id.categoryIdToGuid
-                    |> Option.toNullable
+                    |> Option.map CategoryId.serialize
+                    |> Option.defaultValue null
                 Note =
                     i.Note
                     |> Option.map Note.asText
@@ -59,8 +59,7 @@ module Dto =
                       |> Result.okOrThrow
                   StateTypes.Item.CategoryId =
                       i.Content.CategoryId
-                      |> Option.ofNullable
-                      |> Option.map StateTypes.CategoryId
+                      |> CategoryId.deserialize
                   StateTypes.Item.Note =
                       i.Content.Note
                       |> Note.tryParseOptional
@@ -86,7 +85,7 @@ module Dto =
                       | _ -> failwith "Unexpected schedule kind." }
 
     let serializeCategory isDeleted (i: StateTypes.Category): DtoTypes.Document<DtoTypes.Category> =
-        { Id = i.CategoryId |> Id.categoryIdToGuid |> Id.serialize
+        { Id = i.CategoryId |> CategoryId.serialize
           CustomerId = null
           DocumentKind = DtoTypes.DocumentKind.Category
           Etag =
@@ -102,8 +101,8 @@ module Dto =
         result {
             let! categoryId =
                 i.Id
-                |> Id.deserialize
-                |> Option.map (StateTypes.CategoryId >> Ok)
+                |> CategoryId.deserialize
+                |> Option.map Ok
                 |> Option.defaultValue
                     (sprintf "Could not deserialize this category GUID: %s" i.Id
                      |> Error)
@@ -131,7 +130,7 @@ module Dto =
         |> Result.okOrThrow
 
     let serializeStore isDeleted (i: StateTypes.Store): DtoTypes.Document<DtoTypes.Store> =
-        { Id = i.StoreId |> Id.storeIdToGuid |> Id.serialize
+        { Id = i.StoreId |> StoreId.serialize
           CustomerId = null
           DocumentKind = DtoTypes.DocumentKind.Store
           Etag =

@@ -22,7 +22,7 @@ namespace WebAppTest {
             using var c = TestConnector();
             await c.DeleteDatabase();
             await c.CreateDatabase();
-            var x = StateModule.createSampleData;
+            var x = StateModule.createSampleData();
             await c.Push(x);
             var y = StateModule.createDefault;
             var (z, ts) = await c.Pull(null, x);

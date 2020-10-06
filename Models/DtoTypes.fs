@@ -34,7 +34,7 @@ type Item =
       ScheduleRepeat: Repeat
       Note: string
       Quantity: string
-      CategoryId: Nullable<Guid> }
+      CategoryId: string }
 
 and ScheduleKind =
     | Completed = 1
