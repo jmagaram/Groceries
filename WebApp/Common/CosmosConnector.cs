@@ -75,14 +75,13 @@ namespace WebApp.Common {
             return docs;
         }
 
-        public async Task<(StateTypes.State, int?)> Pull(int? lastSyncTimestamp, StateTypes.State s) {
+        public async Task<StateTypes.ImportChanges> Pull(int? lastSyncTimestamp, StateTypes.State s) {
             var items = await PullCore<Item>(_customerId, lastSyncTimestamp, DocumentKind.Item);
             var stores = await PullCore<Store>(_customerId, lastSyncTimestamp, DocumentKind.Store);
             var categories = await PullCore<Category>(_customerId, lastSyncTimestamp, DocumentKind.Category);
             var notSoldItems = await PullCore<Microsoft.FSharp.Core.Unit>(_customerId, lastSyncTimestamp, DocumentKind.NotSoldItem);
             var import = Dto.pullResponse(items, categories, stores, notSoldItems);
-            var state = StateModule.importChanges(import, s);
-            return (state, import.LatestTimestamp.AsNullable());
+            return import;
         }
 
         protected virtual void Dispose(bool disposing) {

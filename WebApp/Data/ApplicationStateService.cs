@@ -28,8 +28,6 @@ namespace WebApp.Data {
             _state.OnNext(state);
         }
 
-        public void ReplaceState(State s) => _state.OnNext(s);
-
         public FSharpFunc<Unit, DateTimeOffset> Clock { get; private set; }
 
         public IObservable<QueryTypes.ShoppingListQry> ShoppingListQry { get; }

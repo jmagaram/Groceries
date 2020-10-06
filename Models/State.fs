@@ -770,6 +770,7 @@ module State =
         | AcceptAllChanges -> s |> acceptAllChanges
         | SubmitStoreForm msg -> s |> submitStoreForm msg
         | SubmitCategoryForm msg -> s |> submitCategoryForm msg
+        | Import c -> s |> importChanges c
         | ItemMessage msg ->
             match msg with
             | MarkComplete i -> s |> markItemComplete now i

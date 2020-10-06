@@ -100,7 +100,8 @@ type State =
       Categories: CategoryTable
       Stores: StoresTable
       NotSoldItems: NotSoldItemTable
-      Settings: SettingsRow }
+      Settings: SettingsRow 
+    }
 
 type ImportChanges =
     { ItemChanges: Change<Item, ItemId> list
@@ -142,6 +143,7 @@ type StateMessage =
     | SubmitCategoryForm of CategoryFormMessage
     | ItemMessage of ItemMessage
     | StoreMessage of StoreMessage
+    | Import of ImportChanges
     | CategoryMessage of CategoryMessage
     | NotSoldItemMessage of NotSoldItemMessage
     | SettingsMessage of SettingsMessage

@@ -46,10 +46,11 @@ namespace WebApp.Pages {
 
         protected async Task PullAsync() {
             LogMessage($"PULL start");
-            var (state, ts) = await _cosmos.Pull(StateService.LastCosmosSyncTimestamp, StateService.Current);
-            StateService.ReplaceState(state);
-            if (ts.HasValue) {
-                StateService.LastCosmosSyncTimestamp = ts.Value;
+            var pullResponse = await _cosmos.Pull(StateService.LastCosmosSyncTimestamp, StateService.Current);
+            var msg = Models.StateTypes.StateMessage.NewImport(pullResponse);
+            StateService.Update(msg);
+            if (pullResponse.LatestTimestamp.AsNullable().HasValue) {
+                StateService.LastCosmosSyncTimestamp = pullResponse.LatestTimestamp.AsNullable().Value;
             }
             LogMessage($"PULL done");
         }
