@@ -10,26 +10,33 @@ open FsCheck.Xunit
 module CommonTests =
 
     let add nums = nums |> Seq.sum
-    let addMemoized = memoizeLast (add, fun i j -> i = j)
+    let addMemoized = memoizeLast (add, (fun i j -> i = j))
 
     [<Property>]
-    let ``memoizeLast - memoized result is same as non-memoized result`` (NonNegativeInt x) (NonNegativeInt y) (NonNegativeInt z) =
-        let x = x % 5 
-        let y = y % 5 
-        let z = z % 5 
-        let expectedResult = add [x;y;z]
-        let memoizedResult = addMemoized [x;y;z]
+    let ``memoizeLast - memoized result is same as non-memoized result`` (NonNegativeInt x)
+                                                                         (NonNegativeInt y)
+                                                                         (NonNegativeInt z)
+                                                                         =
+        let x = x % 5
+        let y = y % 5
+        let z = z % 5
+        let expectedResult = add [ x; y; z ]
+        let memoizedResult = addMemoized [ x; y; z ]
         memoizedResult |> should equal expectedResult
 
     [<Fact>]
     let ``memoizeLast - uses memoized result when available`` () =
         let mutable calculations = 0
-        let multiply nums = 
+
+        let multiply nums =
             calculations <- calculations + 1
             nums |> Seq.fold (fun total i -> total * i) 1
-        let memoizedmultiply = memoizeLast (multiply, fun i j -> i = j)
-        let a = [1;2;3]
-        let b = [4;5;6]
+
+        let memoizedmultiply =
+            memoizeLast (multiply, (fun i j -> i = j))
+
+        let a = [ 1; 2; 3 ]
+        let b = [ 4; 5; 6 ]
         memoizedmultiply a |> ignore
         memoizedmultiply a |> ignore
         memoizedmultiply b |> ignore
@@ -41,12 +48,16 @@ module CommonTests =
     [<Fact>]
     let ``memoizeLast - can use reference equals operator`` () =
         let mutable calculations = 0
-        let multiply nums = 
+
+        let multiply nums =
             calculations <- calculations + 1
             nums |> Seq.fold (fun total i -> total * i) 1
-        let memoizedmultiply = memoizeLast (multiply, fun i j -> System.Object.ReferenceEquals(i,j))
-        let a = [1;2;3]
-        let b = [1;2;3]
+
+        let memoizedmultiply =
+            memoizeLast (multiply, (fun i j -> System.Object.ReferenceEquals(i, j)))
+
+        let a = [ 1; 2; 3 ]
+        let b = [ 1; 2; 3 ]
         memoizedmultiply a |> ignore
         memoizedmultiply b |> ignore
         calculations |> should equal 2
@@ -60,9 +71,15 @@ module SeqTests =
         let expectedResultSize = min sourceSize takeSize
         let source = Seq.replicate sourceSize "a"
 
-        let actual = source |> Seq.takeAtMost expectedResultSize |> List.ofSeq
+        let actual =
+            source
+            |> Seq.takeAtMost expectedResultSize
+            |> List.ofSeq
 
-        let expected = source |> Seq.take expectedResultSize |> List.ofSeq
+        let expected =
+            source
+            |> Seq.take expectedResultSize
+            |> List.ofSeq
 
         actual |> should equal expected
 
@@ -71,70 +88,69 @@ module SeqTests =
         let takeNegative () = s |> Seq.takeAtMost takeSize |> ignore
         takeNegative |> shouldFail
 
-    let chunkIntoListsOfSameParity = 
-        let createList i = [i]
+    let chunkIntoListsOfSameParity =
+        let createList i = [ i ]
+
         let consIfSameParity i list =
-            let isListEven = list |> List.tryHead |> Option.map (fun i -> i % 2 = 0) |> Option.defaultValue true
+            let isListEven =
+                list
+                |> List.tryHead
+                |> Option.map (fun i -> i % 2 = 0)
+                |> Option.defaultValue true
+
             let isItemEven = i % 2 = 0
-            if isListEven = isItemEven 
-            then Some (i :: list)
-            else None        
+            if isListEven = isItemEven then Some(i :: list) else None
+
         chunk createList consIfSameParity
 
     [<Fact>]
     let ``chunk - when sequence has many items and many resultant chunks`` () =
-        let result = 
-            [1;3;5;2;4;6;7;9;11]
+        let result =
+            [ 1; 3; 5; 2; 4; 6; 7; 9; 11 ]
             |> chunkIntoListsOfSameParity
             |> Seq.toList
-        result 
-        |> should equal [ [5;3;1]; [6;4;2]; [11;9;7]]
+
+        result
+        |> should
+            equal
+               [ [ 5; 3; 1 ]
+                 [ 6; 4; 2 ]
+                 [ 11; 9; 7 ] ]
 
     [<Fact>]
     let ``chunk - when sequence has many items and just one resultant chunk`` () =
-        let result = 
-            [1;3;5;7;9]
+        let result =
+            [ 1; 3; 5; 7; 9 ]
             |> chunkIntoListsOfSameParity
             |> Seq.toList
-        result 
-        |> should equal [ [9;7;5;3;1]]
+
+        result |> should equal [ [ 9; 7; 5; 3; 1 ] ]
 
     [<Fact>]
     let ``chunk - when sequence has nothing in it`` () =
-        let result = 
-            []
-            |> chunkIntoListsOfSameParity
-        result 
-        |> Seq.isEmpty
-        |> should equal true
+        let result = [] |> chunkIntoListsOfSameParity
+        result |> Seq.isEmpty |> should equal true
 
     [<Fact>]
     let ``chunk - when sequence has exactly one item`` () =
-        let result = 
-            [1]
-            |> chunkIntoListsOfSameParity
-            |> Seq.toList
-        result 
-        |> should equal [ [1] ]
+        let result =
+            [ 1 ] |> chunkIntoListsOfSameParity |> Seq.toList
+
+        result |> should equal [ [ 1 ] ]
 
     [<Fact>]
-    let ``zero or one - when empty expect none`` () =
-        []
-        |> zeroOrOne
-        |> should equal None
+    let ``zero or one - when empty expect none`` () = [] |> zeroOrOne |> should equal None
 
     [<Fact>]
     let ``zero or one - when exactly one expect it`` () =
-        [1]
-        |> zeroOrOne
-        |> should equal (Some 1)
+        [ 1 ] |> zeroOrOne |> should equal (Some 1)
 
     [<Fact>]
     let ``zero or one - when more than one throw`` () =
-        let f() = [1;2;3] |> zeroOrOne |> ignore
+        let f () = [ 1; 2; 3 ] |> zeroOrOne |> ignore
         f |> shouldFail
 
-module StringTests = 
+module StringTests =
 
     [<Theory>]
     [<InlineData("1", 1)>]
@@ -145,10 +161,8 @@ module StringTests =
     [<InlineData("0", 0)>]
     [<InlineData("+0", 0)>]
     [<InlineData("-0", 0)>]
-    let ``tryParseInt when is an int `` (s:string) (expected:int) =
-        s 
-        |> tryParseInt
-        |> should equal (Some expected)
+    let ``tryParseInt when is an int `` (s: string) (expected: int) =
+        s |> tryParseInt |> should equal (Some expected)
 
     [<Theory>]
     [<InlineData("banana")>]
@@ -157,7 +171,41 @@ module StringTests =
     [<InlineData("2.4")>]
     [<InlineData("+2.4")>]
     [<InlineData("-2.4")>]
-    let ``tryParseInt when is not an int should return none`` (s:string) =
-        s 
-        |> tryParseInt
-        |> should equal None
+    let ``tryParseInt when is not an int should return none`` (s: string) = s |> tryParseInt |> should equal None
+
+module ResultTests =
+
+    type String5 = String5 of string
+
+    let string5 (s: string) =
+        if s.Length > 5 then Error "Too long" else Ok(String5 s)
+
+    let len (String5 s) = s.Length
+
+    [<Fact>]
+    let ``computation expression - when some part fails, returns error`` () =
+        let actual =
+            result {
+                let! a = string5 "xx"
+                let! b = string5 "yyyyyyyyyyyyy"
+                let! c = string5 "yyyyyyyyy"
+                let! d = string5 "xx"
+                return (len a) + (len b) + (len c) + (len d)
+            }
+
+        let expected: Result<int, string> = Error "Too long"
+        actual |> should equal expected
+
+    [<Fact>]
+    let ``computation expression - when each part ok, returns ok`` () =
+        let actual =
+            result {
+                let! a = string5 "xx"
+                let! b = string5 "yyy"
+                let! c = string5 "y"
+                let! d = string5 "xx"
+                return (len a) + (len b) + (len c) + (len d)
+            }
+
+        let expected: Result<int, string> = Ok 8
+        actual |> should equal expected

@@ -10,7 +10,6 @@ namespace WebAppTest {
         private static readonly string _localEndpointUri = "https://localhost:8081";
         private static readonly string _localPrimaryKey = "C2y6yDjf5/R+ob0N8A7Cgv30VRDJIWEHLM+4QDU5DE2nQ9nDuVTqobD4b8mGGyPMbIZnqyMsEcaGQy67XIw/Jw==";
         private const string _applicationName = "CosmosDBDotnetQuickstart";
-        private string _customerId = "justin@magaram.com";
 
         [Fact]
         public async Task CanCreateDatabase() {
