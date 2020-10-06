@@ -25,7 +25,8 @@ namespace WebAppTest {
             var x = StateModule.createSampleData();
             await c.Push(x);
             var y = StateModule.createDefault;
-            var (z, ts) = await c.Pull(null, x);
+            var imp = await c.Pull(null, x);
+            var z = StateModule.importChanges(imp, y);
             Assert.Equal(x.Items.Item.Count, z.Items.Item.Count);
             Assert.Equal(x.Categories.Item.Count, z.Categories.Item.Count);
             Assert.Equal(x.Stores.Item.Count, z.Stores.Item.Count);
