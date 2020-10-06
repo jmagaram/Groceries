@@ -77,26 +77,6 @@ module Seq =
         | [ x ] -> Some x
         | _ -> failwith "Too many items in the sequence. Expected zero or one."
 
-    let chunk create add source =
-        seq {
-            let mutable chunk = None
-
-            for i in source do
-                let (chunk', isComplete) =
-                    chunk
-                    |> Option.map (fun c ->
-                        match c |> add i with
-                        | None -> (i |> create, true)
-                        | Some c -> (c, false))
-                    |> Option.defaultWith (fun () -> (i |> create, false))
-
-                if isComplete then yield chunk
-                chunk <- Some chunk'
-
-            yield chunk
-        }
-        |> Seq.choose id
-
     let leftJoin xs ys f =
         xs
         |> Seq.map (fun x -> (x, ys |> Seq.filter (fun y -> f x y)))

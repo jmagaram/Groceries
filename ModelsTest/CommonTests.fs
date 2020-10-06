@@ -64,56 +64,6 @@ module CommonTests =
 
 module SeqTests =
 
-    let chunkIntoListsOfSameParity =
-        let createList i = [ i ]
-
-        let consIfSameParity i list =
-            let isListEven =
-                list
-                |> List.tryHead
-                |> Option.map (fun i -> i % 2 = 0)
-                |> Option.defaultValue true
-
-            let isItemEven = i % 2 = 0
-            if isListEven = isItemEven then Some(i :: list) else None
-
-        chunk createList consIfSameParity
-
-    [<Fact>]
-    let ``chunk - when sequence has many items and many resultant chunks`` () =
-        let result =
-            [ 1; 3; 5; 2; 4; 6; 7; 9; 11 ]
-            |> chunkIntoListsOfSameParity
-            |> Seq.toList
-
-        result
-        |> should
-            equal
-               [ [ 5; 3; 1 ]
-                 [ 6; 4; 2 ]
-                 [ 11; 9; 7 ] ]
-
-    [<Fact>]
-    let ``chunk - when sequence has many items and just one resultant chunk`` () =
-        let result =
-            [ 1; 3; 5; 7; 9 ]
-            |> chunkIntoListsOfSameParity
-            |> Seq.toList
-
-        result |> should equal [ [ 9; 7; 5; 3; 1 ] ]
-
-    [<Fact>]
-    let ``chunk - when sequence has nothing in it`` () =
-        let result = [] |> chunkIntoListsOfSameParity
-        result |> Seq.isEmpty |> should equal true
-
-    [<Fact>]
-    let ``chunk - when sequence has exactly one item`` () =
-        let result =
-            [ 1 ] |> chunkIntoListsOfSameParity |> Seq.toList
-
-        result |> should equal [ [ 1 ] ]
-
     [<Fact>]
     let ``zero or one - when empty expect none`` () = [] |> zeroOrOne |> should equal None
 
