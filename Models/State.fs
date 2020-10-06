@@ -309,11 +309,9 @@ module NotSoldItem =
     let private separator = '|'
 
     let serialize (ns: NotSoldItem) =
-        let storeId =
-            ns.StoreId |> StoreId.serialize
+        let storeId = ns.StoreId |> StoreId.serialize
 
-        let itemId =
-            ns.ItemId |> ItemId.serialize
+        let itemId = ns.ItemId |> ItemId.serialize
 
         sprintf "%s%c%s" storeId separator itemId
 
@@ -321,14 +319,10 @@ module NotSoldItem =
         let parts = s.Split(separator)
 
         let storeId =
-            parts.[0]
-            |> StoreId.deserialize
-            |> Option.get
+            parts.[0] |> StoreId.deserialize |> Option.get
 
         let itemId =
-            parts.[1]
-            |> ItemId.deserialize
-            |> Option.get
+            parts.[1] |> ItemId.deserialize |> Option.get
 
         { NotSoldItem.StoreId = storeId
           NotSoldItem.ItemId = itemId }
@@ -507,23 +501,24 @@ module State =
             |> mapItems (DataTable.upsert { i with CategoryId = None })) s
 
     let removeBrokenNotSoldItemLinks (s: State) =
-        s
-        |> notSoldItems
-        |> Seq.filter (fun ns ->
-            let isBrokenStore =
-                s
-                |> itemsTable
-                |> DataTable.tryFindCurrent ns.ItemId
-                |> Option.isNone
+        { s with
+              NotSoldItems =
+                  s
+                  |> notSoldItemsTable
+                  |> DataTable.deleteIf (fun ns ->
+                      let isBrokenStore =
+                          s
+                          |> itemsTable
+                          |> DataTable.tryFindCurrent ns.ItemId
+                          |> Option.isNone
 
-            let isBrokenItem =
-                s
-                |> storesTable
-                |> DataTable.tryFindCurrent ns.StoreId
-                |> Option.isNone
+                      let isBrokenItem =
+                          s
+                          |> storesTable
+                          |> DataTable.tryFindCurrent ns.StoreId
+                          |> Option.isNone
 
-            isBrokenStore || isBrokenItem)
-        |> Seq.fold (fun s i -> s |> mapNotSoldItems (DataTable.delete i)) s
+                      isBrokenStore || isBrokenItem) }
 
     let removeBrokenFilterLinks (s: State) =
         match (s |> settings).StoreFilter with
