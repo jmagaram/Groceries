@@ -5,3 +5,6 @@ type IKey<'TKey> =
     abstract Key: 'TKey
 
 type Clock = unit -> System.DateTimeOffset
+
+[<Measure>]
+type days

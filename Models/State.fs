@@ -265,7 +265,7 @@ module Repeat =
 
             round (duration.TotalDays)
             |> int
-            |> (*) 1<StateTypes.days>)
+            |> (*) 1<days>)
 
     let dueWithin (now: DateTimeOffset) (d: int<days>) r =
         r

@@ -3,15 +3,6 @@
 open System
 open SynchronizationTypes
 
-[<Measure>]
-type days
-
-[<Measure>]
-type wks
-
-[<Measure>]
-type mnth 
-
 [<Struct>]
 type ItemId = ItemId of Guid
 
@@ -91,7 +82,6 @@ type CategoryFormMessage =
     | UpdateCategory of Category
 
 // include "show empty categories"
-
 type Settings = 
     { StoreFilter: StoreId option 
       PostponedViewHorizon : int<days> 

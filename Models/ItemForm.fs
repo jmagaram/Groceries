@@ -19,7 +19,7 @@ type Form =
       Note: string
       ScheduleKind: ScheduleKind
       Frequency: StateTypes.Frequency
-      Postpone: int<StateTypes.days> option
+      Postpone: int<days> option
       CategoryMode: CategoryMode
       NewCategoryName: string
       CategoryChoice: StateTypes.Category option
@@ -41,8 +41,8 @@ type ItemFormMessage =
     | ScheduleOnce
     | ScheduleCompleted
     | ScheduleRepeat
-    | FrequencySet of int<StateTypes.days>
-    | PostponeSet of int<StateTypes.days>
+    | FrequencySet of int<days>
+    | PostponeSet of int<days>
     | PostponeClear
     | CategoryModeChooseExisting
     | CategoryModeCreateNew
@@ -151,7 +151,7 @@ let purchased f =
     | Repeat -> f |> postponeUntilFrequency
     | Completed -> f
 
-let postponeDurationAsText (d: int<StateTypes.days>) =
+let postponeDurationAsText (d: int<days>) =
     let d = d |> int
     let monthsExactly = if d / 30 > 0 && d % 30 = 0 then Some(d / 30) else None
     let weeksExactly = if d / 7 > 0 && d % 7 = 0 then Some(d / 7) else None

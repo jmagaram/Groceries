@@ -42,7 +42,7 @@ and ScheduleKind =
     | Repeat = 3
 
 and Repeat =
-    { Frequency: int<StateTypes.days>
+    { Frequency: int<days>
       PostponedUntil: Nullable<DateTimeOffset> }
 
 type Store = { StoreName: string }
