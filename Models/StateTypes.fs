@@ -101,6 +101,7 @@ type State =
       Stores: StoresTable
       NotSoldItems: NotSoldItemTable
       Settings: SettingsRow 
+      LastCosmosTimestamp : int option
     }
 
 type ImportChanges =

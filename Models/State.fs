@@ -512,7 +512,8 @@ module State =
           Items = DataTable.empty
           Stores = DataTable.empty
           NotSoldItems = DataTable.empty
-          Settings = DataRow.unchanged Settings.create }
+          Settings = DataRow.unchanged Settings.create
+          LastCosmosTimestamp = None }
 
     let setBrokenItemToCategoryLinksToNone (s: State) =
         s
@@ -753,7 +754,9 @@ module State =
                   |> Seq.fold (fun dt i -> dt |> DataTable.acceptChange i) s.Stores
               NotSoldItems =
                   i.NotSoldItemChanges
-                  |> Seq.fold (fun dt i -> dt |> DataTable.acceptChange i) s.NotSoldItems }
+                  |> Seq.fold (fun dt i -> dt |> DataTable.acceptChange i) s.NotSoldItems 
+              LastCosmosTimestamp = i.LatestTimestamp
+        }
         |> fixBrokenForeignKeys
 
     let acceptAllChanges s =

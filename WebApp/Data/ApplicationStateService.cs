@@ -20,8 +20,6 @@ namespace WebApp.Data {
 
         public State Current => _state.Value;
 
-        public int LastCosmosSyncTimestamp { get; set; } = int.MinValue;
-
         public void Update(StateMessage msg) {
             var state = _state.Value;
             state = StateModule.update(msg, state);
