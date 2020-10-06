@@ -129,6 +129,8 @@ module SeqTests =
         failingTests |> Seq.isEmpty |> should equal true
 
 module StringTests =
+    
+    let tryParseInt = tryParseWith System.Int32.TryParse
 
     [<Theory>]
     [<InlineData("1", 1)>]
@@ -139,7 +141,7 @@ module StringTests =
     [<InlineData("0", 0)>]
     [<InlineData("+0", 0)>]
     [<InlineData("-0", 0)>]
-    let ``tryParseInt when is an int `` (s: string) (expected: int) =
+    let ``tryParseWith when is an int `` (s: string) (expected: int) =
         s |> tryParseInt |> should equal (Some expected)
 
     [<Theory>]
@@ -149,7 +151,7 @@ module StringTests =
     [<InlineData("2.4")>]
     [<InlineData("+2.4")>]
     [<InlineData("-2.4")>]
-    let ``tryParseInt when is not an int should return none`` (s: string) = s |> tryParseInt |> should equal None
+    let ``tryParseWith when is not an int should return none`` (s: string) = s |> tryParseInt |> should equal None
 
 module ResultTests =
 
