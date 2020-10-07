@@ -3,7 +3,7 @@ using Models;
 using System;
 
 namespace WebApp.Pages {
-    public partial class ItemEdit2 : ComponentBase {
+    public partial class ItemEdit : ComponentBase {
         protected override void OnInitialized() {
             base.OnInitialized();
             var state = StateService.Current;
