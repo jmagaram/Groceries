@@ -179,9 +179,9 @@ let storesSetAvailability id isSold f =
 
 let canDelete (f: Form) = f.ItemId.IsSome
 
-let createNewItem stores cats =
+let createNewItem itemName stores cats =
     { ItemId = None
-      ItemName = ""
+      ItemName = itemName
       Etag = None
       Quantity = ""
       Note = ""

@@ -64,7 +64,7 @@
 }
 <hr />
 <div class="row">
-<label for="textFilter"></label>
-<input type="text" id="textFilter" class="form-control" style="max-width:200px" value="@TextFilter" placeholder="Find or add" @oninput="OnTextFilterChange" @onfocusout="OnTextFilterBlue"/>
-<a style="margin-left:7px" class="btn btn-primary" href="itemedit2">New item</a>
+    <label for="textFilter"></label>
+    <input type="text" id="textFilter" class="form-control" style="max-width:200px" value="@TextFilter" placeholder="Find or add" @oninput="OnTextFilterChange" @onfocusout="OnTextFilterBlue" />
+    <a style="margin-left:7px" class="btn btn-primary" href="itemnew/@TextFilter">New item</a>
 </div>

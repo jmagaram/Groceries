@@ -12,6 +12,7 @@ namespace WebApp.Pages {
             }
             else {
                 Form = ItemForm.createNewItem(
+                    ItemName ?? "",
                     StateModule.stores.Invoke(state),
                     StateModule.categories.Invoke(state));
             }
@@ -22,6 +23,9 @@ namespace WebApp.Pages {
 
         [Inject]
         NavigationManager Navigation { get; set; }
+
+        [Parameter]
+        public string ItemName { get; set; } = "";
 
         [Parameter]
         public Guid? Id { get; set; }

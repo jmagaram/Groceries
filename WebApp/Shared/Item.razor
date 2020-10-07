@@ -52,7 +52,7 @@
                 <button class="dropdown-item" @onclick="@(async () => { await OnClickPostpone.InvokeAsync((ItemQry.ItemId, 14)); })" type="button">+2 weeks</button>
                 <div class="dropdown-divider"></div>
             }
-            <a class="dropdown-item" href="./ItemEdit2/@ItemQry.ItemId.Item">Details...</a>
+            <a class="dropdown-item" href="./ItemEdit/@ItemQry.ItemId.Item">Details...</a>
         </div>
     </div>
     @if (!HideCategory) {
