@@ -32,7 +32,7 @@
     }
     <div class="dropdown" style="display:inline-block">
         <a @onclick:preventDefault href="#" data-toggle="dropdown">
-            <FormattedText Text="ItemQry.ItemName" Strikethrough="ItemQry.Schedule.IsCompleted"/>
+            <FormattedText Text="ItemQry.ItemName" Strikethrough="ItemQry.Schedule.IsCompleted" />
         </a>
         <div class="dropdown-menu" aria-labelledby="dropdownMenu2">
             @if (!ItemQry.Schedule.IsCompleted) {
@@ -61,11 +61,17 @@
     }
     @if (ItemQry.Quantity.IsSome()) {
         var quantity = ItemQry.Quantity.Value;
-        <span class="divider">&nbsp;|&nbsp;</span><FormattedText Text="@ItemQry.Quantity.Value"/>
+        <span class="divider">&nbsp;|&nbsp;</span><FormattedText Text="@ItemQry.Quantity.Value" />
     }
     @if (ItemQry.Note.IsSome()) {
         var note = ItemQry.Note.Value;
-        <span class="divider">&nbsp;|&nbsp;</span><FormattedText Text="@ItemQry.Note.Value"/>
+        <span class="divider">&nbsp;|&nbsp;</span><FormattedText Text="@ItemQry.Note.Value" />
+    }
+    @{
+        var ns = string.Join(", ", ItemQry.Availability.Where(i => !i.IsSold).Select(i => i.Store.StoreName.Item));
+        if (ns != "") {
+            <span class="divider">&nbsp;|&nbsp;</span><span style="text-decoration:line-through; color:darkgray">@ns</span>
+        }
     }
 </p>
 
