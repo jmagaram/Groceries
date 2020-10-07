@@ -18,7 +18,7 @@ and ItemAvailability = { Store: Store; IsSold: bool }
 type ShoppingList =
     { Items: Item list
       StoreFilter: Store option
-      Stores : Store list
+      Stores: Store list
       SearchTerm: SearchTerm option }
 
 let private createItem find (item: StateTypes.Item) state =
@@ -95,7 +95,7 @@ let create state =
 
                     name || note || qty
 
-            isCompletedMatch && isStoreMatch && isTextMatch)
+            if find.IsSome then isTextMatch else isCompletedMatch && isStoreMatch)
         |> Seq.toList
 
     let storeFilter =
@@ -104,10 +104,10 @@ let create state =
             state
             |> State.storesTable
             |> DataTable.findCurrent sid)
+
     let stores = state |> State.stores |> List.ofSeq
 
     { Items = items
       StoreFilter = storeFilter
-      SearchTerm = settings.ItemTextFilter 
-      Stores = stores 
-    }
+      SearchTerm = settings.ItemTextFilter
+      Stores = stores }
