@@ -31,7 +31,8 @@ and CategoryItem =
 type ShoppingListQry =
     { Stores : Store list
       Items : ItemQry list
-      StoreFilter : Store option }
+      StoreFilter : Store option 
+      TextFilter : string }
 
 type ItemFindQry =
     { ItemId: ItemId

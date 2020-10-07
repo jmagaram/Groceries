@@ -394,12 +394,16 @@ module Settings =
     let create =
         { Settings.StoreFilter = None
           PostponedViewHorizon = 7<days>
-          HideCompletedItems = true }
+          HideCompletedItems = true 
+          ItemTextFilter = "" }
 
     let setStoreFilter f s = { s with StoreFilter = f }
 
     let clearStoreFilterIf k s =
         if s.StoreFilter = Some k then s |> setStoreFilter None else s
+
+    let setItemFilter f s = { s with ItemTextFilter = f }
+    let clearItemFilter = setItemFilter ""
 
 [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
 module State =
@@ -428,7 +432,7 @@ module State =
         { s with
               NotSoldItems = f s.NotSoldItems }
 
-    let mapSettings f s = { s with Settings = f s.Settings }
+    let mapSettings f s = { s with Settings = s.Settings |> DataRow.mapCurrent f }
 
     let (insertCategory, updateCategory, upsertCategory) =
         let go f (c: Category) s = s |> mapCategories (f c)
@@ -477,21 +481,21 @@ module State =
 
         match isStoreReferenceValid with
         | false -> failwith "A store is referenced that does not exist."
-        | true -> mapSettings (DataRow.mapCurrent (Settings.setStoreFilter k)) s
+        | true -> mapSettings (Settings.setStoreFilter k) s
 
     let setPostponedViewHorizon d s =
         s
-        |> mapSettings (DataRow.mapCurrent (fun i -> { i with PostponedViewHorizon = d }))
+        |> mapSettings (fun i -> { i with PostponedViewHorizon = d })
 
     let hideCompletedItems b s =
         s
-        |> mapSettings (DataRow.mapCurrent (fun i -> { i with HideCompletedItems = b }))
+        |> mapSettings (fun i -> { i with HideCompletedItems = b })
 
     let deleteStore k s =
         s
         |> mapStores (DataTable.delete k)
         |> mapNotSoldItems (DataTable.deleteIf (fun i -> i.StoreId = k))
-        |> mapSettings (DataRow.mapCurrent (Settings.clearStoreFilterIf k))
+        |> mapSettings (Settings.clearStoreFilterIf k)
 
     let deleteNotSoldItem k s =
         s |> mapNotSoldItems (DataTable.delete k)
@@ -557,7 +561,7 @@ module State =
             match s |> storesTable |> DataTable.tryFindCurrent sf with
             | None ->
                 s
-                |> mapSettings (DataRow.mapCurrent (fun s -> { s with StoreFilter = None }))
+                |> mapSettings (fun s -> { s with StoreFilter = None })
             | Some _ -> s
 
     let fixBrokenForeignKeys (s: State) =
@@ -802,4 +806,6 @@ module State =
             | SetStoreFilterTo id -> s |> updateSettingsStoreFilter (Some id)
             | SetPostponedViewHorizon d -> s |> setPostponedViewHorizon d
             | HideCompletedItems b -> s |> hideCompletedItems b
+            | ClearItemFilter -> s |> mapSettings (Settings.clearItemFilter)
+            | SetItemFilter f -> s |> mapSettings (Settings.setItemFilter f)
         | Transaction msgs -> msgs |> Seq.fold (fun t i -> t |> update i) s

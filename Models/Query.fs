@@ -73,6 +73,7 @@ let shoppingListQry (now: DateTimeOffset) s =
             |> DataTable.findCurrent storeId)
 
     { Stores = s |> State.stores |> List.ofSeq
+      TextFilter = settings.ItemTextFilter
       StoreFilter = sf
       Items =
           s
