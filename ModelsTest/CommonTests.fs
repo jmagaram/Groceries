@@ -153,6 +153,44 @@ module StringTests =
     [<InlineData("-2.4")>]
     let ``tryParseWith when is not an int should return none`` (s: string) = s |> tryParseInt |> should equal None
 
+module OptionTests =
+
+    [<Fact>]
+    let ``computation expression - let! when each part returns some, return some`` () =
+        let divide numerator denominator =
+            match denominator with
+            | 0 -> None
+            | _ -> Some (numerator / denominator)
+
+        let actual =
+            option {
+                let! a = divide 10 5
+                let! b = divide 20 2
+                let! c = divide 30 6
+                return a + b + c
+            }
+
+        let expected = Some 17
+        actual |> should equal expected
+
+    [<Fact>]
+    let ``computation expression - let! when some part returns none, return none`` () =
+        let divide numerator denominator =
+            match denominator with
+            | 0 -> None
+            | _ -> Some (numerator / denominator)
+
+        let actual =
+            option {
+                let! a = divide 10 5
+                let! b = divide 8 0 // should abort here
+                let c = 3 / 0 // shouldn't get this far
+                return a + b
+            }
+
+        let expected = None
+        actual |> should equal expected
+
 module ResultTests =
 
     type String5 = String5 of string

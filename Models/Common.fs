@@ -91,6 +91,16 @@ module Map =
     let values m = m |> Map.toSeq |> Seq.map snd
 
 [<AutoOpen>]
+module Option =
+
+    type OptionBuilder() =
+        member this.Return(x) = Some x
+        member this.Bind(x, f) = Option.bind f x
+        member this.ReturnFrom r = r
+
+    let option = OptionBuilder()
+
+[<AutoOpen>]
 module String =
 
     let toString i = i.ToString()
