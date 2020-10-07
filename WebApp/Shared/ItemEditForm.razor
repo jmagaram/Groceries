@@ -119,20 +119,17 @@
                 <button class="btn btn-secondary" type="button" @onclick="_=>OnDelete()"><span class="oi oi-trash" aria-hidden="true"></span></button>
             </li>
         }
-        <li>
-            @*Save changes*@
-            <button class="btn btn-secondary" type="button" @onclick="_=>OnSaveChanges()" disabled="@Form.HasErrors">Save</button>
-        </li>
         @if (!Form.ScheduleKind.IsCompleted) {
             <li>
-                @*Purchased! (for repeating and only-once)*@
-                <button type="button" disabled="@Form.HasErrors" class="btn btn-primary" @onclick="OnSubmitPurchased">Complete</button>
+                <button type="button" disabled="@Form.HasErrors" class="btn btn-secondary" @onclick="OnSubmitPurchased">Complete</button>
+            </li>
+            <li>
+                <button class="btn btn-primary" type="button" @onclick="_=>OnSaveChanges()" disabled="@Form.HasErrors">Save</button>
             </li>
         }
-        @if (Form.ScheduleKind.IsCompleted) {
+        else {
             <li>
-                @*Add to shopping list again*@
-                <button type="button" disabled="@Form.HasErrors" class="btn btn-primary" @onclick="AddToShoppingListAgain">Add to shopping list (again)</button>
+                <button type="button" disabled="@Form.HasErrors" class="btn btn-primary" @onclick="AddToShoppingListAgain">Buy again</button>
             </li>
         }
     </ul>
