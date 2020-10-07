@@ -20,6 +20,7 @@ namespace WebApp.Pages {
 
         protected override void OnInitialized() {
             base.OnInitialized();
+            OnTextFilterClear();
             _updateItemList = UpdateItems();
             _updateStorePickerList = UpdateStoreFilterPickerList();
             _updateStorePickerCurrentValue = UpdateStoreFilterSelectedItem();
@@ -91,13 +92,22 @@ namespace WebApp.Pages {
         protected void OnTextFilterChange(ChangeEventArgs e) =>
             StateService.Update(StateMessage.NewSettingsMessage(SettingsMessage.NewSetItemFilter((string)e.Value)));
 
-        protected void OnTextFilterBlue(FocusEventArgs e) { }
+        protected void OnTextFilterClear() =>
+            StateService.Update(StateMessage.NewSettingsMessage(SettingsMessage.ClearItemFilter));
+
+        protected void OnTextFilterKeyDown(KeyboardEventArgs e) {
+            if (e.Key == "Escape") {
+                OnTextFilterClear();
+            }
+        }
+
+        protected void OnTextFilterBlur(FocusEventArgs e) { }
 
         protected string TextFilter { get; private set; }
 
         protected Guid StoreFilter { get; private set; }
 
-        protected IEnumerable<ShoppingListModule.Item> Items { get; private set; }
+        protected List<ShoppingListModule.Item> Items { get; private set; }
 
         protected List<Store> StoreFilterChoices { get; private set; }
 
