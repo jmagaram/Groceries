@@ -40,7 +40,9 @@
             }
             @if (ItemQry.Schedule.IsCompleted) {
                 <button class="dropdown-item" @onclick="@(async () => { await OnClickBuyAgain.InvokeAsync(ItemQry.ItemId); })" type="button">Buy again</button>
-                <button class="dropdown-item" @onclick="@(async () => { await OnClickDelete.InvokeAsync(ItemQry.ItemId); })" type="button">Delete</button>
+            }
+            @if (!ItemQry.Schedule.IsRepeat) {
+            <button class="dropdown-item" @onclick="@(async () => { await OnClickDelete.InvokeAsync(ItemQry.ItemId); })" type="button">Delete</button>
             }
             <div class="dropdown-divider"></div>
             @if (ScheduleModule.isPostponed(ItemQry.Schedule)) {
