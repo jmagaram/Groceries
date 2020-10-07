@@ -27,17 +27,3 @@ and CategoryItem =
       Quantity: Quantity option
       Schedule: Schedule
       Availability: ItemAvailability seq }
-
-type ShoppingListQry =
-    { Stores : Store list
-      Items : ItemQry list
-      StoreFilter : Store option 
-      TextFilter : string }
-
-type ItemFindQry =
-    { ItemId: ItemId
-      ItemName: ItemName
-      Note: Note option
-      Quantity: Quantity option
-      Category: Category option
-      Schedule: Schedule }

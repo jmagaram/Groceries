@@ -7,10 +7,6 @@
     .divider {
         color: lightgray
     }
-
-    .completed {
-        text-decoration: line-through
-    }
 </style>
 <p>
     @{
@@ -36,7 +32,7 @@
     }
     <div class="dropdown" style="display:inline-block">
         <a @onclick:preventDefault href="#" data-toggle="dropdown">
-            <span class="@itemNameClass">@ItemQry.ItemName.Item</span>
+            <FormattedText Text="ItemQry.ItemName" Strikethrough="ItemQry.Schedule.IsCompleted"/>
         </a>
         <div class="dropdown-menu" aria-labelledby="dropdownMenu2">
             @if (!ItemQry.Schedule.IsCompleted) {
@@ -65,17 +61,17 @@
     }
     @if (ItemQry.Quantity.IsSome()) {
         var quantity = ItemQry.Quantity.Value;
-        <span class="divider">&nbsp;|&nbsp;</span>@ItemQry.Quantity.Value.Item
+        <span class="divider">&nbsp;|&nbsp;</span><FormattedText Text="@ItemQry.Quantity.Value"/>
     }
     @if (ItemQry.Note.IsSome()) {
         var note = ItemQry.Note.Value;
-        <span class="divider">&nbsp;|&nbsp;</span>@ItemQry.Note.Value.Item
+        <span class="divider">&nbsp;|&nbsp;</span><FormattedText Text="@ItemQry.Note.Value"/>
     }
 </p>
 
 @code {
     [Parameter]
-    public Models.QueryTypes.ItemQry ItemQry { get; set; }
+    public Models.ShoppingListModule.Item ItemQry { get; set; }
 
     [Parameter]
     public bool HideCategory { get; set; } = false;

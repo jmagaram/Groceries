@@ -81,12 +81,14 @@ type CategoryFormMessage =
     | InsertCategory of CategoryName
     | UpdateCategory of Category
 
+type SearchTerm = SearchTerm of string
+
 // include "show empty categories"
 type Settings =
     { StoreFilter: StoreId option
       PostponedViewHorizon: int<days>
       HideCompletedItems: bool 
-      ItemTextFilter : string
+      ItemTextFilter : SearchTerm option
     }
     interface IKey<string> with
         member this.Key = "singleton"

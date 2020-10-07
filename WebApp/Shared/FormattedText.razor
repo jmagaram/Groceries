@@ -10,13 +10,22 @@
         border-width: 0px;
         padding: 0px;
     }
+
+    .completed {
+        text-decoration: line-through
+    }
 </style>
 @foreach (var i in Models.FormattedText.spans(Text)) {
     var className = i.Format.IsHighlight ? "highlighted" : "normal";
-    <span class="@className">@i.Text</span>
+    if (Strikethrough) {
+        className = $"{className} completed";
+    }<text><span class="@className">@i.Text</span></text>
 }
 
 @code {
     [Parameter]
     public Models.ViewTypes.FormattedText Text { get; set; }
+
+    [Parameter]
+    public bool Strikethrough { get; set; } = false;
 }

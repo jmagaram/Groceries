@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Components;
+using Microsoft.AspNetCore.Components.Web;
 using Models;
 using System;
 using System.Collections.Generic;
@@ -12,6 +13,7 @@ namespace WebApp.Pages {
         IDisposable _updateItemList = null;
         IDisposable _updateStorePickerList = null;
         IDisposable _updateStorePickerCurrentValue = null;
+        IDisposable _updateTextFilter = null;
 
         [Inject]
         public Data.ApplicationStateService StateService { get; set; }
@@ -21,23 +23,30 @@ namespace WebApp.Pages {
             _updateItemList = UpdateItems();
             _updateStorePickerList = UpdateStoreFilterPickerList();
             _updateStorePickerCurrentValue = UpdateStoreFilterSelectedItem();
+            _updateTextFilter = UpdateTextFilter();
         }
 
         private IDisposable UpdateStoreFilterSelectedItem() =>
-            StateService.ShoppingListQry
+            StateService.ShoppingList
             .Select(i => i.StoreFilter)
             .DistinctUntilChanged()
             .Subscribe(s => StoreFilter = s.IsNone() ? Guid.Empty : s.Value.StoreId.Item);
 
+        private IDisposable UpdateTextFilter() =>
+            StateService.ShoppingList
+            .Select(i => i.SearchTerm)
+            .DistinctUntilChanged()
+            .Subscribe(s => TextFilter = s.IsNone() ? "" : s.Value.Item);
+
         private IDisposable UpdateStoreFilterPickerList() =>
-            StateService.ShoppingListQry
+            StateService.ShoppingList
             .Select(i => i.Stores)
             .DistinctUntilChanged()
             .Subscribe(s => StoreFilterChoices = s.OrderBy(i => i.StoreName).ToList());
 
         private IDisposable UpdateItems() =>
             StateService
-            .ShoppingListQry
+            .ShoppingList
             .Select(i => i.Items)
             .DistinctUntilChanged()
             .Subscribe(i => Items = i.ToList());
@@ -79,9 +88,16 @@ namespace WebApp.Pages {
             StateService.Update(StateMessage.NewSettingsMessage(SettingsMessage.NewSetPostponedViewHorizon(days)));
         }
 
+        protected void OnTextFilterChange(ChangeEventArgs e) =>
+            StateService.Update(StateMessage.NewSettingsMessage(SettingsMessage.NewSetItemFilter((string)e.Value)));
+
+        protected void OnTextFilterBlue(FocusEventArgs e) { }
+
+        protected string TextFilter { get; private set; }
+
         protected Guid StoreFilter { get; private set; }
 
-        protected IEnumerable<QueryTypes.ItemQry> Items { get; private set; }
+        protected IEnumerable<ShoppingListModule.Item> Items { get; private set; }
 
         protected List<Store> StoreFilterChoices { get; private set; }
 
@@ -89,6 +105,7 @@ namespace WebApp.Pages {
             _updateItemList?.Dispose();
             _updateStorePickerList?.Dispose();
             _updateStorePickerCurrentValue?.Dispose();
+            _updateTextFilter?.Dispose();
         }
     }
 }

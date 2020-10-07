@@ -19,6 +19,7 @@
     <Compile Include="Query.fs" />
     <Compile Include="ViewTypes.fs" />
     <Compile Include="View.fs" />
+    <Compile Include="ShoppingList.fs" />
     <Compile Include="ItemForm.fs" />
     <Compile Include="StoreForm.fs" />
     <Compile Include="CategoryForm.fs" />

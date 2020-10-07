@@ -5,6 +5,7 @@ open Xunit
 open FsUnit.Xunit
 open FsCheck
 open FsCheck.Xunit
+open Models.StateTypes
 open Models.ValidationTypes
 
 module ReactiveTests =

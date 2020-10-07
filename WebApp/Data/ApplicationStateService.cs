@@ -13,7 +13,7 @@ namespace WebApp.Data {
         public ApplicationStateService() {
             _state = new BehaviorSubject<State>(StateModule.createSampleData());
             _stateObs = _state;
-            ShoppingListQry = _stateObs.Select(x => Query.shoppingListQry(DateTimeOffset.Now, x));
+            ShoppingList = _stateObs.Select(x => ShoppingListModule.create(x));
             Converter<Unit, DateTimeOffset> clock = (x => DateTimeOffset.Now);
             Clock = FuncConvert.ToFSharpFunc(clock);
         }
@@ -28,6 +28,7 @@ namespace WebApp.Data {
 
         public FSharpFunc<Unit, DateTimeOffset> Clock { get; private set; }
 
-        public IObservable<QueryTypes.ShoppingListQry> ShoppingListQry { get; }
+        public IObservable<ShoppingListModule.ShoppingList> ShoppingList { get; }
+
     }
 }
