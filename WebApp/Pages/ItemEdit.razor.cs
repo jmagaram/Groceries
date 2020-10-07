@@ -38,6 +38,11 @@ namespace WebApp.Pages {
             Navigation.NavigateTo("shoppinglist");
         }
 
+        protected void OnDelete(StateTypes.ItemId item) {
+            StateService.Update(StateTypes.StateMessage.NewItemMessage(StateTypes.ItemMessage.NewDeleteItem(item)));
+            Navigation.NavigateTo("shoppinglist");
+        }
+
         protected void OnCancel() => Navigation.NavigateTo("shoppinglist");
     }
 }
