@@ -898,4 +898,5 @@ module State =
             | HideCompletedItems b -> s |> hideCompletedItems b
             | ClearItemFilter -> s |> mapSettings (Settings.clearItemFilter)
             | SetItemFilter f -> s |> mapSettings (Settings.setItemFilter f)
+        | ResetToSampleData -> createSampleData()
         | Transaction msgs -> msgs |> Seq.fold (fun t i -> t |> update i) s

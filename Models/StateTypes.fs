@@ -155,4 +155,5 @@ type StateMessage =
     | NotSoldItemMessage of NotSoldItemMessage
     | SettingsMessage of SettingsMessage
     | AcceptAllChanges
+    | ResetToSampleData
     | Transaction of StateMessage seq

@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Components;
+using Models;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using WebApp.Common;
@@ -27,6 +28,18 @@ namespace WebApp.Pages {
             ModalStatusMessage = "Resetting database...";
             await Cosmos.DeleteDatabase();
             await Cosmos.CreateDatabase();
+            ModalStatusMessage = "";
+        }
+
+        private async Task ResetToSampleData() {
+            ModalStatusMessage = "Resetting to sample data...";
+            LogMessage("Resetting to sample data...");
+            await Cosmos.DeleteDatabase();
+            await Cosmos.CreateDatabase();
+            StateService.Update(StateTypes.StateMessage.ResetToSampleData);
+            await Cosmos.Push(StateService.Current);
+            var changes = await Cosmos.Pull(null, StateService.Current);
+            StateService.Update(StateTypes.StateMessage.NewImport(changes));
             ModalStatusMessage = "";
         }
 
