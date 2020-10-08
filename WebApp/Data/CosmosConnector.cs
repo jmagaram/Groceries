@@ -3,33 +3,34 @@ using Microsoft.Azure.Cosmos.Linq;
 using Models;
 using System;
 using System.Collections.Generic;
+using System.Configuration;
 using System.Linq;
 using System.Threading.Tasks;
 using WebApp.Data;
 using static Models.DtoTypes;
 
-namespace WebApp.Common {
+namespace WebApp.Data {
     public class CosmosConnector : IDisposable {
         private CosmosClient _client;
         private Database _database;
         private Container _container;
         private readonly string _databaseId = "db";
         private readonly string _containerId = "items";
-        private readonly int? _throughput;
         private bool _isDisposed;
         private const string _partitionKeyPath = "/CustomerId";
         private const string _customerId = "justin@magaram.com";
-        private readonly PartitionKey _partitionKey;
 
-        public CosmosConnector(string endpointUri, string primaryKey, string applicationName, int? throughput = 400) {
+        public CosmosConnector(string connectionString) {
+            _client = new CosmosClient(connectionString);
+        }
+
+        public CosmosConnector(string endpointUri, string primaryKey, string applicationName) {
             _client = new CosmosClient(endpointUri, primaryKey, new CosmosClientOptions() { ApplicationName = applicationName });
-            _partitionKey = new PartitionKey(_partitionKeyPath);
-            _throughput = throughput;
         }
 
         public async Task CreateDatabase() {
             _database = await _client.CreateDatabaseIfNotExistsAsync(_databaseId);
-            _container = await _database.CreateContainerIfNotExistsAsync(_containerId, _partitionKeyPath, _throughput);
+            _container = await _database.CreateContainerIfNotExistsAsync(_containerId, _partitionKeyPath);
         }
 
         public async Task DeleteDatabase() {

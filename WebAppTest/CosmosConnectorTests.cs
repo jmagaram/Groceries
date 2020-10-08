@@ -4,6 +4,7 @@ using WebApp.Common;
 using Models;
 using Xunit;
 using Microsoft.Azure.Cosmos;
+using WebApp.Data;
 
 namespace WebAppTest {
     public class CosmosConnectorTests {

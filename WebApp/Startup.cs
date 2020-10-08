@@ -9,6 +9,7 @@ using Microsoft.AspNetCore.HttpsPolicy;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using WebApp.Common;
 using WebApp.Data;
 
 namespace WebApp {
@@ -25,6 +26,7 @@ namespace WebApp {
             services.AddRazorPages();
             services.AddServerSideBlazor();
             services.AddSingleton<ApplicationStateService>();
+            services.AddSingleton(i => new CosmosConnector(Configuration.GetValue<string>("CosmosConnectionString")));
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.

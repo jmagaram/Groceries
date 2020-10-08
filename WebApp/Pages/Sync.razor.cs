@@ -1,15 +1,16 @@
 ﻿using Microsoft.AspNetCore.Components;
-using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using WebApp.Common;
+using WebApp.Data;
 
 namespace WebApp.Pages {
-    public partial class Sync : ComponentBase, IDisposable {
-        private CosmosConnector _cosmos = null;
+    public partial class Sync : ComponentBase {
+        [Inject]
+        public ApplicationStateService StateService { get; set; }
 
         [Inject]
-        public Data.ApplicationStateService StateService { get; set; }
+        public CosmosConnector Cosmos { get; set; }
 
         private void LogMessage(string s) => Log.Insert(0, s);
 
@@ -17,37 +18,29 @@ namespace WebApp.Pages {
 
         protected override async Task OnInitializedAsync() {
             ModalStatusMessage = "Initializing...";
-            _cosmos = CreateConnector();
-            await _cosmos.CreateDatabase();
+            await Cosmos.CreateDatabase();
             ModalStatusMessage = "";
         }
 
         private async Task ResetToEmpty() {
             LogMessage("Resetting database...");
             ModalStatusMessage = "Resetting database...";
-            await _cosmos.DeleteDatabase();
-            await _cosmos.CreateDatabase();
+            await Cosmos.DeleteDatabase();
+            await Cosmos.CreateDatabase();
             ModalStatusMessage = "";
-        }
-
-        private static CosmosConnector CreateConnector() {
-            string localEndpointUri = "https://localhost:8081";
-            string localPrimaryKey = "C2y6yDjf5/R+ob0N8A7Cgv30VRDJIWEHLM+4QDU5DE2nQ9nDuVTqobD4b8mGGyPMbIZnqyMsEcaGQy67XIw/Jw==";
-            string applicationName = "CosmosDBDotnetQuickstart";
-            return new CosmosConnector(localEndpointUri, localPrimaryKey, applicationName);
         }
 
         protected async Task PushAsync() {
             LogMessage($"PUSH start");
-            await _cosmos.CreateDatabase();
-            await _cosmos.Push(StateService.Current);
+            await Cosmos.CreateDatabase();
+            await Cosmos.Push(StateService.Current);
             LogMessage($"PUSH done");
         }
 
         protected async Task PullAsync() {
             LogMessage($"PULL start");
             var state = StateService.Current;
-            var pullResponse = await _cosmos.Pull(state.LastCosmosTimestamp.AsNullable(), state);
+            var pullResponse = await Cosmos.Pull(state.LastCosmosTimestamp.AsNullable(), state);
             var msg = Models.StateTypes.StateMessage.NewImport(pullResponse);
             StateService.Update(msg);
             LogMessage($"PULL done");
@@ -56,7 +49,5 @@ namespace WebApp.Pages {
         protected bool IsReady => ModalStatusMessage == "";
 
         protected string ModalStatusMessage { get; set; } = "";
-
-        public void Dispose() => _cosmos.Dispose();
     }
 }
