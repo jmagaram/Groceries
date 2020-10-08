@@ -73,12 +73,11 @@ else {
         <p>No shopping list items.</p>
     }
 }
-<hr />
-<div class="row">
-    <label for="textFilter"></label>
-    <input autocomplete="off" type="text" id="textFilter" class="form-control" style="max-width:200px" value="@TextFilter" placeholder="Find or add" @oninput="OnTextFilterChange" @onkeydown="OnTextFilterKeyDown" @onfocusout="OnTextFilterBlur" />
-    @if(TextFilter.Length>0) {
-    <button type="button" class="btn btn-outline-secondary" style="margin-left:2px" @onclick="OnTextFilterClear"><span class="oi oi-x" aria-hidden="true"></span></button>
-    }
-    <a style="margin-left:10px" class="btn btn-primary" href="itemnew/@TextFilter">New item</a>
-</div>
+<form class="form-inline" style="position: fixed; bottom: 10px; right: 10px">
+        <label for="textFilter"></label>
+        <input autocomplete="off" type="text" id="textFilter" class="form-control" style="max-width:200px" value="@TextFilter" placeholder="Find or add" @oninput="OnTextFilterChange" @onkeydown="OnTextFilterKeyDown" @onfocusout="OnTextFilterBlur" />
+        @if (TextFilter.Length > 0) {
+            <button type="button" class="btn btn-link" style="margin-left:1px" @onclick="OnTextFilterClear"><span class="oi oi-x" aria-hidden="true"></span></button>
+        }
+        <a style="margin-left:8px" class="btn btn-primary" href="itemnew/@TextFilter">Go</a>
+</form>
