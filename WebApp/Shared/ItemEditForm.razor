@@ -6,13 +6,54 @@
         margin-right: 5px;
     }
 </style>
+<div class="row justify-content-between align-items-center sticky-top" style="padding-bottom:7px; margin-left:0; margin-right:0; border-bottom:solid 1px #d3d3d3">
+    <div class="col nav col-auto">
+        @if (Form.ItemId.IsNone()) {
+            <h4>New item</h4>
+        }
+        else {
+            <h4>Edit item</h4>
+        }
+    </div>
+    <ul class="col col-auto form-inline nav nav-pills">
+        @if (Form.CanDelete) {
+            <li>
+                @*Delete*@
+                <button class="btn btn-secondary" type="button" @onclick="_=>OnDelete()"><span class="oi oi-trash" aria-hidden="true"></span></button>
+            </li>
+        }
+        @if (!Form.ScheduleKind.IsCompleted) {
+            <li>
+                <button type="button" disabled="@Form.HasErrors" class="btn btn-secondary" @onclick="OnSubmitPurchased">Complete</button>
+            </li>
+            <li>
+                <button class="btn btn-primary" type="button" @onclick="_=>OnSaveChanges()" disabled="@Form.HasErrors">&nbsp;&nbsp;Save&nbsp;&nbsp;</button>
+            </li>
+        }
+        else {
+            <li>
+                <button type="button" disabled="@Form.HasErrors" class="btn btn-primary" @onclick="AddToShoppingListAgain">Buy again</button>
+            </li>
+        }
+    </ul>
+</div>
 <form>
-    @if (Form.ItemId.IsNone()) {
-        <h4>New item</h4>
-    }
-    else {
-        <h4>Edit item</h4>
-    }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     <div class="form-group">
         <label for="itemNameInput">Item</label>
         <input id="itemNameInput" class="form-control" @oninput="OnItemNameChange" @onfocusout="OnItemNameFocusOut" placeholder="Apples, Canned Tuna, ..." value="@Form.ItemName" />
@@ -112,25 +153,4 @@
             <small class="form-text text-danger">@Form.NoteValidation.ErrorValue</small>
         }
     </div>
-    <ul class="nav nav-pills">
-        @if (Form.CanDelete) {
-            <li>
-                @*Delete*@
-                <button class="btn btn-secondary" type="button" @onclick="_=>OnDelete()"><span class="oi oi-trash" aria-hidden="true"></span></button>
-            </li>
-        }
-        @if (!Form.ScheduleKind.IsCompleted) {
-            <li>
-                <button type="button" disabled="@Form.HasErrors" class="btn btn-secondary" @onclick="OnSubmitPurchased">Complete</button>
-            </li>
-            <li>
-                <button class="btn btn-primary" type="button" @onclick="_=>OnSaveChanges()" disabled="@Form.HasErrors">&nbsp;&nbsp;Save&nbsp;&nbsp;</button>
-            </li>
-        }
-        else {
-            <li>
-                <button type="button" disabled="@Form.HasErrors" class="btn btn-primary" @onclick="AddToShoppingListAgain">Buy again</button>
-            </li>
-        }
-    </ul>
 </form>
