@@ -73,14 +73,15 @@
             var width = (TextFilter.Length > 0) ? "120px" : "90px";
             var ralign = (TextFilter.Length > 0) ? "20px" : "0px";
         }
-        <input autocomplete="off" type="text" id="textFilter" class="form-control form-control-sm" style="max-width:@width; position:relative; right:@ralign" value="@TextFilter" placeholder="Find or add" @oninput="OnTextFilterChange" @onkeydown="OnTextFilterKeyDown" @onfocusout="OnTextFilterBlur" />
+
+        <input autocomplete="off" type="text" id="textFilter" class="form-control form-control-sm" style="max-width:@width; position:relative; right:@ralign" @onkeydown="OnTextFilterKeyDown" @bind-value="@TextFilter" @bind-value:event="oninput" placeholder="Find or add" @onfocusout="OnTextFilterBlur" />
         @if (TextFilter.Length > 0) {
-            <button type="button" class="btn btn-link btn-sm" style="margin-left: -30px;
+        <button type="button" class="btn btn-link btn-sm" style="margin-left: -30px;
         position: relative;
         right: 20px" @onclick="OnTextFilterClear">
-                <span class="oi oi-x" aria-hidden="true"></span>
-            </button>
-            <a style="margin-left:-10px" class="btn btn-sm btn-outline-dark" href="itemnew/@TextFilter">Add</a>
+            <span class="oi oi-x" aria-hidden="true"></span>
+        </button>
+        <a style="margin-left:-10px" class="btn btn-sm btn-outline-dark" href="itemnew/@TextFilter">Add</a>
         }
     </form>
 </div>

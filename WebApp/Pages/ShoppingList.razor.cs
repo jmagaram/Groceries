@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reactive.Linq;
+using System.Reactive.Subjects;
 using System.Threading.Tasks;
 using WebApp.Common;
 using WebApp.Data;
@@ -19,6 +20,9 @@ namespace WebApp.Pages {
         IDisposable _updateStorePickerCurrentValue = null;
         IDisposable _updateTextFilter = null;
         IDisposable _updateCanSync = null;
+        IDisposable _processTextFilterTyped = null;
+        string _textFilter;
+        BehaviorSubject<string> _textFilterTyped = new BehaviorSubject<string>("");
 
         [Inject]
         public Data.ApplicationStateService StateService { get; set; }
@@ -33,7 +37,18 @@ namespace WebApp.Pages {
             _updateStorePickerCurrentValue = UpdateStoreFilterSelectedItem();
             _updateTextFilter = UpdateTextFilter();
             _updateCanSync = UpdateCanSync();
+            _processTextFilterTyped = ProcessTextFilterTyped();
         }
+
+        private IDisposable ProcessTextFilterTyped() =>
+            _textFilterTyped
+            .DistinctUntilChanged()
+            .Throttle(TimeSpan.FromSeconds(0.75))
+            .Subscribe(s =>
+            {
+                StateService.Update(StateMessage.NewSettingsMessage(SettingsMessage.NewSetItemFilter(s)));
+                InvokeAsync(()=> StateHasChanged());
+            });
 
         private IDisposable UpdateCanSync() =>
             StateService.ShoppingList
@@ -80,7 +95,10 @@ namespace WebApp.Pages {
             StateService.ShoppingList
             .Select(i => i.SearchTerm)
             .DistinctUntilChanged()
-            .Subscribe(s => TextFilter = s.IsNone() ? "" : s.Value.Item);
+            .Subscribe(s =>
+            {
+                TextFilter = s.IsNone() ? "" : s.Value.Item;
+            });
 
         private IDisposable UpdateStoreFilterPickerList() =>
             StateService.ShoppingList
@@ -144,8 +162,10 @@ namespace WebApp.Pages {
             StateService.Update(StateMessage.NewSettingsMessage(SettingsMessage.NewSetPostponedViewHorizon(days)));
         }
 
-        protected void OnTextFilterChange(ChangeEventArgs e) =>
-            StateService.Update(StateMessage.NewSettingsMessage(SettingsMessage.NewSetItemFilter((string)e.Value)));
+        protected void OnTextFilterChange(ChangeEventArgs e) {
+            string valueTyped = (string)e.Value;
+            _textFilterTyped.OnNext(valueTyped);
+        }
 
         protected void OnTextFilterClear() =>
             StateService.Update(StateMessage.NewSettingsMessage(SettingsMessage.ClearItemFilter));
@@ -158,7 +178,14 @@ namespace WebApp.Pages {
 
         protected void OnTextFilterBlur(FocusEventArgs e) { }
 
-        protected string TextFilter { get; private set; }
+        protected string TextFilter
+        {
+            get { return _textFilter; }
+            set {
+                _textFilter = value;
+                _textFilterTyped.OnNext(value);
+            }
+        }
 
         protected Guid StoreFilter { get; private set; }
 
@@ -172,6 +199,7 @@ namespace WebApp.Pages {
             _updateStorePickerCurrentValue?.Dispose();
             _updateTextFilter?.Dispose();
             _updateCanSync?.Dispose();
+            _processTextFilterTyped?.Dispose();
         }
     }
 }
