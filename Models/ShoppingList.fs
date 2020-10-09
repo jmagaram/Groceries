@@ -77,13 +77,16 @@ let create now state =
                     |> fun a -> a.IsSold)
                 |> Option.defaultValue true
 
-            let isPostponedMatch =
-                let due = i.Schedule |> Schedule.due now
+            let isPostponedMatch = // hack
+                match i.Schedule with
+                | StateTypes.Schedule.Repeat r -> 
+                    let due = i.Schedule |> Schedule.due now
 
-                let horizon =
-                    now.AddDays(settings.PostponedViewHorizon |> float)
+                    let horizon =
+                        now.AddDays(settings.PostponedViewHorizon |> float)
 
-                due <= horizon
+                    due <= horizon
+                | _ -> true
 
             let isTextMatch =
                 match find with
