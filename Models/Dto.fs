@@ -266,4 +266,8 @@ module Dto =
                 |> Seq.map (fun i -> i.Timestamp |> Option.ofNullable) ]
               |> Seq.concat
               |> Seq.choose id
-              |> Seq.fold (fun m i -> m |> Option.map (fun m -> max m i)) None }
+              |> Seq.toList
+              |> Seq.fold (fun m i ->
+                  m
+                  |> Option.map (fun m -> max m i)
+                  |> Option.orElse (Some i)) None }
