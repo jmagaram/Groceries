@@ -19,7 +19,8 @@ type ShoppingList =
     { Items: Item list
       StoreFilter: Store option
       Stores: Store list
-      SearchTerm: SearchTerm option }
+      SearchTerm: SearchTerm option 
+      HasChanges : bool }
 
 let private createItem find (item: StateTypes.Item) state =
     let find =
@@ -51,7 +52,8 @@ let private createItem find (item: StateTypes.Item) state =
                     |> DataTable.tryFindCurrent
                         { StoreId = st.StoreId
                           ItemId = item.ItemId }
-                    |> Option.isNone }) }
+                    |> Option.isNone }) 
+       }
 
 let create now state =
     let settings = state |> State.settings
@@ -126,4 +128,5 @@ let create now state =
     { Items = items now
       StoreFilter = storeFilter
       SearchTerm = settings.ItemTextFilter
-      Stores = stores }
+      Stores = stores 
+      HasChanges = state |> State.hasChanges || state.LastCosmosTimestamp.IsNone}

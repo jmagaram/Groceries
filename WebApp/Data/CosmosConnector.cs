@@ -29,13 +29,18 @@ namespace WebApp.Data {
         }
 
         public async Task CreateDatabase() {
-            _database = await _client.CreateDatabaseIfNotExistsAsync(_databaseId);
-            _container = await _database.CreateContainerIfNotExistsAsync(_containerId, _partitionKeyPath);
+            if (_database == null || _container == null) {
+                _database = await _client.CreateDatabaseIfNotExistsAsync(_databaseId);
+                _container = await _database.CreateContainerIfNotExistsAsync(_containerId, _partitionKeyPath);
+            }
         }
 
         public async Task DeleteDatabase() {
             var db = _client.GetDatabase(_databaseId);
             await db.DeleteAsync();
+            _database = null;
+            _container = null;
+
         }
 
         public async Task<ItemResponse<T>> Upsert<T>(T item, string etag) {

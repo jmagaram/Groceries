@@ -838,6 +838,12 @@ module State =
 
         s |> mapItems (DataTable.update item)
 
+    let hasChanges s =
+        (s |> itemsTable |> DataTable.hasChanges) ||
+        (s |> categoriesTable |> DataTable.hasChanges) ||
+        (s |> storesTable |> DataTable.hasChanges) ||
+        (s |> notSoldItemsTable |> DataTable.hasChanges)
+
     let importChanges (i: ImportChanges) (s: StateTypes.State) =
         { s with
               Items =

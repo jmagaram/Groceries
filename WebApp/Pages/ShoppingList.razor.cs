@@ -5,7 +5,9 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reactive.Linq;
+using System.Threading.Tasks;
 using WebApp.Common;
+using WebApp.Data;
 using static Models.StateTypes;
 
 namespace WebApp.Pages {
@@ -14,6 +16,7 @@ namespace WebApp.Pages {
         IDisposable _updateStorePickerList = null;
         IDisposable _updateStorePickerCurrentValue = null;
         IDisposable _updateTextFilter = null;
+        IDisposable _updateCanSync = null;
 
         [Inject]
         public Data.ApplicationStateService StateService { get; set; }
@@ -25,7 +28,14 @@ namespace WebApp.Pages {
             _updateStorePickerList = UpdateStoreFilterPickerList();
             _updateStorePickerCurrentValue = UpdateStoreFilterSelectedItem();
             _updateTextFilter = UpdateTextFilter();
+            _updateCanSync = UpdateCanSync();
         }
+
+        private IDisposable UpdateCanSync() =>
+            StateService.ShoppingList
+            .Select(i => i.HasChanges)
+            .DistinctUntilChanged()
+            .Subscribe(s => HasChangesToSync = s);
 
         private IDisposable UpdateStoreFilterSelectedItem() =>
             StateService.ShoppingList
@@ -57,6 +67,18 @@ namespace WebApp.Pages {
 
         private void OnNavigateToCategory(CategoryId id) =>
             Navigation.NavigateTo($"categoryedit/{id.Item}");
+
+        [Inject]
+        public CosmosConnector Cosmos { get; set; }
+
+        private async Task OnSync() {
+            await Cosmos.CreateDatabase();
+            await Cosmos.Push(StateService.Current);
+            var state = StateService.Current;
+            var pullResponse = await Cosmos.Pull(state.LastCosmosTimestamp.AsNullable(), state);
+            var msg = StateMessage.NewImport(pullResponse);
+            StateService.Update(msg);
+        }
 
         private void OnStoreFilterClear() =>
             StateService.Update(StateMessage.NewSettingsMessage(SettingsMessage.ClearStoreFilter));
@@ -107,6 +129,8 @@ namespace WebApp.Pages {
 
         protected Guid StoreFilter { get; private set; }
 
+        protected bool HasChangesToSync { get; private set; } = false;
+
         protected List<ShoppingListModule.Item> Items { get; private set; }
 
         protected List<Store> StoreFilterChoices { get; private set; }
@@ -116,6 +140,7 @@ namespace WebApp.Pages {
             _updateStorePickerList?.Dispose();
             _updateStorePickerCurrentValue?.Dispose();
             _updateTextFilter?.Dispose();
+            _updateCanSync?.Dispose();
         }
     }
 }
