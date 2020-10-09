@@ -495,6 +495,13 @@ module Settings =
 
     let clearItemFilter s = { s with ItemTextFilter = None }
 
+    let setPostponedViewHorizon d s = 
+        let d = 
+            d
+            |> min 365<days>
+            |> max -365<days>
+        { s with PostponedViewHorizon = d}
+
 [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
 module State =
 
@@ -572,10 +579,6 @@ module State =
         match isStoreReferenceValid with
         | false -> failwith "A store is referenced that does not exist."
         | true -> mapSettings (Settings.setStoreFilter k) s
-
-    let setPostponedViewHorizon d s =
-        s
-        |> mapSettings (fun i -> { i with PostponedViewHorizon = d })
 
     let hideCompletedItems b s =
         s
@@ -894,7 +897,7 @@ module State =
             match msg with
             | ClearStoreFilter -> s |> updateSettingsStoreFilter None
             | SetStoreFilterTo id -> s |> updateSettingsStoreFilter (Some id)
-            | SetPostponedViewHorizon d -> s |> setPostponedViewHorizon d
+            | SetPostponedViewHorizon d -> s |> mapSettings (Settings.setPostponedViewHorizon d)
             | HideCompletedItems b -> s |> hideCompletedItems b
             | ClearItemFilter -> s |> mapSettings (Settings.clearItemFilter)
             | SetItemFilter f -> s |> mapSettings (Settings.setItemFilter f)

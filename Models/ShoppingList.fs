@@ -53,14 +53,14 @@ let private createItem find (item: StateTypes.Item) state =
                           ItemId = item.ItemId }
                     |> Option.isNone }) }
 
-let create state =
+let create now state =
     let settings = state |> State.settings
 
     let find =
         settings.ItemTextFilter
         |> Option.map Highlighter.create
 
-    let items =
+    let items now =
         state
         |> State.items
         |> Seq.map (fun item -> createItem find item state)
@@ -76,6 +76,14 @@ let create state =
                     |> Seq.find (fun x -> x.Store.StoreId = s)
                     |> fun a -> a.IsSold)
                 |> Option.defaultValue true
+
+            let isPostponedMatch =
+                let due = i.Schedule |> Schedule.due now
+
+                let horizon =
+                    now.AddDays(settings.PostponedViewHorizon |> float)
+
+                due <= horizon
 
             let isTextMatch =
                 match find with
@@ -95,7 +103,12 @@ let create state =
 
                     name || note || qty
 
-            if find.IsSome then isTextMatch else isCompletedMatch && isStoreMatch)
+            if find.IsSome then
+                isTextMatch
+            else
+                isCompletedMatch
+                && isStoreMatch
+                && isPostponedMatch)
         |> Seq.toList
 
     let storeFilter =
@@ -107,7 +120,7 @@ let create state =
 
     let stores = state |> State.stores |> List.ofSeq
 
-    { Items = items
+    { Items = items now
       StoreFilter = storeFilter
       SearchTerm = settings.ItemTextFilter
       Stores = stores }
