@@ -4,7 +4,6 @@
 @using Microsoft.FSharp.Core;
 
 <div class="row justify-content-between align-items-center sticky-top" style="padding-bottom:7px; margin-left:0; margin-right:0; border-bottom:solid 1px #d3d3d3">
-    @if(TextFilter.Length==0) {
     <div class="col nav col-auto">
         @{
             var currentStoreName = StoreFilterChoices.FirstOrDefault(i => i.StoreId.Item == StoreFilter)?.StoreName.Item ?? "All Stores";
@@ -27,6 +26,7 @@
                 }
             </div>
         </div>
+        @if(TextFilter.Length==0) {
         <div class="nav-item">
             <button class="btn btn-sm btn-outline-dark dropdown-toggle nav-item" style="margin-left:5px" type="button" id="viewDropdown" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                 View
@@ -44,13 +44,8 @@
                 <button @onclick="_=>OnClickHideCompletedItems()" class="dropdown-item">Hide completed</button>
             </div>
         </div>
+        }
     </div>
-    }
-    else {
-    <div class="col nav col-auto">
-        &nbsp;
-    </div>
-    }
     <form class="col col-auto form-inline" style="padding-right:0px">
         <label for="textFilter"></label>
         @{
