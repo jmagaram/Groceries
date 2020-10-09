@@ -52,7 +52,7 @@ namespace WebApp.Pages {
                             try {
                                 SyncStatus = SyncStatus.SynchronizingNow;
                                 StateHasChanged();
-                                await Task.Delay(TimeSpan.FromSeconds(1));
+                                await Task.Delay(TimeSpan.FromSeconds(0.25));
                                 await OnSync();
                             }
                             catch {
