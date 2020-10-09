@@ -4,78 +4,122 @@
 @using static Common.OptionExtensions
 
 <style>
-    .divider {
-        color: lightgray
+    .postponeBadge {
+        width:30px;
+    }
+
+    .repeater {
+        width: 15px;
+        margin-right:10px;
+    }
+
+    .category {
+    }
+
+    .note {
+        line-height:1.0;
+    }
+
+    .stores {
+        line-height: 1.0;
+    }
+
+    .quantity {
+        margin-left:5px;
+        padding-left:5px;
+        border-left:1px solid #d3d3d3;
+    }
+
+    .wholething {
+        margin-bottom:12px;
     }
 </style>
-<p>
-    @{
+<div class="wholething" style="display:flex; flex-direction:row">
+    <div style="display:flex; flex-direction:row">
+        @{
         var itemNameClass = ItemQry.Schedule.IsCompleted ? "completed" : "";
-    }
-    @if (ItemQry.Schedule is Schedule.Repeat r) {
-        @if (r.Item.PostponedUntil.IsSome()) {
-            var daysAway = RepeatModule.due(DateTimeOffset.Now, r.Item).Value;
-            if (daysAway >= 30) {
-                <span class="badge badge-secondary">@($"{daysAway/30}m")</span>
-            }
-            else if (daysAway >= 7) {
-                <span class="badge badge-dark">@($"{daysAway/7}w")</span>
-            }
-            else if (daysAway > 0) {
-                <span class="badge badge-success">@($"{daysAway}d")</span>
-            }
-            else {
-                <span class="badge badge-warning">@($"{-daysAway}d ago")</span>
+        }
+        <div class="postponeBadge">
+            @if (ItemQry.Schedule is Schedule.Repeat r) {
+            @if (r.Item.PostponedUntil.IsSome()) {
+                var daysAway = RepeatModule.due(DateTimeOffset.Now, r.Item).Value;
+                if (daysAway >= 30) {
+            <span class="badge badge-secondary">@($"{daysAway / 30}m")</span>
+                }
+                else if (daysAway >= 7) {
+            <span class="badge badge-dark">@($"{daysAway / 7}w")</span>
+                }
+                else if (daysAway > 0) {
+            <span class="badge badge-success">@($"{daysAway}d")</span>
+                }
+                else {
+            <span class="badge badge-danger"><span class="oi oi-bell" aria-hidden="true"></span></span>
+                }
             }
         }
-        <text>&nbsp;</text><span class="oi oi-loop-circular" aria-hidden="true"></span><text>&nbsp;</text>
-    }
-    <div class="dropdown" style="display:inline-block">
-        <a @onclick:preventDefault href="#" data-toggle="dropdown">
-            <FormattedText Text="ItemQry.ItemName" Strikethrough="ItemQry.Schedule.IsCompleted" />
-        </a>
-        <div class="dropdown-menu" aria-labelledby="dropdownMenu2">
-            @if (!ItemQry.Schedule.IsCompleted) {
-                <button class="dropdown-item" @onclick="@(async () => { await OnClickComplete.InvokeAsync(ItemQry.ItemId); })" type="button">Complete</button>
-            }
-            @if (ItemQry.Schedule.IsCompleted) {
-                <button class="dropdown-item" @onclick="@(async () => { await OnClickBuyAgain.InvokeAsync(ItemQry.ItemId); })" type="button">Buy again</button>
-            }
-            @if (!ItemQry.Schedule.IsRepeat) {
-            <button class="dropdown-item" @onclick="@(async () => { await OnClickDelete.InvokeAsync(ItemQry.ItemId); })" type="button">Delete</button>
-            }
-            <div class="dropdown-divider"></div>
-            @if (ScheduleModule.isPostponed(ItemQry.Schedule)) {
-                <button class="dropdown-item" @onclick="@(async () => { await OnClickRemovePostpone.InvokeAsync(ItemQry.ItemId); })" type="button">Now</button>
-            }
-            @if (ItemQry.Schedule is Schedule.Repeat) {
-                <button class="dropdown-item" @onclick="@(async () => { await OnClickPostpone.InvokeAsync((ItemQry.ItemId, 1)); })" type="button">Tomorrow</button>
-                <button class="dropdown-item" @onclick="@(async () => { await OnClickPostpone.InvokeAsync((ItemQry.ItemId, 7)); })" type="button">+1 week</button>
-                <button class="dropdown-item" @onclick="@(async () => { await OnClickPostpone.InvokeAsync((ItemQry.ItemId, 14)); })" type="button">+2 weeks</button>
-                <div class="dropdown-divider"></div>
-            }
-            <a class="dropdown-item" href="./ItemEdit/@ItemQry.ItemId.Item">Details...</a>
         </div>
-    </div>
-    @if (!HideCategory) {
-        var catName = ItemQry.Category.AsEnumerable().Select(i => i.CategoryName.Item).SingleOrDefault() ?? "(Uncategorized)";
-        <span class="divider">&nbsp;|&nbsp;</span>@catName
-    }
-    @if (ItemQry.Quantity.IsSome()) {
+        <div class="repeater">
+            @if (ItemQry.Schedule.IsRepeat) {
+            <span class="oi oi-loop-circular" style="display:inline-flex" aria-hidden="true"></span>
+        }
+        else {
+            <text>&nbsp;</text>
+        }
+        </div>
+    </div>      
+    <div style="display:flex; flex-direction:column">
+        <div style="display:flex; flex-direction:row">
+            <div class="dropdown itemname" style="display:block">
+                <a @onclick:preventDefault href="#" data-toggle="dropdown">
+                    <FormattedText Text="ItemQry.ItemName" Strikethrough="ItemQry.Schedule.IsCompleted" />
+                </a>
+                <div class="dropdown-menu" aria-labelledby="dropdownMenu2">
+                    @if (!ItemQry.Schedule.IsCompleted) {
+                    <button class="dropdown-item" @onclick="@(async () => { await OnClickComplete.InvokeAsync(ItemQry.ItemId); })" type="button">Complete</button>
+            }
+                    @if (ItemQry.Schedule.IsCompleted) {
+                    <button class="dropdown-item" @onclick="@(async () => { await OnClickBuyAgain.InvokeAsync(ItemQry.ItemId); })" type="button">Buy again</button>
+            }
+                    @if (!ItemQry.Schedule.IsRepeat) {
+                    <button class="dropdown-item" @onclick="@(async () => { await OnClickDelete.InvokeAsync(ItemQry.ItemId); })" type="button">Delete</button>
+            }
+                    <div class="dropdown-divider"></div>
+                    @if (ScheduleModule.isPostponed(ItemQry.Schedule)) {
+                    <button class="dropdown-item" @onclick="@(async () => { await OnClickRemovePostpone.InvokeAsync(ItemQry.ItemId); })" type="button">Now</button>
+            }
+                    @if (ItemQry.Schedule is Schedule.Repeat) {
+                    <button class="dropdown-item" @onclick="@(async () => { await OnClickPostpone.InvokeAsync((ItemQry.ItemId, 1)); })" type="button">Tomorrow</button>
+                    <button class="dropdown-item" @onclick="@(async () => { await OnClickPostpone.InvokeAsync((ItemQry.ItemId, 7)); })" type="button">+1 week</button>
+                    <button class="dropdown-item" @onclick="@(async () => { await OnClickPostpone.InvokeAsync((ItemQry.ItemId, 14)); })" type="button">+2 weeks</button>
+                    <div class="dropdown-divider"></div>
+            }
+                    <a class="dropdown-item" href="./ItemEdit/@ItemQry.ItemId.Item">Details...</a>
+                </div>
+            </div>
+            @if (ItemQry.Quantity.IsSome()) {
         var quantity = ItemQry.Quantity.Value;
-        <span class="divider">&nbsp;|&nbsp;</span><FormattedText Text="@ItemQry.Quantity.Value" />
-    }
-    @if (ItemQry.Note.IsSome()) {
+            <div class="quantity">
+                <FormattedText Text="@ItemQry.Quantity.Value" />
+            </div>    }
+        </div>        @if (!HideCategory) {
+        var catName = ItemQry.Category.AsEnumerable().Select(i => i.CategoryName.Item).SingleOrDefault() ?? "(Uncategorized)";
+        <div class="category">
+            @catName
+        </div>    }
+        @if (ItemQry.Note.IsSome()) {
         var note = ItemQry.Note.Value;
-        <span class="divider">&nbsp;|&nbsp;</span><FormattedText Text="@ItemQry.Note.Value" />
-    }
-    @{
+        <div class="note">
+            <FormattedText IsSmall="true" Text="@ItemQry.Note.Value" />
+        </div>    }
+        @{
         var ns = string.Join(", ", ItemQry.Availability.Where(i => !i.IsSold).Select(i => i.Store.StoreName.Item));
         if (ns != "") {
-            <span class="divider">&nbsp;|&nbsp;</span><span style="text-decoration:line-through; color:darkgray">@ns</span>
+            <div class="stores">
+                <small style="text-decoration:line-through; color:darkgray">@ns</small>
+            </div> }
         }
-    }
-</p>
+    </div>
+</div>
 
 @code {
     [Parameter]

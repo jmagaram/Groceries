@@ -19,7 +19,13 @@
     var className = i.Format.IsHighlight ? "highlighted" : "normal";
     if (Strikethrough) {
         className = $"{className} completed";
-    }<text><span class="@className">@i.Text</span></text>
+    }
+    if (IsSmall) {
+        <text><small class="@className">@i.Text</small></text>
+    }
+    else {
+        <text><span class="@className">@i.Text</span></text>
+    }
 }
 
 @code {
@@ -28,4 +34,7 @@
 
     [Parameter]
     public bool Strikethrough { get; set; } = false;
+
+    [Parameter]
+    public bool IsSmall { get; set; } = false;
 }
