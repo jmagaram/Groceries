@@ -60,19 +60,19 @@ namespace WebApp.Pages {
                     switch (SyncStatus) {
                         case SyncStatus.SynchronizingNow:
                             SyncStatus = (hasChanges == true) ? SyncStatus.ShouldSync : SyncStatus.NoChanges;
-                            StateHasChanged();
+                            await InvokeAsync(() => StateHasChanged());
                             break;
                         case SyncStatus.ShouldSync:
                         case SyncStatus.NoChanges:
                             try {
                                 SyncStatus = SyncStatus.SynchronizingNow;
-                                StateHasChanged();
+                                await InvokeAsync(() => StateHasChanged());
                                 await Task.Delay(TimeSpan.FromSeconds(0.25));
                                 await OnSync();
                             }
                             catch {
                                 SyncStatus = SyncStatus.ShouldSync;
-                                StateHasChanged();
+                                await InvokeAsync(() => StateHasChanged());
                                 await Task.Delay(TimeSpan.FromSeconds(1));
                             }
                             break;
@@ -81,7 +81,7 @@ namespace WebApp.Pages {
                 else {
                     SyncStatus = SyncStatus.NoChanges;
                     await Task.Delay(TimeSpan.FromSeconds(1));
-                    StateHasChanged();
+                    await InvokeAsync(() => StateHasChanged());
                 }
             });
 
