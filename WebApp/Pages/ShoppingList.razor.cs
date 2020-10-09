@@ -11,7 +11,9 @@ using WebApp.Data;
 using static Models.StateTypes;
 
 namespace WebApp.Pages {
-    public partial class ShoppingList : ComponentBase {
+    public enum SyncStatus { SynchronizingNow, NoChanges, ShouldSync }
+
+    public partial class ShoppingList : ComponentBase, IDisposable {
         IDisposable _updateItemList = null;
         IDisposable _updateStorePickerList = null;
         IDisposable _updateStorePickerCurrentValue = null;
@@ -20,6 +22,8 @@ namespace WebApp.Pages {
 
         [Inject]
         public Data.ApplicationStateService StateService { get; set; }
+
+        public SyncStatus SyncStatus { get; set; } = SyncStatus.NoChanges;
 
         protected override void OnInitialized() {
             base.OnInitialized();
@@ -35,7 +39,36 @@ namespace WebApp.Pages {
             StateService.ShoppingList
             .Select(i => i.HasChanges)
             .DistinctUntilChanged()
-            .Subscribe(s => HasChangesToSync = s);
+            .Subscribe(async hasChanges =>
+            {
+                if (hasChanges) {
+                    switch (SyncStatus) {
+                        case SyncStatus.SynchronizingNow:
+                            SyncStatus = (hasChanges == true) ? SyncStatus.ShouldSync : SyncStatus.NoChanges;
+                            StateHasChanged();
+                            break;
+                        case SyncStatus.ShouldSync:
+                        case SyncStatus.NoChanges:
+                            try {
+                                SyncStatus = SyncStatus.SynchronizingNow;
+                                StateHasChanged();
+                                await Task.Delay(TimeSpan.FromSeconds(1));
+                                await OnSync();
+                            }
+                            catch {
+                                SyncStatus = SyncStatus.ShouldSync;
+                                StateHasChanged();
+                                await Task.Delay(TimeSpan.FromSeconds(1));
+                            }
+                            break;
+                    }
+                }
+                else {
+                    SyncStatus = SyncStatus.NoChanges;
+                    await Task.Delay(TimeSpan.FromSeconds(1));
+                    StateHasChanged();
+                }
+            });
 
         private IDisposable UpdateStoreFilterSelectedItem() =>
             StateService.ShoppingList
@@ -128,8 +161,6 @@ namespace WebApp.Pages {
         protected string TextFilter { get; private set; }
 
         protected Guid StoreFilter { get; private set; }
-
-        protected bool HasChangesToSync { get; private set; } = false;
 
         protected List<ShoppingListModule.Item> Items { get; private set; }
 
