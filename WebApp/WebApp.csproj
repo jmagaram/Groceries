@@ -6,6 +6,10 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Content Remove="C:\Users\justi\.nuget\packages\microsoft.azure.cosmos\3.13.0\contentFiles\any\netstandard2.0\ThirdPartyNotice.txt" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="Microsoft.Azure.Cosmos" Version="3.13.0" />
     <PackageReference Include="Microsoft.Azure.Cosmos.Direct" Version="3.13.3" />
     <PackageReference Include="System.Reactive" Version="4.4.1" />
@@ -13,6 +17,10 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Models\Models.fsproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="wwwroot\js\" />
   </ItemGroup>
 
 </Project>
