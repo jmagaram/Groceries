@@ -12,6 +12,7 @@
         @if (Form.ItemId.IsNone()) {
             <h4>New item</h4>
         }
+
         else {
             <h4>Edit item</h4>
         }
@@ -41,14 +42,14 @@
 <form>
     <div class="form-group">
         <label for="itemNameInput">Item</label>
-        <input id="itemNameInput" class="form-control" @oninput="OnItemNameChange" @onfocusout="OnItemNameFocusOut" placeholder="Apples, Canned Tuna, ..." value="@Form.ItemName" />
+        <input id="itemNameInput" class="form-control" @oninput="OnItemNameChange" @onfocusout="OnItemNameFocusOut" placeholder="Apples, Canned Tuna, ..." value="@Form.ItemName.ValueCommitted" />
         @if (Form.ItemNameValidation().IsError) {
             <small class="form-text text-danger">@Form.ItemNameValidation().ErrorValue</small>
         }
     </div>
     <div class="form-group">
         <label for="quantityInput">Quantity</label>
-        <input id="quantityInput" class="form-control" @oninput="OnQuantityChange" @onfocusout="OnQuantityFocusOut" placeholder="several, 2 lb., lots, ..." value="@Form.Quantity" />
+        <input id="quantityInput" class="form-control" @oninput="OnQuantityChange" @onfocusout="OnQuantityFocusOut" placeholder="several, 2 lb., lots, ..." value="@Form.Quantity.ValueCommitted" />
         @if (Form.QuantityValidation().IsError) {
             <small class="form-text text-danger">@Form.QuantityValidation().ErrorValue</small>
         }
@@ -73,7 +74,7 @@
         @if (Form.CategoryMode.IsCreateNew) {
             <div class="form-group col-auto" style="margin-left:10px">
                 <label for="newCategoryName">&nbsp;</label>
-                <input id="newCategoryName" class="form-control" value="@Form.NewCategoryName" @oninput="OnNewCategoryNameChange" @onfocusout="OnNewCategoryNameFocusOut" placeholder="Category name" />
+                <input id="newCategoryName" class="form-control" value="@Form.NewCategoryName.ValueCommitted" @oninput="OnNewCategoryNameChange" @onfocusout="OnNewCategoryNameFocusOut" placeholder="Category name" />
                 @if (Form.CategoryNameValidation().IsError) {
                     <small class="form-text text-danger">@Form.CategoryNameValidation().ErrorValue</small>
                 }
@@ -133,7 +134,7 @@
     }
     <div class="form-group">
         <label for="noteTextArea">Note</label>
-        <textarea id="noteTextArea" class="form-control" style="width:400px" rows="3" @oninput="OnNoteChange" @onfocusout="OnNoteFocusOut" placeholder="preferred brand, extra soft!, ..." value="@Form.Note" />
+        <textarea id="noteTextArea" class="form-control" style="width:400px" rows="3" @oninput="OnNoteChange" @onfocusout="OnNoteFocusOut" placeholder="preferred brand, extra soft!, ..." value="@Form.Note.ValueCommitted" />
         @if (Form.NoteValidation().IsError) {
             <small class="form-text text-danger">@Form.NoteValidation().ErrorValue</small>
         }

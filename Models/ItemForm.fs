@@ -5,28 +5,28 @@ open System
 open System.Runtime.CompilerServices
 open StateTypes
 
-let itemNameValidation f = f.ItemNameProposed |> ItemName.tryParse
-let itemNameChange s f = { f with ItemNameProposed = s }
+let itemNameValidation (f:ItemForm) = f.ItemName.ValueTyping |> ItemName.tryParse
+let itemNameChange s (f:ItemForm)  = { f with ItemName = f.ItemName |> TextBox.typeText s }
 
 let itemNameBlur f =
     { f with
-          ItemForm.ItemName = f.ItemNameProposed |> ItemName.normalizer }
+          ItemForm.ItemName = f.ItemName |> TextBox.loseFocus ItemName.normalizer }
 
-let quantityValidation f =
-    f.QuantityProposed |> Quantity.tryParseOptional
+let quantityValidation (f:ItemForm) =
+    f.Quantity.ValueTyping |> Quantity.tryParseOptional
 
-let quantityChange s f = { f with QuantityProposed = s }
+let quantityChange s (f:ItemForm) = { f with Quantity = f.Quantity |> TextBox.typeText s }
 
 let quantityBlur f =
     { f with
-          ItemForm.Quantity = f.QuantityProposed |> Quantity.normalizer }
+          ItemForm.Quantity = f.Quantity |> TextBox.loseFocus Quantity.normalizer }
 
-let noteChange s f = { f with NoteProposed = s }
-let noteValidation f = f.NoteProposed |> Note.tryParseOptional
+let noteChange s (f:ItemForm) = { f with Note = f.Note |> TextBox.typeText s }
+let noteValidation (f:ItemForm) = f.Note.ValueTyping |> Note.tryParseOptional
 
 let noteBlur f =
     { f with
-          ItemForm.Note = f.NoteProposed |> Note.normalizer }
+          ItemForm.Note = f.Note |> TextBox.loseFocus Note.normalizer }
 
 let categoryModeChooseExisting f = { f with CategoryMode = ChooseExisting }
 let categoryModeCreateNew f = { f with CategoryMode = CreateNew }
@@ -44,21 +44,19 @@ let chooseCategory i f =
               |> List.find (fun j -> j.CategoryId = StateTypes.CategoryId i)
               |> Some }
 
-let categoryNameValidation f =
-    f.NewCategoryNameProposed |> CategoryName.tryParse
+let categoryNameValidation (f:ItemForm) =
+    f.NewCategoryName.ValueTyping |>  CategoryName.tryParse
 
-let categoryNameChange s f = { f with NewCategoryNameProposed = s }
+let categoryNameChange s (f:ItemForm) = { f with NewCategoryName = f.NewCategoryName |> TextBox.typeText s }
 
 let categoryNameBlur (f: ItemForm) =
-    let normalized =
-        f.NewCategoryNameProposed
-        |> CategoryName.normalizer
+    let normalized = f.NewCategoryName |> TextBox.loseFocus CategoryName.normalizer
 
     let exists =
         f.CategoryChoiceList
         |> Seq.tryFind (fun i ->
             String.Equals
-                (i.CategoryName |> CategoryName.asText, normalized, StringComparison.InvariantCultureIgnoreCase))
+                (i.CategoryName |> CategoryName.asText, normalized.ValueCommitted, StringComparison.InvariantCultureIgnoreCase))
 
     match exists with
     | None -> { f with NewCategoryName = normalized }
@@ -66,7 +64,7 @@ let categoryNameBlur (f: ItemForm) =
         { f with
               CategoryMode = ChooseExisting
               CategoryChoice = Some c
-              NewCategoryName = "" }
+              NewCategoryName = TextBox.create "" }
 
 let scheduleOnce f = { f with ScheduleKind = Once }
 let scheduleCompleted f = { f with ScheduleKind = Completed }
@@ -159,19 +157,15 @@ let canDelete (f: ItemForm) = f.ItemId.IsSome
 
 let createNewItem itemName stores cats =
     { ItemId = None
-      ItemName = itemName
-      ItemNameProposed = itemName
+      ItemName = TextBox.create itemName
       Etag = None
-      Quantity = ""
-      QuantityProposed = ""
-      Note = ""
-      NoteProposed = ""
+      Quantity = TextBox.create ""
+      Note = TextBox.create ""
       ScheduleKind = ScheduleKind.Once
       Frequency = Frequency.goodDefault
       Postpone = postponeDefault
       CategoryMode = CategoryMode.ChooseExisting
-      NewCategoryName = ""
-      NewCategoryNameProposed = ""
+      NewCategoryName = TextBox.create ""
       CategoryChoice = None
       CategoryChoiceList =
           cats
@@ -187,25 +181,18 @@ let createNewItem itemName stores cats =
 
 let editItem (clock: Now) cats (i: QueryTypes.ItemQry) =
     { ItemId = Some i.ItemId
-      ItemName = i.ItemName |> ItemName.asText
-      ItemNameProposed = i.ItemName |> ItemName.asText
+      ItemName = i.ItemName |> ItemName.asText |> TextBox.create
       Etag = i.Etag
       Quantity =
           i.Quantity
           |> Option.map Quantity.asText
           |> Option.defaultValue ""
-      QuantityProposed =
-          i.Quantity
-          |> Option.map Quantity.asText
-          |> Option.defaultValue ""
+          |> TextBox.create
       Note =
           i.Note
           |> Option.map Note.asText
           |> Option.defaultValue ""
-      NoteProposed =
-          i.Note
-          |> Option.map Note.asText
-          |> Option.defaultValue ""
+          |> TextBox.create
       ScheduleKind =
           match i.Schedule with
           | StateTypes.Schedule.Completed -> Completed
@@ -222,8 +209,7 @@ let editItem (clock: Now) cats (i: QueryTypes.ItemQry) =
           | StateTypes.Schedule.Once -> postponeDefault
           | StateTypes.Schedule.Repeat r -> r |> Repeat.due (clock ())
       CategoryMode = CategoryMode.ChooseExisting
-      NewCategoryName = ""
-      NewCategoryNameProposed = ""
+      NewCategoryName = "" |> TextBox.create
       CategoryChoice = i.Category
       CategoryChoiceList =
           cats

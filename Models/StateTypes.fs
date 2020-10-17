@@ -110,23 +110,17 @@ type ItemAvailability = { Store: Store; IsSold: bool }
 // If this was a generic add-on to State, maybe could define this and it's
 // extension methods in one file (using implicit extensions) later in the
 // dependency order.
-//
-// Use TextBox here
 type ItemForm =
     { ItemId: ItemId option
-      ItemNameProposed: string
-      ItemName: string
+      ItemName : TextBox
       Etag: Etag option
-      Quantity: string
-      QuantityProposed: string
-      Note: string
-      NoteProposed: string
+      Quantity: TextBox
+      Note: TextBox
       ScheduleKind: ScheduleKind
       Frequency: Frequency
       Postpone: int<days> option
       CategoryMode: CategoryMode
-      NewCategoryName: string
-      NewCategoryNameProposed: string
+      NewCategoryName: TextBox
       CategoryChoice: Category option
       CategoryChoiceList: Category list
       Stores: ItemAvailability list }
