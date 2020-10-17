@@ -27,13 +27,13 @@ let submit (s: State) =
 
         let s =
             match form with
-            | CategoryEditFormResult.InsertCategory c ->
+            | CategoryEditForm.FormResult.InsertCategory c ->
                 s
                 |> StateUpdateCore.insertCategory
                     { CategoryName = c
                       CategoryId = CategoryId.create ()
                       Etag = None }
-            | CategoryEditFormResult.EditCategory c -> s |> StateUpdateCore.updateCategory c
+            | CategoryEditForm.FormResult.EditCategory c -> s |> StateUpdateCore.updateCategory c
 
         return s |> cancel
     }

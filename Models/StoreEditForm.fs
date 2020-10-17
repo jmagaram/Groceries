@@ -4,6 +4,14 @@ module Models.StoreEditForm
 open System.Runtime.CompilerServices
 open StateTypes
 
+type FormResult =
+    | InsertStore of StoreName
+    | EditStore of Store
+
+type FormMode =
+    | CreateNewStoreMode
+    | EditExistingStoreMode
+
 let createNew =
     { StoreId = None
       StoreName = TextBox.create ""
@@ -33,10 +41,6 @@ let validateStoreName f = f.StoreName.ValueTyping |> StoreName.tryParse
 
 let hasErrors f = f |> validateStoreName |> Result.isError
 
-type FormMode =
-    | CreateNewStoreMode
-    | EditExistingStoreMode
-
 let mode f =
     match f.StoreId with
     | None -> CreateNewStoreMode
@@ -48,8 +52,8 @@ let tryCommit f =
 
         return
             match f.StoreId with
-            | None -> StoreEditFormResult.InsertStore name
-            | Some id -> StoreEditFormResult.EditStore { StoreId = id; Etag = f.Etag; StoreName = name }
+            | None -> FormResult.InsertStore name
+            | Some id -> FormResult.EditStore { StoreId = id; Etag = f.Etag; StoreName = name }
     }
 
 let handle msg f =

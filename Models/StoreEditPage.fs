@@ -27,13 +27,13 @@ let submit (s: State) =
 
         let s =
             match form with
-            | StoreEditFormResult.InsertStore c ->
+            | StoreEditForm.FormResult.InsertStore c ->
                 s
                 |> StateUpdateCore.insertStore
                     { StoreName = c
                       StoreId = StoreId.create ()
                       Etag = None }
-            | StoreEditFormResult.EditStore c -> s |> StateUpdateCore.updateStore c
+            | StoreEditForm.FormResult.EditStore c -> s |> StateUpdateCore.updateStore c
 
         return s |> cancel
     }

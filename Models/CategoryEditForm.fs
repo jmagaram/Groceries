@@ -4,6 +4,14 @@ module Models.CategoryEditForm
 open System.Runtime.CompilerServices
 open StateTypes
 
+type FormMode =
+    | CreateNewCategoryMode
+    | EditExistingCategoryMode
+
+type FormResult=
+    | InsertCategory of CategoryName
+    | EditCategory of Category
+
 let createNew =
     { CategoryId = None
       CategoryName = TextBox.create ""
@@ -33,10 +41,6 @@ let validateCategoryName f = f.CategoryName.ValueTyping |> CategoryName.tryParse
 
 let hasErrors f = f |> validateCategoryName |> Result.isError
 
-type FormMode =
-    | CreateNewCategoryMode
-    | EditExistingCategoryMode
-
 let mode f =
     match f.CategoryId with
     | None -> CreateNewCategoryMode
@@ -48,8 +52,8 @@ let tryCommit f =
 
         return
             match f.CategoryId with
-            | None -> CategoryEditFormResult.InsertCategory name
-            | Some id -> CategoryEditFormResult.EditCategory { CategoryId = id; Etag = f.Etag; CategoryName = name }
+            | None -> FormResult.InsertCategory name
+            | Some id -> FormResult.EditCategory { CategoryId = id; Etag = f.Etag; CategoryName = name }
     }
 
 let handle msg f =

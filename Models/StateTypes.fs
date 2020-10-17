@@ -137,10 +137,6 @@ type CategoryEditForm =
       CategoryName: TextBox
       Etag: Etag option }
 
-type CategoryEditFormResult =
-    | InsertCategory of CategoryName
-    | EditCategory of Category
-
 type CategoryEditFormMessage = CategoryNameMessage of TextBoxMessage
 
 type CategoryEditPageMessage =
@@ -155,10 +151,6 @@ type StoreEditForm =
     { StoreId: StoreId option
       StoreName: TextBox
       Etag: Etag option }
-
-type StoreEditFormResult =
-    | InsertStore of StoreName
-    | EditStore of Store
 
 // Not sure these message/command types need to be displayed here; maybe later
 // in the project dependency order
