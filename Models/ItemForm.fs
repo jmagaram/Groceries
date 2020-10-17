@@ -185,7 +185,7 @@ let createNewItem itemName stores cats =
           |> Seq.sortBy (fun i -> i.Store.StoreName)
           |> List.ofSeq }
 
-let editItem (clock: Clock) cats (i: QueryTypes.ItemQry) =
+let editItem (clock: Now) cats (i: QueryTypes.ItemQry) =
     { ItemId = Some i.ItemId
       ItemName = i.ItemName |> ItemName.asText
       ItemNameProposed = i.ItemName |> ItemName.asText
@@ -234,11 +234,11 @@ let editItem (clock: Clock) cats (i: QueryTypes.ItemQry) =
           |> Seq.sortBy (fun i -> i.Store.StoreName)
           |> List.ofSeq }
 
-let editItemFromGuid (itemId: Guid) (clock: Clock) (s: StateTypes.State) =
+let editItemFromGuid (itemId: Guid) (clock: Now) (s: StateTypes.State) =
     let itemQry = s |> StateQuery.itemQryFromGuid itemId
     editItem clock (s |> StateQuery.categories) itemQry
 
-let editItemFromSerializedId (itemId: string) (clock: Clock) (s: StateTypes.State) =
+let editItemFromSerializedId (itemId: string) (clock: Now) (s: StateTypes.State) =
     let itemId = ItemId.deserialize itemId |> Option.get
 
     let item =

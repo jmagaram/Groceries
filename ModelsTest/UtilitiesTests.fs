@@ -7,7 +7,7 @@ open FsUnit.Xunit
 open FsCheck
 open FsCheck.Xunit
 
-module CommonTests =
+module MemoizeTests =
 
     let add nums = nums |> Seq.sum
     let addMemoized = memoizeLast (add, (fun i j -> i = j))

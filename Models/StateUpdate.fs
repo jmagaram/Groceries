@@ -173,7 +173,7 @@ let buyAgain id s =
     s |> mapItems (DataTable.update item)
 
 let rec update msg s =
-    let now = DateTimeOffset.Now
+    let now = clock()
 
     match msg with
     | CategoryEditPageMessage msg -> s |> CategoryEditPage.handle msg |> Result.okOrThrow

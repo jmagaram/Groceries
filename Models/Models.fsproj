@@ -5,20 +5,12 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Compile Include="CommonTypes.fs" />
-    <Compile Include="Common.fs" />
-    <Compile Include="Map.fs" />
-    <Compile Include="Option.fs" />
-    <Compile Include="Seq.fs" />
-    <Compile Include="Result.fs" />
-    <Compile Include="String.fs" />
-    <Compile Include="Math.fs" />
+    <Compile Include="UtilitiesTypes.fs" />
+    <Compile Include="Utilities.fs" />
     <Compile Include="ChangeTrackerTypes.fs" />
-    <Compile Include="DataRow.fs" />
-    <Compile Include="DataTable.fs" />
+    <Compile Include="ChangeTracker.fs" />
     <Compile Include="ValidationTypes.fs" />
-    <Compile Include="StringValidation.fs" />
-    <Compile Include="RangeValidation.fs" />
+    <Compile Include="Validation.fs" />
     <Compile Include="StateTypes.fs" />
     <Compile Include="Etag.fs" />
     <Compile Include="Item.fs" />
