@@ -26,7 +26,6 @@ let createDefault =
       NotSoldItems = DataTable.empty
       ShoppingListSettings = DataRow.unchanged ShoppingListSettings.create
       LastCosmosTimestamp = None
-      ItemEditForm = None 
       CategoryEditPage = None
       StoreEditPage = None
       ItemEditPage = None }

@@ -216,7 +216,6 @@ type State =
       NotSoldItems: NotSoldItemTable
       ShoppingListSettings: ShoppingListSettingsRow
       LastCosmosTimestamp: int option
-      ItemEditForm: ItemForm option
       CategoryEditPage: CategoryEditForm option 
       StoreEditPage : StoreEditForm option 
       ItemEditPage : ItemForm option }
