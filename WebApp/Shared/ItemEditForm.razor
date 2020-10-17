@@ -1,6 +1,7 @@
 ﻿@using Microsoft.FSharp.Core;
-@using static Models.ItemForm;
+@using static Models.ItemFormModule;
 @using static Common.OptionExtensions;
+@using static Models.ItemFormModule.ItemFormExtensions; 
 <style>
     .nav-pills li {
         margin-right: 5px;
@@ -16,7 +17,7 @@
         }
     </div>
     <ul class="col col-auto form-inline nav nav-pills">
-        @if (Form.CanDelete) {
+        @if (Form.CanDelete()) {
             <li>
                 @*Delete*@
                 <button class="btn btn-secondary" type="button" @onclick="_=>OnDelete()"><span class="oi oi-trash" aria-hidden="true"></span></button>
@@ -24,15 +25,15 @@
         }
         @if (!Form.ScheduleKind.IsCompleted) {
             <li>
-                <button type="button" disabled="@Form.HasErrors" class="btn btn-secondary" @onclick="OnSubmitPurchased">Complete</button>
+                <button type="button" disabled="@Form.HasErrors()" class="btn btn-secondary" @onclick="OnSubmitPurchased">Complete</button>
             </li>
             <li>
-                <button class="btn btn-primary" type="button" @onclick="_=>OnSaveChanges()" disabled="@Form.HasErrors">&nbsp;&nbsp;Save&nbsp;&nbsp;</button>
+                <button class="btn btn-primary" type="button" @onclick="_=>OnSaveChanges()" disabled="@Form.HasErrors()">&nbsp;&nbsp;Save&nbsp;&nbsp;</button>
             </li>
         }
         else {
             <li>
-                <button type="button" disabled="@Form.HasErrors" class="btn btn-primary" @onclick="AddToShoppingListAgain">Buy again</button>
+                <button type="button" disabled="@Form.HasErrors()" class="btn btn-primary" @onclick="AddToShoppingListAgain">Buy again</button>
             </li>
         }
     </ul>
@@ -41,15 +42,15 @@
     <div class="form-group">
         <label for="itemNameInput">Item</label>
         <input id="itemNameInput" class="form-control" @oninput="OnItemNameChange" @onfocusout="OnItemNameFocusOut" placeholder="Apples, Canned Tuna, ..." value="@Form.ItemName" />
-        @if (Form.ItemNameValidation.IsError) {
-            <small class="form-text text-danger">@Form.ItemNameValidation.ErrorValue</small>
+        @if (Form.ItemNameValidation().IsError) {
+            <small class="form-text text-danger">@Form.ItemNameValidation().ErrorValue</small>
         }
     </div>
     <div class="form-group">
         <label for="quantityInput">Quantity</label>
         <input id="quantityInput" class="form-control" @oninput="OnQuantityChange" @onfocusout="OnQuantityFocusOut" placeholder="several, 2 lb., lots, ..." value="@Form.Quantity" />
-        @if (Form.QuantityValidation.IsError) {
-            <small class="form-text text-danger">@Form.QuantityValidation.ErrorValue</small>
+        @if (Form.QuantityValidation().IsError) {
+            <small class="form-text text-danger">@Form.QuantityValidation().ErrorValue</small>
         }
     </div>
     <div class="form-row">
@@ -73,8 +74,8 @@
             <div class="form-group col-auto" style="margin-left:10px">
                 <label for="newCategoryName">&nbsp;</label>
                 <input id="newCategoryName" class="form-control" value="@Form.NewCategoryName" @oninput="OnNewCategoryNameChange" @onfocusout="OnNewCategoryNameFocusOut" placeholder="Category name" />
-                @if (Form.CategoryNameValidation.IsError) {
-                    <small class="form-text text-danger">@Form.CategoryNameValidation.ErrorValue</small>
+                @if (Form.CategoryNameValidation().IsError) {
+                    <small class="form-text text-danger">@Form.CategoryNameValidation().ErrorValue</small>
                 }
             </div>
         }
@@ -83,8 +84,8 @@
         <div class="col-auto">
             <label for="selectFrequency">Frequency</label>
             <select class="form-control" @onchange="OnRepeatChange" id="selectFrequency">
-                @foreach (var i in Form.FrequencyChoices) {
-                    string description = Models.ItemForm.frequencyAsText(i);
+                @foreach (var i in Form.FrequencyChoices()) {
+                    string description = Models.ItemFormModule.frequencyAsText(i);
                     string key = i.Item.ToString();
                     bool isSelected = i.Equals(Form.Frequency);
                     <option selected="@isSelected" value="@key">@description</option>
@@ -109,8 +110,8 @@
             <div class="col-auto">
                 <label>&nbsp;</label>
                 <select @attributes="@attr" class="form-control" @onchange="OnPostponeChange">
-                    @foreach (var i in Form.PostponeChoices) {
-                        string description = Models.ItemForm.postponeDurationAsText(i);
+                    @foreach (var i in Form.PostponeChoices()) {
+                        string description = Models.ItemFormModule.postponeDurationAsText(i);
                         string key = i.ToString();
                         bool isSelected = Form.Postpone.IsSomeValue(i);
                         <option selected="@isSelected" value="@key">+@description</option>
@@ -133,8 +134,8 @@
     <div class="form-group">
         <label for="noteTextArea">Note</label>
         <textarea id="noteTextArea" class="form-control" style="width:400px" rows="3" @oninput="OnNoteChange" @onfocusout="OnNoteFocusOut" placeholder="preferred brand, extra soft!, ..." value="@Form.Note" />
-        @if (Form.NoteValidation.IsError) {
-            <small class="form-text text-danger">@Form.NoteValidation.ErrorValue</small>
+        @if (Form.NoteValidation().IsError) {
+            <small class="form-text text-danger">@Form.NoteValidation().ErrorValue</small>
         }
     </div>
 </form>

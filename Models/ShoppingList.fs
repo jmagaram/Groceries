@@ -17,10 +17,11 @@ and ItemAvailability = { Store: Store; IsSold: bool }
 
 type ShoppingList =
     { Items: Item list
+      ItemEdited: ItemForm option
       StoreFilter: Store option
       Stores: Store list
-      SearchTerm: SearchTerm option 
-      HasChanges : bool }
+      SearchTerm: SearchTerm option
+      HasChanges: bool }
 
 let private createItem find (item: StateTypes.Item) state =
     let find =
@@ -31,40 +32,33 @@ let private createItem find (item: StateTypes.Item) state =
     { ItemId = item.ItemId
       ItemName = item.ItemName |> ItemName.asText |> find
       Note = item.Note |> Option.map (Note.asText >> find)
-      Quantity =
-          item.Quantity
-          |> Option.map (Quantity.asText >> find)
+      Quantity = item.Quantity |> Option.map (Quantity.asText >> find)
       Category =
           item.CategoryId
           |> Option.map (fun c ->
               state
-              |> State.categoriesTable
+              |> StateQuery.categoriesTable
               |> DataTable.findCurrent c)
       Schedule = item.Schedule
       Availability =
           state
-          |> State.stores
+          |> StateQuery.stores
           |> Seq.map (fun st ->
               { Store = st
                 IsSold =
                     state
-                    |> State.notSoldItemsTable
-                    |> DataTable.tryFindCurrent
-                        { StoreId = st.StoreId
-                          ItemId = item.ItemId }
-                    |> Option.isNone }) 
-       }
+                    |> StateQuery.notSoldItemsTable
+                    |> DataTable.tryFindCurrent { StoreId = st.StoreId; ItemId = item.ItemId }
+                    |> Option.isNone }) }
 
 let create now state =
-    let settings = state |> State.settings
+    let settings = state |> StateQuery.settings
 
-    let find =
-        settings.ItemTextFilter
-        |> Option.map Highlighter.create
+    let find = settings.ItemTextFilter |> Option.map Highlighter.create
 
     let items now =
         state
-        |> State.items
+        |> StateQuery.items
         |> Seq.map (fun item -> createItem find item state)
         |> Seq.filter (fun i ->
             let isCompletedMatch =
@@ -81,11 +75,10 @@ let create now state =
 
             let isPostponedMatch = // hack
                 match i.Schedule with
-                | StateTypes.Schedule.Repeat r -> 
+                | StateTypes.Schedule.Repeat r ->
                     let due = i.Schedule |> Schedule.due now
 
-                    let horizon =
-                        now.AddDays(settings.PostponedViewHorizon |> float)
+                    let horizon = now.AddDays(settings.PostponedViewHorizon |> float)
 
                     due <= horizon
                 | _ -> true
@@ -108,25 +101,20 @@ let create now state =
 
                     name || note || qty
 
-            if find.IsSome then
-                isTextMatch
-            else
-                isCompletedMatch
-                && isStoreMatch
-                && isPostponedMatch)
+            if find.IsSome then isTextMatch else isCompletedMatch && isStoreMatch && isPostponedMatch)
         |> Seq.toList
 
     let storeFilter =
         settings.StoreFilter
-        |> Option.map (fun sid ->
-            state
-            |> State.storesTable
-            |> DataTable.findCurrent sid)
+        |> Option.map (fun sid -> state |> StateQuery.storesTable |> DataTable.findCurrent sid)
 
-    let stores = state |> State.stores |> List.ofSeq
+    let stores = state |> StateQuery.stores |> List.ofSeq
 
     { Items = items now
       StoreFilter = storeFilter
       SearchTerm = settings.ItemTextFilter
-      Stores = stores 
-      HasChanges = state |> State.hasChanges || state.LastCosmosTimestamp.IsNone}
+      Stores = stores
+      HasChanges =
+          state |> StateQuery.hasChanges
+          || state.LastCosmosTimestamp.IsNone
+      ItemEdited = None }

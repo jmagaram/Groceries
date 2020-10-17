@@ -2,10 +2,6 @@
 open Models
 open StateTypes
 
-type ItemAvailability =
-    { Store : Store
-      IsSold : bool }
-
 type ItemQry =
     { ItemId: ItemId
       ItemName: ItemName

@@ -4,69 +4,68 @@ using Models;
 using System;
 using System.Collections.Generic;
 using WebApp.Common;
+using static Models.ItemFormModule.ItemFormExtensions;
 
 namespace WebApp.Shared {
     public partial class ItemEditForm : ComponentBase {
         [Parameter]
-        public ItemForm.Form Form { get; set; }
+        public StateTypes.ItemForm Form { get; set; }
 
-        private void Process(ItemForm.ItemFormMessage msg) {
-            Form = ItemForm.handleMessage(msg, Form);
-        }
+        private void Process(StateTypes.ItemFormMessage msg) => 
+            OnItemFormMessage.InvokeAsync(msg);
+
         protected void OnItemNameChange(ChangeEventArgs e) =>
-            Process(ItemForm.ItemFormMessage.NewItemNameSet((string)e.Value));
+            Process(StateTypes.ItemFormMessage.NewItemNameSet((string)e.Value));
 
         protected void OnItemNameFocusOut(FocusEventArgs e) =>
-            Process(ItemForm.ItemFormMessage.ItemNameBlur);
+            Process(StateTypes.ItemFormMessage.ItemNameBlur);
 
         protected void OnQuantityChange(ChangeEventArgs e) =>
-            Process(ItemForm.ItemFormMessage.NewQuantitySet((string)e.Value));
+            Process(StateTypes.ItemFormMessage.NewQuantitySet((string)e.Value));
 
         protected void OnQuantityFocusOut(FocusEventArgs e) =>
-            Process(ItemForm.ItemFormMessage.QuantityBlur);
+            Process(StateTypes.ItemFormMessage.QuantityBlur);
 
         protected void OnNoteChange(ChangeEventArgs e) =>
-            Process(ItemForm.ItemFormMessage.NewNoteSet((string)e.Value));
+            Process(StateTypes.ItemFormMessage.NewNoteSet((string)e.Value));
 
         protected void OnNoteFocusOut(FocusEventArgs e) =>
-            Process(ItemForm.ItemFormMessage.NoteBlur);
+            Process(StateTypes.ItemFormMessage.NoteBlur);
 
         protected void OnNewCategoryNameChange(ChangeEventArgs e) =>
-            Process(ItemForm.ItemFormMessage.NewNewCategoryNameSet((string)e.Value));
+            Process(StateTypes.ItemFormMessage.NewNewCategoryNameSet((string)e.Value));
 
         protected void OnScheduleOnce(ChangeEventArgs e) =>
-            Process(ItemForm.ItemFormMessage.ScheduleOnce);
+            Process(StateTypes.ItemFormMessage.ScheduleOnce);
 
         protected void OnClickScheduleOnce() =>
-            Process(ItemForm.ItemFormMessage.ScheduleOnce);
+            Process(StateTypes.ItemFormMessage.ScheduleOnce);
 
         protected void OnScheduleRepeat(ChangeEventArgs e) =>
-            Process(ItemForm.ItemFormMessage.ScheduleRepeat);
+            Process(StateTypes.ItemFormMessage.ScheduleRepeat);
 
         protected void OnScheduleCompleted(ChangeEventArgs e) =>
-            Process(ItemForm.ItemFormMessage.ScheduleCompleted);
+            Process(StateTypes.ItemFormMessage.ScheduleCompleted);
 
-        protected void OnSaveChanges() {
-            OnSaveChangesCallback.InvokeAsync(Form.ItemFormResult(DateTimeOffset.Now));
-        }
+        protected void OnSaveChanges() => OnSaveChangesCallback.InvokeAsync(null);
 
         protected void OnSubmitPurchased() {
-            Process(ItemForm.ItemFormMessage.Purchased);
-            OnSaveChangesCallback.InvokeAsync(Form.ItemFormResult(DateTimeOffset.Now));
+            Process(StateTypes.ItemFormMessage.Purchased);
+            OnSaveChangesCallback.InvokeAsync(null);
         }
 
         protected void OnSubmitPostponed(int days) {
-            Process(ItemForm.ItemFormMessage.NewPostponeSet(days));
-            OnSaveChangesCallback.InvokeAsync(Form.ItemFormResult(DateTimeOffset.Now));
+            Process(StateTypes.ItemFormMessage.NewPostponeSet(days));
+            OnSaveChangesCallback.InvokeAsync(null);
         }
 
         protected void AddToShoppingListAgain() {
-            Process(ItemForm.ItemFormMessage.ScheduleOnce);
-            OnSaveChangesCallback.InvokeAsync(Form.ItemFormResult(DateTimeOffset.Now));
+            Process(StateTypes.ItemFormMessage.ScheduleOnce);
+            OnSaveChangesCallback.InvokeAsync(null);
         }
 
         protected void OnNewCategoryNameFocusOut(FocusEventArgs e) =>
-            Process(ItemForm.ItemFormMessage.NewCategoryNameBlur);
+            Process(StateTypes.ItemFormMessage.NewCategoryNameBlur);
 
         const string chooseUncategorized = "chooseUncategorized";
         const string chooseCreateNewCategory = "chooseNewCategory";
@@ -74,19 +73,19 @@ namespace WebApp.Shared {
         protected void OnExistingCategoryChange(ChangeEventArgs e) {
             string value = (string)(e.Value);
             if (value == chooseUncategorized) {
-                var chooseUncategorized = ItemForm.ItemFormMessage.ChooseCategoryUncategorized;
-                var modeIsChoose = ItemForm.ItemFormMessage.CategoryModeChooseExisting;
-                var trans = ItemForm.ItemFormMessage.NewTransaction(new List<ItemForm.ItemFormMessage> { modeIsChoose, chooseUncategorized });
+                var chooseUncategorized = StateTypes.ItemFormMessage.ChooseCategoryUncategorized;
+                var modeIsChoose = StateTypes.ItemFormMessage.CategoryModeChooseExisting;
+                var trans = StateTypes.ItemFormMessage.NewTransaction(new List<StateTypes.ItemFormMessage> { modeIsChoose, chooseUncategorized });
                 Process(trans);
             }
             else if (value == chooseCreateNewCategory) {
-                var modeIsCreateNew = ItemForm.ItemFormMessage.CategoryModeCreateNew;
+                var modeIsCreateNew = StateTypes.ItemFormMessage.CategoryModeCreateNew;
                 Process(modeIsCreateNew);
             }
             else if (Guid.TryParse(value, out Guid categoryId)) {
-                var chooseSomeCat = ItemForm.ItemFormMessage.NewChooseCategory(categoryId);
-                var modeIsChoose = ItemForm.ItemFormMessage.CategoryModeChooseExisting;
-                var trans = ItemForm.ItemFormMessage.NewTransaction(new List<ItemForm.ItemFormMessage> { modeIsChoose, chooseSomeCat });
+                var chooseSomeCat = StateTypes.ItemFormMessage.NewChooseCategory(categoryId);
+                var modeIsChoose = StateTypes.ItemFormMessage.CategoryModeChooseExisting;
+                var trans = StateTypes.ItemFormMessage.NewTransaction(new List<StateTypes.ItemFormMessage> { modeIsChoose, chooseSomeCat });
                 Process(trans);
             }
         }
@@ -96,15 +95,15 @@ namespace WebApp.Shared {
         protected void OnRepeatChange(ChangeEventArgs e) {
             if (int.TryParse((string)(e.Value), out int d)) {
                 if (d == notRepeating) {
-                    var removePostpone = ItemForm.ItemFormMessage.PostponeClear;
-                    var scheduleOnce = ItemForm.ItemFormMessage.ScheduleOnce;
-                    var trans = ItemForm.ItemFormMessage.NewTransaction(new List<ItemForm.ItemFormMessage> { removePostpone, scheduleOnce });
+                    var removePostpone = StateTypes.ItemFormMessage.PostponeClear;
+                    var scheduleOnce = StateTypes.ItemFormMessage.ScheduleOnce;
+                    var trans = StateTypes.ItemFormMessage.NewTransaction(new List<StateTypes.ItemFormMessage> { removePostpone, scheduleOnce });
                     Process(trans);
                 }
                 else {
-                    var scheduleIsRepeat = ItemForm.ItemFormMessage.ScheduleRepeat;
-                    var setFrequency = ItemForm.ItemFormMessage.NewFrequencySet(d);
-                    var trans = ItemForm.ItemFormMessage.NewTransaction(new List<ItemForm.ItemFormMessage> { scheduleIsRepeat, setFrequency });
+                    var scheduleIsRepeat = StateTypes.ItemFormMessage.ScheduleRepeat;
+                    var setFrequency = StateTypes.ItemFormMessage.NewFrequencySet(d);
+                    var trans = StateTypes.ItemFormMessage.NewTransaction(new List<StateTypes.ItemFormMessage> { scheduleIsRepeat, setFrequency });
                     Process(trans);
                 }
             }
@@ -115,43 +114,46 @@ namespace WebApp.Shared {
         protected void OnPostponeChange(ChangeEventArgs e) {
             string value = (string)(e.Value);
             if (value == notPostponed) {
-                Process(ItemForm.ItemFormMessage.PostponeClear);
+                Process(StateTypes.ItemFormMessage.PostponeClear);
             }
             else if (int.TryParse(value, out int days)) {
-                Process(ItemForm.ItemFormMessage.NewPostponeSet(days));
+                Process(StateTypes.ItemFormMessage.NewPostponeSet(days));
             }
         }
 
         protected void OnPostponeClick(int days) =>
-            Process(ItemForm.ItemFormMessage.NewPostponeSet(days));
+            Process(StateTypes.ItemFormMessage.NewPostponeSet(days));
 
         protected void OnPostponeClear() =>
-            Process(ItemForm.ItemFormMessage.PostponeClear);
+            Process(StateTypes.ItemFormMessage.PostponeClear);
 
         protected void OnPostponeToggle() {
             if (Form.Postpone.IsNone()) {
-                Process(ItemForm.ItemFormMessage.NewPostponeSet(7));
+                Process(StateTypes.ItemFormMessage.NewPostponeSet(7));
             }
             else {
-                Process(ItemForm.ItemFormMessage.PostponeClear);
+                Process(StateTypes.ItemFormMessage.PostponeClear);
             }
         }
 
         protected void OnCancel() => OnCancelCallback.InvokeAsync(null);
 
-        protected void OnDelete() => OnDeleteCallback.InvokeAsync(Form.ItemId.Value);
+        protected void OnDelete() => OnDeleteCallback.InvokeAsync(null);
 
         protected void OnStoreChange(ChangeEventArgs e, StateTypes.StoreId store) =>
-            Process(ItemForm.ItemFormMessage.NewStoresSetAvailability(store, (bool)e.Value));
+            Process(StateTypes.ItemFormMessage.NewStoresSetAvailability(store, (bool)e.Value));
 
         [Parameter]
-        public EventCallback<StateTypes.ItemId> OnDeleteCallback { get; set; }
+        public EventCallback OnDeleteCallback { get; set; }
 
         [Parameter]
         public EventCallback OnCancelCallback { get; set; }
 
         [Parameter]
-        public EventCallback<ItemForm.ItemFormResult> OnSaveChangesCallback { get; set; }
+        public EventCallback OnSaveChangesCallback { get; set; }
+
+        [Parameter]
+        public EventCallback<StateTypes.ItemFormMessage> OnItemFormMessage { get; set; }
 
     }
 }

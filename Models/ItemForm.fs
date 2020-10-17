@@ -1,83 +1,32 @@
-﻿module Models.ItemForm
+﻿[<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
+module Models.ItemForm
 
 open System
-
-type ScheduleKind =
-    | Once
-    | Completed
-    | Repeat
-
-type CategoryMode =
-    | ChooseExisting
-    | CreateNew
-
-type Form =
-    { ItemId: StateTypes.ItemId option
-      ItemNameProposed: string
-      ItemName: string
-      Etag: StateTypes.Etag option
-      Quantity: string
-      QuantityProposed: string
-      Note: string
-      NoteProposed: string
-      ScheduleKind: ScheduleKind
-      Frequency: StateTypes.Frequency
-      Postpone: int<days> option
-      CategoryMode: CategoryMode
-      NewCategoryName: string
-      NewCategoryNameProposed: string
-      CategoryChoice: StateTypes.Category option
-      CategoryChoiceList: StateTypes.Category list
-      Stores: QueryTypes.ItemAvailability list }
-
-type ItemFormResult =
-    { Item: StateTypes.Item
-      InsertCategory: StateTypes.Category option
-      NotSold: StateTypes.StoreId list }
-
-type ItemFormMessage =
-    | ItemNameSet of string
-    | ItemNameBlur
-    | QuantitySet of string
-    | QuantityBlur
-    | NoteSet of string
-    | NoteBlur
-    | ScheduleOnce
-    | ScheduleCompleted
-    | ScheduleRepeat
-    | FrequencySet of int<days>
-    | PostponeSet of int<days>
-    | PostponeClear
-    | CategoryModeChooseExisting
-    | CategoryModeCreateNew
-    | ChooseCategoryUncategorized
-    | ChooseCategory of Guid
-    | NewCategoryNameSet of string
-    | NewCategoryNameBlur
-    | StoresSetAvailability of store: StateTypes.StoreId * isSold: bool
-    | Purchased
-    | Transaction of ItemFormMessage seq
+open System.Runtime.CompilerServices
+open StateTypes
 
 let itemNameValidation f = f.ItemNameProposed |> ItemName.tryParse
 let itemNameChange s f = { f with ItemNameProposed = s }
 
 let itemNameBlur f =
     { f with
-          ItemName = f.ItemNameProposed |> ItemName.normalizer }
+          ItemForm.ItemName = f.ItemNameProposed |> ItemName.normalizer }
 
-let quantityValidation f = f.QuantityProposed |> Quantity.tryParseOptional
+let quantityValidation f =
+    f.QuantityProposed |> Quantity.tryParseOptional
+
 let quantityChange s f = { f with QuantityProposed = s }
 
 let quantityBlur f =
     { f with
-          Quantity = f.QuantityProposed |> Quantity.normalizer }
+          ItemForm.Quantity = f.QuantityProposed |> Quantity.normalizer }
 
 let noteChange s f = { f with NoteProposed = s }
 let noteValidation f = f.NoteProposed |> Note.tryParseOptional
 
 let noteBlur f =
     { f with
-          Note = f.NoteProposed |> Note.normalizer }
+          ItemForm.Note = f.NoteProposed |> Note.normalizer }
 
 let categoryModeChooseExisting f = { f with CategoryMode = ChooseExisting }
 let categoryModeCreateNew f = { f with CategoryMode = CreateNew }
@@ -100,9 +49,10 @@ let categoryNameValidation f =
 
 let categoryNameChange s f = { f with NewCategoryNameProposed = s }
 
-let categoryNameBlur (f: Form) =
+let categoryNameBlur (f: ItemForm) =
     let normalized =
-        f.NewCategoryNameProposed |> CategoryName.normalizer
+        f.NewCategoryNameProposed
+        |> CategoryName.normalizer
 
     let exists =
         f.CategoryChoiceList
@@ -128,13 +78,13 @@ let frequencyCoerceIntoBounds d =
 
 let frequencySet v f =
     { f with
-          Frequency =
+          ItemForm.Frequency =
               v
               |> frequencyCoerceIntoBounds
               |> Frequency.create
               |> Result.okOrThrow }
 
-let frequencyChoices (f: Form) =
+let frequencyChoices (f: ItemForm) =
     f.Frequency :: Frequency.common
     |> Seq.distinct
     |> Seq.sort
@@ -190,7 +140,7 @@ let postponeDurationAsText (d: int<days>) =
         | Some w -> if w = 1 then "1 week" else sprintf "%i weeks" w
         | None -> if d = 1 then "1 day" else sprintf "%i days" d
 
-let postponeChoices (f: Form) =
+let postponeChoices (f: ItemForm) =
     f.Postpone
     :: (Repeat.commonPostponeDays |> List.map Some)
     |> Seq.choose id
@@ -201,11 +151,11 @@ let postponeChoices (f: Form) =
 
 let storesSetAvailability id isSold f =
     { f with
-          Stores =
+          ItemForm.Stores =
               f.Stores
               |> List.map (fun a -> if a.Store.StoreId = id then { a with IsSold = isSold } else a) }
 
-let canDelete (f: Form) = f.ItemId.IsSome
+let canDelete (f: ItemForm) = f.ItemId.IsSome
 
 let createNewItem itemName stores cats =
     { ItemId = None
@@ -230,8 +180,8 @@ let createNewItem itemName stores cats =
       Stores =
           stores
           |> Seq.map (fun i ->
-              { QueryTypes.ItemAvailability.Store = i
-                QueryTypes.ItemAvailability.IsSold = true })
+              { ItemAvailability.Store = i
+                ItemAvailability.IsSold = true })
           |> Seq.sortBy (fun i -> i.Store.StoreName)
           |> List.ofSeq }
 
@@ -285,8 +235,20 @@ let editItem (clock: Clock) cats (i: QueryTypes.ItemQry) =
           |> List.ofSeq }
 
 let editItemFromGuid (itemId: Guid) (clock: Clock) (s: StateTypes.State) =
-    let itemQry = s |> Query.itemQryFromGuid itemId
-    editItem clock (s |> State.categories) itemQry
+    let itemQry = s |> StateQuery.itemQryFromGuid itemId
+    editItem clock (s |> StateQuery.categories) itemQry
+
+let editItemFromSerializedId (itemId: string) (clock: Clock) (s: StateTypes.State) =
+    let itemId = ItemId.deserialize itemId |> Option.get
+
+    let item =
+        s
+        |> StateQuery.itemsTable
+        |> DataTable.findCurrent itemId
+
+    let itemQry = StateQuery.itemQry item s
+    let categories = s |> StateQuery.categories
+    editItem clock categories itemQry
 
 let hasErrors f =
     (f |> itemNameValidation |> Result.isError)
@@ -295,7 +257,7 @@ let hasErrors f =
     || ((f |> categoryModeIsCreateNew)
         && (f |> categoryNameValidation |> Result.isError))
 
-let rec handleMessage msg (f: Form) =
+let rec handleMessage msg (f: ItemForm) =
     match msg with
     | ItemNameSet s -> f |> itemNameChange s
     | ItemNameBlur -> f |> itemNameBlur
@@ -317,9 +279,9 @@ let rec handleMessage msg (f: Form) =
     | NewCategoryNameBlur -> f |> categoryNameBlur
     | StoresSetAvailability (id: StateTypes.StoreId, isSold: bool) -> f |> storesSetAvailability id isSold
     | Purchased -> f |> purchased
-    | Transaction msgs -> msgs |> Seq.fold (fun f m -> handleMessage m f) f
+    | ItemFormMessage.Transaction msgs -> msgs |> Seq.fold (fun f m -> handleMessage m f) f
 
-let asItemFormResult (now: DateTimeOffset) (f: Form) =
+let asItemFormResult (now: DateTimeOffset) (f: ItemForm) =
     let insertCategory =
         match f.CategoryMode with
         | ChooseExisting -> None
@@ -334,19 +296,19 @@ let asItemFormResult (now: DateTimeOffset) (f: Form) =
                       StateTypes.Category.Etag = None }
 
     let item =
-        { StateTypes.Item.ItemId =
+        { Item.ItemId =
               f.ItemId
               |> Option.defaultWith (fun () -> ItemId.create ())
-          StateTypes.Item.ItemName = f |> itemNameValidation |> Result.okOrThrow
-          StateTypes.Item.Etag = f.Etag
-          StateTypes.Item.CategoryId =
+          Item.ItemName = f |> itemNameValidation |> Result.okOrThrow
+          Item.Etag = f.Etag
+          Item.CategoryId =
               match f.CategoryMode with
               | ChooseExisting -> f.CategoryChoice
               | CreateNew -> insertCategory
               |> Option.map (fun i -> i.CategoryId)
-          StateTypes.Item.Quantity = f |> quantityValidation |> Result.okOrThrow
-          StateTypes.Item.Note = f |> noteValidation |> Result.okOrThrow
-          StateTypes.Item.Schedule =
+          Item.Quantity = f |> quantityValidation |> Result.okOrThrow
+          Item.Note = f |> noteValidation |> Result.okOrThrow
+          Item.Schedule =
               match f.ScheduleKind with
               | Completed -> StateTypes.Schedule.Completed
               | Once -> StateTypes.Schedule.Once
@@ -366,50 +328,60 @@ let asItemFormResult (now: DateTimeOffset) (f: Form) =
       InsertCategory = insertCategory
       NotSold = notSold }
 
-type Form with
-    member me.ItemNameValidation = me |> itemNameValidation
-    member me.NoteValidation = me |> noteValidation
-    member me.QuantityValidation = me |> quantityValidation
-    member me.FrequencyChoices = me |> frequencyChoices
-    member me.PostponeChoices = me |> postponeChoices
-    member me.CategoryNameValidation = me |> categoryNameValidation
-    member me.HasErrors = me |> hasErrors
-    member me.ItemFormResult(now) = me |> asItemFormResult now
-    member me.CanDelete = me |> canDelete
+// Needs a GUID for the category; don't bake it in
+let processResult (r: ItemFormResult) (s: State) =
+    let s =
+        match r.InsertCategory with
+        | None -> s
+        | Some c -> s |> StateUpdateCore.insertCategory c
 
-open StateTypes
+    let s = s |> StateUpdateCore.upsertItem r.Item
 
-let itemFormResultAsTransaction (r: ItemFormResult) (s: State) =
-    seq {
-        yield!
-            r.InsertCategory
-            |> Option.map (InsertCategory >> CategoryMessage)
-            |> Option.toList
+    let nsExpected = r.NotSold
 
-        yield r.Item |> (UpsertItem >> ItemMessage)
+    let nsCurrent =
+        s
+        |> StateQuery.notSoldItems
+        |> Seq.choose (fun i -> if i.ItemId = r.Item.ItemId then Some i.StoreId else None)
 
-        let nsExpected = r.NotSold
+    let nsToRemove = nsCurrent |> Seq.except nsExpected
+    let nsToAdd = nsExpected |> Seq.except nsCurrent
 
-        let nsCurrent =
-            s
-            |> State.notSoldItems
-            |> Seq.choose (fun i -> if i.ItemId = r.Item.ItemId then Some i.StoreId else None)
+    let s =
+        nsToRemove
+        |> Seq.map (fun s -> { StoreId = s; ItemId = r.Item.ItemId })
+        |> Seq.fold (fun s i -> s |> StateUpdateCore.deleteNotSoldItem i) s
 
-        let nsToRemove = nsCurrent |> Seq.except nsExpected
-        let nsToAdd = nsExpected |> Seq.except nsCurrent
+    let s =
+        nsToAdd
+        |> Seq.map (fun s -> { StoreId = s; ItemId = r.Item.ItemId })
+        |> Seq.fold (fun s i -> s |> StateUpdateCore.insertNotSoldItem i) s
 
-        yield!
-            nsToAdd
-            |> Seq.map (fun s ->
-                { StateTypes.NotSoldItem.StoreId = s
-                  StateTypes.NotSoldItem.ItemId = r.Item.ItemId }
-                |> (InsertNotSoldItem >> NotSoldItemMessage))
+    s
 
-        yield!
-            nsToRemove
-            |> Seq.map (fun s ->
-                { StateTypes.NotSoldItem.StoreId = s
-                  StateTypes.NotSoldItem.ItemId = r.Item.ItemId }
-                |> (DeleteNotSoldItem >> NotSoldItemMessage))
-    }
-    |> StateMessage.Transaction
+[<Extension>]
+type ItemFormExtensions =
+    [<Extension>]
+    static member ItemNameValidation(me: ItemForm) = me |> itemNameValidation
+
+    [<Extension>]
+    static member NoteValidation(me: ItemForm) = me |> noteValidation
+
+    [<Extension>]
+    static member QuantityValidation(me: ItemForm) = me |> quantityValidation
+
+    [<Extension>]
+    static member FrequencyChoices(me: ItemForm) = me |> frequencyChoices
+
+    [<Extension>]
+    static member PostponeChoices(me: ItemForm) = me |> postponeChoices
+
+    [<Extension>]
+    static member CategoryNameValidation(me: ItemForm) = me |> categoryNameValidation
+
+    [<Extension>]
+    static member HasErrors(me: ItemForm) = me |> hasErrors
+
+    [<Extension>]
+    static member CanDelete(me: ItemForm) = me |> canDelete
+

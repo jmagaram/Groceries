@@ -15,7 +15,7 @@ module ReactiveTests =
 
     [<Fact>]
     let ``can create sample data``() =
-        let x = Models.State.createSampleData
+        let x = Models.StateUpdate.createSampleData
         true
 
     [<Fact>]

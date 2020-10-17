@@ -1,0 +1,5 @@
+﻿@page "/itemedit/{ID}"
+@page "/itemnew/{ItemName}"
+@page "/itemnew"
+
+<ItemEditForm OnItemFormMessage="@OnFormMessage" OnDeleteCallback="@OnDelete" OnCancelCallback="@OnCancel" OnSaveChangesCallback="@OnClickOk" Form="@Form"></ItemEditForm>

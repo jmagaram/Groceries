@@ -1,10 +1,7 @@
-using System;
-using System.Threading.Tasks;
-using WebApp.Common;
 using Models;
-using Xunit;
-using Microsoft.Azure.Cosmos;
+using System.Threading.Tasks;
 using WebApp.Data;
+using Xunit;
 
 namespace WebAppTest {
     public class CosmosConnectorTests {
@@ -23,11 +20,11 @@ namespace WebAppTest {
             using var c = TestConnector();
             await c.DeleteDatabase();
             await c.CreateDatabase();
-            var x = StateModule.createSampleData();
+            var x = StateUpdateModule.createSampleData();
             await c.Push(x);
-            var y = StateModule.createDefault;
+            var y = StateUpdateModule.createDefault;
             var imp = await c.Pull(null, x);
-            var z = StateModule.importChanges(imp, y);
+            var z = StateUpdateCoreModule.importChanges(imp, y);
             Assert.Equal(x.Items.Item.Count, z.Items.Item.Count);
             Assert.Equal(x.Categories.Item.Count, z.Categories.Item.Count);
             Assert.Equal(x.Stores.Item.Count, z.Stores.Item.Count);

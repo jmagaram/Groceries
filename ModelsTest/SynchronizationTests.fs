@@ -5,7 +5,7 @@ open Xunit
 open FsUnit
 open FsUnit.Xunit
 open Models
-open Models.SynchronizationTypes
+open Models.ChangeTrackerTypes
 
 module SynchronizationTestHelpers =
     type Person =

@@ -1,4 +1,4 @@
-﻿module Models.SynchronizationTypes
+﻿module Models.ChangeTrackerTypes
 
 type DataRow<'T> =
     | Unchanged of 'T

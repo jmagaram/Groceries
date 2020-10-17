@@ -1,0 +1,112 @@
+﻿@page "/categoryedit"
+@page "/categoryedit/{ID}"
+@implements IDisposable
+@using System.Reactive.Linq;
+@using Data; 
+@using Models
+@using static Common.OptionExtensions;
+@using static Models.CategoryEditFormModule.CategoryEditFormExtensions;
+
+<style>
+    .nav-pills li {
+        margin-right: 5px;
+    }
+</style>
+
+@if (Form.Mode().IsCreateNewCategoryMode) {
+    <h3>New category</h3>
+}
+else {
+    <h3>Edit category</h3>
+}
+
+<form>
+    <div class="form-group">
+        <label for="categoryNameInput">Category name</label>
+        <input id="categoryNameInput" class="form-control" @oninput="OnNameChange" @onfocusout="OnNameFocusOut" value="@Form.CategoryName.ValueCommitted" />
+        @if (Form.CategoryNameErrors().IsSome()) {
+            <small class="form-text text-danger">
+                @Form.CategoryNameErrors().Value
+            </small>
+        }
+    </div>
+
+    <ul class="nav nav-pills">
+        @if (Form.Mode().IsEditExistingCategoryMode) {
+            <li>
+                <button class="btn btn-secondary" type="button" @onclick="e=>OnDelete()"><span class="oi oi-trash" aria-hidden="true"></span></button>
+            </li>
+        }
+        <li>
+            <button class="btn btn-primary" type="button" @onclick="OnSubmit" disabled="@(Form.HasErrors())">Submit</button>
+        </li>
+    </ul>
+</form>
+
+@code {
+    IDisposable _subscription = null;
+
+    public void Dispose() => _subscription?.Dispose();
+
+    protected override void OnInitialized() {
+        _subscription = StateService.CategoryEditPage.Subscribe(i => Form = i);
+        if (!string.IsNullOrWhiteSpace(Id)) {
+            var pageMessage = StateTypes.CategoryEditPageMessage.NewBeginEditCategory(Id);
+            var stateMessage = StateTypes.StateMessage.NewCategoryEditPageMessage(pageMessage);
+            StateService.Update(stateMessage);
+        }
+        else {
+            var pageMessage = StateTypes.CategoryEditPageMessage.BeginCreateNewCategory;
+            var stateMessage = StateTypes.StateMessage.NewCategoryEditPageMessage(pageMessage);
+            StateService.Update(stateMessage);
+        }
+    }
+
+    [Inject]
+    public ApplicationStateService StateService { get; set; }
+
+    [Inject]
+    NavigationManager Navigation { get; set; }
+
+    [Parameter]
+    public string Id { get; set; }
+
+    protected StateTypes.CategoryEditForm Form { get; set; }
+
+    protected void OnNameChange(ChangeEventArgs e) {
+        var textBoxMessage = StateTypes.TextBoxMessage.NewTypeText((string)e.Value);
+        var formMessage = StateTypes.CategoryEditFormMessage.NewCategoryNameMessage(textBoxMessage);
+        var pageMessage = StateTypes.CategoryEditPageMessage.NewCategoryEditFormMessage(formMessage);
+        var stateMessage = StateTypes.StateMessage.NewCategoryEditPageMessage(pageMessage);
+        StateService.Update(stateMessage);
+    }
+
+    protected void OnNameFocusOut(FocusEventArgs e) {
+        var textBoxMessage = StateTypes.TextBoxMessage.LoseFocus;
+        var formMessage = StateTypes.CategoryEditFormMessage.NewCategoryNameMessage(textBoxMessage);
+        var pageMessage = StateTypes.CategoryEditPageMessage.NewCategoryEditFormMessage(formMessage);
+        var stateMessage = StateTypes.StateMessage.NewCategoryEditPageMessage(pageMessage);
+        StateService.Update(stateMessage);
+    }
+
+    protected void OnDelete() {
+        var pageMessage = StateTypes.CategoryEditPageMessage.DeleteCategory;
+        var stateMessage = StateTypes.StateMessage.NewCategoryEditPageMessage(pageMessage);
+        StateService.Update(stateMessage);
+        Navigation.NavigateTo("shoppinglist");
+    }
+
+    protected void OnSubmit() {
+        var pageMessage = StateTypes.CategoryEditPageMessage.SubmitCategoryEditForm;
+        var stateMessage = StateTypes.StateMessage.NewCategoryEditPageMessage(pageMessage);
+        StateService.Update(stateMessage);
+        Navigation.NavigateTo("shoppinglist");
+    }
+
+    protected void OnCancel() {
+        var pageMessage = StateTypes.CategoryEditPageMessage.CancelCategoryEditForm;
+        var stateMessage = StateTypes.StateMessage.NewCategoryEditPageMessage(pageMessage);
+        StateService.Update(stateMessage);
+        Navigation.NavigateTo("shoppinglist");
+    }
+}

@@ -248,6 +248,18 @@ module ResultTests =
         let expected: Result<int, string> = Ok 3
         actual |> should equal expected
 
+    //[<Fact>]
+    //let ``computation expression - can match!`` () =
+    //    let actual = 
+    //        result {
+    //            let a = match! (Ok 3) with
+    //                    | 3 -> true
+    //                    | _ -> false
+    //            return a
+    //        }
+    //    true
+
+
     [<Fact>]
     let ``fromResults - return first Error, if any, or Ok list`` () =
         let isSmallerThan5 x = if x < 5 then Ok x else Error x

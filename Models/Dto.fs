@@ -1,9 +1,12 @@
 ﻿namespace Models
 
 open System
-open SynchronizationTypes
+open ChangeTrackerTypes
 
 module Dto =
+
+    type StateItem = StateTypes.Item
+    type StateStore = StateTypes.Store
 
     let serializeItem isDeleted (i: StateTypes.Item): DtoTypes.Document<DtoTypes.Item> =
         { Id = i.ItemId |> ItemId.serialize
@@ -112,13 +115,13 @@ module Dto =
                         |> Error
 
                 let item =
-                    { StateTypes.Item.ItemId = itemId
-                      StateTypes.Item.ItemName = itemName
-                      StateTypes.Item.CategoryId = categoryId
-                      StateTypes.Item.Note = note
-                      StateTypes.Item.Etag = StateTypes.Etag i.Etag |> Some
-                      StateTypes.Item.Quantity = quantity
-                      StateTypes.Item.Schedule = schedule }
+                    { StateItem.ItemId = itemId
+                      StateItem.ItemName = itemName
+                      StateItem.CategoryId = categoryId
+                      StateItem.Note = note
+                      StateItem.Etag = StateTypes.Etag i.Etag |> Some
+                      StateItem.Quantity = quantity
+                      StateItem.Schedule = schedule }
 
                 return (Upsert item)
         }
@@ -194,9 +197,9 @@ module Dto =
             | false ->
                 return
                     Change.Upsert
-                        { StateTypes.Store.StoreId = storeId
-                          StateTypes.Store.StoreName = storeName
-                          StateTypes.Store.Etag = StateTypes.Etag i.Etag |> Some }
+                        { StateStore.StoreId = storeId
+                          StateStore.StoreName = storeName
+                          StateStore.Etag = StateTypes.Etag i.Etag |> Some }
         }
 
     let serializeNotSoldItem isDeleted (i: StateTypes.NotSoldItem): DtoTypes.Document<DtoTypes.NotSoldItem> =
@@ -238,10 +241,10 @@ module Dto =
             |> Seq.map (fun (i, isDeleted) -> f isDeleted i)
             |> Seq.toArray
 
-        { DtoTypes.Changes.Items = collect State.itemsTable serializeItem
-          DtoTypes.Changes.Categories = collect State.categoriesTable serializeCategory
-          DtoTypes.Changes.Stores = collect State.storesTable serializeStore
-          DtoTypes.Changes.NotSoldItems = collect State.notSoldItemsTable serializeNotSoldItem }
+        { DtoTypes.Changes.Items = collect StateQuery.itemsTable serializeItem
+          DtoTypes.Changes.Categories = collect StateQuery.categoriesTable serializeCategory
+          DtoTypes.Changes.Stores = collect StateQuery.storesTable serializeStore
+          DtoTypes.Changes.NotSoldItems = collect StateQuery.notSoldItemsTable serializeNotSoldItem }
 
     // maybe should take what works, not throw
     let private deserialize<'T, 'U> (f: DtoTypes.Document<'T> -> Result<'U, string>) (i: DtoTypes.Document<'T> seq) =

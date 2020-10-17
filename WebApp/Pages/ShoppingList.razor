@@ -30,9 +30,10 @@
                     <button class="dropdown-item btn-small" href="#" @onclick="e=>OnStoreFilter(s.StoreId)">@description</button>
                 }
                 <div class="dropdown-divider"></div>
-                <a class="dropdown-item btn-small" href="editstore">New store...</a>
+                <a class="dropdown-item btn-small" href="storeedit">New store...</a>
                 @if (StoreFilter != Guid.Empty) {
-                    <a class="dropdown-item" href="editstore/@StoreFilter">Edit @currentStoreName...</a>
+                    var storeId = StoreFilter.ToString(); // use StoreId serialize and deserialize instead
+                    <a class="dropdown-item" href="storeEdit/@storeId">Edit @currentStoreName...</a>
                 }
             </div>
         </div>
