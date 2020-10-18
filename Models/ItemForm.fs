@@ -5,6 +5,34 @@ open System
 open System.Runtime.CompilerServices
 open StateTypes
 
+// Make sure all these are pure messages; include current time and any necessary
+// GUID values; don't create these on-the-fly inside various methods Maybe there
+// should be a standard "ItemFormHost" message that includes delete, create,
+// cancel, submit and then use this wherever the form is hosted rather than
+// hardwiring it into the ItemPageMessage and ItemPopUpDilaogEditorMessage etc.
+type Message =
+    | ItemNameSet of string
+    | ItemNameBlur
+    | QuantitySet of string
+    | QuantityBlur
+    | NoteSet of string
+    | NoteBlur
+    | ScheduleOnce
+    | ScheduleCompleted
+    | ScheduleRepeat
+    | FrequencySet of int<days>
+    | PostponeSet of int<days>
+    | PostponeClear
+    | CategoryModeChooseExisting
+    | CategoryModeCreateNew
+    | ChooseCategoryUncategorized
+    | ChooseCategory of Guid
+    | NewCategoryNameSet of string
+    | NewCategoryNameBlur
+    | StoresSetAvailability of store: StoreId * isSold: bool
+    | Purchased
+    | Transaction of Message seq
+
 let itemNameValidation (f:ItemForm) = f.ItemName.ValueTyping |> ItemName.tryParse
 let itemNameChange s (f:ItemForm)  = { f with ItemName = f.ItemName |> TextBox.typeText s }
 
@@ -265,7 +293,7 @@ let rec handleMessage msg (f: ItemForm) =
     | NewCategoryNameBlur -> f |> categoryNameBlur
     | StoresSetAvailability (id: StateTypes.StoreId, isSold: bool) -> f |> storesSetAvailability id isSold
     | Purchased -> f |> purchased
-    | ItemFormMessage.Transaction msgs -> msgs |> Seq.fold (fun f m -> handleMessage m f) f
+    | Message.Transaction msgs -> msgs |> Seq.fold (fun f m -> handleMessage m f) f
 
 let asItemFormResult (now: DateTimeOffset) (f: ItemForm) =
     let insertCategory =

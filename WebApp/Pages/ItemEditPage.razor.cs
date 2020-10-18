@@ -1,6 +1,8 @@
 ﻿using Microsoft.AspNetCore.Components;
 using Models;
 using System;
+using FormMessage = Models.ItemFormModule.Message;
+using PageMessage = Models.ItemEditPageModule.Message;
 
 namespace WebApp.Pages {
     public partial class ItemEditPage : ComponentBase, IDisposable {
@@ -8,15 +10,15 @@ namespace WebApp.Pages {
 
         protected override void OnInitialized() {
             if (!string.IsNullOrWhiteSpace(Id)) {
-                var pageMessage = StateTypes.ItemEditPageMessage.NewBeginEditItem(Id);
+                var pageMessage = PageMessage.NewBeginEditItem(Id);
                 var stateMessage = StateUpdateModule.StateMessage.NewItemEditPageMessage(pageMessage);
                 StateService.Update(stateMessage);
             }
             else {
                 var pageMessage =
                     string.IsNullOrWhiteSpace(ItemName)
-                    ? StateTypes.ItemEditPageMessage.BeginCreateNewItem
-                    : StateTypes.ItemEditPageMessage.NewBeginCreateNewItemWithName(ItemName);
+                    ? PageMessage.BeginCreateNewItem
+                    : PageMessage.NewBeginCreateNewItemWithName(ItemName);
                 var stateMessage = StateUpdateModule.StateMessage.NewItemEditPageMessage(pageMessage);
                 StateService.Update(stateMessage);
             }
@@ -37,28 +39,28 @@ namespace WebApp.Pages {
 
         public StateTypes.ItemForm Form { get; private set; }
 
-        protected void OnFormMessage(StateTypes.ItemFormMessage message) {
-            var pageMessage = StateTypes.ItemEditPageMessage.NewItemEditFormMessage(message);
+        protected void OnFormMessage(FormMessage message) {
+            var pageMessage = PageMessage.NewItemEditFormMessage(message);
             var stateMessage = StateUpdateModule.StateMessage.NewItemEditPageMessage(pageMessage);
             StateService.Update(stateMessage);
         }
 
         protected void OnClickOk() {
-            var pageMessage = StateTypes.ItemEditPageMessage.SubmitItemEditForm;
+            var pageMessage = PageMessage.SubmitItemEditForm;
             var stateMessage = StateUpdateModule.StateMessage.NewItemEditPageMessage(pageMessage);
             StateService.Update(stateMessage);
             Navigation.NavigateTo("shoppinglist");
         }
 
         protected void OnDelete() {
-            var pageMessage = StateTypes.ItemEditPageMessage.DeleteItem;
+            var pageMessage = PageMessage.DeleteItem;
             var stateMessage = StateUpdateModule.StateMessage.NewItemEditPageMessage(pageMessage);
             StateService.Update(stateMessage);
             Navigation.NavigateTo("shoppinglist");
         }
 
         protected void OnCancel() {
-            var pageMessage = StateTypes.ItemEditPageMessage.CancelItemEditForm;
+            var pageMessage = PageMessage.CancelItemEditForm;
             var stateMessage = StateUpdateModule.StateMessage.NewItemEditPageMessage(pageMessage);
             StateService.Update(stateMessage);
             Navigation.NavigateTo("shoppinglist");

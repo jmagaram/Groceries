@@ -6,7 +6,7 @@ open StateTypes
 open StateUpdateCore
 
 type StateMessage =
-    | ItemEditPageMessage of ItemEditPageMessage
+    | ItemEditPageMessage of ItemEditPage.Message
     | CategoryEditPageMessage of CategoryEditPage.Message
     | StoreEditPageMessage of StoreEditPage.Message
     | ItemMessage of ItemMessage

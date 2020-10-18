@@ -160,43 +160,6 @@ type ImportChanges =
       NotSoldItemChanges: Change<NotSoldItem, NotSoldItem> list
       LatestTimestamp: int option }
 
-type ItemEditPageMessage =
-    | BeginEditItem of SerializedId
-    | BeginCreateNewItem
-    | BeginCreateNewItemWithName of string
-    | ItemEditFormMessage of ItemFormMessage
-    | SubmitItemEditForm
-    | CancelItemEditForm
-    | DeleteItem
-
-// Make sure all these are pure messages; include current time and any necessary
-// GUID values; don't create these on-the-fly inside various methods Maybe there
-// should be a standard "ItemFormHost" message that includes delete, create,
-// cancel, submit and then use this wherever the form is hosted rather than
-// hardwiring it into the ItemPageMessage and ItemPopUpDilaogEditorMessage etc.
-and ItemFormMessage =
-    | ItemNameSet of string
-    | ItemNameBlur
-    | QuantitySet of string
-    | QuantityBlur
-    | NoteSet of string
-    | NoteBlur
-    | ScheduleOnce
-    | ScheduleCompleted
-    | ScheduleRepeat
-    | FrequencySet of int<days>
-    | PostponeSet of int<days>
-    | PostponeClear
-    | CategoryModeChooseExisting
-    | CategoryModeCreateNew
-    | ChooseCategoryUncategorized
-    | ChooseCategory of Guid
-    | NewCategoryNameSet of string
-    | NewCategoryNameBlur
-    | StoresSetAvailability of store: StoreId * isSold: bool
-    | Purchased
-    | Transaction of ItemFormMessage seq
-
 type ItemMessage =
     | MarkComplete of ItemId
     | BuyAgain of ItemId

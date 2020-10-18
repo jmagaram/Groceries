@@ -3,6 +3,15 @@ module Models.ItemEditPage
 
 open StateTypes
 
+type Message =
+    | BeginEditItem of SerializedId
+    | BeginCreateNewItem
+    | BeginCreateNewItemWithName of string
+    | ItemEditFormMessage of ItemForm.Message
+    | SubmitItemEditForm
+    | CancelItemEditForm
+    | DeleteItem
+
 let beginEditItem id clock state =
     let form =
         state
@@ -61,10 +70,10 @@ let trySubmit now state =
 // very inconsistent handling of Result; when to throw and when to handle a result
 let reduce msg clock now state =
     match msg with
-    | ItemEditPageMessage.BeginCreateNewItem -> state |> beginCreateItem None
-    | ItemEditPageMessage.BeginCreateNewItemWithName n -> state |> beginCreateItem (Some n)
-    | ItemEditPageMessage.BeginEditItem id -> state |> beginEditItem id clock
-    | ItemEditPageMessage.CancelItemEditForm -> state |> cancel
-    | ItemEditPageMessage.DeleteItem -> state |> delete |> Result.okOrThrow
-    | ItemEditPageMessage.ItemEditFormMessage msg -> state |> updateForm msg |> Result.okOrThrow
-    | ItemEditPageMessage.SubmitItemEditForm -> state |> trySubmit now |> Result.okOrThrow
+    | Message.BeginCreateNewItem -> state |> beginCreateItem None
+    | Message.BeginCreateNewItemWithName n -> state |> beginCreateItem (Some n)
+    | Message.BeginEditItem id -> state |> beginEditItem id clock
+    | Message.CancelItemEditForm -> state |> cancel
+    | Message.DeleteItem -> state |> delete |> Result.okOrThrow
+    | Message.ItemEditFormMessage msg -> state |> updateForm msg |> Result.okOrThrow
+    | Message.SubmitItemEditForm -> state |> trySubmit now |> Result.okOrThrow

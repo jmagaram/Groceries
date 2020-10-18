@@ -5,67 +5,68 @@ using System;
 using System.Collections.Generic;
 using WebApp.Common;
 using static Models.ItemFormModule.ItemFormExtensions;
+using FormMessage = Models.ItemFormModule.Message;
 
 namespace WebApp.Shared {
     public partial class ItemEditForm : ComponentBase {
         [Parameter]
         public StateTypes.ItemForm Form { get; set; }
 
-        private void Process(StateTypes.ItemFormMessage msg) => 
+        private void Process(FormMessage msg) => 
             OnItemFormMessage.InvokeAsync(msg);
 
         protected void OnItemNameChange(ChangeEventArgs e) =>
-            Process(StateTypes.ItemFormMessage.NewItemNameSet((string)e.Value));
+            Process(FormMessage.NewItemNameSet((string)e.Value));
 
         protected void OnItemNameFocusOut(FocusEventArgs e) =>
-            Process(StateTypes.ItemFormMessage.ItemNameBlur);
+            Process(FormMessage.ItemNameBlur);
 
         protected void OnQuantityChange(ChangeEventArgs e) =>
-            Process(StateTypes.ItemFormMessage.NewQuantitySet((string)e.Value));
+            Process(FormMessage.NewQuantitySet((string)e.Value));
 
         protected void OnQuantityFocusOut(FocusEventArgs e) =>
-            Process(StateTypes.ItemFormMessage.QuantityBlur);
+            Process(FormMessage.QuantityBlur);
 
         protected void OnNoteChange(ChangeEventArgs e) =>
-            Process(StateTypes.ItemFormMessage.NewNoteSet((string)e.Value));
+            Process(FormMessage.NewNoteSet((string)e.Value));
 
         protected void OnNoteFocusOut(FocusEventArgs e) =>
-            Process(StateTypes.ItemFormMessage.NoteBlur);
+            Process(FormMessage.NoteBlur);
 
         protected void OnNewCategoryNameChange(ChangeEventArgs e) =>
-            Process(StateTypes.ItemFormMessage.NewNewCategoryNameSet((string)e.Value));
+            Process(FormMessage.NewNewCategoryNameSet((string)e.Value));
 
         protected void OnScheduleOnce(ChangeEventArgs e) =>
-            Process(StateTypes.ItemFormMessage.ScheduleOnce);
+            Process(FormMessage.ScheduleOnce);
 
         protected void OnClickScheduleOnce() =>
-            Process(StateTypes.ItemFormMessage.ScheduleOnce);
+            Process(FormMessage.ScheduleOnce);
 
         protected void OnScheduleRepeat(ChangeEventArgs e) =>
-            Process(StateTypes.ItemFormMessage.ScheduleRepeat);
+            Process(FormMessage.ScheduleRepeat);
 
         protected void OnScheduleCompleted(ChangeEventArgs e) =>
-            Process(StateTypes.ItemFormMessage.ScheduleCompleted);
+            Process(FormMessage.ScheduleCompleted);
 
         protected void OnSaveChanges() => OnSaveChangesCallback.InvokeAsync(null);
 
         protected void OnSubmitPurchased() {
-            Process(StateTypes.ItemFormMessage.Purchased);
+            Process(FormMessage.Purchased);
             OnSaveChangesCallback.InvokeAsync(null);
         }
 
         protected void OnSubmitPostponed(int days) {
-            Process(StateTypes.ItemFormMessage.NewPostponeSet(days));
+            Process(FormMessage.NewPostponeSet(days));
             OnSaveChangesCallback.InvokeAsync(null);
         }
 
         protected void AddToShoppingListAgain() {
-            Process(StateTypes.ItemFormMessage.ScheduleOnce);
+            Process(FormMessage.ScheduleOnce);
             OnSaveChangesCallback.InvokeAsync(null);
         }
 
         protected void OnNewCategoryNameFocusOut(FocusEventArgs e) =>
-            Process(StateTypes.ItemFormMessage.NewCategoryNameBlur);
+            Process(FormMessage.NewCategoryNameBlur);
 
         const string chooseUncategorized = "chooseUncategorized";
         const string chooseCreateNewCategory = "chooseNewCategory";
@@ -73,19 +74,19 @@ namespace WebApp.Shared {
         protected void OnExistingCategoryChange(ChangeEventArgs e) {
             string value = (string)(e.Value);
             if (value == chooseUncategorized) {
-                var chooseUncategorized = StateTypes.ItemFormMessage.ChooseCategoryUncategorized;
-                var modeIsChoose = StateTypes.ItemFormMessage.CategoryModeChooseExisting;
-                var trans = StateTypes.ItemFormMessage.NewTransaction(new List<StateTypes.ItemFormMessage> { modeIsChoose, chooseUncategorized });
+                var chooseUncategorized = FormMessage.ChooseCategoryUncategorized;
+                var modeIsChoose = FormMessage.CategoryModeChooseExisting;
+                var trans = FormMessage.NewTransaction(new List<FormMessage> { modeIsChoose, chooseUncategorized });
                 Process(trans);
             }
             else if (value == chooseCreateNewCategory) {
-                var modeIsCreateNew = StateTypes.ItemFormMessage.CategoryModeCreateNew;
+                var modeIsCreateNew = FormMessage.CategoryModeCreateNew;
                 Process(modeIsCreateNew);
             }
             else if (Guid.TryParse(value, out Guid categoryId)) {
-                var chooseSomeCat = StateTypes.ItemFormMessage.NewChooseCategory(categoryId);
-                var modeIsChoose = StateTypes.ItemFormMessage.CategoryModeChooseExisting;
-                var trans = StateTypes.ItemFormMessage.NewTransaction(new List<StateTypes.ItemFormMessage> { modeIsChoose, chooseSomeCat });
+                var chooseSomeCat = FormMessage.NewChooseCategory(categoryId);
+                var modeIsChoose = FormMessage.CategoryModeChooseExisting;
+                var trans = FormMessage.NewTransaction(new List<FormMessage> { modeIsChoose, chooseSomeCat });
                 Process(trans);
             }
         }
@@ -95,15 +96,15 @@ namespace WebApp.Shared {
         protected void OnRepeatChange(ChangeEventArgs e) {
             if (int.TryParse((string)(e.Value), out int d)) {
                 if (d == notRepeating) {
-                    var removePostpone = StateTypes.ItemFormMessage.PostponeClear;
-                    var scheduleOnce = StateTypes.ItemFormMessage.ScheduleOnce;
-                    var trans = StateTypes.ItemFormMessage.NewTransaction(new List<StateTypes.ItemFormMessage> { removePostpone, scheduleOnce });
+                    var removePostpone = FormMessage.PostponeClear;
+                    var scheduleOnce = FormMessage.ScheduleOnce;
+                    var trans = FormMessage.NewTransaction(new List<FormMessage> { removePostpone, scheduleOnce });
                     Process(trans);
                 }
                 else {
-                    var scheduleIsRepeat = StateTypes.ItemFormMessage.ScheduleRepeat;
-                    var setFrequency = StateTypes.ItemFormMessage.NewFrequencySet(d);
-                    var trans = StateTypes.ItemFormMessage.NewTransaction(new List<StateTypes.ItemFormMessage> { scheduleIsRepeat, setFrequency });
+                    var scheduleIsRepeat = FormMessage.ScheduleRepeat;
+                    var setFrequency = FormMessage.NewFrequencySet(d);
+                    var trans = FormMessage.NewTransaction(new List<FormMessage> { scheduleIsRepeat, setFrequency });
                     Process(trans);
                 }
             }
@@ -114,25 +115,25 @@ namespace WebApp.Shared {
         protected void OnPostponeChange(ChangeEventArgs e) {
             string value = (string)(e.Value);
             if (value == notPostponed) {
-                Process(StateTypes.ItemFormMessage.PostponeClear);
+                Process(FormMessage.PostponeClear);
             }
             else if (int.TryParse(value, out int days)) {
-                Process(StateTypes.ItemFormMessage.NewPostponeSet(days));
+                Process(FormMessage.NewPostponeSet(days));
             }
         }
 
         protected void OnPostponeClick(int days) =>
-            Process(StateTypes.ItemFormMessage.NewPostponeSet(days));
+            Process(FormMessage.NewPostponeSet(days));
 
         protected void OnPostponeClear() =>
-            Process(StateTypes.ItemFormMessage.PostponeClear);
+            Process(FormMessage.PostponeClear);
 
         protected void OnPostponeToggle() {
             if (Form.Postpone.IsNone()) {
-                Process(StateTypes.ItemFormMessage.NewPostponeSet(7));
+                Process(FormMessage.NewPostponeSet(7));
             }
             else {
-                Process(StateTypes.ItemFormMessage.PostponeClear);
+                Process(FormMessage.PostponeClear);
             }
         }
 
@@ -141,7 +142,7 @@ namespace WebApp.Shared {
         protected void OnDelete() => OnDeleteCallback.InvokeAsync(null);
 
         protected void OnStoreChange(ChangeEventArgs e, StateTypes.StoreId store) =>
-            Process(StateTypes.ItemFormMessage.NewStoresSetAvailability(store, (bool)e.Value));
+            Process(FormMessage.NewStoresSetAvailability(store, (bool)e.Value));
 
         [Parameter]
         public EventCallback OnDeleteCallback { get; set; }
@@ -153,7 +154,7 @@ namespace WebApp.Shared {
         public EventCallback OnSaveChangesCallback { get; set; }
 
         [Parameter]
-        public EventCallback<StateTypes.ItemFormMessage> OnItemFormMessage { get; set; }
+        public EventCallback<FormMessage> OnItemFormMessage { get; set; }
 
     }
 }
