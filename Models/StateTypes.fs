@@ -7,7 +7,15 @@ open ChangeTrackerTypes
 type ItemId = ItemId of Guid
 
 [<Struct>]
+type CategoryId = CategoryId of Guid
+
+[<Struct>]
+type StoreId = StoreId of Guid
+
+[<Struct>]
 type ItemName = ItemName of string
+
+type SerializedId = string
 
 [<Struct>]
 type Note = Note of string
@@ -15,26 +23,19 @@ type Note = Note of string
 [<Struct>]
 type Quantity = Quantity of string
 
-[<Struct>]
-type Frequency = Frequency of int<days>
-
-type Repeat =
-    { Frequency: Frequency
-      PostponedUntil: DateTimeOffset option }
-
 type Schedule =
     | Completed
     | Once
     | Repeat of Repeat
 
-[<Struct>]
-type CategoryId = CategoryId of Guid
+and Repeat =
+    { Frequency: Frequency
+      PostponedUntil: DateTimeOffset option }
+
+and Frequency = Frequency of int<days>
 
 [<Struct>]
 type CategoryName = CategoryName of string
-
-[<Struct>]
-type StoreId = StoreId of Guid
 
 [<Struct>]
 type StoreName = StoreName of string
@@ -90,29 +91,12 @@ type ShoppingListSettings =
     interface IKey<string> with
         member this.Key = "singleton"
 
-type ItemsTable = DataTable<ItemId, Item>
-type StoresTable = DataTable<StoreId, Store>
-type CategoryTable = DataTable<CategoryId, Category>
-type NotSoldItemTable = DataTable<NotSoldItem, NotSoldItem>
-type ShoppingListSettingsRow = DataRow<ShoppingListSettings>
-
-type ScheduleKind =
-    | Once
-    | Completed
-    | Repeat
-
-type CategoryMode =
-    | ChooseExisting
-    | CreateNew
-
-type ItemAvailability = { Store: Store; IsSold: bool }
-
 // If this was a generic add-on to State, maybe could define this and it's
 // extension methods in one file (using implicit extensions) later in the
 // dependency order.
 type ItemForm =
     { ItemId: ItemId option
-      ItemName : TextBox
+      ItemName: TextBox
       Etag: Etag option
       Quantity: TextBox
       Note: TextBox
@@ -125,7 +109,16 @@ type ItemForm =
       CategoryChoiceList: Category list
       Stores: ItemAvailability list }
 
-type SerializedId = string
+and CategoryMode =
+    | ChooseExisting
+    | CreateNew
+
+and ScheduleKind =
+    | Once
+    | Completed
+    | Repeat
+
+and ItemAvailability = { Store: Store; IsSold: bool }
 
 type CategoryEditForm =
     { CategoryId: CategoryId option
@@ -137,6 +130,12 @@ type StoreEditForm =
       StoreName: TextBox
       Etag: Etag option }
 
+type ItemsTable = DataTable<ItemId, Item>
+type StoresTable = DataTable<StoreId, Store>
+type CategoryTable = DataTable<CategoryId, Category>
+type NotSoldItemTable = DataTable<NotSoldItem, NotSoldItem>
+type ShoppingListSettingsRow = DataRow<ShoppingListSettings>
+
 type State =
     { Items: ItemsTable
       Categories: CategoryTable
@@ -144,9 +143,9 @@ type State =
       NotSoldItems: NotSoldItemTable
       ShoppingListSettings: ShoppingListSettingsRow
       LastCosmosTimestamp: int option
-      CategoryEditPage: CategoryEditForm option 
-      StoreEditPage : StoreEditForm option 
-      ItemEditPage : ItemForm option }
+      CategoryEditPage: CategoryEditForm option
+      StoreEditPage: StoreEditForm option
+      ItemEditPage: ItemForm option }
 
 type ImportChanges =
     { ItemChanges: Change<Item, ItemId> list
