@@ -89,7 +89,7 @@ let createSampleData () =
 
         let postpone = postpone |> Option.map (fun d -> now.AddDays(d |> float))
 
-        let repeat = Repeat.create freq postpone
+        let repeat = { Repeat.Frequency = freq; PostponedUntil = postpone }
 
         let item =
             s

@@ -111,7 +111,7 @@ let frequencySet v f =
               |> Result.okOrThrow }
 
 let frequencyChoices (f: ItemForm) =
-    f.Frequency :: Frequency.common
+    f.Frequency :: Frequency.commonFrequencyChoices
     |> Seq.distinct
     |> Seq.sort
     |> List.ofSeq
@@ -167,7 +167,7 @@ let postponeDurationAsText (d: int<days>) =
 
 let postponeChoices (f: ItemForm) =
     f.Postpone
-    :: (Repeat.commonPostponeDays |> List.map Some)
+    :: (Repeat.commonPostponeChoices |> List.map Some)
     |> Seq.choose id
     |> Seq.map frequencyCoerceIntoBounds
     |> Seq.distinct

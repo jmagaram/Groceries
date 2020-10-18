@@ -178,22 +178,16 @@ module Frequency =
 
     let frequencyDefault = 7<days> |> create |> Result.okOrThrow
 
-    let common =
+    let commonFrequencyChoices =
         [ 1; 3; 7; 14; 30; 60; 90 ]
         |> List.map (fun i -> i * 1<days> |> create |> Result.okOrThrow)
 
 [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
 module Repeat =
 
-    let commonPostponeDays =
+    let commonPostponeChoices =
         [ 1; 3; 7; 14; 30; 60; 90 ]
         |> List.map (fun i -> i * 1<days>)
-
-    let create frequency postponedUntil =
-        { Frequency = frequency
-          PostponedUntil = postponedUntil }
-
-    let postponedUntil r = r.PostponedUntil
 
     let postponedUntilDays (now: DateTimeOffset) r =
         r.PostponedUntil
@@ -237,6 +231,26 @@ module Schedule =
                           now.AddDays(r.Frequency |> Frequency.days |> float)
                           |> Some }
 
+    let activate s =
+        match s with
+        | Schedule.Completed -> Schedule.Once
+        | Schedule.Once -> s
+        | Schedule.Repeat _ -> s
+
+    let withoutPostpone s =
+        match s with
+        | Schedule.Repeat ({ PostponedUntil = Some _ } as r) -> Schedule.Repeat { r with PostponedUntil = None }
+        | _ -> s
+
+    let tryPostpone (now: DateTimeOffset) (d: int<days>) s =
+        match s with
+        | Schedule.Repeat r ->
+            { r with
+                  PostponedUntil = now.AddDays(d |> float) |> Some }
+            |> Schedule.Repeat
+            |> Ok
+        | _ -> Error "Only repeating items can be postponed."
+
     // Could put all extensions in a single class for use by C#.
     [<Extension>]
     type ScheduleExtensions =
@@ -252,32 +266,17 @@ module Schedule =
 [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
 module Item =
 
-    let markComplete (now: DateTimeOffset) (i: Item) =
-        { i with
-              Schedule = i.Schedule |> Schedule.completeNext now }
+    let mapSchedule f i = { i with Schedule = i.Schedule |> f }
 
-    let buyAgain (i: Item) =
-        match i.Schedule with
-        | Schedule.Completed -> { i with Schedule = Schedule.Once }
-        | Schedule.Once -> i
-        | Schedule.Repeat _ -> i
+    let markComplete (now: DateTimeOffset) i =
+        i |> mapSchedule (Schedule.completeNext now)
 
-    let removePostpone (i: Item) =
-        match i.Schedule with
-        | Schedule.Repeat ({ PostponedUntil = Some _ } as r) ->
-            { i with
-                  Schedule = Schedule.Repeat { r with PostponedUntil = None } }
-        | _ -> i
+    let buyAgain i = i |> mapSchedule Schedule.activate
 
-    let postpone (now: DateTimeOffset) (d: int<days>) (i: Item) =
-        match i.Schedule with
-        | Schedule.Repeat r ->
-            let r =
-                { r with
-                      PostponedUntil = now.AddDays(d |> float) |> Some }
+    let removePostpone i =
+        i |> mapSchedule Schedule.withoutPostpone
 
-            { i with Schedule = Schedule.Repeat r }
-        | _ -> failwith "A non-repeating item can not be postponed."
+    let postpone now days i = i |> mapSchedule (Schedule.tryPostpone now days >> Result.okOrThrow)
 
     type Message =
         | MarkComplete of ItemId
