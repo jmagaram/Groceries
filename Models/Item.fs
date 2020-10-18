@@ -45,9 +45,6 @@ module Note =
     let tryParse =
         StringValidation.createParser normalizer validator Note List.head
 
-    let tryParseOptional s =
-        if s |> String.isNullOrWhiteSpace then Ok None else s |> tryParse |> Result.map Some
-
     let asText (Note s) = s
 
 [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
@@ -61,9 +58,6 @@ module Quantity =
 
     let tryParse =
         StringValidation.createParser normalizer validator Quantity List.head
-
-    let tryParseOptional s =
-        if s |> String.isNullOrWhiteSpace then Ok None else s |> tryParse |> Result.map Some
 
     let asText (Quantity s) = s
 

@@ -78,12 +78,12 @@ module Dto =
 
                 let! note =
                     i.Content.Note
-                    |> Note.tryParseOptional
+                    |> String.tryParseOptional Note.tryParse
                     |> Result.mapError (sprintf "Could not parse the note '%s'; error %A" i.Content.Note)
 
                 let! quantity =
                     i.Content.Quantity
-                    |> Quantity.tryParseOptional
+                    |> String.tryParseOptional Quantity.tryParse
                     |> Result.mapError (sprintf "Could not parse the quantity '%s'; error %A" i.Content.Quantity)
 
                 let! schedule =

@@ -126,6 +126,9 @@ module String =
         | true, v -> Some v
         | false, _ -> None
 
+    let tryParseOptional parser s =
+        if s |> isNullOrWhiteSpace then Ok None else s |> parser |> Result.map Some
+
 [<AutoOpen>]
 module Math =
 
@@ -173,6 +176,6 @@ module Memoize =
 [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
 module Guid =
 
-    let serialize (g:Guid) = g.ToString()
+    let serialize (g: Guid) = g.ToString()
 
     let tryDeserialize s = s |> String.tryParseWith Guid.TryParse

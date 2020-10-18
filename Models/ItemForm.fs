@@ -41,7 +41,7 @@ let itemNameBlur f =
           ItemForm.ItemName = f.ItemName |> TextBox.loseFocus ItemName.normalizer }
 
 let quantityValidation (f:ItemForm) =
-    f.Quantity.ValueTyping |> Quantity.tryParseOptional
+    f.Quantity.ValueTyping |> String.tryParseOptional Quantity.tryParse
 
 let quantityChange s (f:ItemForm) = { f with Quantity = f.Quantity |> TextBox.typeText s }
 
@@ -50,7 +50,7 @@ let quantityBlur f =
           ItemForm.Quantity = f.Quantity |> TextBox.loseFocus Quantity.normalizer }
 
 let noteChange s (f:ItemForm) = { f with Note = f.Note |> TextBox.typeText s }
-let noteValidation (f:ItemForm) = f.Note.ValueTyping |> Note.tryParseOptional
+let noteValidation (f:ItemForm) = f.Note.ValueTyping |> String.tryParseOptional Note.tryParse
 
 let noteBlur f =
     { f with
