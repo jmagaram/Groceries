@@ -5,6 +5,16 @@ open System
 open StateTypes
 open StateUpdateCore
 
+type StateMessage =
+    | ItemEditPageMessage of ItemEditPageMessage
+    | CategoryEditPageMessage of CategoryEditPage.Message
+    | StoreEditPageMessage of StoreEditPage.Message
+    | ItemMessage of ItemMessage
+    | ShoppingListSettingsMessage of ShoppingListSettingsMessage
+    | Import of ImportChanges
+    | AcceptAllChanges
+    | ResetToSampleData
+
 let updateSettingsStoreFilter k s =
     let isStoreReferenceValid =
         k

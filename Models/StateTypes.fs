@@ -137,32 +137,28 @@ type CategoryEditForm =
       CategoryName: TextBox
       Etag: Etag option }
 
-type CategoryEditFormMessage = CategoryNameMessage of TextBoxMessage
-
-type CategoryEditPageMessage =
-    | BeginEditCategory of SerializedId
-    | BeginCreateNewCategory
-    | CategoryEditFormMessage of CategoryEditFormMessage
-    | SubmitCategoryEditForm
-    | CancelCategoryEditForm
-    | DeleteCategory
-
 type StoreEditForm =
     { StoreId: StoreId option
       StoreName: TextBox
       Etag: Etag option }
 
-// Not sure these message/command types need to be displayed here; maybe later
-// in the project dependency order
-type StoreEditFormMessage = StoreNameMessage of TextBoxMessage
+type State =
+    { Items: ItemsTable
+      Categories: CategoryTable
+      Stores: StoresTable
+      NotSoldItems: NotSoldItemTable
+      ShoppingListSettings: ShoppingListSettingsRow
+      LastCosmosTimestamp: int option
+      CategoryEditPage: CategoryEditForm option 
+      StoreEditPage : StoreEditForm option 
+      ItemEditPage : ItemForm option }
 
-type StoreEditPageMessage =
-    | BeginEditStore of SerializedId
-    | BeginCreateNewStore
-    | StoreEditFormMessage of StoreEditFormMessage
-    | SubmitStoreEditForm
-    | CancelStoreEditForm
-    | DeleteStore
+type ImportChanges =
+    { ItemChanges: Change<Item, ItemId> list
+      CategoryChanges: Change<Category, CategoryId> list
+      StoreChanges: Change<Store, StoreId> list
+      NotSoldItemChanges: Change<NotSoldItem, NotSoldItem> list
+      LatestTimestamp: int option }
 
 type ItemEditPageMessage =
     | BeginEditItem of SerializedId
@@ -201,24 +197,6 @@ and ItemFormMessage =
     | Purchased
     | Transaction of ItemFormMessage seq
 
-type State =
-    { Items: ItemsTable
-      Categories: CategoryTable
-      Stores: StoresTable
-      NotSoldItems: NotSoldItemTable
-      ShoppingListSettings: ShoppingListSettingsRow
-      LastCosmosTimestamp: int option
-      CategoryEditPage: CategoryEditForm option 
-      StoreEditPage : StoreEditForm option 
-      ItemEditPage : ItemForm option }
-
-type ImportChanges =
-    { ItemChanges: Change<Item, ItemId> list
-      CategoryChanges: Change<Category, CategoryId> list
-      StoreChanges: Change<Store, StoreId> list
-      NotSoldItemChanges: Change<NotSoldItem, NotSoldItem> list
-      LatestTimestamp: int option }
-
 type ItemMessage =
     | MarkComplete of ItemId
     | BuyAgain of ItemId
@@ -237,12 +215,3 @@ type ShoppingListSettingsMessage =
     | SetItemFilter of string
     | ClearItemFilter
 
-type StateMessage =
-    | ItemEditPageMessage of ItemEditPageMessage
-    | CategoryEditPageMessage of CategoryEditPageMessage
-    | StoreEditPageMessage of StoreEditPageMessage
-    | ItemMessage of ItemMessage
-    | ShoppingListSettingsMessage of ShoppingListSettingsMessage
-    | Import of ImportChanges
-    | AcceptAllChanges
-    | ResetToSampleData

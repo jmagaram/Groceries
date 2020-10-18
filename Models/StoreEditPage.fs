@@ -2,6 +2,14 @@
 
 open StateTypes
 
+type Message =
+    | BeginEditStore of SerializedId
+    | BeginCreateNewStore
+    | StoreEditFormMessage of StoreEditForm.Message
+    | SubmitStoreEditForm
+    | CancelStoreEditForm
+    | DeleteStore
+
 let beginEditStore id s =
     { s with
           StoreEditPage = StoreEditForm.editExistingByGuid id s |> Some }
@@ -58,11 +66,11 @@ let private handleFormMessage m s =
                   StoreEditPage = form |> StoreEditForm.handle m |> Some }
     }
 
-let handle (msg: StoreEditPageMessage) (s: State) =
+let handle (msg: Message) (s: State) =
     match msg with
     | BeginEditStore id -> s |> beginEditStore id |> Ok
     | BeginCreateNewStore -> s |> beginCreateNewStore |> Ok
     | StoreEditFormMessage msg -> s |> handleFormMessage msg
     | SubmitStoreEditForm -> s |> submit 
     | CancelStoreEditForm -> s |> cancel |> Ok
-    | StoreEditPageMessage.DeleteStore -> s |> delete
+    | DeleteStore -> s |> delete

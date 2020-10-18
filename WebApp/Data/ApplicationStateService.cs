@@ -25,7 +25,7 @@ namespace WebApp.Data {
 
         public State Current => _state.Value;
 
-        public void Update(StateMessage msg) {
+        public void Update(StateUpdateModule.StateMessage msg) {
             var state = _state.Value;
             state = StateUpdateModule.update(msg, state);
             _state.OnNext(state);

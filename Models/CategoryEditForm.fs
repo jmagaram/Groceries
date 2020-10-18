@@ -12,6 +12,8 @@ type FormResult=
     | InsertCategory of CategoryName
     | EditCategory of Category
 
+type Message = CategoryNameMessage of TextBoxMessage
+
 let createNew =
     { CategoryId = None
       CategoryName = TextBox.create ""

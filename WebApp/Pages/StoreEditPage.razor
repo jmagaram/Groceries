@@ -2,10 +2,13 @@
 @page "/storeedit/{ID}"
 @implements IDisposable
 @using System.Reactive.Linq;
-@using Data; 
+@using Data;
 @using Models;
 @using static Common.OptionExtensions;
 @using static Models.StoreEditFormModule.StoreEditFormExtensions;
+@using FormMessage = Models.StoreEditFormModule.Message;
+@using PageMessage = Models.StoreEditPage.Message;
+@using StateMessage = Models.StateUpdateModule.StateMessage;
 
 <style>
     .nav-pills li {
@@ -51,13 +54,13 @@ else {
     protected override void OnInitialized() {
         _subscription = StateService.StoreEditPage.Subscribe(i => Form = i);
         if (!string.IsNullOrWhiteSpace(Id)) {
-            var pageMessage = StateTypes.StoreEditPageMessage.NewBeginEditStore(Id);
-            var stateMessage = StateTypes.StateMessage.NewStoreEditPageMessage(pageMessage);
+            var pageMessage = PageMessage.NewBeginEditStore(Id);
+            var stateMessage = StateUpdateModule.StateMessage.NewStoreEditPageMessage(pageMessage);
             StateService.Update(stateMessage);
         }
         else {
-            var pageMessage = StateTypes.StoreEditPageMessage.BeginCreateNewStore;
-            var stateMessage = StateTypes.StateMessage.NewStoreEditPageMessage(pageMessage);
+            var pageMessage = PageMessage.BeginCreateNewStore;
+            var stateMessage = StateMessage.NewStoreEditPageMessage(pageMessage);
             StateService.Update(stateMessage);
         }
     }
@@ -75,37 +78,37 @@ else {
 
     protected void OnNameChange(ChangeEventArgs e) {
         var textBoxMessage = StateTypes.TextBoxMessage.NewTypeText((string)e.Value);
-        var formMessage = StateTypes.StoreEditFormMessage.NewStoreNameMessage(textBoxMessage);
-        var pageMessage = StateTypes.StoreEditPageMessage.NewStoreEditFormMessage(formMessage);
-        var stateMessage = StateTypes.StateMessage.NewStoreEditPageMessage(pageMessage);
+        var formMessage = FormMessage.NewStoreNameMessage(textBoxMessage);
+        var pageMessage = PageMessage.NewStoreEditFormMessage(formMessage);
+        var stateMessage = StateMessage.NewStoreEditPageMessage(pageMessage);
         StateService.Update(stateMessage);
     }
 
     protected void OnNameFocusOut(FocusEventArgs e) {
         var textBoxMessage = StateTypes.TextBoxMessage.LoseFocus;
-        var formMessage = StateTypes.StoreEditFormMessage.NewStoreNameMessage(textBoxMessage);
-        var pageMessage = StateTypes.StoreEditPageMessage.NewStoreEditFormMessage(formMessage);
-        var stateMessage = StateTypes.StateMessage.NewStoreEditPageMessage(pageMessage);
+        var formMessage = StoreEditFormModule.Message.NewStoreNameMessage(textBoxMessage);
+        var pageMessage = PageMessage.NewStoreEditFormMessage(formMessage);
+        var stateMessage = StateMessage.NewStoreEditPageMessage(pageMessage);
         StateService.Update(stateMessage);
     }
 
     protected void OnDelete() {
-        var pageMessage = StateTypes.StoreEditPageMessage.DeleteStore;
-        var stateMessage = StateTypes.StateMessage.NewStoreEditPageMessage(pageMessage);
+        var pageMessage = PageMessage.DeleteStore;
+        var stateMessage = StateMessage.NewStoreEditPageMessage(pageMessage);
         StateService.Update(stateMessage);
         Navigation.NavigateTo("shoppinglist");
     }
 
     protected void OnSubmit() {
-        var pageMessage = StateTypes.StoreEditPageMessage.SubmitStoreEditForm;
-        var stateMessage = StateTypes.StateMessage.NewStoreEditPageMessage(pageMessage);
+        var pageMessage = PageMessage.SubmitStoreEditForm;
+        var stateMessage = StateMessage.NewStoreEditPageMessage(pageMessage);
         StateService.Update(stateMessage);
         Navigation.NavigateTo("shoppinglist");
     }
 
     protected void OnCancel() {
-        var pageMessage = StateTypes.StoreEditPageMessage.CancelStoreEditForm;
-        var stateMessage = StateTypes.StateMessage.NewStoreEditPageMessage(pageMessage);
+        var pageMessage = PageMessage.CancelStoreEditForm;
+        var stateMessage = StateMessage.NewStoreEditPageMessage(pageMessage);
         StateService.Update(stateMessage);
         Navigation.NavigateTo("shoppinglist");
     }

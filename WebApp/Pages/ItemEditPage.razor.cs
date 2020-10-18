@@ -9,7 +9,7 @@ namespace WebApp.Pages {
         protected override void OnInitialized() {
             if (!string.IsNullOrWhiteSpace(Id)) {
                 var pageMessage = StateTypes.ItemEditPageMessage.NewBeginEditItem(Id);
-                var stateMessage = StateTypes.StateMessage.NewItemEditPageMessage(pageMessage);
+                var stateMessage = StateUpdateModule.StateMessage.NewItemEditPageMessage(pageMessage);
                 StateService.Update(stateMessage);
             }
             else {
@@ -17,7 +17,7 @@ namespace WebApp.Pages {
                     string.IsNullOrWhiteSpace(ItemName)
                     ? StateTypes.ItemEditPageMessage.BeginCreateNewItem
                     : StateTypes.ItemEditPageMessage.NewBeginCreateNewItemWithName(ItemName);
-                var stateMessage = StateTypes.StateMessage.NewItemEditPageMessage(pageMessage);
+                var stateMessage = StateUpdateModule.StateMessage.NewItemEditPageMessage(pageMessage);
                 StateService.Update(stateMessage);
             }
             _subscription = StateService.ItemEditPage.Subscribe(i => Form = i);
@@ -39,27 +39,27 @@ namespace WebApp.Pages {
 
         protected void OnFormMessage(StateTypes.ItemFormMessage message) {
             var pageMessage = StateTypes.ItemEditPageMessage.NewItemEditFormMessage(message);
-            var stateMessage = StateTypes.StateMessage.NewItemEditPageMessage(pageMessage);
+            var stateMessage = StateUpdateModule.StateMessage.NewItemEditPageMessage(pageMessage);
             StateService.Update(stateMessage);
         }
 
         protected void OnClickOk() {
             var pageMessage = StateTypes.ItemEditPageMessage.SubmitItemEditForm;
-            var stateMessage = StateTypes.StateMessage.NewItemEditPageMessage(pageMessage);
+            var stateMessage = StateUpdateModule.StateMessage.NewItemEditPageMessage(pageMessage);
             StateService.Update(stateMessage);
             Navigation.NavigateTo("shoppinglist");
         }
 
         protected void OnDelete() {
             var pageMessage = StateTypes.ItemEditPageMessage.DeleteItem;
-            var stateMessage = StateTypes.StateMessage.NewItemEditPageMessage(pageMessage);
+            var stateMessage = StateUpdateModule.StateMessage.NewItemEditPageMessage(pageMessage);
             StateService.Update(stateMessage);
             Navigation.NavigateTo("shoppinglist");
         }
 
         protected void OnCancel() {
             var pageMessage = StateTypes.ItemEditPageMessage.CancelItemEditForm;
-            var stateMessage = StateTypes.StateMessage.NewItemEditPageMessage(pageMessage);
+            var stateMessage = StateUpdateModule.StateMessage.NewItemEditPageMessage(pageMessage);
             StateService.Update(stateMessage);
             Navigation.NavigateTo("shoppinglist");
         }

@@ -12,6 +12,8 @@ type FormMode =
     | CreateNewStoreMode
     | EditExistingStoreMode
 
+type Message = StoreNameMessage of TextBoxMessage
+
 let createNew =
     { StoreId = None
       StoreName = TextBox.create ""

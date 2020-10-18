@@ -10,6 +10,7 @@ using System.Threading.Tasks;
 using WebApp.Common;
 using WebApp.Data;
 using static Models.StateTypes;
+using static Models.StateUpdateModule;
 
 namespace WebApp.Pages {
     public enum SyncStatus { SynchronizingNow, NoChanges, ShouldSync }

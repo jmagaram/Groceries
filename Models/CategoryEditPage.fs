@@ -2,6 +2,14 @@
 
 open StateTypes
 
+type Message =
+    | BeginEditCategory of SerializedId
+    | BeginCreateNewCategory
+    | CategoryEditFormMessage of CategoryEditForm.Message
+    | SubmitCategoryEditForm
+    | CancelCategoryEditForm
+    | DeleteCategory
+
 let beginEditCategory id s =
     { s with
           CategoryEditPage = CategoryEditForm.editExistingByGuid id s |> Some }
@@ -58,11 +66,11 @@ let private handleFormMessage m s =
                   CategoryEditPage = form |> CategoryEditForm.handle m |> Some }
     }
 
-let handle (msg: CategoryEditPageMessage) (s: State) =
+let handle (msg: Message) (s: State) =
     match msg with
     | BeginEditCategory id -> s |> beginEditCategory id |> Ok
     | BeginCreateNewCategory -> s |> beginCreateNewCategory |> Ok
     | CategoryEditFormMessage msg -> s |> handleFormMessage msg
     | SubmitCategoryEditForm -> s |> submit 
     | CancelCategoryEditForm -> s |> cancel |> Ok
-    | CategoryEditPageMessage.DeleteCategory -> s |> delete
+    | DeleteCategory -> s |> delete
