@@ -169,12 +169,3 @@ type ItemMessage =
     | UpdateItem of Item
     | UpsertItem of Item
     | DeleteItem of ItemId
-
-type ShoppingListSettingsMessage =
-    | ClearStoreFilter
-    | SetStoreFilterTo of StoreId
-    | SetPostponedViewHorizon of int<days>
-    | HideCompletedItems of bool
-    | SetItemFilter of string
-    | ClearItemFilter
-

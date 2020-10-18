@@ -10,24 +10,10 @@ type StateMessage =
     | CategoryEditPageMessage of CategoryEditPage.Message
     | StoreEditPageMessage of StoreEditPage.Message
     | ItemMessage of ItemMessage
-    | ShoppingListSettingsMessage of ShoppingListSettingsMessage
+    | ShoppingListSettingsMessage of ShoppingListSettings.Message
     | Import of ImportChanges
     | AcceptAllChanges
     | ResetToSampleData
-
-let updateSettingsStoreFilter k s =
-    let isStoreReferenceValid =
-        k
-        |> Option.map (fun k -> s.Stores |> DataTable.tryFindCurrent k |> Option.isSome)
-        |> Option.defaultValue true
-
-    match isStoreReferenceValid with
-    | false -> failwith "A store is referenced that does not exist."
-    | true -> mapSettings (ShoppingListSettings.setStoreFilter k) s
-
-let hideCompletedItems b s =
-    s
-    |> mapSettings (fun i -> { i with HideCompletedItems = b })
 
 let createDefault =
     { Categories = DataTable.empty
@@ -200,12 +186,5 @@ let rec update msg s =
         | UpdateItem i -> s |> updateItem i
         | UpsertItem i -> s |> upsertItem i
         | DeleteItem k -> s |> deleteItem k
-    | ShoppingListSettingsMessage msg ->
-        match msg with
-        | ClearStoreFilter -> s |> updateSettingsStoreFilter None
-        | SetStoreFilterTo id -> s |> updateSettingsStoreFilter (Some id)
-        | SetPostponedViewHorizon d -> s |> mapSettings (ShoppingListSettings.setPostponedViewHorizon d)
-        | HideCompletedItems b -> s |> hideCompletedItems b
-        | ClearItemFilter -> s |> mapSettings (ShoppingListSettings.clearItemFilter)
-        | SetItemFilter f -> s |> mapSettings (ShoppingListSettings.setItemFilter f)
+    | ShoppingListSettingsMessage msg -> s |> ShoppingListSettings.reduce msg
     | ResetToSampleData -> createSampleData ()

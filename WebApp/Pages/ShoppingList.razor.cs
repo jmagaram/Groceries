@@ -4,6 +4,7 @@ using Models;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reactive.Disposables;
 using System.Reactive.Linq;
 using System.Reactive.Subjects;
 using System.Threading.Tasks;
@@ -11,6 +12,7 @@ using WebApp.Common;
 using WebApp.Data;
 using static Models.StateTypes;
 using static Models.StateUpdateModule;
+using SettingsMessage = Models.ShoppingListSettingsModule.Message;
 
 namespace WebApp.Pages {
     public enum SyncStatus { SynchronizingNow, NoChanges, ShouldSync }
@@ -22,6 +24,8 @@ namespace WebApp.Pages {
         IDisposable _updateTextFilter = null;
         IDisposable _updateCanSync = null;
         IDisposable _processTextFilterTyped = null;
+        CompositeDisposable _disposables;
+
         string _textFilter;
         BehaviorSubject<string> _textFilterTyped = new BehaviorSubject<string>("");
 
@@ -47,7 +51,7 @@ namespace WebApp.Pages {
             .Throttle(TimeSpan.FromSeconds(0.75))
             .Subscribe(s =>
             {
-                StateService.Update(StateMessage.NewShoppingListSettingsMessage(ShoppingListSettingsMessage.NewSetItemFilter(s)));
+                StateService.Update(StateMessage.NewShoppingListSettingsMessage(SettingsMessage.NewSetItemFilter(s)));
                 InvokeAsync(() => StateHasChanged());
             });
 
@@ -134,10 +138,10 @@ namespace WebApp.Pages {
         }
 
         private void OnStoreFilterClear() =>
-            StateService.Update(StateMessage.NewShoppingListSettingsMessage(ShoppingListSettingsMessage.ClearStoreFilter));
+            StateService.Update(StateMessage.NewShoppingListSettingsMessage(SettingsMessage.ClearStoreFilter));
 
         private void OnStoreFilter(StoreId id) =>
-            StateService.Update(StateMessage.NewShoppingListSettingsMessage(ShoppingListSettingsMessage.NewSetStoreFilterTo(id)));
+            StateService.Update(StateMessage.NewShoppingListSettingsMessage(SettingsMessage.NewSetStoreFilterTo(id)));
 
         private void OnClickDelete(ItemId itemId) =>
             StateService.Update(StateMessage.NewItemMessage(ItemMessage.NewDeleteItem(itemId)));
@@ -155,13 +159,13 @@ namespace WebApp.Pages {
             StateService.Update(StateMessage.NewItemMessage(ItemMessage.NewPostpone(i.itemId, i.days)));
 
         private void OnClickHideCompletedItems() =>
-            StateService.Update(StateMessage.NewShoppingListSettingsMessage(ShoppingListSettingsMessage.NewHideCompletedItems(true)));
+            StateService.Update(StateMessage.NewShoppingListSettingsMessage(SettingsMessage.NewHideCompletedItems(true)));
 
         private void OnClickShowCompletedItems() =>
-            StateService.Update(StateMessage.NewShoppingListSettingsMessage(ShoppingListSettingsMessage.NewHideCompletedItems(false)));
+            StateService.Update(StateMessage.NewShoppingListSettingsMessage(SettingsMessage.NewHideCompletedItems(false)));
 
         private void ShowPostponedWithinNext(int days) {
-            StateService.Update(StateMessage.NewShoppingListSettingsMessage(ShoppingListSettingsMessage.NewSetPostponedViewHorizon(days)));
+            StateService.Update(StateMessage.NewShoppingListSettingsMessage(SettingsMessage.NewSetPostponedViewHorizon(days)));
         }
 
         protected void OnTextFilterChange(ChangeEventArgs e) {
@@ -170,7 +174,7 @@ namespace WebApp.Pages {
         }
 
         protected void OnTextFilterClear() =>
-            StateService.Update(StateMessage.NewShoppingListSettingsMessage(ShoppingListSettingsMessage.ClearItemFilter));
+            StateService.Update(StateMessage.NewShoppingListSettingsMessage(SettingsMessage.ClearItemFilter));
 
         protected void OnTextFilterKeyDown(KeyboardEventArgs e) {
             if (e.Key == "Escape") {
