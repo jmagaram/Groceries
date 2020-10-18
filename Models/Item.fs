@@ -17,9 +17,7 @@ module ItemId =
         | ItemId g -> g |> Guid.serialize
 
     let deserialize s =
-        s
-        |> Guid.tryDeserialize
-        |> Option.map ItemId
+        s |> Guid.tryDeserialize |> Option.map ItemId
 
 [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
 module ItemName =
@@ -169,6 +167,8 @@ module Frequency =
 
     let rules = { Min = 1<days>; Max = 365<days> }
 
+    let days (Frequency v) = v
+
     let create =
         let normalizer = id
         let validator = RangeValidation.createValidator rules
@@ -176,15 +176,11 @@ module Frequency =
         let onFailure = id
         RangeValidation.toResult normalizer validator onSuccess onFailure
 
-    let goodDefault = 7<days> |> create |> Result.okOrThrow
+    let frequencyDefault = 7<days> |> create |> Result.okOrThrow
 
     let common =
         [ 1; 3; 7; 14; 30; 60; 90 ]
         |> List.map (fun i -> i * 1<days> |> create |> Result.okOrThrow)
-
-    let days (Frequency v) = v
-
-    let fromNow (now: DateTimeOffset) f = now.AddDays(f |> days |> float)
 
 [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
 module Repeat =
@@ -197,22 +193,14 @@ module Repeat =
         { Frequency = frequency
           PostponedUntil = postponedUntil }
 
-    let due (now: DateTimeOffset) r =
+    let postponedUntil r = r.PostponedUntil
+
+    let postponedUntilDays (now: DateTimeOffset) r =
         r.PostponedUntil
         |> Option.map (fun future ->
             let duration = future - now
 
             round (duration.TotalDays) |> int |> (*) 1<days>)
-
-    let dueWithin (now: DateTimeOffset) (d: int<days>) r =
-        r
-        |> due now
-        |> Option.map (fun d' -> d' <= d)
-        |> Option.defaultValue true
-
-    let completeOne (now: DateTimeOffset) r =
-        { r with
-              PostponedUntil = r.Frequency |> Frequency.fromNow now |> Some }
 
 [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
 module Schedule =
@@ -233,24 +221,40 @@ module Schedule =
         | Schedule.Completed -> true
         | _ -> false
 
+    let postponedUntilDays (now: DateTimeOffset) s =
+        match s with
+        | Schedule.Repeat r -> r |> Repeat.postponedUntilDays now
+        | _ -> None
+
+    let completeNext (now: DateTimeOffset) s =
+        match s with
+        | Schedule.Completed -> s
+        | Schedule.Once -> Schedule.Completed
+        | Schedule.Repeat r ->
+            Schedule.Repeat
+                { r with
+                      PostponedUntil =
+                          now.AddDays(r.Frequency |> Frequency.days |> float)
+                          |> Some }
+
+    // Could put all extensions in a single class for use by C#.
     [<Extension>]
     type ScheduleExtensions =
         [<Extension>]
         static member IsPostponed(me: Schedule) = me |> isPostponed
 
         [<Extension>]
-        static member EffectiveDueDate(me: Schedule, now:DateTimeOffset) = me |> effectiveDueDate now
+        static member EffectiveDueDate(me: Schedule, now: DateTimeOffset) = me |> effectiveDueDate now
+
+        [<Extension>]
+        static member PostponedUntilDays(me: Schedule, now: DateTimeOffset) = me |> postponedUntilDays now
 
 [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
 module Item =
 
     let markComplete (now: DateTimeOffset) (i: Item) =
-        match i.Schedule with
-        | Schedule.Completed -> i
-        | Schedule.Once -> { i with Schedule = Schedule.Completed }
-        | Schedule.Repeat r ->
-            { i with
-                  Schedule = r |> Repeat.completeOne now |> Schedule.Repeat }
+        { i with
+              Schedule = i.Schedule |> Schedule.completeNext now }
 
     let buyAgain (i: Item) =
         match i.Schedule with
@@ -295,4 +299,3 @@ module Item =
         | Postpone (id, d) -> map id (postpone now d) s
         | BuyAgain i -> map i buyAgain s
         | DeleteItem k -> s |> StateUpdateCore.deleteItem k
-

@@ -75,8 +75,9 @@
     </elix-menu-button>
     <div class="postponeBadge">
         @if (ItemQry.Schedule is Schedule.Repeat r) {
-            @if (r.Item.PostponedUntil.IsSome()) {
-                var daysAway = RepeatModule.due(DateTimeOffset.Now, r.Item).Value;
+            var postponedUntilDays = ItemQry.Schedule.PostponedUntilDays(DateTimeOffset.Now);
+            @if (postponedUntilDays.IsSome()) {
+                var daysAway = postponedUntilDays.Value;
                 if (daysAway >= 30) {
                     <span class="badge badge-secondary">@($"{daysAway / 30}m")</span>
                 }

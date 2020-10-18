@@ -142,7 +142,6 @@ let postponeUntilFrequency f =
           Postpone = f.Frequency |> Frequency.days |> Some }
 
 let postponeClear f = { f with Postpone = None }
-let postponeDefault = None
 
 let purchased f =
     match f.ScheduleKind with
@@ -190,8 +189,8 @@ let createNewItem itemName stores cats =
       Quantity = TextBox.create ""
       Note = TextBox.create ""
       ScheduleKind = ScheduleKind.Once
-      Frequency = Frequency.goodDefault
-      Postpone = postponeDefault
+      Frequency = Frequency.frequencyDefault
+      Postpone = None
       CategoryMode = CategoryMode.ChooseExisting
       NewCategoryName = TextBox.create ""
       CategoryChoice = None
@@ -228,14 +227,14 @@ let editItem (clock: Now) cats (i: QueryTypes.ItemQry) =
           | StateTypes.Schedule.Repeat _ -> Repeat
       Frequency =
           match i.Schedule with
-          | StateTypes.Schedule.Completed -> Frequency.goodDefault
-          | StateTypes.Schedule.Once -> Frequency.goodDefault
+          | StateTypes.Schedule.Completed -> Frequency.frequencyDefault
+          | StateTypes.Schedule.Once -> Frequency.frequencyDefault
           | StateTypes.Schedule.Repeat r -> r.Frequency
       Postpone =
           match i.Schedule with
-          | StateTypes.Schedule.Completed -> postponeDefault
-          | StateTypes.Schedule.Once -> postponeDefault
-          | StateTypes.Schedule.Repeat r -> r |> Repeat.due (clock ())
+          | StateTypes.Schedule.Completed -> None
+          | StateTypes.Schedule.Once -> None
+          | StateTypes.Schedule.Repeat r -> r |> Repeat.postponedUntilDays (clock ())
       CategoryMode = CategoryMode.ChooseExisting
       NewCategoryName = "" |> TextBox.create
       CategoryChoice = i.Category
