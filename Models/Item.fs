@@ -16,7 +16,10 @@ module ItemId =
         match i with
         | ItemId g -> g.ToString()
 
-    let deserialize s = s |> String.tryParseWith Guid.TryParse |> Option.map ItemId
+    let deserialize s =
+        s
+        |> String.tryParseWith Guid.TryParse
+        |> Option.map ItemId
 
 [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
 module ItemName =
@@ -24,7 +27,8 @@ module ItemName =
     let rules = singleLine 3<chars> 50<chars>
     let normalizer = String.trim
 
-    let validator = rules |> StringValidation.createValidator
+    let validator =
+        rules |> StringValidation.createValidator
 
     let tryParse =
         StringValidation.createParser normalizer validator ItemName List.head
@@ -37,7 +41,8 @@ module Note =
     let rules = multipleLine 3<chars> 200<chars>
     let normalizer = String.trim
 
-    let validator = rules |> StringValidation.createValidator
+    let validator =
+        rules |> StringValidation.createValidator
 
     let tryParse =
         StringValidation.createParser normalizer validator Note List.head
@@ -53,7 +58,8 @@ module Quantity =
     let rules = singleLine 1<chars> 30<chars>
     let normalizer = String.trim
 
-    let validator = rules |> StringValidation.createValidator
+    let validator =
+        rules |> StringValidation.createValidator
 
     let tryParse =
         StringValidation.createParser normalizer validator Quantity List.head
@@ -75,11 +81,13 @@ module Quantity =
           { OneOf = "bunch"; ManyOf = "bunches" }
           { OneOf = "pack"; ManyOf = "packs" }
           { OneOf = "bag"; ManyOf = "bags" }
-          { OneOf = "package"; ManyOf = "packages" }
+          { OneOf = "package"
+            ManyOf = "packages" }
           { OneOf = "box"; ManyOf = "boxes" }
           { OneOf = "pint"; ManyOf = "pints" }
           { OneOf = "gallon"; ManyOf = "gallons" }
-          { OneOf = "container"; ManyOf = "containers" } ]
+          { OneOf = "container"
+            ManyOf = "containers" } ]
 
     let private manyOf u =
         knownUnits
@@ -95,7 +103,8 @@ module Quantity =
         |> Seq.tryHead
         |> Option.defaultValue u
 
-    let private grammar = new Regex("^\s*(\d+)\s*(.*)", RegexOptions.Compiled)
+    let private grammar =
+        new Regex("^\s*(\d+)\s*(.*)", RegexOptions.Compiled)
 
     type private ParsedQuantity = { Quantity: int; Units: string }
 
@@ -123,7 +132,10 @@ module Quantity =
             | Some i ->
                 let qty = i.Quantity + 1
 
-                let result = { Quantity = qty; Units = i.Units |> manyOf } |> format
+                let result =
+                    { Quantity = qty
+                      Units = i.Units |> manyOf }
+                    |> format
 
                 Some result
 
@@ -146,9 +158,11 @@ module Quantity =
 
                 Some result
 
-    let increaseQty qty = qty |> asText |> increase |> Option.map Quantity // not good logic; Quantity.create makes a Result
+    let increaseQty qty =
+        qty |> asText |> increase |> Option.map Quantity // not good logic; Quantity.create makes a Result
 
-    let decreaseQty qty = qty |> asText |> decrease |> Option.map Quantity
+    let decreaseQty qty =
+        qty |> asText |> decrease |> Option.map Quantity
 
 [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
 module Frequency =
@@ -179,7 +193,9 @@ module Repeat =
         [ 1; 3; 7; 14; 30; 60; 90 ]
         |> List.map (fun i -> i * 1<days>)
 
-    let create frequency postponedUntil = { Frequency = frequency; PostponedUntil = postponedUntil }
+    let create frequency postponedUntil =
+        { Frequency = frequency
+          PostponedUntil = postponedUntil }
 
     let due (now: DateTimeOffset) r =
         r.PostponedUntil
@@ -255,7 +271,30 @@ module Item =
     let postpone (now: DateTimeOffset) (d: int<days>) (i: Item) =
         match i.Schedule with
         | Schedule.Repeat r ->
-            let r = { r with PostponedUntil = now.AddDays(d |> float) |> Some }
+            let r =
+                { r with
+                      PostponedUntil = now.AddDays(d |> float) |> Some }
 
             { i with Schedule = Schedule.Repeat r }
         | _ -> failwith "A non-repeating item can not be postponed."
+
+    type Message =
+        | MarkComplete of ItemId
+        | BuyAgain of ItemId
+        | RemovePostpone of ItemId
+        | Postpone of ItemId * int<days>
+        | DeleteItem of ItemId
+
+    let map id f (s: State) =
+        let item = s.Items |> DataTable.findCurrent id |> f
+
+        { s with
+              Items = s.Items |> DataTable.update item }
+
+    let reduce now msg (s: State) =
+        match msg with
+        | MarkComplete i -> map i (markComplete now) s
+        | RemovePostpone i -> map i removePostpone s
+        | Postpone (id, d) -> map id (postpone now d) s
+        | BuyAgain i -> map i buyAgain s
+        | DeleteItem k -> s |> StateUpdateCore.deleteItem k

@@ -12,6 +12,7 @@
     <Compile Include="ValidationTypes.fs" />
     <Compile Include="Validation.fs" />
     <Compile Include="StateTypes.fs" />
+    <Compile Include="StateUpdateCore.fs" />
     <Compile Include="Etag.fs" />
     <Compile Include="Item.fs" />
     <Compile Include="Category.fs" />
@@ -22,7 +23,6 @@
     <Compile Include="ShoppingListSettings.fs" />
     <Compile Include="QueryTypes.fs" />
     <Compile Include="StateQuery.fs" />
-    <Compile Include="StateUpdateCore.fs" />
     <Compile Include="CategoryEditForm.fs" />
     <Compile Include="CategoryEditPage.fs" />
     <Compile Include="StoreEditForm.fs" />

@@ -9,7 +9,7 @@ type StateMessage =
     | ItemEditPageMessage of ItemEditPage.Message
     | CategoryEditPageMessage of CategoryEditPage.Message
     | StoreEditPageMessage of StoreEditPage.Message
-    | ItemMessage of ItemMessage
+    | ItemMessage of Item.Message
     | ShoppingListSettingsMessage of ShoppingListSettings.Message
     | Import of ImportChanges
     | AcceptAllChanges
@@ -131,41 +131,6 @@ let createSampleData () =
     |> doesNotSellItem "QFC" "Dried flax seeds"
     |> doesNotSellItem "Costco" "Chocolate bars"
 
-let markItemComplete now id s =
-    let item =
-        s
-        |> StateQuery.itemsTable
-        |> DataTable.findCurrent id
-        |> Item.markComplete now
-
-    s |> mapItems (DataTable.update item)
-
-let removePostpone id s =
-    let item =
-        s
-        |> StateQuery.itemsTable
-        |> DataTable.findCurrent id
-        |> Item.removePostpone
-
-    s |> mapItems (DataTable.update item)
-
-let postponeItem now id d s =
-    let item =
-        s
-        |> StateQuery.itemsTable
-        |> DataTable.findCurrent id
-        |> Item.postpone now d
-
-    s |> mapItems (DataTable.update item)
-
-let buyAgain id s =
-    let item =
-        s
-        |> StateQuery.itemsTable
-        |> DataTable.findCurrent id
-        |> Item.buyAgain
-
-    s |> mapItems (DataTable.update item)
 
 let rec update msg s =
     let now = clock()
@@ -176,15 +141,6 @@ let rec update msg s =
     | ItemEditPageMessage msg -> s |> ItemEditPage.reduce msg clock now
     | AcceptAllChanges -> s |> acceptAllChanges
     | Import c -> s |> importChanges c
-    | ItemMessage msg ->
-        match msg with
-        | MarkComplete i -> s |> markItemComplete now i
-        | RemovePostpone i -> s |> removePostpone i
-        | Postpone (id, d) -> s |> postponeItem now id d
-        | BuyAgain i -> s |> buyAgain i
-        | InsertItem i -> s |> insertItem i
-        | UpdateItem i -> s |> updateItem i
-        | UpsertItem i -> s |> upsertItem i
-        | DeleteItem k -> s |> deleteItem k
+    | ItemMessage msg -> s |> Item.reduce now msg
     | ShoppingListSettingsMessage msg -> s |> ShoppingListSettings.reduce msg
     | ResetToSampleData -> createSampleData ()

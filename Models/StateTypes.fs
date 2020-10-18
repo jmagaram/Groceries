@@ -159,13 +159,3 @@ type ImportChanges =
       StoreChanges: Change<Store, StoreId> list
       NotSoldItemChanges: Change<NotSoldItem, NotSoldItem> list
       LatestTimestamp: int option }
-
-type ItemMessage =
-    | MarkComplete of ItemId
-    | BuyAgain of ItemId
-    | RemovePostpone of ItemId
-    | Postpone of ItemId * int<days>
-    | InsertItem of Item
-    | UpdateItem of Item
-    | UpsertItem of Item
-    | DeleteItem of ItemId

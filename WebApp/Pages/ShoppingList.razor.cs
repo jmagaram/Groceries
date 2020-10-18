@@ -13,6 +13,7 @@ using WebApp.Data;
 using static Models.StateTypes;
 using static Models.StateUpdateModule;
 using SettingsMessage = Models.ShoppingListSettingsModule.Message;
+using ItemMessage = Models.ItemModule.Message;
 
 namespace WebApp.Pages {
     public enum SyncStatus { SynchronizingNow, NoChanges, ShouldSync }
