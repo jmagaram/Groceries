@@ -7,7 +7,7 @@ open FsUnit.Xunit
 open Models
 open Models.ChangeTrackerTypes
 
-module SynchronizationTestHelpers =
+module TestHelpers =
     type Person =
         { Id: int
           Name: string }
@@ -21,7 +21,7 @@ module SynchronizationTestHelpers =
     let joe' = person 2 "joe"
 
 module DataRowTests =
-    open SynchronizationTestHelpers
+    open TestHelpers
 
     [<Fact>]
     let ``when create a MODIFIED row, before and after values are set correctly`` () =
@@ -99,7 +99,7 @@ module DataRowTests =
         actual |> should equal expected
 
 module DataTableTests =
-    open SynchronizationTestHelpers
+    open TestHelpers
     open DataTable
 
     [<Fact>]

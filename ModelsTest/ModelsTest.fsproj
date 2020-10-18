@@ -11,7 +11,7 @@
     <Compile Include="Generators.fs" />
     <Compile Include="UtilitiesTests.fs" />
     <Compile Include="StateTests.fs" />
-    <Compile Include="SynchronizationTests.fs" />
+    <Compile Include="ChangeTrackerTests.fs" />
     <Compile Include="ValidationTests.fs" />
     <Compile Include="ViewTests.fs" />
     <Compile Include="Program.fs" />
