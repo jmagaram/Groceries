@@ -5,6 +5,7 @@
 @using Models
 @using static Models.StateTypes
 @using static Common.OptionExtensions
+@using static Models.ScheduleModule.ScheduleExtensions
 
 <style>
     .postponeBadge {
@@ -63,7 +64,7 @@
         }
         <elix-menu-separator></elix-menu-separator>
         @if (ItemQry.Schedule is Schedule.Repeat) {
-            @if (ScheduleModule.isPostponed(ItemQry.Schedule)) {
+            @if (ItemQry.Schedule.IsPostponed()) {
                 <elix-menu-item id="@MenuChoice.Now">Add to shopping list now</elix-menu-item>
             }
             <elix-menu-item id="@MenuChoice.Plus1Wk">Postpone +1 Week</elix-menu-item>

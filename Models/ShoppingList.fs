@@ -76,7 +76,7 @@ let create now state =
             let isPostponedMatch = // hack
                 match i.Schedule with
                 | StateTypes.Schedule.Repeat r ->
-                    let due = i.Schedule |> Schedule.due now
+                    let due = i.Schedule |> Schedule.effectiveDueDate now
 
                     let horizon = now.AddDays(settings.PostponedViewHorizon |> float)
 

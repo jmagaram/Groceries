@@ -2,7 +2,7 @@
 
 open System
 open System.Text.RegularExpressions
-open System.Collections.Generic
+open System.Runtime.CompilerServices
 open StateTypes
 open StringValidation
 open ValidationTypes
@@ -217,18 +217,11 @@ module Repeat =
 [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
 module Schedule =
 
-    let due (now: DateTimeOffset) s =
+    let effectiveDueDate (now: DateTimeOffset) s =
         match s with
         | Schedule.Once -> now
         | Schedule.Completed -> DateTimeOffset.MaxValue
         | Schedule.Repeat r -> r.PostponedUntil |> Option.defaultValue now
-
-    let effectiveDueDateComparer (now: DateTimeOffset): IComparer<Schedule> =
-        { new IComparer<Schedule> with
-            member this.Compare(x, y) =
-                let xDue = x |> due now
-                let yDue = y |> due now
-                DateTimeOffset.Compare(xDue, yDue) }
 
     let isPostponed s =
         match s with
@@ -239,6 +232,14 @@ module Schedule =
         match s with
         | Schedule.Completed -> true
         | _ -> false
+
+    [<Extension>]
+    type ScheduleExtensions =
+        [<Extension>]
+        static member IsPostponed(me: Schedule) = me |> isPostponed
+
+        [<Extension>]
+        static member EffectiveDueDate(me: Schedule, now:DateTimeOffset) = me |> effectiveDueDate now
 
 [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
 module Item =
@@ -256,10 +257,6 @@ module Item =
         | Schedule.Completed -> { i with Schedule = Schedule.Once }
         | Schedule.Once -> i
         | Schedule.Repeat _ -> i
-
-    let isPostponed (i: Item) = i.Schedule |> Schedule.isPostponed
-
-    let isCompleted (i: Item) = i.Schedule |> Schedule.isCompleted
 
     let removePostpone (i: Item) =
         match i.Schedule with
@@ -298,3 +295,4 @@ module Item =
         | Postpone (id, d) -> map id (postpone now d) s
         | BuyAgain i -> map i buyAgain s
         | DeleteItem k -> s |> StateUpdateCore.deleteItem k
+
