@@ -183,11 +183,11 @@ module Schedule =
         [ 1; 3; 7; 14; 30; 60; 90 ]
         |> List.map (fun i -> i * 1<days>)
 
-    let effectiveDueDate (now: DateTimeOffset) s =
+    let dueDate (now: DateTimeOffset) s =
         match s with
-        | Schedule.Once -> now
-        | Schedule.Completed -> DateTimeOffset.MaxValue
-        | Schedule.Repeat r -> r.PostponedUntil |> Option.defaultValue now
+        | Schedule.Completed -> None
+        | Schedule.Once -> Some now
+        | Schedule.Repeat r -> r.PostponedUntil |> Option.orElse (Some now)
 
     let isPostponed s =
         match s with
@@ -252,7 +252,7 @@ module Schedule =
         static member IsPostponed(me: Schedule) = me |> isPostponed
 
         [<Extension>]
-        static member EffectiveDueDate(me: Schedule, now: DateTimeOffset) = me |> effectiveDueDate now
+        static member DueDate(me: Schedule, now: DateTimeOffset) = me |> dueDate now
 
         [<Extension>]
         static member PostponedUntilDays(me: Schedule, now: DateTimeOffset) = me |> postponedUntilDays now
