@@ -177,21 +177,11 @@ module Frequency =
         |> List.map (fun i -> i * 1<days> |> create |> Result.okOrThrow)
 
 [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
-module Repeat =
+module Schedule =
 
     let commonPostponeChoices =
         [ 1; 3; 7; 14; 30; 60; 90 ]
         |> List.map (fun i -> i * 1<days>)
-
-    let postponedUntilDays (now: DateTimeOffset) r =
-        r.PostponedUntil
-        |> Option.map (fun future ->
-            let duration = future - now
-
-            round (duration.TotalDays) |> int |> (*) 1<days>)
-
-[<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
-module Schedule =
 
     let effectiveDueDate (now: DateTimeOffset) s =
         match s with
@@ -211,7 +201,11 @@ module Schedule =
 
     let postponedUntilDays (now: DateTimeOffset) s =
         match s with
-        | Schedule.Repeat r -> r |> Repeat.postponedUntilDays now
+        | Schedule.Repeat r ->
+            r.PostponedUntil
+            |> Option.map (fun future ->
+                let duration = future - now
+                round (duration.TotalDays) |> int |> (*) 1<days>)
         | _ -> None
 
     let completeNext (now: DateTimeOffset) s =
@@ -219,11 +213,11 @@ module Schedule =
         | Schedule.Completed -> s
         | Schedule.Once -> Schedule.Completed
         | Schedule.Repeat r ->
-            Schedule.Repeat
-                { r with
-                      PostponedUntil =
-                          now.AddDays(r.Frequency |> Frequency.days |> float)
-                          |> Some }
+            { r with
+                  PostponedUntil =
+                      now.AddDays(r.Frequency |> Frequency.days |> float)
+                      |> Some }
+            |> Schedule.Repeat
 
     let activate s =
         match s with
@@ -233,7 +227,9 @@ module Schedule =
 
     let withoutPostpone s =
         match s with
-        | Schedule.Repeat ({ PostponedUntil = Some _ } as r) -> Schedule.Repeat { r with PostponedUntil = None }
+        | Schedule.Repeat ({ PostponedUntil = Some _ } as r) ->
+            { r with PostponedUntil = None }
+            |> Schedule.Repeat
         | _ -> s
 
     let tryPostpone (now: DateTimeOffset) (d: int<days>) s =
@@ -269,7 +265,9 @@ module Item =
     let removePostpone i =
         i |> mapSchedule Schedule.withoutPostpone
 
-    let postpone now days i = i |> mapSchedule (Schedule.tryPostpone now days >> Result.okOrThrow)
+    let postpone now days i =
+        i
+        |> mapSchedule (Schedule.tryPostpone now days >> Result.okOrThrow)
 
     type Message =
         | MarkComplete of ItemId

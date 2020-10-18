@@ -167,7 +167,7 @@ let postponeDurationAsText (d: int<days>) =
 
 let postponeChoices (f: ItemForm) =
     f.Postpone
-    :: (Repeat.commonPostponeChoices |> List.map Some)
+    :: (Schedule.commonPostponeChoices |> List.map Some)
     |> Seq.choose id
     |> Seq.map frequencyCoerceIntoBounds
     |> Seq.distinct
@@ -230,11 +230,7 @@ let editItem (clock: Now) cats (i: QueryTypes.ItemQry) =
           | StateTypes.Schedule.Completed -> Frequency.frequencyDefault
           | StateTypes.Schedule.Once -> Frequency.frequencyDefault
           | StateTypes.Schedule.Repeat r -> r.Frequency
-      Postpone =
-          match i.Schedule with
-          | StateTypes.Schedule.Completed -> None
-          | StateTypes.Schedule.Once -> None
-          | StateTypes.Schedule.Repeat r -> r |> Repeat.postponedUntilDays (clock ())
+      Postpone = i.Schedule |> Schedule.postponedUntilDays (clock())
       CategoryMode = CategoryMode.ChooseExisting
       NewCategoryName = "" |> TextBox.create
       CategoryChoice = i.Category
