@@ -169,3 +169,10 @@ module Memoize =
 
         let add x y cache = Some(x, y)
         memoize empty tryFind add f
+
+[<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
+module Guid =
+
+    let serialize (g:Guid) = g.ToString()
+
+    let tryDeserialize s = s |> String.tryParseWith Guid.TryParse

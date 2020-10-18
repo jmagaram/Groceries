@@ -11,9 +11,9 @@ module StoreId =
 
     let serialize i =
         match i with
-        | StoreId g -> g.ToString()
+        | StoreId g -> g |> Guid.serialize
 
-    let deserialize s = s |> String.tryParseWith Guid.TryParse |> Option.map StoreId
+    let deserialize s = s |> Guid.tryDeserialize |> Option.map StoreId
 
 [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
 module StoreName =

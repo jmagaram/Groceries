@@ -12,11 +12,11 @@ module CategoryId =
 
     let serialize i =
         match i with
-        | CategoryId g -> g.ToString()
+        | CategoryId g -> g |> Guid.serialize
 
     let deserialize s =
         s
-        |> String.tryParseWith Guid.TryParse
+        |> Guid.tryDeserialize
         |> Option.map CategoryId
 
 [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]

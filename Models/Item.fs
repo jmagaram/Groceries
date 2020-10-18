@@ -14,11 +14,11 @@ module ItemId =
 
     let serialize i =
         match i with
-        | ItemId g -> g.ToString()
+        | ItemId g -> g |> Guid.serialize
 
     let deserialize s =
         s
-        |> String.tryParseWith Guid.TryParse
+        |> Guid.tryDeserialize
         |> Option.map ItemId
 
 [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]

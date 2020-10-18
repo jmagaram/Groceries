@@ -1,5 +1,6 @@
 ﻿namespace ModelsTest
 
+open System
 open Models
 open Xunit
 open FsUnit
@@ -129,7 +130,7 @@ module SeqTests =
         failingTests |> Seq.isEmpty |> should equal true
 
 module StringTests =
-    
+
     let tryParseInt = tryParseWith System.Int32.TryParse
 
     [<Theory>]
@@ -160,7 +161,7 @@ module OptionTests =
         let divide numerator denominator =
             match denominator with
             | 0 -> None
-            | _ -> Some (numerator / denominator)
+            | _ -> Some(numerator / denominator)
 
         let actual =
             option {
@@ -178,7 +179,7 @@ module OptionTests =
         let divide numerator denominator =
             match denominator with
             | 0 -> None
-            | _ -> Some (numerator / denominator)
+            | _ -> Some(numerator / denominator)
 
         let actual =
             option {
@@ -230,27 +231,22 @@ module ResultTests =
 
     [<Fact>]
     let ``computation expression - can return! an error directly`` () =
-        let actual : Result<int,string> =
-            result {
-                return! (Error "this is the error")
-            }
+        let actual: Result<int, string> =
+            result { return! (Error "this is the error") }
 
         let expected: Result<int, string> = Error "this is the error"
         actual |> should equal expected
 
     [<Fact>]
     let ``computation expression - can return! an OK directly`` () =
-        let actual : Result<int,string> =
-            result {
-                return! (Ok 3)
-            }
+        let actual: Result<int, string> = result { return! (Ok 3) }
 
         let expected: Result<int, string> = Ok 3
         actual |> should equal expected
 
     //[<Fact>]
     //let ``computation expression - can match!`` () =
-    //    let actual = 
+    //    let actual =
     //        result {
     //            let a = match! (Ok 3) with
     //                    | 3 -> true
@@ -263,23 +259,70 @@ module ResultTests =
     [<Fact>]
     let ``fromResults - return first Error, if any, or Ok list`` () =
         let isSmallerThan5 x = if x < 5 then Ok x else Error x
-        let nums1To10 = Gen.choose (1,10)
-        let testData = 
-            Gen.choose(0,5)
+        let nums1To10 = Gen.choose (1, 10)
+
+        let testData =
+            Gen.choose (0, 5)
             >>= fun len -> Gen.listOfLength len nums1To10
             |> Gen.sample 1 1000
-        let results = 
+
+        let results =
             testData
-            |> Seq.map (fun i -> 
-                let input = i |> Seq.map isSmallerThan5 |> List.ofSeq
+            |> Seq.map (fun i ->
+                let input =
+                    i |> Seq.map isSmallerThan5 |> List.ofSeq
+
                 let result = input |> fromResults
-                let expected = 
-                    match input |> List.tryPick (fun i -> match i with | Error e -> Some e | _ -> None) with
+
+                let expected =
+                    match input
+                          |> List.tryPick (fun i ->
+                              match i with
+                              | Error e -> Some e
+                              | _ -> None) with
                     | None -> Ok i
-                    | Some r -> Error r 
-                {| Input = input; Expected = expected; Actual = result|})
+                    | Some r -> Error r
+
+                {| Input = input
+                   Expected = expected
+                   Actual = result |})
             |> List.ofSeq
-        let failing = 
+
+        let failing =
             results
             |> List.filter (fun i -> i.Actual <> i.Expected)
+
         failing |> Seq.isEmpty |> should equal true
+
+module GuidTests =
+
+    [<Property>]
+    let ``serialize and tryDeserialize results in same thing`` () =
+        let g = Guid.NewGuid()
+
+        let actual =
+            g |> Guid.serialize |> Guid.tryDeserialize
+
+        let expected = Some g
+        actual |> should equal expected
+
+    [<Property>]
+    let ``tryDeserialize trims whitespace`` (NonNegativeInt spaceBefore) (NonNegativeInt spaceAfter) =
+        let before = new String(' ', spaceBefore)
+        let after = new String(' ', spaceAfter)
+        let g = Guid.NewGuid() |> Guid.serialize
+        let g' = sprintf "%s%s%s" before g after
+
+        (g |> Guid.tryDeserialize)
+        |> should equal (g' |> Guid.tryDeserialize)
+
+    // 7b9b544f-9fe2-42e8-b7f6-767f659e8866 is valid
+    [<Theory>]
+    [<InlineData("x7b9b544f-9fe2-42e8-b7f6-767f659e8866")>]
+    [<InlineData("7b9b544f-9fe2-42e8-b7f6-767f659e8866x")>]
+    [<InlineData("7b9b544f-9fe2-42e8-b7f6--67f659e8866")>]
+    let ``tryDeserialize when invalid returns None`` s =
+        s
+        |> Guid.tryDeserialize
+        |> Option.isNone
+        |> should equal true
