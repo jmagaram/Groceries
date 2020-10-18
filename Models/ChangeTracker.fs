@@ -114,7 +114,7 @@ module DataTable =
         let dt = dt |> asMap
 
         match dt |> Map.tryFind k with
-        | None -> failwith "A row with the same key does not exist and thus could not be updated."
+        | None -> failwith "Could not find a row with that key to update."
         | Some r ->
             let r = r |> DataRow.update v
             dt |> Map.add k r |> fromMap
@@ -134,7 +134,7 @@ module DataTable =
         let dt = dt |> asMap
 
         match dt |> Map.tryFind k with
-        | None -> failwith "A row with that key does not exist and thus no row could be deleted."
+        | None -> failwith "Could not find a row with that key to delete."
         | Some r ->
             match r |> DataRow.delete with
             | Some r -> dt |> Map.add k r

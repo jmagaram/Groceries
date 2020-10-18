@@ -245,7 +245,6 @@ module Schedule =
             |> Ok
         | _ -> Error "Only repeating items can be postponed."
 
-    // Could put all extensions in a single class for use by C#.
     [<Extension>]
     type ScheduleExtensions =
         [<Extension>]
