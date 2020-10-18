@@ -125,11 +125,6 @@ type ItemForm =
       CategoryChoiceList: Category list
       Stores: ItemAvailability list }
 
-type ItemFormResult =
-    { Item: Item
-      InsertCategory: Category option
-      NotSold: StoreId list }
-
 type SerializedId = string
 
 type CategoryEditForm =

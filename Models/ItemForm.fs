@@ -295,6 +295,11 @@ let rec handleMessage msg (f: ItemForm) =
     | Purchased -> f |> purchased
     | Message.Transaction msgs -> msgs |> Seq.fold (fun f m -> handleMessage m f) f
 
+type ItemFormResult =
+    { Item: Item
+      InsertCategory: Category option
+      NotSold: StoreId list }
+
 let asItemFormResult (now: DateTimeOffset) (f: ItemForm) =
     let insertCategory =
         match f.CategoryMode with
