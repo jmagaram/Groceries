@@ -199,6 +199,11 @@ module Schedule =
         | Schedule.Completed -> true
         | _ -> false
 
+    let postponedUntil s =
+        match s with
+        | Schedule.Repeat r -> r.PostponedUntil
+        | _ -> None
+
     let postponedUntilDays (now: DateTimeOffset) s =
         match s with
         | Schedule.Repeat r ->

@@ -1,6 +1,6 @@
 ﻿[<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
 module Models.ShoppingList
-
+open System
 open StateTypes
 open ViewTypes
 
@@ -56,7 +56,7 @@ let create now state =
 
     let find = settings.ItemTextFilter |> Option.map Highlighter.create
 
-    let items now =
+    let items (now:DateTimeOffset) =
         state
         |> StateQuery.items
         |> Seq.map (fun item -> createItem find item state)
@@ -73,15 +73,13 @@ let create now state =
                     |> fun a -> a.IsSold)
                 |> Option.defaultValue true
 
-            let isPostponedMatch = // hack
-                match i.Schedule with
-                | StateTypes.Schedule.Repeat r ->
-                    let due = i.Schedule |> Schedule.effectiveDueDate now
-
+            let isPostponedMatch = 
+                i.Schedule
+                |> Schedule.postponedUntil
+                |> Option.map (fun postponedUntil -> 
                     let horizon = now.AddDays(settings.PostponedViewHorizon |> float)
-
-                    due <= horizon
-                | _ -> true
+                    postponedUntil <= horizon)
+                |> Option.defaultValue true
 
             let isTextMatch =
                 match find with
