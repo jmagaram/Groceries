@@ -18,12 +18,6 @@ namespace WebApp.Pages {
     public enum SyncStatus { SynchronizingNow, NoChanges, ShouldSync }
 
     public partial class ShoppingList : ComponentBase, IDisposable {
-        IDisposable _updateItemList = null;
-        IDisposable _updateStorePickerList = null;
-        IDisposable _updateStorePickerCurrentValue = null;
-        IDisposable _updateTextFilter = null;
-        IDisposable _updateCanSync = null;
-        IDisposable _processTextFilterTyped = null;
         CompositeDisposable _disposables;
 
         string _textFilter;
@@ -32,17 +26,26 @@ namespace WebApp.Pages {
         [Inject]
         public Data.ApplicationStateService StateService { get; set; }
 
+        [Inject]
+        NavigationManager Navigation { get; set; }
+
+        [Inject]
+        public CosmosConnector Cosmos { get; set; }
+
         public SyncStatus SyncStatus { get; set; } = SyncStatus.NoChanges;
 
         protected override void OnInitialized() {
             base.OnInitialized();
             OnTextFilterClear();
-            _updateItemList = UpdateItems();
-            _updateStorePickerList = UpdateStoreFilterPickerList();
-            _updateStorePickerCurrentValue = UpdateStoreFilterSelectedItem();
-            _updateTextFilter = UpdateTextFilter();
-            _updateCanSync = UpdateCanSync();
-            _processTextFilterTyped = ProcessTextFilterTyped();
+            _disposables = new CompositeDisposable
+            {
+                UpdateItems(),
+                UpdateStoreFilterPickerList(),
+                UpdateStoreFilterSelectedItem(),
+                UpdateTextFilter(),
+                UpdateCanSync(),
+                ProcessTextFilterTyped()
+            };
         }
 
         private IDisposable ProcessTextFilterTyped() =>
@@ -117,16 +120,10 @@ namespace WebApp.Pages {
             .DistinctUntilChanged()
             .Subscribe(i => Items = i.ToList());
 
-        [Inject]
-        NavigationManager Navigation { get; set; }
-
         private void OnNavigateToCategory(CategoryId id) {
             string categoryId = CategoryIdModule.serialize(id);
             Navigation.NavigateTo($"categoryedit/{categoryId}");
         }
-
-        [Inject]
-        public CosmosConnector Cosmos { get; set; }
 
         private async Task OnSync() {
             await Cosmos.CreateDatabase();
@@ -200,13 +197,6 @@ namespace WebApp.Pages {
 
         protected List<Store> StoreFilterChoices { get; private set; }
 
-        public void Dispose() {
-            _updateItemList?.Dispose();
-            _updateStorePickerList?.Dispose();
-            _updateStorePickerCurrentValue?.Dispose();
-            _updateTextFilter?.Dispose();
-            _updateCanSync?.Dispose();
-            _processTextFilterTyped?.Dispose();
-        }
+        public void Dispose() => _disposables.Dispose();
     }
 }
