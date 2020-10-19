@@ -66,18 +66,6 @@ module MemoizeTests =
 module SeqTests =
 
     [<Fact>]
-    let ``zero or one - when empty expect none`` () = [] |> zeroOrOne |> should equal None
-
-    [<Fact>]
-    let ``zero or one - when exactly one expect it`` () =
-        [ 1 ] |> zeroOrOne |> should equal (Some 1)
-
-    [<Fact>]
-    let ``zero or one - when more than one throw`` () =
-        let f () = [ 1; 2; 3 ] |> zeroOrOne |> ignore
-        f |> shouldFail
-
-    [<Fact>]
     let ``takeTo - no item before the last satisfies the predicate`` () =
         let isLessThanOrEqualTo75 x = x <= 75
 

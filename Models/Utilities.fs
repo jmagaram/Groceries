@@ -35,14 +35,6 @@ module Seq =
                 isDone <- predicate en.Current
         }
 
-    let zeroOrOne s =
-        let result = s |> Seq.truncate 2 |> Seq.toList
-
-        match result with
-        | [] -> None
-        | [ x ] -> Some x
-        | _ -> failwith "Too many items in the sequence. Expected zero or one."
-
 [<AutoOpen>]
 module Option =
 
