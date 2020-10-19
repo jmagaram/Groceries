@@ -137,7 +137,7 @@ module DataRowTests =
     let ``tryUpdate - when deleted and different value, return error`` () =
         match DataRow.deleted bob1 |> DataRow.tryUpdate bob2 with
         | Ok r -> false
-        | Error RowIsDeletedError -> true
+        | Error RowIsDeleted -> true
         |> should equal true
 
     [<Fact>]
@@ -192,7 +192,7 @@ module DataRowTests =
     let ``tryMap - when deleted and different value return error`` () =
         match DataRow.deleted bob1
               |> DataRow.tryMap (changeNameTo bob2.Name) with
-        | Error RowIsDeletedError -> true
+        | Error RowIsDeleted -> true
         | _ -> false
         |> should equal true
 
@@ -200,7 +200,7 @@ module DataRowTests =
     let ``tryMap - when deleted and same value return self`` () =
         match DataRow.deleted bob1 |> DataRow.tryMap id with
         | Ok r -> r |> isDeleted bob1
-        | Error RowIsDeletedError -> false
+        | Error RowIsDeleted -> false
         |> should equal true
 
     [<Fact>]
@@ -372,7 +372,7 @@ module DataTableTests =
         |> insert bob1
         |> tryDeleteOrThrow bob1.Id
         |> tryFindRow bob1.Id
-        |> Result.isError
+        |> Option.isNone
         |> should equal true
 
     [<Fact>]
@@ -382,7 +382,7 @@ module DataTableTests =
         |> acceptChanges
         |> tryDeleteOrThrow bob1.Id
         |> tryFindRow bob1.Id
-        |> Result.okOrThrow
+        |> Option.get
         |> assertisDeleted bob1
 
     [<Fact>]
@@ -393,7 +393,7 @@ module DataTableTests =
         |> update bob2
         |> tryDeleteOrThrow bob1.Id
         |> tryFindRow bob1.Id
-        |> Result.okOrThrow
+        |> Option.get
         |> assertisDeleted bob1
 
     [<Fact>]
@@ -405,7 +405,7 @@ module DataTableTests =
         |> tryDeleteOrThrow bob1.Id
         |> tryDeleteOrThrow bob1.Id
         |> tryFindRow bob1.Id
-        |> Result.okOrThrow
+        |> Option.get
         |> assertisDeleted bob1
 
     [<Fact>]
@@ -416,7 +416,7 @@ module DataTableTests =
         |> tryDeleteOrThrow bob1.Id
         |> deleteIf (fun i -> i.Id = bob1.Id)
         |> tryFindRow bob1.Id
-        |> Result.okOrThrow
+        |> Option.get
         |> assertisDeleted bob1
 
     [<Fact>]
@@ -425,7 +425,7 @@ module DataTableTests =
         |> insert bob1
         |> deleteIf (fun i -> i.Id = bob1.Id)
         |> tryFindRow bob1.Id
-        |> Result.isError
+        |> Option.isNone
         |> should equal true
 
     [<Fact>]
@@ -435,7 +435,7 @@ module DataTableTests =
         |> acceptChanges
         |> deleteIf (fun i -> i.Id = bob1.Id)
         |> tryFindRow bob1.Id
-        |> Result.okOrThrow
+        |> Option.get
         |> assertisDeleted bob1
 
     [<Fact>]
@@ -446,7 +446,7 @@ module DataTableTests =
         |> tryUpdateOrThrow bob2
         |> deleteIf (fun i -> i.Id = bob1.Id)
         |> tryFindRow bob1.Id
-        |> Result.okOrThrow
+        |> Option.get
         |> assertisDeleted bob1
 
     [<Fact>]
@@ -456,7 +456,7 @@ module DataTableTests =
         |> acceptChanges
         |> acceptChange (Change.Delete bob1.Id)
         |> tryFindRow bob1.Id
-        |> Result.isError
+        |> Option.isNone
         |> should equal true
 
     [<Fact>]
@@ -467,7 +467,7 @@ module DataTableTests =
         |> tryUpdateOrThrow bob2
         |> acceptChange (Change.Delete bob1.Id)
         |> tryFindRow bob1.Id
-        |> Result.isError
+        |> Option.isNone
         |> should equal true
 
     [<Fact>]
@@ -476,7 +476,7 @@ module DataTableTests =
         |> insert bob1
         |> acceptChange (Change.Delete bob1.Id)
         |> tryFindRow bob1.Id
-        |> Result.isError
+        |> Option.isNone
         |> should equal true
 
     [<Fact>]
@@ -487,7 +487,7 @@ module DataTableTests =
         |> tryDeleteOrThrow bob1.Id
         |> acceptChange (Change.Delete bob1.Id)
         |> tryFindRow bob1.Id
-        |> Result.isError
+        |> Option.isNone
         |> should equal true
 
     [<Fact>]
@@ -497,7 +497,7 @@ module DataTableTests =
         |> acceptChanges
         |> acceptChange (Change.Delete joe1.Id)
         |> tryFindRow joe1.Id
-        |> Result.isError
+        |> Option.isNone
         |> should equal true
 
     [<Fact>]
@@ -507,7 +507,7 @@ module DataTableTests =
         |> acceptChanges
         |> acceptChange (Change.Upsert bob2)
         |> tryFindRow bob1.Id
-        |> Result.okOrThrow
+        |> Option.get
         |> assertisUnchanged bob2
 
     [<Fact>]
@@ -516,7 +516,7 @@ module DataTableTests =
         |> insert bob1
         |> acceptChange (Change.Upsert bob2)
         |> tryFindRow bob1.Id
-        |> Result.okOrThrow
+        |> Option.get
         |> assertisUnchanged bob2
 
     [<Fact>]
@@ -527,7 +527,7 @@ module DataTableTests =
         |> tryDeleteOrThrow bob1.Id
         |> acceptChange (Change.Upsert bob2)
         |> tryFindRow bob1.Id
-        |> Result.okOrThrow
+        |> Option.get
         |> assertisUnchanged bob2
 
     [<Fact>]
@@ -538,7 +538,7 @@ module DataTableTests =
         |> update bob2
         |> acceptChange (Change.Upsert bob3)
         |> tryFindRow bob1.Id
-        |> Result.okOrThrow
+        |> Option.get
         |> assertisUnchanged bob3
 
     [<Fact>]
@@ -546,5 +546,5 @@ module DataTableTests =
         empty
         |> acceptChange (Change.Upsert bob1)
         |> tryFindRow bob1.Id
-        |> Result.okOrThrow
+        |> Option.get
         |> assertisUnchanged bob1

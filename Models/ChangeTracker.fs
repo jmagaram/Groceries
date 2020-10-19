@@ -49,7 +49,7 @@ module DataRow =
         | Added _ -> added v' |> Ok
         | Deleted v ->
             match v = v' with
-            | false -> RowIsDeletedError |> Error
+            | false -> RowIsDeleted |> Error
             | true -> r |> Ok
 
     let tryMap f r =
@@ -99,35 +99,31 @@ module DataTable =
 
     let empty<'Key, 'T when 'Key: comparison> = Map.empty<'Key, DataRow<'T>> |> DataTable
 
-    // should return None not error; why else would it fail?
-    let tryFindRow k dt =
-        match dt |> asMap |> Map.tryFind k with
-        | None -> Error KeyNotFoundError
-        | Some r -> Ok r
+    let tryFindRow k dt = dt |> asMap |> Map.tryFind k
 
     let tryRemoveRow k dt =
         match dt |> asMap |> Map.containsKey k with
         | true -> dt |> asMap |> Map.remove k |> fromMap |> Ok
-        | false -> Error KeyNotFoundError
+        | false -> Error RowToDeleteNotFound
 
     let tryInsert v dt =
         let k = v |> keyOf
         let rowHasKey k dt = dt |> asMap |> Map.containsKey k
 
         match dt |> rowHasKey k with
-        | true -> Error DuplicateKeyError
+        | true -> Error DuplicateKey
         | false -> dt |> asMap |> Map.add k (DataRow.added v) |> fromMap |> Ok
 
     let insert v dt =
         match dt |> tryInsert v with
         | Ok dt -> dt
-        | Error DuplicateKeyError -> failwith "A row with that key already exists."
+        | Error DuplicateKey -> failwith "A row with that key already exists."
 
     let tryUpdate v dt =
         result {
             let k = v |> keyOf
-            let! row = dt |> tryFindRow k |> Result.mapError KeyNotFound
-            let! row = row |> DataRow.tryUpdate v |> Result.mapError RowIsDeleted
+            let! row = dt |> tryFindRow k |> Option.asResult RowToUpdateNotFound
+            let! row = row |> DataRow.tryUpdate v |> Result.mapError (fun _ -> RowIsDeletedInTable)
             return dt |> asMap |> Map.add k row |> fromMap
         }
 
@@ -160,7 +156,7 @@ module DataTable =
 
     let tryDelete k dt =
         result {
-            let! r = dt |> tryFindRow k
+            let! r = dt |> tryFindRow k |> Option.asResult RowToDeleteNotFound
 
             return
                 match r |> DataRow.delete with
@@ -170,7 +166,7 @@ module DataTable =
 
     let delete k dt =
         match dt |> tryDelete k with
-        | Error KeyNotFoundError -> dt
+        | Error RowToDeleteNotFound -> dt
         | Ok dt -> dt
 
     let deleteIf p dt =
@@ -204,11 +200,7 @@ module DataTable =
 
     let isDeleted dt = dt |> asMap |> Map.values |> Seq.choose DataRow.isDeleted
 
-    let tryFindCurrent k dt =
-        dt
-        |> asMap
-        |> Map.tryFind k
-        |> Option.bind DataRow.current
+    let tryFindCurrent k dt = dt |> asMap |> Map.tryFind k |> Option.bind DataRow.current
 
     let findCurrent k dt = tryFindCurrent k dt |> Option.get
 
