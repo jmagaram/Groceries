@@ -8,7 +8,7 @@ module Miscellaneous =
 
     let keyOf<'T, 'TKey when 'T :> IKey<'TKey>> i = (i :> IKey<'TKey>).Key
 
-    let clock: Now = fun () -> DateTimeOffset.Now
+    let clock: Clock = fun () -> DateTimeOffset.Now
 
     let refEquals<'T when 'T: not struct> x y = Object.ReferenceEquals(x, y)
 

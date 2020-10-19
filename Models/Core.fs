@@ -896,7 +896,7 @@ module ItemForm =
               |> Seq.sortBy (fun i -> i.Store.StoreName)
               |> List.ofSeq }
 
-    let editItem (clock: Now) cats (i: ItemDenormalized) =
+    let editItem (now:DateTimeOffset) cats (i: ItemDenormalized) =
         { ItemId = Some i.ItemId
           ItemName = i.ItemName |> ItemName.asText |> TextBox.create
           Etag = i.Etag
@@ -922,7 +922,7 @@ module ItemForm =
               | Schedule.Repeat r -> r.Frequency
           Postpone =
               i.Schedule
-              |> Schedule.postponedUntilDays (clock ())
+              |> Schedule.postponedUntilDays now
           CategoryMode = CategoryMode.ChooseExisting
           NewCategoryName = "" |> TextBox.create
           CategoryChoice = i.Category

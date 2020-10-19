@@ -10,6 +10,7 @@ let storesTable (s: State) = s.Stores
 let itemsTable (s: State) = s.Items
 let notSoldItemsTable (s: State) = s.NotSoldItems
 let settingsRow (s: State) = s.ShoppingListSettings
+
 let settings =
     settingsRow
     >> DataRow.currentValue
@@ -532,7 +533,7 @@ let handleItemEditPageMessage (now: DateTimeOffset) (msg: ItemEditPageMessage) (
         let item = s |> itemDenormalized item
         let cats = s |> categories
         let clock = fun () -> now
-        let form = ItemForm.editItem clock cats item
+        let form = ItemForm.editItem now cats item
         { s with ItemEditPage = Some form }
 
     | BeginCreateNewItem -> s |> beginCreateItem None
@@ -567,8 +568,8 @@ let handleItemEditPageMessage (now: DateTimeOffset) (msg: ItemEditPageMessage) (
         |> Result.okOrThrow
 
 let update: Update =
-    fun now msg s ->
-        let now = now ()
+    fun clock msg s ->
+        let now = clock ()
 
         match msg with
         | ItemMessage msg -> s |> handleItemMessage now msg

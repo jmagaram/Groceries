@@ -61,4 +61,4 @@ and ItemMessage =
     | ModifyItem of ItemId * Item.Message
     | DeleteItem of ItemId
 
-type Update = Now -> StateMessage -> State -> State
+type Update = Clock -> StateMessage -> State -> State

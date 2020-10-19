@@ -9,4 +9,4 @@ type days
 type IKey<'TKey> =
     abstract Key: 'TKey
 
-type Now = unit -> DateTimeOffset
+type Clock = unit -> DateTimeOffset
