@@ -43,14 +43,6 @@ module Seq =
         | [ x ] -> Some x
         | _ -> failwith "Too many items in the sequence. Expected zero or one."
 
-    let leftJoin xs ys f =
-        xs
-        |> Seq.map (fun x -> (x, ys |> Seq.filter (fun y -> f x y)))
-
-    let join xs ys f =
-        leftJoin xs ys f
-        |> Seq.collect (fun (x, ys) -> ys |> Seq.map (fun y -> (x, y)))
-
 [<AutoOpen>]
 module Option =
 
