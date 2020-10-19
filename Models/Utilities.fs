@@ -98,8 +98,6 @@ module Result =
 [<AutoOpen>]
 module String =
 
-    let toString i = i.ToString()
-
     let trim (s: String) = s.Trim()
 
     let isNullOrWhiteSpace s = String.IsNullOrWhiteSpace(s)
