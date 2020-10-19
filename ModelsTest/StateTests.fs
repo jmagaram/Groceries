@@ -11,7 +11,7 @@ module StateTests =
 
     [<Fact>]
     let ``can create sample data`` () =
-        let x = StateUpdate.createSampleData ()
+        let x = Models.State.createSampleData ()
         true
 
 module QuantityTests =

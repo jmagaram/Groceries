@@ -2,13 +2,14 @@
 @page "/categoryedit/{ID}"
 @implements IDisposable
 @using System.Reactive.Linq;
-@using Data; 
+@using Data;
 @using Models
 @using static Common.OptionExtensions;
 @using static Models.CategoryEditFormModule.CategoryEditFormExtensions;
 @using FormMessage = Models.CategoryEditFormModule.Message;
-@using PageMessage = Models.CategoryEditPage.Message;
-@using StateMessage = Models.StateUpdateModule.StateMessage;
+@using PageMessage = Models.StateTypes.CategoryEditPageMessage;
+@using StateMessage = Models.StateTypes.StateMessage;
+@using TextBoxMessage = Models.CoreTypes.TextBoxMessage;
 
 <style>
     .nav-pills li {
@@ -74,10 +75,10 @@ else {
     [Parameter]
     public string Id { get; set; }
 
-    protected StateTypes.CategoryEditForm Form { get; set; }
+    protected CoreTypes.CategoryEditForm Form { get; set; }
 
     protected void OnNameChange(ChangeEventArgs e) {
-        var textBoxMessage = StateTypes.TextBoxMessage.NewTypeText((string)e.Value);
+        var textBoxMessage = TextBoxMessage.NewTypeText((string)e.Value);
         var formMessage = FormMessage.NewCategoryNameMessage(textBoxMessage);
         var pageMessage = PageMessage.NewCategoryEditFormMessage(formMessage);
         var stateMessage = StateMessage.NewCategoryEditPageMessage(pageMessage);
@@ -85,7 +86,7 @@ else {
     }
 
     protected void OnNameFocusOut(FocusEventArgs e) {
-        var textBoxMessage = StateTypes.TextBoxMessage.LoseFocus;
+        var textBoxMessage = TextBoxMessage.LoseFocus;
         var formMessage = FormMessage.NewCategoryNameMessage(textBoxMessage);
         var pageMessage = PageMessage.NewCategoryEditFormMessage(formMessage);
         var stateMessage = StateMessage.NewCategoryEditPageMessage(pageMessage);

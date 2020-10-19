@@ -20,11 +20,11 @@ namespace WebAppTest {
             using var c = TestConnector();
             await c.DeleteDatabase();
             await c.CreateDatabase();
-            var x = StateUpdateModule.createSampleData();
+            var x = StateModule.createSampleData();
             await c.Push(x);
-            var y = StateUpdateModule.createDefault;
+            var y = StateModule.createDefault;
             var imp = await c.Pull(null, x);
-            var z = StateUpdateCoreModule.importChanges(imp, y);
+            var z = StateModule.importChanges(imp, y);
             Assert.Equal(x.Items.Item.Count, z.Items.Item.Count);
             Assert.Equal(x.Categories.Item.Count, z.Categories.Item.Count);
             Assert.Equal(x.Stores.Item.Count, z.Stores.Item.Count);

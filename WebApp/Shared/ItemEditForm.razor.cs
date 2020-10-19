@@ -10,7 +10,7 @@ using FormMessage = Models.ItemFormModule.Message;
 namespace WebApp.Shared {
     public partial class ItemEditForm : ComponentBase {
         [Parameter]
-        public StateTypes.ItemForm Form { get; set; }
+        public CoreTypes.ItemForm Form { get; set; }
 
         private void Process(FormMessage msg) => 
             OnItemFormMessage.InvokeAsync(msg);
@@ -141,7 +141,7 @@ namespace WebApp.Shared {
 
         protected void OnDelete() => OnDeleteCallback.InvokeAsync(null);
 
-        protected void OnStoreChange(ChangeEventArgs e, StateTypes.StoreId store) =>
+        protected void OnStoreChange(ChangeEventArgs e, CoreTypes.StoreId store) =>
             Process(FormMessage.NewStoresSetAvailability(store, (bool)e.Value));
 
         [Parameter]

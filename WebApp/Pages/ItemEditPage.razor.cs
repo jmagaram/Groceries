@@ -2,7 +2,8 @@
 using Models;
 using System;
 using FormMessage = Models.ItemFormModule.Message;
-using PageMessage = Models.ItemEditPageModule.Message;
+using PageMessage = Models.StateTypes.ItemEditPageMessage;
+using StateMessage = Models.StateTypes.StateMessage;
 
 namespace WebApp.Pages {
     public partial class ItemEditPage : ComponentBase, IDisposable {
@@ -11,7 +12,7 @@ namespace WebApp.Pages {
         protected override void OnInitialized() {
             if (!string.IsNullOrWhiteSpace(Id)) {
                 var pageMessage = PageMessage.NewBeginEditItem(Id);
-                var stateMessage = StateUpdateModule.StateMessage.NewItemEditPageMessage(pageMessage);
+                var stateMessage = StateMessage.NewItemEditPageMessage(pageMessage);
                 StateService.Update(stateMessage);
             }
             else {
@@ -19,7 +20,7 @@ namespace WebApp.Pages {
                     string.IsNullOrWhiteSpace(ItemName)
                     ? PageMessage.BeginCreateNewItem
                     : PageMessage.NewBeginCreateNewItemWithName(ItemName);
-                var stateMessage = StateUpdateModule.StateMessage.NewItemEditPageMessage(pageMessage);
+                var stateMessage = StateMessage.NewItemEditPageMessage(pageMessage);
                 StateService.Update(stateMessage);
             }
             _subscription = StateService.ItemEditPage.Subscribe(i => Form = i);
@@ -37,31 +38,31 @@ namespace WebApp.Pages {
         [Parameter]
         public string Id { get; set; }
 
-        public StateTypes.ItemForm Form { get; private set; }
+        public CoreTypes.ItemForm Form { get; private set; }
 
         protected void OnFormMessage(FormMessage message) {
             var pageMessage = PageMessage.NewItemEditFormMessage(message);
-            var stateMessage = StateUpdateModule.StateMessage.NewItemEditPageMessage(pageMessage);
+            var stateMessage = StateMessage.NewItemEditPageMessage(pageMessage);
             StateService.Update(stateMessage);
         }
 
         protected void OnClickOk() {
             var pageMessage = PageMessage.SubmitItemEditForm;
-            var stateMessage = StateUpdateModule.StateMessage.NewItemEditPageMessage(pageMessage);
+            var stateMessage = StateMessage.NewItemEditPageMessage(pageMessage);
             StateService.Update(stateMessage);
             Navigation.NavigateTo("shoppinglist");
         }
 
         protected void OnDelete() {
             var pageMessage = PageMessage.DeleteItem;
-            var stateMessage = StateUpdateModule.StateMessage.NewItemEditPageMessage(pageMessage);
+            var stateMessage = StateMessage.NewItemEditPageMessage(pageMessage);
             StateService.Update(stateMessage);
             Navigation.NavigateTo("shoppinglist");
         }
 
         protected void OnCancel() {
             var pageMessage = PageMessage.CancelItemEditForm;
-            var stateMessage = StateUpdateModule.StateMessage.NewItemEditPageMessage(pageMessage);
+            var stateMessage = StateMessage.NewItemEditPageMessage(pageMessage);
             StateService.Update(stateMessage);
             Navigation.NavigateTo("shoppinglist");
         }

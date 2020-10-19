@@ -7,8 +7,9 @@
 @using static Common.OptionExtensions;
 @using static Models.StoreEditFormModule.StoreEditFormExtensions;
 @using FormMessage = Models.StoreEditFormModule.Message;
-@using PageMessage = Models.StoreEditPage.Message;
-@using StateMessage = Models.StateUpdateModule.StateMessage;
+@using PageMessage = Models.StateTypes.StoreEditPageMessage;
+@using StateMessage = Models.StateTypes.StateMessage;
+@using TextBoxMessage = Models.CoreTypes.TextBoxMessage;
 
 <style>
     .nav-pills li {
@@ -55,7 +56,7 @@ else {
         _subscription = StateService.StoreEditPage.Subscribe(i => Form = i);
         if (!string.IsNullOrWhiteSpace(Id)) {
             var pageMessage = PageMessage.NewBeginEditStore(Id);
-            var stateMessage = StateUpdateModule.StateMessage.NewStoreEditPageMessage(pageMessage);
+            var stateMessage = StateMessage.NewStoreEditPageMessage(pageMessage);
             StateService.Update(stateMessage);
         }
         else {
@@ -74,10 +75,10 @@ else {
     [Parameter]
     public string Id { get; set; }
 
-    protected StateTypes.StoreEditForm Form { get; set; }
+    protected CoreTypes.StoreEditForm Form { get; set; }
 
     protected void OnNameChange(ChangeEventArgs e) {
-        var textBoxMessage = StateTypes.TextBoxMessage.NewTypeText((string)e.Value);
+        var textBoxMessage = TextBoxMessage.NewTypeText((string)e.Value);
         var formMessage = FormMessage.NewStoreNameMessage(textBoxMessage);
         var pageMessage = PageMessage.NewStoreEditFormMessage(formMessage);
         var stateMessage = StateMessage.NewStoreEditPageMessage(pageMessage);
@@ -85,7 +86,7 @@ else {
     }
 
     protected void OnNameFocusOut(FocusEventArgs e) {
-        var textBoxMessage = StateTypes.TextBoxMessage.LoseFocus;
+        var textBoxMessage = TextBoxMessage.LoseFocus;
         var formMessage = StoreEditFormModule.Message.NewStoreNameMessage(textBoxMessage);
         var pageMessage = PageMessage.NewStoreEditFormMessage(formMessage);
         var stateMessage = StateMessage.NewStoreEditPageMessage(pageMessage);

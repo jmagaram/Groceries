@@ -5,10 +5,12 @@ open ChangeTrackerTypes
 
 module Dto =
 
-    type StateItem = StateTypes.Item
-    type StateStore = StateTypes.Store
+    type StateItem = CoreTypes.Item
+    type StateStore = CoreTypes.Store
+    type StateCategory = CoreTypes.Category
 
-    let serializeItem isDeleted (i: StateTypes.Item): DtoTypes.Document<DtoTypes.Item> =
+
+    let serializeItem isDeleted (i: CoreTypes.Item): DtoTypes.Document<DtoTypes.Item> =
         { Id = i.ItemId |> ItemId.serialize
           CustomerId = null
           DocumentKind = DtoTypes.DocumentKind.Item
@@ -34,12 +36,12 @@ module Dto =
                     |> Option.defaultValue null
                 ScheduleKind =
                     match i.Schedule with
-                    | StateTypes.Schedule.Completed -> DtoTypes.ScheduleKind.Completed
-                    | StateTypes.Schedule.Once -> DtoTypes.ScheduleKind.Once
-                    | StateTypes.Schedule.Repeat _ -> DtoTypes.ScheduleKind.Repeat
+                    | CoreTypes.Schedule.Completed -> DtoTypes.ScheduleKind.Completed
+                    | CoreTypes.Schedule.Once -> DtoTypes.ScheduleKind.Once
+                    | CoreTypes.Schedule.Repeat _ -> DtoTypes.ScheduleKind.Repeat
                 ScheduleRepeat =
                     match i.Schedule with
-                    | StateTypes.Schedule.Repeat r ->
+                    | CoreTypes.Schedule.Repeat r ->
                         { Frequency = r.Frequency |> Frequency.days
                           PostponedUntil = r.PostponedUntil |> Option.toNullable }
                     | _ -> Unchecked.defaultof<DtoTypes.Repeat> } }
@@ -88,8 +90,8 @@ module Dto =
 
                 let! schedule =
                     match i.Content.ScheduleKind with
-                    | DtoTypes.ScheduleKind.Completed -> StateTypes.Schedule.Completed |> Ok
-                    | DtoTypes.ScheduleKind.Once -> StateTypes.Schedule.Once |> Ok
+                    | DtoTypes.ScheduleKind.Completed -> CoreTypes.Schedule.Completed |> Ok
+                    | DtoTypes.ScheduleKind.Once -> CoreTypes.Schedule.Once |> Ok
                     | DtoTypes.ScheduleKind.Repeat ->
                         let frequency =
                             i.Content.ScheduleRepeat.Frequency
@@ -106,9 +108,9 @@ module Dto =
 
                         frequency
                         |> Result.map (fun f ->
-                            StateTypes.Schedule.Repeat
-                                { StateTypes.Repeat.Frequency = f
-                                  StateTypes.Repeat.PostponedUntil = postponedUntil })
+                            CoreTypes.Schedule.Repeat
+                                { CoreTypes.Repeat.Frequency = f
+                                  CoreTypes.Repeat.PostponedUntil = postponedUntil })
 
                     | _ ->
                         sprintf "An unexpected schedule type was found: '%A'" i.Content.ScheduleKind
@@ -119,14 +121,14 @@ module Dto =
                       StateItem.ItemName = itemName
                       StateItem.CategoryId = categoryId
                       StateItem.Note = note
-                      StateItem.Etag = StateTypes.Etag i.Etag |> Some
+                      StateItem.Etag = CoreTypes.Etag i.Etag |> Some
                       StateItem.Quantity = quantity
                       StateItem.Schedule = schedule }
 
                 return (Upsert item)
         }
 
-    let serializeCategory isDeleted (i: StateTypes.Category): DtoTypes.Document<DtoTypes.Category> =
+    let serializeCategory isDeleted (i: CoreTypes.Category): DtoTypes.Document<DtoTypes.Category> =
         { Id = i.CategoryId |> CategoryId.serialize
           CustomerId = null
           DocumentKind = DtoTypes.DocumentKind.Category
@@ -159,12 +161,12 @@ module Dto =
             | false ->
                 return
                     Change.Upsert
-                        { StateTypes.Category.CategoryId = categoryId
-                          StateTypes.Category.CategoryName = categoryName
-                          StateTypes.Category.Etag = StateTypes.Etag i.Etag |> Some }
+                        { StateCategory.CategoryId = categoryId
+                          StateCategory.CategoryName = categoryName
+                          StateCategory.Etag = CoreTypes.Etag i.Etag |> Some }
         }
 
-    let serializeStore isDeleted (i: StateTypes.Store): DtoTypes.Document<DtoTypes.Store> =
+    let serializeStore isDeleted (i: CoreTypes.Store): DtoTypes.Document<DtoTypes.Store> =
         { Id = i.StoreId |> StoreId.serialize
           CustomerId = null
           DocumentKind = DtoTypes.DocumentKind.Store
@@ -199,10 +201,10 @@ module Dto =
                     Change.Upsert
                         { StateStore.StoreId = storeId
                           StateStore.StoreName = storeName
-                          StateStore.Etag = StateTypes.Etag i.Etag |> Some }
+                          StateStore.Etag = CoreTypes.Etag i.Etag |> Some }
         }
 
-    let serializeNotSoldItem isDeleted (i: StateTypes.NotSoldItem): DtoTypes.Document<DtoTypes.NotSoldItem> =
+    let serializeNotSoldItem isDeleted (i: CoreTypes.NotSoldItem): DtoTypes.Document<DtoTypes.NotSoldItem> =
         { Id = i |> NotSoldItem.serialize // use Json here
           CustomerId = null
           DocumentKind = DtoTypes.DocumentKind.NotSoldItem
@@ -241,10 +243,10 @@ module Dto =
             |> Seq.map (fun (i, isDeleted) -> f isDeleted i)
             |> Seq.toArray
 
-        { DtoTypes.Changes.Items = collect StateQuery.itemsTable serializeItem
-          DtoTypes.Changes.Categories = collect StateQuery.categoriesTable serializeCategory
-          DtoTypes.Changes.Stores = collect StateQuery.storesTable serializeStore
-          DtoTypes.Changes.NotSoldItems = collect StateQuery.notSoldItemsTable serializeNotSoldItem }
+        { DtoTypes.Changes.Items = collect State.itemsTable serializeItem
+          DtoTypes.Changes.Categories = collect State.categoriesTable serializeCategory
+          DtoTypes.Changes.Stores = collect State.storesTable serializeStore
+          DtoTypes.Changes.NotSoldItems = collect State.notSoldItemsTable serializeNotSoldItem }
 
     // maybe should take what works, not throw
     let private deserialize<'T, 'U> (f: DtoTypes.Document<'T> -> Result<'U, string>) (i: DtoTypes.Document<'T> seq) =

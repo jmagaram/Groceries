@@ -1,6 +1,7 @@
 ﻿[<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
 module Models.ShoppingList
 open System
+open CoreTypes
 open StateTypes
 open ViewTypes
 
@@ -23,7 +24,7 @@ type ShoppingList =
       SearchTerm: SearchTerm option
       HasChanges: bool }
 
-let private createItem find (item: StateTypes.Item) state =
+let private createItem find (item: CoreTypes.Item) state =
     let find =
         match find with
         | Some find -> find
@@ -37,28 +38,28 @@ let private createItem find (item: StateTypes.Item) state =
           item.CategoryId
           |> Option.map (fun c ->
               state
-              |> StateQuery.categoriesTable
+              |> State.categoriesTable
               |> DataTable.findCurrent c)
       Schedule = item.Schedule
       Availability =
           state
-          |> StateQuery.stores
+          |> State.stores
           |> Seq.map (fun st ->
               { Store = st
                 IsSold =
                     state
-                    |> StateQuery.notSoldItemsTable
+                    |> State.notSoldItemsTable
                     |> DataTable.tryFindCurrent { StoreId = st.StoreId; ItemId = item.ItemId }
                     |> Option.isNone }) }
 
 let create now state =
-    let settings = state |> StateQuery.settings
+    let settings = state |> State.settings
 
     let find = settings.ItemTextFilter |> Option.map Highlighter.create
 
     let items (now:DateTimeOffset) =
         state
-        |> StateQuery.items
+        |> State.items
         |> Seq.map (fun item -> createItem find item state)
         |> Seq.filter (fun i ->
             let isCompletedMatch =
@@ -104,15 +105,15 @@ let create now state =
 
     let storeFilter =
         settings.StoreFilter
-        |> Option.map (fun sid -> state |> StateQuery.storesTable |> DataTable.findCurrent sid)
+        |> Option.map (fun sid -> state |> State.storesTable |> DataTable.findCurrent sid)
 
-    let stores = state |> StateQuery.stores |> List.ofSeq
+    let stores = state |> State.stores |> List.ofSeq
 
     { Items = items now
       StoreFilter = storeFilter
       SearchTerm = settings.ItemTextFilter
       Stores = stores
       HasChanges =
-          state |> StateQuery.hasChanges
+          state |> State.hasChanges
           || state.LastCosmosTimestamp.IsNone
       ItemEdited = None }

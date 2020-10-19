@@ -13,7 +13,7 @@ namespace WebApp.Data {
 
         public ApplicationStateService() {
             //_state = new BehaviorSubject<State>(StateModule.createSampleData());
-            _state = new BehaviorSubject<State>(StateUpdateModule.createDefault);
+            _state = new BehaviorSubject<State>(StateModule.createDefault);
             _stateObs = _state;
             ShoppingList = _stateObs.Select(x => ShoppingListModule.create(DateTimeOffset.Now, x));
             CategoryEditPage = _stateObs.Select(x => x.CategoryEditPage).Where(x => x.IsSome()).Select(i => i.Value).DistinctUntilChanged();
@@ -25,9 +25,9 @@ namespace WebApp.Data {
 
         public State Current => _state.Value;
 
-        public void Update(StateUpdateModule.StateMessage msg) {
+        public void Update(StateTypes.StateMessage msg) {
             var state = _state.Value;
-            state = StateUpdateModule.update(msg, state);
+            state = StateModule.update(Clock, msg, state);
             _state.OnNext(state);
         }
 
@@ -35,12 +35,12 @@ namespace WebApp.Data {
 
         public IObservable<ShoppingListModule.ShoppingList> ShoppingList { get; }
 
-        public IObservable<StateTypes.CategoryEditForm> CategoryEditPage { get; }
+        public IObservable<CoreTypes.CategoryEditForm> CategoryEditPage { get; }
 
-        public IObservable<StateTypes.StoreEditForm> StoreEditPage { get; }
+        public IObservable<CoreTypes.StoreEditForm> StoreEditPage { get; }
 
         // Put all this inside F#
         // Rename "ItemForm" to "ItemEditForm" or rename all the others to just "StoreForm"
-        public IObservable<StateTypes.ItemForm> ItemEditPage { get; }
+        public IObservable<CoreTypes.ItemForm> ItemEditPage { get; }
     }
 }

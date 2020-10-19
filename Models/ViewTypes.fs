@@ -1,5 +1,5 @@
 ﻿module Models.ViewTypes
-open Models.StateTypes
+open Models.CoreTypes
 open Models.ValidationTypes
 
 type TextFormat =

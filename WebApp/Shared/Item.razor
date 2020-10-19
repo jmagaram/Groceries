@@ -3,7 +3,7 @@
 @implements IDisposable
 @using Common
 @using Models
-@using static Models.StateTypes
+@using static Models.CoreTypes
 @using static Common.OptionExtensions
 @using static Models.ScheduleModule.ScheduleExtensions
 
@@ -175,19 +175,19 @@
     public bool HideCategory { get; set; } = false;
 
     [Parameter]
-    public EventCallback<Models.StateTypes.ItemId> OnClickDelete { get; set; }
+    public EventCallback<Models.CoreTypes.ItemId> OnClickDelete { get; set; }
 
     [Parameter]
-    public EventCallback<Models.StateTypes.ItemId> OnClickComplete { get; set; }
+    public EventCallback<Models.CoreTypes.ItemId> OnClickComplete { get; set; }
 
     [Parameter]
-    public EventCallback<Models.StateTypes.ItemId> OnClickBuyAgain { get; set; }
+    public EventCallback<Models.CoreTypes.ItemId> OnClickBuyAgain { get; set; }
 
     [Parameter]
-    public EventCallback<Models.StateTypes.ItemId> OnClickRemovePostpone { get; set; }
+    public EventCallback<Models.CoreTypes.ItemId> OnClickRemovePostpone { get; set; }
 
     [Parameter]
-    public EventCallback<(Models.StateTypes.ItemId, int)> OnClickPostpone { get; set; }
+    public EventCallback<(Models.CoreTypes.ItemId, int)> OnClickPostpone { get; set; }
 
     public void Dispose() => _contextMenuCallback?.Dispose();
 }

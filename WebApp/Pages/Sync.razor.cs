@@ -36,10 +36,10 @@ namespace WebApp.Pages {
             LogMessage("Resetting to sample data...");
             await Cosmos.DeleteDatabase();
             await Cosmos.CreateDatabase();
-            StateService.Update(StateUpdateModule.StateMessage.ResetToSampleData);
+            StateService.Update(StateTypes.StateMessage.ResetToSampleData);
             await Cosmos.Push(StateService.Current);
             var changes = await Cosmos.Pull(null, StateService.Current);
-            StateService.Update(StateUpdateModule.StateMessage.NewImport(changes));
+            StateService.Update(StateTypes.StateMessage.NewImport(changes));
             ModalStatusMessage = "";
         }
 
@@ -54,7 +54,7 @@ namespace WebApp.Pages {
             LogMessage($"PULL start");
             var state = StateService.Current;
             var pullResponse = await Cosmos.Pull(state.LastCosmosTimestamp.AsNullable(), state);
-            var msg = Models.StateUpdateModule.StateMessage.NewImport(pullResponse);
+            var msg = StateTypes.StateMessage.NewImport(pullResponse);
             StateService.Update(msg);
             LogMessage($"PULL done");
         }

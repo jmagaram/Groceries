@@ -5,7 +5,7 @@ open Xunit
 open FsUnit.Xunit
 open FsCheck
 open FsCheck.Xunit
-open Models.StateTypes
+open Models.CoreTypes
 open Models.ValidationTypes
 
 module ReactiveTests =
@@ -15,7 +15,7 @@ module ReactiveTests =
 
     [<Fact>]
     let ``can create sample data``() =
-        let x = Models.StateUpdate.createSampleData
+        let x = Models.State.createSampleData
         true
 
     [<Fact>]

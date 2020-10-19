@@ -10,10 +10,14 @@ using System.Reactive.Subjects;
 using System.Threading.Tasks;
 using WebApp.Common;
 using WebApp.Data;
+using static Models.CoreTypes;
 using static Models.StateTypes;
-using static Models.StateUpdateModule;
+using static Models.StateModule;
 using SettingsMessage = Models.ShoppingListSettingsModule.Message;
 using ItemMessage = Models.ItemModule.Message;
+using StateItemMessage = Models.StateTypes.ItemMessage;
+using StateMessage = Models.StateTypes.StateMessage;
+using System.ComponentModel.DataAnnotations;
 
 namespace WebApp.Pages {
     public enum SyncStatus { SynchronizingNow, NoChanges, ShouldSync }
@@ -141,20 +145,39 @@ namespace WebApp.Pages {
         private void OnStoreFilter(StoreId id) =>
             StateService.Update(StateMessage.NewShoppingListSettingsMessage(SettingsMessage.NewSetStoreFilterTo(id)));
 
-        private void OnClickDelete(ItemId itemId) =>
-            StateService.Update(StateMessage.NewItemMessage(ItemMessage.NewDeleteItem(itemId)));
+        private void OnClickDelete(ItemId itemId) {
+            var stateItemMessage = StateItemMessage.NewDeleteItem(itemId);
+            var stateMessage = StateMessage.NewItemMessage(stateItemMessage);
+            StateService.Update(stateMessage);
+        }
 
-        private void OnClickComplete(ItemId itemId) =>
-            StateService.Update(StateMessage.NewItemMessage(ItemMessage.NewMarkComplete(itemId)));
+        private void OnClickComplete(ItemId itemId) {
+            var itemMessage = ItemMessage.MarkComplete;
+            var stateItemMessage = StateItemMessage.NewModifyItem(itemId,itemMessage);
+            var stateMessage = StateMessage.NewItemMessage(stateItemMessage);
+            StateService.Update(stateMessage);
+        }
 
-        private void OnClickBuyAgain(ItemId itemId) =>
-            StateService.Update(StateMessage.NewItemMessage(ItemMessage.NewBuyAgain(itemId)));
+        private void OnClickBuyAgain(ItemId itemId) {
+            var itemMessage = ItemMessage.BuyAgain;
+            var stateItemMessage = StateItemMessage.NewModifyItem(itemId, itemMessage);
+            var stateMessage = StateMessage.NewItemMessage(stateItemMessage);
+            StateService.Update(stateMessage);
+        }
 
-        private void OnClickRemovePostpone(ItemId itemId) =>
-            StateService.Update(StateMessage.NewItemMessage(ItemMessage.NewRemovePostpone(itemId)));
+        private void OnClickRemovePostpone(ItemId itemId) {
+            var itemMessage = ItemMessage.RemovePostpone;
+            var stateItemMessage = StateItemMessage.NewModifyItem(itemId, itemMessage);
+            var stateMessage = StateMessage.NewItemMessage(stateItemMessage);
+            StateService.Update(stateMessage);
+        }
 
-        private void OnClickPostpone((ItemId itemId, int days) i) =>
-            StateService.Update(StateMessage.NewItemMessage(ItemMessage.NewPostpone(i.itemId, i.days)));
+        private void OnClickPostpone((ItemId itemId, int days) i) {
+            var itemMessage = ItemMessage.NewPostpone(i.days);
+            var stateItemMessage = StateItemMessage.NewModifyItem(i.itemId, itemMessage);
+            var stateMessage = StateMessage.NewItemMessage(stateItemMessage);
+            StateService.Update(stateMessage);
+        }
 
         private void OnClickHideCompletedItems() =>
             StateService.Update(StateMessage.NewShoppingListSettingsMessage(SettingsMessage.NewHideCompletedItems(true)));
