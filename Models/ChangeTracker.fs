@@ -8,18 +8,32 @@ module DataRow =
 
     let unchanged v = Unchanged v
 
-    let modified v v' =
-        match v = v' with
-        | true -> Unchanged v'
+    let modified a b =
+        match a = b with
+        | true -> Unchanged b
         | false ->
-            let vKey = v |> keyOf
-            let vKey' = v' |> keyOf
+            let aKey = a |> keyOf
+            let bKey = b |> keyOf
 
-            match vKey = vKey' with
-            | false -> failwith "It is not possible to change the key when modifying a data row."
-            | true -> Modified {| Original = v; Current = v' |}
+            match aKey = bKey with
+            | false -> failwith "It is not possible to change the key."
+            | true -> Modified {| Original = a; Current = b |}
 
     let deleted v = Deleted v
+
+    let current r =
+        match r with
+        | Unchanged v -> v |> Some
+        | Modified m -> m.Current |> Some
+        | Added v -> v |> Some
+        | Deleted _ -> None
+
+    let original r =
+        match r with
+        | Unchanged v -> v
+        | Modified m -> m.Original
+        | Added v -> v
+        | Deleted v -> v
 
     let delete r =
         match r with
@@ -28,33 +42,22 @@ module DataRow =
         | Added _ -> None
         | Deleted _ -> r |> Some
 
-    let update v' r =
+    let tryUpdate v' r =
         match r with
-        | Unchanged v -> modified v v'
-        | Modified m -> modified m.Original v'
-        | Added _ -> added v'
-        | Deleted _ -> failwith "Deleted rows can not be updated."
+        | Unchanged v -> modified v v' |> Ok
+        | Modified m -> modified m.Original v' |> Ok
+        | Added _ -> added v' |> Ok
+        | Deleted v ->
+            match v = v' with
+            | false -> RowIsDeletedError |> Error
+            | true -> r |> Ok
 
-    let currentValue r =
+    let tryMap f r =
         match r with
-        | Unchanged v -> v |> Some
-        | Modified m -> m.Current |> Some
-        | Added v -> v |> Some
-        | Deleted _ -> None
-
-    let originalValue r =
-        match r with
-        | Unchanged v -> v
-        | Modified m -> m.Original
-        | Added v -> v
-        | Deleted v -> v
-
-    let mapCurrent f r =
-        match r with
-        | Unchanged v -> modified v (f v)
-        | Modified m -> modified m.Original (f m.Current)
-        | Added v -> added (f v)
-        | Deleted _ -> r
+        | Unchanged v -> r |> tryUpdate (f v)
+        | Modified m -> r |> tryUpdate (f m.Current)
+        | Added v -> r |> tryUpdate (f v)
+        | Deleted v -> r |> tryUpdate (f v)
 
     let isAddedOrModified r =
         match r with
@@ -94,86 +97,81 @@ module DataTable =
         match dt with
         | DataTable dt -> dt
 
-    let empty<'Key, 'T when 'Key: comparison> =
-        Map.empty<'Key, DataRow<'T>> |> DataTable
+    let empty<'Key, 'T when 'Key: comparison> = Map.empty<'Key, DataRow<'T>> |> DataTable
 
-    let insert v dt =
+    // should return None not error; why else would it fail?
+    let tryFindRow k dt =
+        match dt |> asMap |> Map.tryFind k with
+        | None -> Error KeyNotFoundError
+        | Some r -> Ok r
+
+    let tryRemoveRow k dt =
+        match dt |> asMap |> Map.containsKey k with
+        | true -> dt |> asMap |> Map.remove k |> fromMap |> Ok
+        | false -> Error KeyNotFoundError
+
+    let tryInsert v dt =
         let k = v |> keyOf
         let rowHasKey k dt = dt |> asMap |> Map.containsKey k
 
         match dt |> rowHasKey k with
-        | true -> failwith "A row with that key already exists."
-        | false ->
-            dt
-            |> asMap
-            |> Map.add k (DataRow.added v)
-            |> fromMap
+        | true -> Error DuplicateKeyError
+        | false -> dt |> asMap |> Map.add k (DataRow.added v) |> fromMap |> Ok
 
-    let update v dt =
-        let k = v |> keyOf
-        let dt = dt |> asMap
+    let insert v dt =
+        match dt |> tryInsert v with
+        | Ok dt -> dt
+        | Error DuplicateKeyError -> failwith "A row with that key already exists."
 
-        match dt |> Map.tryFind k with
-        | None -> failwith "Could not find a row with that key to update."
-        | Some r ->
-            let r = r |> DataRow.update v
-            dt |> Map.add k r |> fromMap
+    let tryUpdate v dt =
+        result {
+            let k = v |> keyOf
+            let! row = dt |> tryFindRow k |> Result.mapError KeyNotFound
+            let! row = row |> DataRow.tryUpdate v |> Result.mapError RowIsDeleted
+            return dt |> asMap |> Map.add k row |> fromMap
+        }
 
-    let upsert v dt =
-        let k = v |> keyOf
-        let dt = dt |> asMap
+    let update v dt = dt |> tryUpdate v |> Result.okOrThrow
 
-        let r =
-            match dt |> Map.tryFind k with
-            | None -> DataRow.added v
-            | Some r -> r |> DataRow.update v
+    let tryUpsert v dt =
+        result {
+            let k = v |> keyOf
+            let dt = dt |> asMap
 
-        dt |> Map.add k r |> fromMap
+            let! r =
+                match dt |> Map.tryFind k with
+                | None -> DataRow.added v |> Ok
+                | Some r -> r |> DataRow.tryUpdate v
 
-    let delete k dt =
-        let dt = dt |> asMap
+            return dt |> Map.add k r |> fromMap
+        }
 
-        match dt |> Map.tryFind k with
-        | None -> failwith "Could not find a row with that key to delete."
-        | Some r ->
-            match r |> DataRow.delete with
-            | Some r -> dt |> Map.add k r
-            | None -> dt |> Map.remove k
-            |> fromMap
+    let upsert v dt = dt |> tryUpsert v |> Result.okOrThrow
+
+    let upsertUnchanged v dt =
+        let key = keyOf v
+        let row = DataRow.unchanged v
+        dt |> asMap |> Map.add key row |> fromMap
 
     let current dt =
         dt
         |> asMap
-        |> Seq.choose (fun kv -> kv.Value |> DataRow.currentValue)
+        |> Seq.choose (fun kv -> kv.Value |> DataRow.current)
 
-    let hasChanges dt =
-        dt
-        |> asMap
-        |> Map.exists (fun k v -> v |> DataRow.hasChanges)
+    let tryDelete k dt =
+        result {
+            let! r = dt |> tryFindRow k
 
-    let private chooseRow f dt =
-        dt
-        |> asMap
-        |> Map.toSeq
-        |> Seq.choose (fun (k, v) -> f v |> Option.map (fun v -> (k, v)))
-        |> Map.ofSeq
-        |> fromMap
+            return
+                match r |> DataRow.delete with
+                | None -> dt |> asMap |> Map.remove k |> fromMap
+                | Some r -> dt |> asMap |> Map.add k r |> fromMap
+        }
 
-    let acceptChanges dt = dt |> chooseRow DataRow.acceptChanges
-
-    let rejectChanges dt = dt |> chooseRow DataRow.rejectChanges
-
-    let isAddedOrModified dt =
-        dt
-        |> asMap
-        |> Map.values
-        |> Seq.choose DataRow.isAddedOrModified
-
-    let isDeleted dt =
-        dt
-        |> asMap
-        |> Map.values
-        |> Seq.choose DataRow.isDeleted
+    let delete k dt =
+        match dt |> tryDelete k with
+        | Error KeyNotFoundError -> dt
+        | Ok dt -> dt
 
     let deleteIf p dt =
         dt
@@ -181,24 +179,40 @@ module DataTable =
         |> Seq.choose (fun v -> if p v then Some(keyOf v) else None)
         |> Seq.fold (fun dt k -> dt |> delete k) dt
 
+    let hasChanges dt =
+        dt
+        |> asMap
+        |> Map.exists (fun k v -> v |> DataRow.hasChanges)
+
+    let private choose f dt =
+        dt
+        |> asMap
+        |> Map.toSeq
+        |> Seq.choose (fun (k, v) -> f v |> Option.map (fun v -> (k, v)))
+        |> Map.ofSeq
+        |> fromMap
+
+    let acceptChanges dt = dt |> choose DataRow.acceptChanges
+
+    let rejectChanges dt = dt |> choose DataRow.rejectChanges
+
+    let isAddedOrModified dt =
+        dt
+        |> asMap
+        |> Map.values
+        |> Seq.choose DataRow.isAddedOrModified
+
+    let isDeleted dt = dt |> asMap |> Map.values |> Seq.choose DataRow.isDeleted
+
     let tryFindCurrent k dt =
         dt
         |> asMap
         |> Map.tryFind k
-        |> Option.bind DataRow.currentValue
+        |> Option.bind DataRow.current
 
     let findCurrent k dt = tryFindCurrent k dt |> Option.get
 
-    // problem with exceptions on delete;
-    // problem with exceptions on upsert; it will throw but didn't know that from type signature
-    // really should return results from other functions
     let acceptChange c dt =
         match c with
-        | Delete k ->
-            match dt |> asMap |> Map.tryFind k with
-            | None -> dt
-            | Some _ -> dt |> asMap |> Map.remove k |> fromMap
-        | Upsert v ->
-            let key = keyOf v
-            let row = DataRow.unchanged v
-            dt |> asMap |> Map.add key row |> fromMap
+        | Delete k -> dt |> tryRemoveRow k |> Result.okOrDefaultValue dt
+        | Upsert v -> dt |> upsertUnchanged v

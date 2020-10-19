@@ -9,12 +9,13 @@ let categoriesTable (s: State) = s.Categories
 let storesTable (s: State) = s.Stores
 let itemsTable (s: State) = s.Items
 let notSoldItemsTable (s: State) = s.NotSoldItems
-let settingsRow (s: State) = s.ShoppingListSettings
+let shoppingListSettingsRow (s: State) = s.ShoppingListSettings
 
-let settings =
-    settingsRow
-    >> DataRow.currentValue
-    >> Option.defaultValue ShoppingListSettings.create
+let shoppingListSettings s =
+    s
+    |> shoppingListSettingsRow
+    |> DataRow.current
+    |> Option.get // may throw
 
 let categories = categoriesTable >> DataTable.current
 let stores = storesTable >> DataTable.current
@@ -25,13 +26,15 @@ let mapCategories f s = { s with Categories = f s.Categories }
 let mapStores f s = { s with State.Stores = f s.Stores }
 let mapItems f s = { s with Items = f s.Items }
 
-let mapNotSoldItems f s =
-    { s with
-          NotSoldItems = f s.NotSoldItems }
+let mapNotSoldItems f s = { s with NotSoldItems = f s.NotSoldItems }
 
-let mapSettings f s =
+let mapShoppingListSettings f s =
     { s with
-          ShoppingListSettings = s.ShoppingListSettings |> DataRow.mapCurrent f }
+          ShoppingListSettings =
+              s
+              |> shoppingListSettingsRow
+              |> DataRow.tryMap f
+              |> Result.okOrThrow }
 
 let (insertCategory, updateCategory, upsertCategory) =
     let go f (c: Category) s = s |> mapCategories (f c)
@@ -45,10 +48,7 @@ let (insertItem, updateItem, upsertItem) =
     let go f (i: Item) s =
         let isCategoryReferenceValid =
             i.CategoryId
-            |> Option.map (fun c ->
-                s.Categories
-                |> DataTable.tryFindCurrent c
-                |> Option.isSome)
+            |> Option.map (fun c -> s.Categories |> DataTable.tryFindCurrent c |> Option.isSome)
             |> Option.defaultValue true
 
         match isCategoryReferenceValid with
@@ -58,11 +58,9 @@ let (insertItem, updateItem, upsertItem) =
     (go DataTable.insert, go DataTable.update, go DataTable.upsert)
 
 let insertNotSoldItem (nsi: NotSoldItem) s =
-    let item =
-        s.Items |> DataTable.tryFindCurrent nsi.ItemId
+    let item = s.Items |> DataTable.tryFindCurrent nsi.ItemId
 
-    let store =
-        s.Stores |> DataTable.tryFindCurrent nsi.StoreId
+    let store = s.Stores |> DataTable.tryFindCurrent nsi.StoreId
 
     match item, store with
     | Some _, Some _ -> s |> mapNotSoldItems (DataTable.insert nsi)
@@ -71,7 +69,7 @@ let insertNotSoldItem (nsi: NotSoldItem) s =
 
 let private isShoppingListStoreFilterBroken (s: State) =
     option {
-        let! shoppingListSettings = s.ShoppingListSettings |> DataRow.currentValue
+        let! shoppingListSettings = s.ShoppingListSettings |> DataRow.current
         let! storeFilterId = shoppingListSettings.StoreFilter
 
         return
@@ -81,14 +79,19 @@ let private isShoppingListStoreFilterBroken (s: State) =
     }
     |> Option.defaultValue false
 
-let private removeBrokenShoppingListStoreFilter (s: State) =
+let private removeBrokenShoppingListStoreFilter s =
     match s |> isShoppingListStoreFilterBroken with
     | false -> s
     | true ->
         { s with
               ShoppingListSettings =
-                  s.ShoppingListSettings
-                  |> DataRow.mapCurrent (fun t -> { t with StoreFilter = None }) }
+                  s
+                  |> shoppingListSettingsRow
+                  |> DataRow.tryMap ShoppingListSettings.clearStoreFilter
+                  |> Result.okOrThrow } // may throw
+
+// these are all safe delete options that delete and update broken links. maybe
+// rename others to unsafe delete.
 
 let deleteStore k s =
     s
@@ -96,10 +99,12 @@ let deleteStore k s =
     |> mapNotSoldItems (DataTable.deleteIf (fun i -> i.StoreId = k))
     |> removeBrokenShoppingListStoreFilter
 
-let deleteNotSoldItem k s =
-    s |> mapNotSoldItems (DataTable.delete k)
+let deleteItem k s =
+    s
+    |> mapItems (DataTable.delete k)
+    |> mapNotSoldItems (DataTable.deleteIf (fun i -> i.ItemId = k))
 
-let deleteItem k s = s |> mapItems (DataTable.delete k)
+let deleteNotSoldItem k s = s |> mapNotSoldItems (DataTable.delete k)
 
 let deleteCategory k s =
     s
@@ -116,10 +121,7 @@ let private setBrokenItemToCategoryLinksToNone (s: State) =
     |> Seq.filter (fun i ->
         match i.CategoryId with
         | None -> false
-        | Some c ->
-            s.Categories
-            |> DataTable.tryFindCurrent c
-            |> Option.isNone)
+        | Some c -> s.Categories |> DataTable.tryFindCurrent c |> Option.isNone)
     |> Seq.fold (fun s i ->
         s
         |> mapItems (DataTable.upsert { i with CategoryId = None })) s
@@ -180,9 +182,7 @@ let acceptAllChanges s =
 let isItemSold (s: Store) (i: Item) state =
     state
     |> notSoldItemsTable
-    |> DataTable.tryFindCurrent
-        { ItemId = i.ItemId
-          StoreId = s.StoreId }
+    |> DataTable.tryFindCurrent { ItemId = i.ItemId; StoreId = s.StoreId }
     |> Option.isNone
 
 let itemDenormalized (item: Item) state =
@@ -194,10 +194,7 @@ let itemDenormalized (item: Item) state =
       Schedule = item.Schedule
       Category =
           item.CategoryId
-          |> Option.map (fun c ->
-              state
-              |> categoriesTable
-              |> DataTable.findCurrent c)
+          |> Option.map (fun c -> state |> categoriesTable |> DataTable.findCurrent c)
       Availability =
           state
           |> stores
@@ -233,8 +230,7 @@ let createSampleData () =
               Etag = None }
 
     let findCategory n (s: State) =
-        let n =
-            CategoryName.tryParse n |> Result.okOrThrow
+        let n = CategoryName.tryParse n |> Result.okOrThrow
 
         s.Categories
         |> DataTable.current
@@ -260,18 +256,8 @@ let createSampleData () =
             { Item.ItemId = ItemId.create ()
               ItemName = name |> ItemName.tryParse |> Result.okOrThrow
               Etag = None
-              Quantity =
-                  if qty = "" then
-                      None
-                  else
-                      qty
-                      |> Quantity.tryParse
-                      |> Result.okOrThrow
-                      |> Some
-              Note =
-                  if note = ""
-                  then None
-                  else note |> Note.tryParse |> Result.okOrThrow |> Some
+              Quantity = if qty = "" then None else qty |> Quantity.tryParse |> Result.okOrThrow |> Some
+              Note = if note = "" then None else note |> Note.tryParse |> Result.okOrThrow |> Some
               Item.Schedule = Schedule.Once
               Item.CategoryId = if cat = "" then None else Some (findCategory cat s).CategoryId }
 
@@ -286,23 +272,16 @@ let createSampleData () =
         s |> mapItems (DataTable.update item)
 
     let makeRepeat n freq postpone (s: State) =
-        let freq =
-            Frequency.create freq |> Result.okOrThrow
+        let freq = Frequency.create freq |> Result.okOrThrow
 
-        let postpone =
-            postpone
-            |> Option.map (fun d -> now.AddDays(d |> float))
+        let postpone = postpone |> Option.map (fun d -> now.AddDays(d |> float))
 
-        let repeat =
-            { Repeat.Frequency = freq
-              PostponedUntil = postpone }
+        let repeat = { Repeat.Frequency = freq; PostponedUntil = postpone }
 
         let item =
             s
             |> findItem n
-            |> fun i ->
-                { i with
-                      Schedule = Schedule.Repeat repeat }
+            |> fun i -> { i with Schedule = Schedule.Repeat repeat }
 
         s |> mapItems (DataTable.update item)
 
@@ -340,41 +319,37 @@ let createSampleData () =
     |> doesNotSellItem "Costco" "Chocolate bars"
 
 let handleItemMessage now msg (s: State) =
-    let map id f (s: State) =
-        let item = s.Items |> DataTable.findCurrent id |> f
-
-        { s with
-              Items = s.Items |> DataTable.update item }
-
     match msg with
-    | ModifyItem (k, msg) -> map k (Item.update now msg) s
-    | DeleteItem k -> s |> mapItems (DataTable.delete k)
+    | ModifyItem (k, msg) ->
+        let item = s.Items |> DataTable.findCurrent k |> Item.update now msg
+        s |> updateItem item
+    | DeleteItem k -> s |> deleteItem k
 
 let handleCategoryEditPageMessage (msg: CategoryEditPageMessage) (s: State) =
     let form (s: State) =
         s.CategoryEditPage
         |> Option.asResult "There is no category editing form."
 
-    let map f =
-        { s with
-              CategoryEditPage = s.CategoryEditPage |> Option.map f }
-
     let cancel s = { s with CategoryEditPage = None }
 
     match msg with
     | BeginEditCategory id ->
-        let id =
-            id |> CategoryId.deserialize |> Option.get
+        let id = id |> CategoryId.deserialize |> Option.get
 
-        let cat =
-            s |> categoriesTable |> DataTable.findCurrent id
+        let cat = s |> categoriesTable |> DataTable.findCurrent id
 
         let form = CategoryEditForm.editExisting cat
         { s with CategoryEditPage = Some form }
     | BeginCreateNewCategory ->
         let form = CategoryEditForm.createNew
         { s with CategoryEditPage = Some form }
-    | CategoryEditFormMessage msg -> map (CategoryEditForm.handle msg)
+    | CategoryEditFormMessage msg ->
+        result {
+            let! form = s |> form
+            let form = form |> CategoryEditForm.handle msg
+            return { s with CategoryEditPage = Some form }
+        }
+        |> Result.okOrThrow
     | SubmitCategoryEditForm ->
         result {
             let! form = s |> form
@@ -415,25 +390,26 @@ let handleStoreEditPageMessage (msg: StoreEditPageMessage) (s: State) =
         s.StoreEditPage
         |> Option.asResult "There is no Store editing form."
 
-    let map f =
-        { s with
-              StoreEditPage = s.StoreEditPage |> Option.map f }
-
     let cancel s = { s with StoreEditPage = None }
 
     match msg with
     | BeginEditStore id ->
         let id = id |> StoreId.deserialize |> Option.get
 
-        let str =
-            s |> storesTable |> DataTable.findCurrent id
+        let str = s |> storesTable |> DataTable.findCurrent id
 
         let form = StoreEditForm.editExisting str
         { s with StoreEditPage = Some form }
     | BeginCreateNewStore ->
         let form = StoreEditForm.createNew
         { s with StoreEditPage = Some form }
-    | StoreEditFormMessage msg -> map (StoreEditForm.update msg)
+    | StoreEditFormMessage msg ->
+        result {
+            let! form = s |> form
+            let form = form |> StoreEditForm.update msg
+            return { s with StoreEditPage = Some form }
+        }
+        |> Result.okOrThrow
     | SubmitStoreEditForm ->
         result {
             let! form = s |> form
@@ -447,10 +423,7 @@ let handleStoreEditPageMessage (msg: StoreEditPageMessage) (s: State) =
                 match form with
                 | StoreEditForm.FormResult.InsertStore c ->
                     s
-                    |> insertStore
-                        { StoreName = c
-                          StoreId = StoreId.create ()
-                          Etag = None }
+                    |> insertStore { StoreName = c; StoreId = StoreId.create (); Etag = None }
                 | StoreEditForm.FormResult.EditStore c -> s |> updateStore c
 
             return s |> cancel
@@ -469,12 +442,10 @@ let handleStoreEditPageMessage (msg: StoreEditPageMessage) (s: State) =
         }
         |> Result.okOrThrow
 
+// problem when it is deleted; shouldn't happen
 let handleShoppingListSettingsMessage (msg: ShoppingListSettings.Message) (s: State) =
-    let map f s =
-        { s with
-              ShoppingListSettings = s.ShoppingListSettings |> DataRow.mapCurrent f }
-
-    s |> map (ShoppingListSettings.update msg)
+    let settings = s |> shoppingListSettings |> ShoppingListSettings.update msg
+    s |> mapShoppingListSettings (fun _ -> settings)
 
 let handleItemEditPageMessage (now: DateTimeOffset) (msg: ItemEditPageMessage) (s: State) =
     let form state =
@@ -488,8 +459,7 @@ let handleItemEditPageMessage (now: DateTimeOffset) (msg: ItemEditPageMessage) (
         let stores = state |> stores
         let name = name |> Option.defaultValue ""
 
-        let form =
-            ItemForm.createNewItem name stores categories
+        let form = ItemForm.createNewItem name stores categories
 
         { state with ItemEditPage = Some form }
 
@@ -527,12 +497,10 @@ let handleItemEditPageMessage (now: DateTimeOffset) (msg: ItemEditPageMessage) (
     | BeginEditItem id ->
         let k = ItemId.deserialize id |> Option.get
 
-        let item =
-            s |> itemsTable |> DataTable.findCurrent k
+        let item = s |> itemsTable |> DataTable.findCurrent k
 
         let item = s |> itemDenormalized item
         let cats = s |> categories
-        let clock = fun () -> now
         let form = ItemForm.editItem now cats item
         { s with ItemEditPage = Some form }
 
@@ -580,19 +548,3 @@ let update: Update =
         | ResetToSampleData -> createSampleData ()
         | ShoppingListSettingsMessage msg -> s |> handleShoppingListSettingsMessage msg
         | ItemEditPageMessage msg -> s |> handleItemEditPageMessage now msg
-
-module Core =
-    let x = 4
-
-module DataIntegrity =
-    let y = 4
-
-module Initialization =
-    let sampleData = 5
-    let empty = 3
-
-module Update =
-    let q = 4
-
-module Queries =
-    let q = 4

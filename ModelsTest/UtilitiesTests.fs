@@ -182,12 +182,27 @@ module OptionTests =
 
 module ResultTests =
 
+    [<Property>]
+    let ``okOrDefaultValue - when ok, return it`` (NonNegativeInt n) =
+        let source = Ok n
+        let expected = n
+        let actual = source |> Result.okOrDefaultValue -1
+        actual |> should equal expected
+
+    [<Property>]
+    let ``okOrDefaultValue - when error, return default`` (NonNegativeInt n) =
+        let source = Error n
+        let expected = -1
+        let actual = source |> Result.okOrDefaultValue -1
+        actual |> should equal expected
+
     type String5 = String5 of string
 
     let string5 (s: string) =
         if s.Length > 5 then Error "Too long" else Ok(String5 s)
 
     let len (String5 s) = s.Length
+
 
     [<Fact>]
     let ``computation expression - let! when some part fails, return error`` () =

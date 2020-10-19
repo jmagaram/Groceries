@@ -53,7 +53,7 @@ let private createItem find (item: CoreTypes.Item) state =
                     |> Option.isNone }) }
 
 let create now state =
-    let settings = state |> State.settings
+    let settings = state |> State.shoppingListSettings
 
     let find = settings.ItemTextFilter |> Option.map Highlighter.create
 

@@ -11,3 +11,11 @@ type DataTable<'Key, 'T when 'Key: comparison> = DataTable of Map<'Key, DataRow<
 type Change<'T, 'Key> =
     | Upsert of 'T
     | Delete of 'Key
+
+type RowIsDeletedError = RowIsDeletedError
+type DuplicateKeyError = DuplicateKeyError
+type KeyNotFoundError = KeyNotFoundError
+
+type UpdateError =
+    | KeyNotFound of KeyNotFoundError
+    | RowIsDeleted of RowIsDeletedError

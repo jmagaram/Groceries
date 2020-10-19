@@ -58,6 +58,11 @@ module Result =
         | Ok v -> v
         | Error e -> failwithf "Could not get the Ok value; this was the Error: %A" e
 
+    let okOrDefaultValue v r =
+        match r with
+        | Ok v -> v
+        | Error _ -> v
+
     let asOption r =
         match r with
         | Ok v -> Some v
