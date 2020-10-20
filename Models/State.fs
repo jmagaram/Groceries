@@ -363,10 +363,8 @@ let handleStoreEditPageMessage (msg: StoreEditPageMessage) (s: State) =
         let id = s |> form |> fun i -> i.StoreId |> Option.get
         s |> deleteStore id |> cancel
 
-// problem when it is deleted; shouldn't happen
 let handleShoppingListSettingsMessage (msg: ShoppingListSettings.Message) (s: State) =
-    let settings = s |> shoppingListSettings |> ShoppingListSettings.update msg
-    s |> mapShoppingListSettings (fun _ -> settings)
+    s |> mapShoppingListSettings (ShoppingListSettings.update msg)
 
 let handleItemEditPageMessage (now: DateTimeOffset) (msg: ItemEditPageMessage) (s: State) =
     let form state =
