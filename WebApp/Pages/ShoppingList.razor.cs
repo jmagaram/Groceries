@@ -1,32 +1,34 @@
-﻿using Microsoft.AspNetCore.Components;
-using Microsoft.AspNetCore.Components.Web;
-using Models;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reactive.Disposables;
 using System.Reactive.Linq;
 using System.Reactive.Subjects;
 using System.Threading.Tasks;
+
+using Microsoft.AspNetCore.Components;
+using Microsoft.AspNetCore.Components.Web;
+
+using Models;
+
 using WebApp.Common;
 using WebApp.Data;
+
 using static Models.CoreTypes;
-using static Models.StateTypes;
-using static Models.StateModule;
-using SettingsMessage = Models.ShoppingListSettingsModule.Message;
+
 using ItemMessage = Models.ItemModule.Message;
+using SettingsMessage = Models.ShoppingListSettingsModule.Message;
 using StateItemMessage = Models.StateTypes.ItemMessage;
 using StateMessage = Models.StateTypes.StateMessage;
-using System.ComponentModel.DataAnnotations;
 
 namespace WebApp.Pages {
-    public enum SyncStatus { SynchronizingNow, NoChanges, ShouldSync }
+    public enum SyncStatus { SynchronizingNow, NoChangesToPush, ShouldSync }
 
     public partial class ShoppingList : ComponentBase, IDisposable {
         CompositeDisposable _disposables;
 
         string _textFilter;
-        BehaviorSubject<string> _textFilterTyped = new BehaviorSubject<string>("");
+        readonly BehaviorSubject<string> _textFilterTyped = new BehaviorSubject<string>("");
 
         [Inject]
         public Data.ApplicationStateService StateService { get; set; }
@@ -37,7 +39,7 @@ namespace WebApp.Pages {
         [Inject]
         public CosmosConnector Cosmos { get; set; }
 
-        public SyncStatus SyncStatus { get; set; } = SyncStatus.NoChanges;
+        public SyncStatus SyncStatus { get; set; } = SyncStatus.NoChangesToPush;
 
         protected override void OnInitialized() {
             base.OnInitialized();
@@ -66,34 +68,28 @@ namespace WebApp.Pages {
         private IDisposable UpdateCanSync() =>
             StateService.ShoppingList
             .Select(i => i.HasChanges)
-            .DistinctUntilChanged()
             .Subscribe(async hasChanges =>
             {
                 if (hasChanges) {
-                    switch (SyncStatus) {
-                        case SyncStatus.SynchronizingNow:
-                            SyncStatus = (hasChanges == true) ? SyncStatus.ShouldSync : SyncStatus.NoChanges;
-                            await InvokeAsync(() => StateHasChanged());
-                            break;
-                        case SyncStatus.ShouldSync:
-                        case SyncStatus.NoChanges:
-                            try {
-                                SyncStatus = SyncStatus.SynchronizingNow;
-                                await InvokeAsync(() => StateHasChanged());
-                                await OnSync();
-                            }
-                            catch {
-                                SyncStatus = SyncStatus.ShouldSync;
-                                await InvokeAsync(() => StateHasChanged());
-                                await Task.Delay(TimeSpan.FromSeconds(0.5));
-                            }
-                            break;
+                    if (SyncStatus != SyncStatus.SynchronizingNow) {
+                        SyncStatus = SyncStatus.SynchronizingNow;
+                        await InvokeAsync(() => StateHasChanged());
+                    }
+                    try {
+                        await OnSync();
+                    }
+                    catch {
+                        SyncStatus = SyncStatus.ShouldSync;
+                        await InvokeAsync(() => StateHasChanged());
+                        await Task.Delay(TimeSpan.FromSeconds(0.5));
                     }
                 }
                 else {
-                    SyncStatus = SyncStatus.NoChanges;
-                    await Task.Delay(TimeSpan.FromSeconds(1));
-                    await InvokeAsync(() => StateHasChanged());
+                    if (SyncStatus != SyncStatus.NoChangesToPush) {
+                        SyncStatus = SyncStatus.NoChangesToPush;
+                        await Task.Delay(TimeSpan.FromSeconds(1));
+                        await InvokeAsync(() => StateHasChanged());
+                    }
                 }
             });
 
@@ -153,7 +149,7 @@ namespace WebApp.Pages {
 
         private void OnClickComplete(ItemId itemId) {
             var itemMessage = ItemMessage.MarkComplete;
-            var stateItemMessage = StateItemMessage.NewModifyItem(itemId,itemMessage);
+            var stateItemMessage = StateItemMessage.NewModifyItem(itemId, itemMessage);
             var stateMessage = StateMessage.NewItemMessage(stateItemMessage);
             StateService.Update(stateMessage);
         }
