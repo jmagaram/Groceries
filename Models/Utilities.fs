@@ -103,6 +103,8 @@ module Result =
 [<AutoOpen>]
 module String =
 
+    let toString v = sprintf "%A" v
+
     let trim (s: String) = s.Trim()
 
     let isNullOrWhiteSpace s = String.IsNullOrWhiteSpace(s)
