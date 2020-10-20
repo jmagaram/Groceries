@@ -379,6 +379,11 @@ module TextBox =
 
     let loseFocus normalize t = { t with ValueCommitted = normalize t.ValueTyping }
 
+    let update normalize msg t =
+        match msg with
+        | TypeText s -> t |> typeText s
+        | LoseFocus -> t |> loseFocus normalize
+
 [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
 module SearchTerm =
 
@@ -525,15 +530,10 @@ module CategoryEditForm =
           CategoryName = c.CategoryName |> CategoryName.asText |> TextBox.create
           Etag = c.Etag }
 
-    let typeCategoryName s f =
-        { f with
-              CategoryEditForm.CategoryName = f.CategoryName |> TextBox.typeText s }
-
-    let blurCategoryName f =
-        { f with
-              CategoryEditForm.CategoryName =
-                  f.CategoryName
-                  |> (TextBox.loseFocus CategoryName.normalizer) }
+    let updateCategoryName msg f =
+        f.CategoryName
+        |> TextBox.update CategoryName.normalizer msg
+        |> fun frm -> { f with CategoryName = frm }
 
     let validateCategoryName f = f.CategoryName.ValueTyping |> CategoryName.tryParse
 
@@ -556,10 +556,7 @@ module CategoryEditForm =
 
     let handle msg f =
         match msg with
-        | CategoryNameMessage txt ->
-            match txt with
-            | TextBoxMessage.LoseFocus -> f |> blurCategoryName
-            | TextBoxMessage.TypeText s -> f |> typeCategoryName s
+        | CategoryNameMessage txt -> f |> updateCategoryName txt
 
     [<Extension>]
     type CategoryEditFormExtensions =
@@ -595,13 +592,10 @@ module StoreEditForm =
           StoreName = c.StoreName |> StoreName.asText |> TextBox.create
           Etag = c.Etag }
 
-    let typeStoreName s f =
-        { f with
-              StoreEditForm.StoreName = f.StoreName |> TextBox.typeText s }
-
-    let blurStoreName f =
-        { f with
-              StoreEditForm.StoreName = f.StoreName |> (TextBox.loseFocus StoreName.normalizer) }
+    let updateStoreName msg f =
+        f.StoreName
+        |> TextBox.update StoreName.normalizer msg
+        |> fun frm -> { f with StoreName = frm }
 
     let validateStoreName f = f.StoreName.ValueTyping |> StoreName.tryParse
 
@@ -624,10 +618,7 @@ module StoreEditForm =
 
     let update msg f =
         match msg with
-        | StoreNameMessage txt ->
-            match txt with
-            | TextBoxMessage.LoseFocus -> f |> blurStoreName
-            | TextBoxMessage.TypeText s -> f |> typeStoreName s
+        | StoreNameMessage txt -> f |> updateStoreName txt
 
     [<Extension>]
     type StoreEditFormExtensions =
