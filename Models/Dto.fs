@@ -246,7 +246,7 @@ module Dto =
         { DtoTypes.Changes.Items = collect State.itemsTable serializeItem
           DtoTypes.Changes.Categories = collect State.categoriesTable serializeCategory
           DtoTypes.Changes.Stores = collect State.storesTable serializeStore
-          DtoTypes.Changes.NotSoldItems = collect State.notSoldItemsTable serializeNotSoldItem }
+          DtoTypes.Changes.NotSoldItems = collect State.notSoldTable serializeNotSoldItem }
 
     // maybe should take what works, not throw
     let private deserialize<'T, 'U> (f: DtoTypes.Document<'T> -> Result<'U, string>) (i: DtoTypes.Document<'T> seq) =

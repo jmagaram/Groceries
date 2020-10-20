@@ -48,7 +48,7 @@ let private createItem find (item: CoreTypes.Item) state =
               { Store = st
                 IsSold =
                     state
-                    |> State.notSoldItemsTable
+                    |> State.notSoldTable
                     |> DataTable.tryFindCurrent { StoreId = st.StoreId; ItemId = item.ItemId }
                     |> Option.isNone }) }
 

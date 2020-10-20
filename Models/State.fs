@@ -2,25 +2,26 @@
 module Models.State
 
 open System
+open ChangeTrackerTypes
 open CoreTypes
 open StateTypes
 
 let categoriesTable (s: State) = s.Categories
 let storesTable (s: State) = s.Stores
 let itemsTable (s: State) = s.Items
-let notSoldItemsTable (s: State) = s.NotSoldItems
+let notSoldTable (s: State) = s.NotSoldItems
 let shoppingListSettingsRow (s: State) = s.ShoppingListSettings
 
 let shoppingListSettings s =
     s
     |> shoppingListSettingsRow
     |> DataRow.current
-    |> Option.get // may throw
+    |> Option.get
 
 let categories = categoriesTable >> DataTable.current
 let stores = storesTable >> DataTable.current
 let items = itemsTable >> DataTable.current
-let notSoldItems = notSoldItemsTable >> DataTable.current
+let notSold = notSoldTable >> DataTable.current
 
 let mapCategories f s = { s with Categories = f s.Categories }
 let mapStores f s = { s with State.Stores = f s.Stores }
@@ -36,6 +37,62 @@ let mapShoppingListSettings f s =
               |> DataRow.tryMap f
               |> Result.okOrThrow }
 
+let itemHasInvalidCategory (i: Item) s =
+    i.CategoryId
+    |> Option.map (fun c ->
+        s
+        |> categoriesTable
+        |> DataTable.tryFindCurrent c
+        |> Option.isNone)
+    |> Option.defaultValue false
+
+let notSoldHasInvalidItem (ns: NotSoldItem) s =
+    s
+    |> itemsTable
+    |> DataTable.tryFindCurrent ns.ItemId
+    |> Option.isNone
+
+let notSoldHasInvalidStore (ns: NotSoldItem) s =
+    s
+    |> storesTable
+    |> DataTable.tryFindCurrent ns.StoreId
+    |> Option.isNone
+
+let shoppingListSettingsHasInvalidStoreFilter s =
+    s
+    |> shoppingListSettings
+    |> fun i ->
+        i.StoreFilter
+        |> Option.map (fun sf ->
+            s
+            |> storesTable
+            |> DataTable.tryFindCurrent sf
+            |> Option.isNone)
+        |> Option.defaultValue false
+
+let fixItemForeignKeys s =
+    s
+    |> items
+    |> Seq.filter (fun i -> s |> itemHasInvalidCategory i)
+    |> Seq.map (fun i -> { i with CategoryId = None })
+    |> Seq.fold (fun s i -> s |> mapItems (DataTable.update i)) s
+
+let fixNotSoldForeignKeys s =
+    s
+    |> notSold
+    |> Seq.filter (fun n ->
+        let isItemInvalid = s |> notSoldHasInvalidItem n
+        let isStoreInvalid = s |> notSoldHasInvalidStore n
+        isItemInvalid || isStoreInvalid)
+    |> Seq.fold (fun s i -> s |> mapNotSoldItems (DataTable.delete i)) s
+
+let fixShoppingListSettingsForeignKeys s =
+    match s |> shoppingListSettingsHasInvalidStoreFilter with
+    | false -> s
+    | true ->
+        s
+        |> mapShoppingListSettings ShoppingListSettings.clearStoreFilter
+
 let (insertCategory, updateCategory, upsertCategory) =
     let go f (c: Category) s = s |> mapCategories (f c)
     (go DataTable.insert, go DataTable.update, go DataTable.upsert)
@@ -46,108 +103,36 @@ let (insertStore, updateStore, upsertStore) =
 
 let (insertItem, updateItem, upsertItem) =
     let go f (i: Item) s =
-        let isCategoryReferenceValid =
-            i.CategoryId
-            |> Option.map (fun c -> s.Categories |> DataTable.tryFindCurrent c |> Option.isSome)
-            |> Option.defaultValue true
-
-        match isCategoryReferenceValid with
-        | false -> failwith "A category is referenced that does not exist."
-        | true -> s |> mapItems (f i)
+        match s |> itemHasInvalidCategory i with
+        | true -> failwith "The item has an invalid category foreign key."
+        | false -> s |> mapItems (f i)
 
     (go DataTable.insert, go DataTable.update, go DataTable.upsert)
 
-let insertNotSoldItem (nsi: NotSoldItem) s =
-    let item = s.Items |> DataTable.tryFindCurrent nsi.ItemId
+let insertNotSoldItem (n: NotSoldItem) s =
+    if s |> notSoldHasInvalidItem n then failwith "The notSoldItem has an invalid item foreign key."
+    elif s |> notSoldHasInvalidStore n then failwith "The notSoldItem has an invalid store foreign key."
+    else s |> mapNotSoldItems (DataTable.insert n)
 
-    let store = s.Stores |> DataTable.tryFindCurrent nsi.StoreId
-
-    match item, store with
-    | Some _, Some _ -> s |> mapNotSoldItems (DataTable.insert nsi)
-    | None, _ -> failwith "A store is referenced that does not exist."
-    | _, None -> failwith "An item is referenced that does not exist."
-
-let private isShoppingListStoreFilterBroken (s: State) =
-    option {
-        let! shoppingListSettings = s.ShoppingListSettings |> DataRow.current
-        let! storeFilterId = shoppingListSettings.StoreFilter
-
-        return
-            s.Stores
-            |> DataTable.tryFindCurrent storeFilterId
-            |> Option.isNone
-    }
-    |> Option.defaultValue false
-
-let private removeBrokenShoppingListStoreFilter s =
-    match s |> isShoppingListStoreFilterBroken with
-    | false -> s
-    | true ->
-        { s with
-              ShoppingListSettings =
-                  s
-                  |> shoppingListSettingsRow
-                  |> DataRow.tryMap ShoppingListSettings.clearStoreFilter
-                  |> Result.okOrThrow } // may throw
-
-// these are all safe delete options that delete and update broken links. maybe
-// rename others to unsafe delete.
-
-let deleteStore k s =
+let fixForeignKeys s =
     s
-    |> mapStores (DataTable.delete k)
-    |> mapNotSoldItems (DataTable.deleteIf (fun i -> i.StoreId = k))
-    |> removeBrokenShoppingListStoreFilter
+    |> fixItemForeignKeys
+    |> fixNotSoldForeignKeys
+    |> fixShoppingListSettingsForeignKeys
 
-let deleteItem k s =
-    s
-    |> mapItems (DataTable.delete k)
-    |> mapNotSoldItems (DataTable.deleteIf (fun i -> i.ItemId = k))
+let deleteStore k s = s |> mapStores (DataTable.delete k) |> fixForeignKeys
+
+let deleteItem k s = s |> mapItems (DataTable.delete k) |> fixForeignKeys
 
 let deleteNotSoldItem k s = s |> mapNotSoldItems (DataTable.delete k)
 
-let deleteCategory k s =
-    s
-    |> mapCategories (DataTable.delete k)
-    |> mapItems (fun dt ->
-        dt
-        |> DataTable.current
-        |> Seq.choose (fun i -> if i.CategoryId = Some k then Some { i with CategoryId = None } else None)
-        |> Seq.fold (fun dt i -> dt |> DataTable.update i) s.Items)
+let deleteCategory k s = s |> mapCategories (DataTable.delete k) |> fixForeignKeys
 
-let private setBrokenItemToCategoryLinksToNone (s: State) =
-    s.Items
-    |> DataTable.current
-    |> Seq.filter (fun i ->
-        match i.CategoryId with
-        | None -> false
-        | Some c -> s.Categories |> DataTable.tryFindCurrent c |> Option.isNone)
-    |> Seq.fold (fun s i ->
-        s
-        |> mapItems (DataTable.upsert { i with CategoryId = None })) s
-
-let private removeBrokenNotSoldItemLinks (s: State) =
-    { s with
-          NotSoldItems =
-              s.NotSoldItems
-              |> DataTable.deleteIf (fun ns ->
-                  let isBrokenStore =
-                      s.Items
-                      |> DataTable.tryFindCurrent ns.ItemId
-                      |> Option.isNone
-
-                  let isBrokenItem =
-                      s.Stores
-                      |> DataTable.tryFindCurrent ns.StoreId
-                      |> Option.isNone
-
-                  isBrokenStore || isBrokenItem) }
-
-let fixBrokenForeignKeys (s: State) =
-    s
-    |> setBrokenItemToCategoryLinksToNone
-    |> removeBrokenNotSoldItemLinks
-    |> removeBrokenShoppingListStoreFilter
+let hasChanges s =
+    (s |> itemsTable |> DataTable.hasChanges)
+    || (s |> categoriesTable |> DataTable.hasChanges)
+    || (s |> storesTable |> DataTable.hasChanges)
+    || (s |> notSoldTable |> DataTable.hasChanges)
 
 let importChanges (i: ImportChanges) (s: StateTypes.State) =
     { s with
@@ -164,13 +149,6 @@ let importChanges (i: ImportChanges) (s: StateTypes.State) =
               i.NotSoldItemChanges
               |> Seq.fold (fun dt i -> dt |> DataTable.acceptChange i) s.NotSoldItems
           LastCosmosTimestamp = i.LatestTimestamp }
-    |> fixBrokenForeignKeys
-
-let hasChanges s =
-    (s |> itemsTable |> DataTable.hasChanges)
-    || (s |> categoriesTable |> DataTable.hasChanges)
-    || (s |> storesTable |> DataTable.hasChanges)
-    || (s |> notSoldItemsTable |> DataTable.hasChanges)
 
 let acceptAllChanges s =
     s
@@ -178,29 +156,28 @@ let acceptAllChanges s =
     |> mapCategories DataTable.acceptChanges
     |> mapStores DataTable.acceptChanges
     |> mapNotSoldItems DataTable.acceptChanges
+    |> fixForeignKeys
 
-let isItemSold (s: Store) (i: Item) state =
-    state
-    |> notSoldItemsTable
-    |> DataTable.tryFindCurrent { ItemId = i.ItemId; StoreId = s.StoreId }
-    |> Option.isNone
-
-let itemDenormalized (item: Item) state =
-    { ItemDenormalized.ItemId = item.ItemId
-      ItemName = item.ItemName
-      Etag = item.Etag
-      Note = item.Note
-      Quantity = item.Quantity
-      Schedule = item.Schedule
+let itemDenormalized (i: Item) state =
+    { ItemDenormalized.ItemId = i.ItemId
+      ItemName = i.ItemName
+      Etag = i.Etag
+      Note = i.Note
+      Quantity = i.Quantity
+      Schedule = i.Schedule
       Category =
-          item.CategoryId
+          i.CategoryId
           |> Option.map (fun c -> state |> categoriesTable |> DataTable.findCurrent c)
       Availability =
           state
           |> stores
           |> Seq.map (fun s ->
               { ItemAvailability.Store = s
-                IsSold = isItemSold s item state }) }
+                IsSold =
+                    state
+                    |> notSoldTable
+                    |> DataTable.tryFindCurrent { ItemId = i.ItemId; StoreId = s.StoreId }
+                    |> Option.isNone }) }
 
 let createDefault =
     { Categories = DataTable.empty
@@ -215,40 +192,32 @@ let createDefault =
 
 let createSampleData () =
 
-    let newCategory n s =
-        s
-        |> insertCategory
+    let newCategory n =
+        insertCategory
             { Category.CategoryId = CategoryId.create ()
               CategoryName = n |> CategoryName.tryParse |> Result.okOrThrow
               Etag = None }
 
-    let newStore n s =
-        s
-        |> insertStore
+    let newStore n =
+        insertStore
             { Store.StoreId = StoreId.create ()
               StoreName = n |> StoreName.tryParse |> Result.okOrThrow
               Etag = None }
 
     let findCategory n (s: State) =
-        let n = CategoryName.tryParse n |> Result.okOrThrow
-
         s.Categories
         |> DataTable.current
-        |> Seq.find (fun i -> i.CategoryName = n)
+        |> Seq.find (fun i -> i.CategoryName = (CategoryName.tryParse n |> Result.okOrThrow))
 
     let findItem n (s: State) =
-        let n = ItemName.tryParse n |> Result.okOrThrow
-
         s.Items
         |> DataTable.current
-        |> Seq.find (fun i -> i.ItemName = n)
+        |> Seq.find (fun i -> i.ItemName = (ItemName.tryParse n |> Result.okOrThrow))
 
     let findStore n (s: State) =
-        let n = StoreName.tryParse n |> Result.okOrThrow
-
         s.Stores
         |> DataTable.current
-        |> Seq.find (fun i -> i.StoreName = n)
+        |> Seq.find (fun i -> i.StoreName = (StoreName.tryParse n |> Result.okOrThrow))
 
     let newItem name cat qty note s =
         s
@@ -256,14 +225,17 @@ let createSampleData () =
             { Item.ItemId = ItemId.create ()
               ItemName = name |> ItemName.tryParse |> Result.okOrThrow
               Etag = None
-              Quantity = if qty = "" then None else qty |> Quantity.tryParse |> Result.okOrThrow |> Some
-              Note = if note = "" then None else note |> Note.tryParse |> Result.okOrThrow |> Some
+              Quantity =
+                  qty
+                  |> tryParseOptional Quantity.tryParse
+                  |> Result.okOrThrow
+              Note = note |> tryParseOptional Note.tryParse |> Result.okOrThrow
               Item.Schedule = Schedule.Once
               Item.CategoryId = if cat = "" then None else Some (findCategory cat s).CategoryId }
 
     let now = System.DateTimeOffset.Now
 
-    let markComplete n (s: State) =
+    let markComplete n s =
         let item =
             s
             |> findItem n
@@ -271,7 +243,7 @@ let createSampleData () =
 
         s |> mapItems (DataTable.update item)
 
-    let makeRepeat n freq postpone (s: State) =
+    let makeRepeat n freq postpone s =
         let freq = Frequency.create freq |> Result.okOrThrow
 
         let postpone = postpone |> Option.map (fun d -> now.AddDays(d |> float))
@@ -475,7 +447,7 @@ let handleItemEditPageMessage (now: DateTimeOffset) (msg: ItemEditPageMessage) (
 
         let nsCurrent =
             s
-            |> notSoldItems
+            |> notSold
             |> Seq.choose (fun i -> if i.ItemId = r.Item.ItemId then Some i.StoreId else None)
 
         let nsToRemove = nsCurrent |> Seq.except nsExpected
