@@ -93,6 +93,12 @@ let fixShoppingListSettingsForeignKeys s =
         s
         |> mapShoppingListSettings ShoppingListSettings.clearStoreFilter
 
+let fixForeignKeys s =
+    s
+    |> fixItemForeignKeys
+    |> fixNotSoldForeignKeys
+    |> fixShoppingListSettingsForeignKeys
+
 let (insertCategory, updateCategory, upsertCategory) =
     let go f (c: Category) s = s |> mapCategories (f c)
     (go DataTable.insert, go DataTable.update, go DataTable.upsert)
@@ -113,12 +119,6 @@ let insertNotSoldItem (n: NotSoldItem) s =
     if s |> notSoldHasInvalidItem n then failwith "The notSoldItem has an invalid item foreign key."
     elif s |> notSoldHasInvalidStore n then failwith "The notSoldItem has an invalid store foreign key."
     else s |> mapNotSoldItems (DataTable.insert n)
-
-let fixForeignKeys s =
-    s
-    |> fixItemForeignKeys
-    |> fixNotSoldForeignKeys
-    |> fixShoppingListSettingsForeignKeys
 
 let deleteStore k s = s |> mapStores (DataTable.delete k) |> fixForeignKeys
 
@@ -157,27 +157,6 @@ let acceptAllChanges s =
     |> mapStores DataTable.acceptChanges
     |> mapNotSoldItems DataTable.acceptChanges
     |> fixForeignKeys
-
-let itemDenormalized (i: Item) state =
-    { ItemDenormalized.ItemId = i.ItemId
-      ItemName = i.ItemName
-      Etag = i.Etag
-      Note = i.Note
-      Quantity = i.Quantity
-      Schedule = i.Schedule
-      Category =
-          i.CategoryId
-          |> Option.map (fun c -> state |> categoriesTable |> DataTable.findCurrent c)
-      Availability =
-          state
-          |> stores
-          |> Seq.map (fun s ->
-              { ItemAvailability.Store = s
-                IsSold =
-                    state
-                    |> notSoldTable
-                    |> DataTable.tryFindCurrent { ItemId = i.ItemId; StoreId = s.StoreId }
-                    |> Option.isNone }) }
 
 let createDefault =
     { Categories = DataTable.empty
@@ -290,6 +269,27 @@ let createSampleData () =
     |> doesNotSellItem "QFC" "Dried flax seeds"
     |> doesNotSellItem "Costco" "Chocolate bars"
 
+let itemDenormalized (i: Item) state =
+    { ItemDenormalized.ItemId = i.ItemId
+      ItemName = i.ItemName
+      Etag = i.Etag
+      Note = i.Note
+      Quantity = i.Quantity
+      Schedule = i.Schedule
+      Category =
+          i.CategoryId
+          |> Option.map (fun c -> state |> categoriesTable |> DataTable.findCurrent c)
+      Availability =
+          state
+          |> stores
+          |> Seq.map (fun s ->
+              { ItemAvailability.Store = s
+                IsSold =
+                    state
+                    |> notSoldTable
+                    |> DataTable.tryFindCurrent { ItemId = i.ItemId; StoreId = s.StoreId }
+                    |> Option.isNone }) }
+
 let handleItemMessage now msg (s: State) =
     match msg with
     | ModifyItem (k, msg) ->
@@ -298,10 +298,7 @@ let handleItemMessage now msg (s: State) =
     | DeleteItem k -> s |> deleteItem k
 
 let handleCategoryEditPageMessage (msg: CategoryEditPageMessage) (s: State) =
-    let form (s: State) =
-        s.CategoryEditPage
-        |> Option.asResult "There is no category editing form."
-
+    let form (s: State) = s.CategoryEditPage |> Option.get
     let cancel s = { s with CategoryEditPage = None }
 
     match msg with
@@ -313,55 +310,28 @@ let handleCategoryEditPageMessage (msg: CategoryEditPageMessage) (s: State) =
         let form = CategoryEditForm.editExisting cat
         { s with CategoryEditPage = Some form }
     | BeginCreateNewCategory ->
-        let form = CategoryEditForm.createNew
-        { s with CategoryEditPage = Some form }
+        { s with
+              CategoryEditPage = CategoryEditForm.createNew |> Some }
     | CategoryEditFormMessage msg ->
-        result {
-            let! form = s |> form
-            let form = form |> CategoryEditForm.handle msg
-            return { s with CategoryEditPage = Some form }
-        }
-        |> Result.okOrThrow
+        { s with
+              CategoryEditPage = s |> form |> CategoryEditForm.handle msg |> Some }
     | SubmitCategoryEditForm ->
-        result {
-            let! form = s |> form
-
-            let! form =
-                form
-                |> CategoryEditForm.tryCommit
-                |> Result.mapError (sprintf "%A")
-
-            let s =
-                match form with
-                | CategoryEditForm.FormResult.InsertCategory c ->
-                    s
-                    |> insertCategory
-                        { CategoryName = c
-                          CategoryId = CategoryId.create ()
-                          Etag = None }
-                | CategoryEditForm.FormResult.EditCategory c -> s |> updateCategory c
-
-            return s |> cancel
-        }
-        |> Result.okOrThrow
+        match s |> form |> CategoryEditForm.tryCommit |> Result.okOrThrow with
+        | CategoryEditForm.FormResult.InsertCategory n ->
+            s
+            |> insertCategory
+                { CategoryName = n
+                  CategoryId = CategoryId.create ()
+                  Etag = None }
+            |> cancel
+        | CategoryEditForm.FormResult.EditCategory c -> s |> updateCategory c |> cancel
     | CancelCategoryEditForm -> s |> cancel
     | DeleteCategory ->
-        result {
-            let! form = s |> form
-
-            let! id =
-                form.CategoryId
-                |> Option.asResult "Can only delete an existing category, not one that is being created."
-
-            return s |> deleteCategory id |> cancel
-        }
-        |> Result.okOrThrow
+        let id = s |> form |> fun i -> i.CategoryId |> Option.get
+        s |> deleteCategory id |> cancel
 
 let handleStoreEditPageMessage (msg: StoreEditPageMessage) (s: State) =
-    let form (s: State) =
-        s.StoreEditPage
-        |> Option.asResult "There is no Store editing form."
-
+    let form (s: State) = s.StoreEditPage |> Option.get
     let cancel s = { s with StoreEditPage = None }
 
     match msg with
@@ -373,46 +343,25 @@ let handleStoreEditPageMessage (msg: StoreEditPageMessage) (s: State) =
         let form = StoreEditForm.editExisting str
         { s with StoreEditPage = Some form }
     | BeginCreateNewStore ->
-        let form = StoreEditForm.createNew
-        { s with StoreEditPage = Some form }
+        { s with
+              StoreEditPage = StoreEditForm.createNew |> Some }
     | StoreEditFormMessage msg ->
-        result {
-            let! form = s |> form
-            let form = form |> StoreEditForm.update msg
-            return { s with StoreEditPage = Some form }
-        }
-        |> Result.okOrThrow
+        { s with
+              StoreEditPage = s |> form |> StoreEditForm.update msg |> Some }
     | SubmitStoreEditForm ->
-        result {
-            let! form = s |> form
-
-            let! form =
-                form
-                |> StoreEditForm.tryCommit
-                |> Result.mapError (sprintf "%A")
-
-            let s =
-                match form with
-                | StoreEditForm.FormResult.InsertStore c ->
-                    s
-                    |> insertStore { StoreName = c; StoreId = StoreId.create (); Etag = None }
-                | StoreEditForm.FormResult.EditStore c -> s |> updateStore c
-
-            return s |> cancel
-        }
-        |> Result.okOrThrow
+        match s |> form |> StoreEditForm.tryCommit |> Result.okOrThrow with
+        | StoreEditForm.FormResult.InsertStore n ->
+            s
+            |> insertStore
+                { StoreName = n
+                  StoreId = StoreId.create ()
+                  Etag = None }
+            |> cancel
+        | StoreEditForm.FormResult.EditStore c -> s |> updateStore c |> cancel
     | CancelStoreEditForm -> s |> cancel
     | DeleteStore ->
-        result {
-            let! form = s |> form
-
-            let! id =
-                form.StoreId
-                |> Option.asResult "Can only delete an existing Store, not one that is being created."
-
-            return s |> deleteStore id |> cancel
-        }
-        |> Result.okOrThrow
+        let id = s |> form |> fun i -> i.StoreId |> Option.get
+        s |> deleteStore id |> cancel
 
 // problem when it is deleted; shouldn't happen
 let handleShoppingListSettingsMessage (msg: ShoppingListSettings.Message) (s: State) =
