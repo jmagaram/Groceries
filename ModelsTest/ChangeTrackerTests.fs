@@ -137,7 +137,7 @@ module DataRowTests =
     let ``tryUpdate - when deleted and different value, return error`` () =
         match DataRow.deleted bob1 |> DataRow.tryUpdate bob2 with
         | Ok r -> false
-        | Error RowIsDeleted -> true
+        | Error DataRowIsDeletedError -> true
         |> should equal true
 
     [<Fact>]
@@ -192,7 +192,7 @@ module DataRowTests =
     let ``tryMap - when deleted and different value return error`` () =
         match DataRow.deleted bob1
               |> DataRow.tryMap (changeNameTo bob2.Name) with
-        | Error RowIsDeleted -> true
+        | Error DataRowIsDeletedError -> true
         | _ -> false
         |> should equal true
 
@@ -200,7 +200,7 @@ module DataRowTests =
     let ``tryMap - when deleted and same value return self`` () =
         match DataRow.deleted bob1 |> DataRow.tryMap id with
         | Ok r -> r |> isDeleted bob1
-        | Error RowIsDeleted -> false
+        | Error DataRowIsDeletedError -> false
         |> should equal true
 
     [<Fact>]

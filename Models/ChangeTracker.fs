@@ -49,7 +49,7 @@ module DataRow =
         | Added _ -> added v' |> Ok
         | Deleted v ->
             match v = v' with
-            | false -> RowIsDeleted |> Error
+            | false -> DataRowIsDeletedError |> Error
             | true -> r |> Ok
 
     let tryMap f r =

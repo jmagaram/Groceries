@@ -12,15 +12,12 @@ type Change<'T, 'Key> =
     | Upsert of 'T
     | Delete of 'Key
 
-type RowUpdateError =
-    | RowIsDeleted 
+type DataRowIsDeletedError = | DataRowIsDeletedError
 
-type DataTableDeleteError =
-    | RowToDeleteNotFound
+type RowToDeleteNotFound = | RowToDeleteNotFound
 
-type DataTableInsertError =
-    | DuplicateKey
+type DuplicateKey = | DuplicateKey
 
 type DataTableUpdateError =
-    | RowToUpdateNotFound 
+    | RowToUpdateNotFound
     | RowIsDeletedInTable
