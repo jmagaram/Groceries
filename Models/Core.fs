@@ -636,29 +636,17 @@ module ItemForm =
 
     let itemNameValidation (f: ItemForm) = f.ItemName.ValueTyping |> ItemName.tryParse
 
-    let itemNameChange s (f: ItemForm) = { f with ItemName = f.ItemName |> TextBox.typeText s }
-
-    let itemNameBlur f =
-        { f with
-              ItemForm.ItemName = f.ItemName |> TextBox.loseFocus ItemName.normalizer }
+    let updateItemName msg (f: ItemForm) = f.ItemName |> TextBox.update ItemName.normalizer msg |> fun n -> { f with ItemName = n }
 
     let quantityValidation (f: ItemForm) =
         f.Quantity.ValueTyping
         |> String.tryParseOptional Quantity.tryParse
 
-    let quantityChange s (f: ItemForm) = { f with Quantity = f.Quantity |> TextBox.typeText s }
+    let updateQuantity msg (f: ItemForm) = f.Quantity |> TextBox.update Quantity.normalizer msg |> fun q -> { f with Quantity = q }
 
-    let quantityBlur f =
-        { f with
-              ItemForm.Quantity = f.Quantity |> TextBox.loseFocus Quantity.normalizer }
-
-    let noteChange s (f: ItemForm) = { f with Note = f.Note |> TextBox.typeText s }
+    let updateNote msg (f: ItemForm) = f.Quantity |> TextBox.update Note.normalizer msg |> fun n -> { f with Note = n }
 
     let noteValidation (f: ItemForm) = f.Note.ValueTyping |> String.tryParseOptional Note.tryParse
-
-    let noteBlur f =
-        { f with
-              ItemForm.Note = f.Note |> TextBox.loseFocus Note.normalizer }
 
     let categoryModeChooseExisting f = { f with CategoryMode = ChooseExisting }
     let categoryModeCreateNew f = { f with CategoryMode = CreateNew }
@@ -902,12 +890,9 @@ module ItemForm =
           NotSold = notSold }
 
     type Message =
-        | ItemNameSet of string
-        | ItemNameBlur
-        | QuantitySet of string
-        | QuantityBlur
-        | NoteSet of string
-        | NoteBlur
+        | ItemName of TextBoxMessage
+        | Quantity of TextBoxMessage
+        | Note of TextBoxMessage
         | ScheduleOnce
         | ScheduleCompleted
         | ScheduleRepeat
@@ -918,20 +903,16 @@ module ItemForm =
         | CategoryModeCreateNew
         | ChooseCategoryUncategorized
         | ChooseCategory of Guid
-        | NewCategoryNameSet of string
-        | NewCategoryNameBlur
+        | NewCategoryName of TextBoxMessage
         | StoresSetAvailability of store: StoreId * isSold: bool
         | Purchased
         | Transaction of Message seq
 
     let rec update msg (f: ItemForm) =
         match msg with
-        | ItemNameSet s -> f |> itemNameChange s
-        | ItemNameBlur -> f |> itemNameBlur
-        | QuantitySet s -> f |> quantityChange s
-        | QuantityBlur -> f |> quantityBlur
-        | NoteSet s -> f |> noteChange s
-        | NoteBlur -> f |> noteBlur
+        | ItemName m -> f |> updateItemName m
+        | Quantity m -> f |> updateQuantity m
+        | Note m -> f |> updateNote m
         | ScheduleOnce -> f |> scheduleOnce
         | ScheduleCompleted -> f |> scheduleCompleted
         | ScheduleRepeat -> f |> scheduleRepeat
@@ -942,8 +923,8 @@ module ItemForm =
         | CategoryModeCreateNew -> f |> categoryModeCreateNew
         | ChooseCategoryUncategorized -> f |> chooseCategoryUncategorized
         | ChooseCategory g -> f |> chooseCategory g
-        | NewCategoryNameSet s -> f |> categoryNameChange s
-        | NewCategoryNameBlur -> f |> categoryNameBlur
+        | NewCategoryName (TextBoxMessage.TypeText s) -> f |> categoryNameChange s
+        | NewCategoryName (TextBoxMessage.LoseFocus) -> f |> categoryNameBlur
         | StoresSetAvailability (id: StoreId, isSold: bool) -> f |> storesSetAvailability id isSold
         | Purchased -> f |> purchased
         | Message.Transaction msgs -> msgs |> Seq.fold (fun f m -> update m f) f

@@ -1,40 +1,47 @@
-﻿using Microsoft.AspNetCore.Components;
-using Microsoft.AspNetCore.Components.Web;
-using Models;
-using System;
+﻿using System;
 using System.Collections.Generic;
+
+using Microsoft.AspNetCore.Components;
+using Microsoft.AspNetCore.Components.Web;
+
+using Models;
+
 using WebApp.Common;
-using static Models.ItemFormModule.ItemFormExtensions;
+
 using FormMessage = Models.ItemFormModule.Message;
+using TextBoxMessage = Models.CoreTypes.TextBoxMessage;
 
 namespace WebApp.Shared {
     public partial class ItemEditForm : ComponentBase {
         [Parameter]
         public CoreTypes.ItemForm Form { get; set; }
 
-        private void Process(FormMessage msg) => 
+        private void Process(FormMessage msg) =>
             OnItemFormMessage.InvokeAsync(msg);
 
         protected void OnItemNameChange(ChangeEventArgs e) =>
-            Process(FormMessage.NewItemNameSet((string)e.Value));
+            Process(FormMessage.NewItemName(TextBoxMessage.NewTypeText((string)e.Value)));
 
         protected void OnItemNameFocusOut(FocusEventArgs e) =>
-            Process(FormMessage.ItemNameBlur);
+            Process(FormMessage.NewItemName(TextBoxMessage.LoseFocus));
 
         protected void OnQuantityChange(ChangeEventArgs e) =>
-            Process(FormMessage.NewQuantitySet((string)e.Value));
+            Process(FormMessage.NewQuantity(TextBoxMessage.NewTypeText((string)e.Value)));
 
         protected void OnQuantityFocusOut(FocusEventArgs e) =>
-            Process(FormMessage.QuantityBlur);
+            Process(FormMessage.NewQuantity(TextBoxMessage.LoseFocus));
 
         protected void OnNoteChange(ChangeEventArgs e) =>
-            Process(FormMessage.NewNoteSet((string)e.Value));
+            Process(FormMessage.NewNote(TextBoxMessage.NewTypeText((string)e.Value)));
 
         protected void OnNoteFocusOut(FocusEventArgs e) =>
-            Process(FormMessage.NoteBlur);
+            Process(FormMessage.NewNote(TextBoxMessage.LoseFocus));
 
         protected void OnNewCategoryNameChange(ChangeEventArgs e) =>
-            Process(FormMessage.NewNewCategoryNameSet((string)e.Value));
+            Process(FormMessage.NewNewCategoryName(TextBoxMessage.NewTypeText((string)e.Value)));
+
+        protected void OnNewCategoryNameFocusOut(FocusEventArgs e) =>
+            Process(FormMessage.NewNewCategoryName(TextBoxMessage.LoseFocus));
 
         protected void OnScheduleOnce(ChangeEventArgs e) =>
             Process(FormMessage.ScheduleOnce);
@@ -64,9 +71,6 @@ namespace WebApp.Shared {
             Process(FormMessage.ScheduleOnce);
             OnSaveChangesCallback.InvokeAsync(null);
         }
-
-        protected void OnNewCategoryNameFocusOut(FocusEventArgs e) =>
-            Process(FormMessage.NewCategoryNameBlur);
 
         const string chooseUncategorized = "chooseUncategorized";
         const string chooseCreateNewCategory = "chooseNewCategory";
