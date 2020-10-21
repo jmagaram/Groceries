@@ -8,11 +8,10 @@ using WebApp.Data;
 namespace WebApp.Pages {
     public partial class Sync : ComponentBase {
         [Inject]
-        public Models.Service StateService { get; set; }
+        public Service StateService { get; set; }
 
-        // inject the interface!
         [Inject]
-        public CosmosConnector Cosmos { get; set; }
+        public ICosmosConnector Cosmos { get; set; }
 
         private void LogMessage(string s) => Log.Insert(0, s);
 
@@ -32,29 +31,20 @@ namespace WebApp.Pages {
             await Cosmos.DeleteDatabaseAsync();
             await Cosmos.CreateDatabaseAsync();
             StateService.Update(StateTypes.StateMessage.ResetToSampleData);
-            await StateService.PushRequest().DoAsync(c => Cosmos.PushAsync(c));
-            var changes = await Cosmos.PullEverythingAsync();
-            var import = Dto.pullResponse(changes.Items, changes.Categories, changes.Stores, changes.NotSoldItems);
-            StateService.Update(StateTypes.StateMessage.NewImport(import));
+            await StateService.Push();
+            await StateService.PullIncremental();
             ModalStatusMessage = "";
         }
 
         protected async Task PushAsync() {
             LogMessage($"PUSH start");
-            await StateService.PushRequest().DoAsync(c => Cosmos.PushAsync(c));
+            await StateService.Push();
             LogMessage($"PUSH done");
         }
 
         protected async Task PullAsync() {
             LogMessage($"PULL start");
-            var state = StateService.Current;
-            var changes =
-                state.LastCosmosTimestamp.IsSome()
-                    ? await Cosmos.PullSinceAsync(state.LastCosmosTimestamp.Value)
-                    : await Cosmos.PullEverythingAsync();
-            var import = Dto.pullResponse(changes.Items, changes.Categories, changes.Stores, changes.NotSoldItems);
-            var msg = StateTypes.StateMessage.NewImport(import);
-            StateService.Update(msg);
+            await StateService.PullIncremental();
             LogMessage($"PULL done");
         }
 

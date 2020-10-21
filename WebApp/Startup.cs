@@ -1,9 +1,10 @@
+using System;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-
+using Models;
 using WebApp.Data;
 
 namespace WebApp {
@@ -19,8 +20,8 @@ namespace WebApp {
         public void ConfigureServices(IServiceCollection services) {
             services.AddRazorPages();
             services.AddServerSideBlazor();
-            services.AddSingleton<Models.Service>();
-            services.AddSingleton(i => new CosmosConnector(Configuration.GetValue<string>("CosmosConnectionString")));
+            services.AddSingleton<ICosmosConnector, CosmosConnector>(i => new CosmosConnector(Configuration.GetValue<string>("CosmosConnectionString")));
+            services.AddSingleton<Service>();
             services.AddServerSideBlazor().AddCircuitOptions(options => { options.DetailedErrors = true; });
         }
 

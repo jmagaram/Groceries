@@ -9,7 +9,6 @@ module Dto =
     type StateStore = CoreTypes.Store
     type StateCategory = CoreTypes.Category
 
-
     let serializeItem isDeleted (i: CoreTypes.Item): DtoTypes.Document<DtoTypes.Item> =
         { Id = i.ItemId |> ItemId.serialize
           CustomerId = null
@@ -266,3 +265,5 @@ module Dto =
               |> Seq.choose id
               |> Seq.toList
               |> Seq.fold (fun m i -> m |> Option.map (fun m -> max m i) |> Option.orElse (Some i)) None }
+
+    let changesAsImport (c:DtoTypes.Changes) = pullResponse (c.Items) (c.Categories) (c.Stores) (c.NotSoldItems)

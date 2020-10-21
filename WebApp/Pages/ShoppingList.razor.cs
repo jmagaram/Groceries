@@ -5,17 +5,12 @@ using System.Reactive.Disposables;
 using System.Reactive.Linq;
 using System.Reactive.Subjects;
 using System.Threading.Tasks;
-
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
-
 using Models;
-
 using WebApp.Common;
 using WebApp.Data;
-
 using static Models.CoreTypes;
-
 using ItemMessage = Models.ItemModule.Message;
 using SettingsMessage = Models.ShoppingListSettingsModule.Message;
 using StateItemMessage = Models.StateTypes.ItemMessage;
@@ -31,13 +26,10 @@ namespace WebApp.Pages {
         readonly BehaviorSubject<string> _textFilterTyped = new BehaviorSubject<string>("");
 
         [Inject]
-        public Models.Service StateService { get; set; }
+        public Service StateService { get; set; }
 
         [Inject]
         NavigationManager Navigation { get; set; }
-
-        [Inject]
-        public CosmosConnector Cosmos { get; set; }
 
         public SyncStatus SyncStatus { get; set; } = SyncStatus.NoChangesToPush;
 
@@ -127,16 +119,8 @@ namespace WebApp.Pages {
         }
 
         private async Task OnSync() {
-            await Cosmos.CreateDatabaseAsync();
-            await StateService.PushRequest().DoAsync(c => Cosmos.PushAsync(c));
-            var state = StateService.Current;
-            var changes =
-                state.LastCosmosTimestamp.IsSome()
-                ? await Cosmos.PullSinceAsync(state.LastCosmosTimestamp.Value)
-                : await Cosmos.PullEverythingAsync();
-            var import = Dto.pullResponse(changes.Items, changes.Categories, changes.Stores, changes.NotSoldItems);
-            var msg = StateMessage.NewImport(import);
-            StateService.Update(msg);
+            await StateService.Push();
+            await StateService.PullIncremental();
         }
 
         private void OnStoreFilterClear() =>
