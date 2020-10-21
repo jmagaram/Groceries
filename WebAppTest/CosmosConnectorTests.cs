@@ -1,3 +1,4 @@
+using System.Threading;
 using System.Threading.Tasks;
 using Models;
 using WebApp.Common;
@@ -22,9 +23,9 @@ namespace WebAppTest {
             await c.DeleteDatabaseAsync();
             await c.CreateDatabaseAsync();
             var x = StateModule.createSampleData();
-            await Dto.pushRequest(x).DoAsync(changes => c.PushAsync(changes));
+            await Dto.pushRequest(x).DoAsync(changes => c.PushAsync(changes, CancellationToken.None));
             var y = StateModule.createDefault;
-            var changes = await c.PullEverythingAsync();
+            var changes = await c.PullEverythingAsync(CancellationToken.None);
             var import = Dto.pullResponse(changes.Items, changes.Categories, changes.Stores, changes.NotSoldItems);
             var z = StateModule.importChanges(import, y);
             Assert.Equal(x.Items.Item.Count, z.Items.Item.Count);

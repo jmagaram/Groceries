@@ -6,13 +6,14 @@ open FSharp.Control.Reactive
 open CoreTypes
 open StateTypes
 open System.Threading.Tasks
+open System.Threading
 
 type ICosmosConnector =
     abstract CreateDatabaseAsync: unit -> Task
     abstract DeleteDatabaseAsync: unit -> Task
-    abstract PullSinceAsync: lastSync:int -> Task<DtoTypes.Changes>
-    abstract PullEverythingAsync: unit -> Task<DtoTypes.Changes>
-    abstract PushAsync: DtoTypes.Changes -> Task
+    abstract PullSinceAsync: lastSync:int -> token:CancellationToken  -> Task<DtoTypes.Changes>
+    abstract PullEverythingAsync: token:CancellationToken -> Task<DtoTypes.Changes>
+    abstract PushAsync: DtoTypes.Changes -> token:CancellationToken -> Task
 
 type Service(state: StateTypes.State, clock, cosmos: ICosmosConnector) =
     let stateSub = state |> Subject.behavior
@@ -28,8 +29,8 @@ type Service(state: StateTypes.State, clock, cosmos: ICosmosConnector) =
         async {
             let! changes =
                 match t with
-                | None -> cosmos.PullEverythingAsync()
-                | Some t -> cosmos.PullSinceAsync(t)
+                | None -> cosmos.PullEverythingAsync CancellationToken.None
+                | Some t -> cosmos.PullSinceAsync t CancellationToken.None
                 |> Async.AwaitTask
 
             let import = changes |> Dto.changesAsImport
@@ -41,7 +42,7 @@ type Service(state: StateTypes.State, clock, cosmos: ICosmosConnector) =
         async {
             match stateSub.Value |> Dto.pushRequest with
             | None -> ()
-            | Some changes -> changes |> cosmos.PushAsync |> Async.AwaitTask |> ignore
+            | Some changes -> cosmos.PushAsync changes CancellationToken.None |> Async.AwaitTask |> ignore
         }
 
     new(cosmos) = Service(State.createDefault, clock, cosmos)
