@@ -10,6 +10,7 @@ namespace WebApp.Pages {
         [Inject]
         public Models.Service StateService { get; set; }
 
+        // inject the interface!
         [Inject]
         public CosmosConnector Cosmos { get; set; }
 
@@ -17,44 +18,42 @@ namespace WebApp.Pages {
 
         public List<string> Log { get; } = new List<string>();
 
-        protected override async Task OnInitializedAsync() {
-            ModalStatusMessage = "Initializing...";
-            await Cosmos.CreateDatabase();
-            ModalStatusMessage = "";
-        }
-
         private async Task ResetToEmpty() {
             LogMessage("Resetting database...");
             ModalStatusMessage = "Resetting database...";
-            await Cosmos.DeleteDatabase();
-            await Cosmos.CreateDatabase();
+            await Cosmos.DeleteDatabaseAsync();
+            await Cosmos.CreateDatabaseAsync();
             ModalStatusMessage = "";
         }
 
         private async Task ResetToSampleData() {
             ModalStatusMessage = "Resetting to sample data...";
             LogMessage("Resetting to sample data...");
-            await Cosmos.DeleteDatabase();
-            await Cosmos.CreateDatabase();
+            await Cosmos.DeleteDatabaseAsync();
+            await Cosmos.CreateDatabaseAsync();
             StateService.Update(StateTypes.StateMessage.ResetToSampleData);
-            await StateService.PushRequest().DoAsync(c => Cosmos.Push(c));
-            var changes = await Cosmos.Pull(null);
-            StateService.Update(StateTypes.StateMessage.NewImport(changes));
+            await StateService.PushRequest().DoAsync(c => Cosmos.PushAsync(c));
+            var changes = await Cosmos.PullEverythingAsync();
+            var import = Dto.pullResponse(changes.Items, changes.Categories, changes.Stores, changes.NotSoldItems);
+            StateService.Update(StateTypes.StateMessage.NewImport(import));
             ModalStatusMessage = "";
         }
 
         protected async Task PushAsync() {
             LogMessage($"PUSH start");
-            await Cosmos.CreateDatabase();
-            await StateService.PushRequest().DoAsync(c => Cosmos.Push(c));
+            await StateService.PushRequest().DoAsync(c => Cosmos.PushAsync(c));
             LogMessage($"PUSH done");
         }
 
         protected async Task PullAsync() {
             LogMessage($"PULL start");
             var state = StateService.Current;
-            var pullResponse = await Cosmos.Pull(state.LastCosmosTimestamp.AsNullable());
-            var msg = StateTypes.StateMessage.NewImport(pullResponse);
+            var changes =
+                state.LastCosmosTimestamp.IsSome()
+                    ? await Cosmos.PullSinceAsync(state.LastCosmosTimestamp.Value)
+                    : await Cosmos.PullEverythingAsync();
+            var import = Dto.pullResponse(changes.Items, changes.Categories, changes.Stores, changes.NotSoldItems);
+            var msg = StateTypes.StateMessage.NewImport(import);
             StateService.Update(msg);
             LogMessage($"PULL done");
         }

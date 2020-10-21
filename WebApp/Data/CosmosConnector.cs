@@ -8,10 +8,8 @@ using Models;
 using static Models.DtoTypes;
 
 namespace WebApp.Data {
-    public class CosmosConnector : IDisposable {
+    public class CosmosConnector : ICosmosConnector, IDisposable {
         private CosmosClient _client;
-        private Database _database;
-        private Container _container;
         private readonly string _databaseId = "db";
         private readonly string _containerId = "items";
         private bool _isDisposed;
@@ -26,47 +24,53 @@ namespace WebApp.Data {
             _client = new CosmosClient(endpointUri, primaryKey, new CosmosClientOptions() { ApplicationName = applicationName });
         }
 
-        public async Task CreateDatabase() {
-            if (_database == null || _container == null) {
-                _database = await _client.CreateDatabaseIfNotExistsAsync(_databaseId);
-                _container = await _database.CreateContainerIfNotExistsAsync(_containerId, _partitionKeyPath);
-            }
+        public async Task CreateDatabaseAsync() {
+            Database db = await _client.CreateDatabaseIfNotExistsAsync(_databaseId);
+            Container ct = await db.CreateContainerIfNotExistsAsync(_containerId, _partitionKeyPath);
         }
 
-        public async Task DeleteDatabase() {
-            var db = _client.GetDatabase(_databaseId);
+        public async Task DeleteDatabaseAsync() {
+            Database db = _client.GetDatabase(_databaseId);
             await db.DeleteAsync();
-            _database = null;
-            _container = null;
-
         }
 
-        public async Task<ItemResponse<T>> Upsert<T>(T item, string etag) {
-            return await _container.UpsertItemAsync(item, requestOptions: new ItemRequestOptions { IfMatchEtag = etag });
-        }
-
-        private async Task PushCore<T>(IEnumerable<T> items, Func<T, string> etag) {
-            foreach (var i in items) {
-                try {
-                    await _container.UpsertItemAsync(item: i, requestOptions: new ItemRequestOptions { IfMatchEtag = etag(i) });
-                }
-                catch (CosmosException e) when (e.StatusCode == System.Net.HttpStatusCode.PreconditionFailed) {
-                }
-            }
-        }
-
-        public async Task Push(Changes c) {
+        public async Task PushAsync(Changes c) {
             await PushCore(c.Items.Select(i => Dto.withCustomerId(_customerId, i)), i => i.Etag);
             await PushCore(c.Categories.Select(i => Dto.withCustomerId(_customerId, i)), i => i.Etag);
             await PushCore(c.Stores.Select(i => Dto.withCustomerId(_customerId, i)), i => i.Etag);
             await PushCore(c.NotSoldItems.Select(i => Dto.withCustomerId(_customerId, i)), i => i.Etag);
         }
 
-        private async Task<List<Document<T>>> PullCore<T>(string customerId, int? timestamp, DocumentKind documentKind) {
-            var query = _container.GetItemLinqQueryable<Document<T>>()
+        private async Task PushCore<T>(IEnumerable<T> items, Func<T, string> etag) {
+            var ct = _client.GetContainer(_databaseId, _containerId);
+            foreach (var i in items) {
+                try {
+                    await ct.UpsertItemAsync(item: i, requestOptions: new ItemRequestOptions { IfMatchEtag = etag(i) });
+                }
+                catch (CosmosException e) when (e.StatusCode == System.Net.HttpStatusCode.PreconditionFailed) {
+                }
+            }
+        }
+
+        public async Task<Changes> PullSinceAsync(int lastSync) => await PullCore(lastSync);
+
+        public async Task<Changes> PullEverythingAsync() => await PullCore(null);
+
+        private async Task<Changes> PullCore(int? lastSync) {
+            var items = await PullByKindCore<Item>(_customerId, lastSync, DocumentKind.Item);
+            var stores = await PullByKindCore<Store>(_customerId, lastSync, DocumentKind.Store);
+            var categories = await PullByKindCore<Category>(_customerId, lastSync, DocumentKind.Category);
+            var notSoldItems = await PullByKindCore<Microsoft.FSharp.Core.Unit>(_customerId, lastSync, DocumentKind.NotSoldItem);
+            var import = new Changes(items, categories, stores, notSoldItems);
+            return import;
+        }
+
+        private async Task<Document<T>[]> PullByKindCore<T>(string customerId, int? timestamp, DocumentKind kind) {
+            var container = _client.GetContainer(_databaseId, _containerId);
+            var query = container.GetItemLinqQueryable<Document<T>>()
                 .Where(i => i.Timestamp > (timestamp ?? int.MinValue))
                 .Where(i => i.CustomerId == customerId)
-                .Where(i => i.DocumentKind == documentKind);
+                .Where(i => i.DocumentKind == kind);
             var docs = new List<Document<T>>();
             using (var iterator = query.ToFeedIterator()) {
                 while (iterator.HasMoreResults) {
@@ -75,16 +79,7 @@ namespace WebApp.Data {
                     }
                 }
             }
-            return docs;
-        }
-
-        public async Task<StateTypes.ImportChanges> Pull(int? lastSyncTimestamp) {
-            var items = await PullCore<Item>(_customerId, lastSyncTimestamp, DocumentKind.Item);
-            var stores = await PullCore<Store>(_customerId, lastSyncTimestamp, DocumentKind.Store);
-            var categories = await PullCore<Category>(_customerId, lastSyncTimestamp, DocumentKind.Category);
-            var notSoldItems = await PullCore<Microsoft.FSharp.Core.Unit>(_customerId, lastSyncTimestamp, DocumentKind.NotSoldItem);
-            var import = Dto.pullResponse(items, categories, stores, notSoldItems);
-            return import;
+            return docs.ToArray();
         }
 
         protected virtual void Dispose(bool disposing) {
@@ -99,7 +94,6 @@ namespace WebApp.Data {
         }
 
         public void Dispose() {
-            // Do not change this code. Put cleanup code in 'Dispose(bool disposing)' method
             Dispose(disposing: true);
             GC.SuppressFinalize(this);
         }

@@ -5,6 +5,14 @@ open System.Reactive.Linq
 open FSharp.Control.Reactive
 open CoreTypes
 open StateTypes
+open System.Threading.Tasks
+
+type ICosmosConnector =
+    abstract CreateDatabaseAsync: unit -> Task
+    abstract DeleteDatabaseAsync: unit -> Task
+    abstract PullSinceAsync: lastSync:int -> Task<DtoTypes.Changes>
+    abstract PullEverythingAsync: unit -> Task<DtoTypes.Changes>
+    abstract PushAsync: DtoTypes.Changes -> Task
 
 type Service(state, clock) =
     let stateSub = state |> Subject.behavior

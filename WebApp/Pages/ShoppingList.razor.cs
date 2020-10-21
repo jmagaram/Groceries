@@ -127,11 +127,15 @@ namespace WebApp.Pages {
         }
 
         private async Task OnSync() {
-            await Cosmos.CreateDatabase();
-            await StateService.PushRequest().DoAsync(c => Cosmos.Push(c));
+            await Cosmos.CreateDatabaseAsync();
+            await StateService.PushRequest().DoAsync(c => Cosmos.PushAsync(c));
             var state = StateService.Current;
-            var pullResponse = await Cosmos.Pull(state.LastCosmosTimestamp.AsNullable());
-            var msg = StateMessage.NewImport(pullResponse);
+            var changes =
+                state.LastCosmosTimestamp.IsSome()
+                ? await Cosmos.PullSinceAsync(state.LastCosmosTimestamp.Value)
+                : await Cosmos.PullEverythingAsync();
+            var import = Dto.pullResponse(changes.Items, changes.Categories, changes.Stores, changes.NotSoldItems);
+            var msg = StateMessage.NewImport(import);
             StateService.Update(msg);
         }
 

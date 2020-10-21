@@ -13,19 +13,20 @@ namespace WebAppTest {
         [Fact]
         public async Task CanCreateDatabase() {
             using var c = TestConnector();
-            await c.CreateDatabase();
+            await c.CreateDatabaseAsync();
         }
 
         [Fact]
         public async Task CanPushThenPullSameNumberOfItems() {
             using var c = TestConnector();
-            await c.DeleteDatabase();
-            await c.CreateDatabase();
+            await c.DeleteDatabaseAsync();
+            await c.CreateDatabaseAsync();
             var x = StateModule.createSampleData();
-            await Dto.pushRequest(x).DoAsync(changes => c.Push(changes));
+            await Dto.pushRequest(x).DoAsync(changes => c.PushAsync(changes));
             var y = StateModule.createDefault;
-            var imp = await c.Pull(null);
-            var z = StateModule.importChanges(imp, y);
+            var changes = await c.PullEverythingAsync();
+            var import = Dto.pullResponse(changes.Items, changes.Categories, changes.Stores, changes.NotSoldItems);
+            var z = StateModule.importChanges(import, y);
             Assert.Equal(x.Items.Item.Count, z.Items.Item.Count);
             Assert.Equal(x.Categories.Item.Count, z.Categories.Item.Count);
             Assert.Equal(x.Stores.Item.Count, z.Stores.Item.Count);
