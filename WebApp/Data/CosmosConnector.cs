@@ -1,12 +1,11 @@
-﻿using Microsoft.Azure.Cosmos;
-using Microsoft.Azure.Cosmos.Linq;
-using Models;
-using System;
+﻿using System;
 using System.Collections.Generic;
-using System.Configuration;
 using System.Linq;
 using System.Threading.Tasks;
-using WebApp.Data;
+using Microsoft.Azure.Cosmos;
+using Microsoft.Azure.Cosmos.Linq;
+using Models;
+using WebApp.Common;
 using static Models.DtoTypes;
 
 namespace WebApp.Data {
@@ -57,13 +56,14 @@ namespace WebApp.Data {
             }
         }
 
-        public async Task Push(StateTypes.State s) {
-            var changes = Models.Dto.pushRequest(s);
-            await PushCore(changes.Items.Select(i => Dto.withCustomerId(_customerId, i)), i => i.Etag);
-            await PushCore(changes.Categories.Select(i => Dto.withCustomerId(_customerId, i)), i => i.Etag);
-            await PushCore(changes.Stores.Select(i => Dto.withCustomerId(_customerId, i)), i => i.Etag);
-            await PushCore(changes.NotSoldItems.Select(i => Dto.withCustomerId(_customerId, i)), i => i.Etag);
+        private async Task Push(Changes c) {
+            await PushCore(c.Items.Select(i => Dto.withCustomerId(_customerId, i)), i => i.Etag);
+            await PushCore(c.Categories.Select(i => Dto.withCustomerId(_customerId, i)), i => i.Etag);
+            await PushCore(c.Stores.Select(i => Dto.withCustomerId(_customerId, i)), i => i.Etag);
+            await PushCore(c.NotSoldItems.Select(i => Dto.withCustomerId(_customerId, i)), i => i.Etag);
         }
+
+        public async Task Push(StateTypes.State s) => await Dto.pushRequest(s).DoAsync(c => Push(c));
 
         private async Task<List<Document<T>>> PullCore<T>(string customerId, int? timestamp, DocumentKind documentKind) {
             var query = _container.GetItemLinqQueryable<Document<T>>()

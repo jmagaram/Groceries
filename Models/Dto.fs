@@ -14,10 +14,7 @@ module Dto =
         { Id = i.ItemId |> ItemId.serialize
           CustomerId = null
           DocumentKind = DtoTypes.DocumentKind.Item
-          Etag =
-              i.Etag
-              |> Option.map (Etag.tag)
-              |> Option.defaultValue null
+          Etag = i.Etag |> Option.map (Etag.tag) |> Option.defaultValue null
           IsDeleted = isDeleted
           Timestamp = Nullable<int>()
           Content =
@@ -26,10 +23,7 @@ module Dto =
                     i.CategoryId
                     |> Option.map CategoryId.serialize
                     |> Option.defaultValue null
-                Note =
-                    i.Note
-                    |> Option.map Note.asText
-                    |> Option.defaultValue null
+                Note = i.Note |> Option.map Note.asText |> Option.defaultValue null
                 Quantity =
                     i.Quantity
                     |> Option.map Quantity.asText
@@ -102,9 +96,7 @@ module Dto =
                                     i.Content.ScheduleRepeat.Frequency
                                     e)
 
-                        let postponedUntil =
-                            i.Content.ScheduleRepeat.PostponedUntil
-                            |> Option.ofNullable
+                        let postponedUntil = i.Content.ScheduleRepeat.PostponedUntil |> Option.ofNullable
 
                         frequency
                         |> Result.map (fun f ->
@@ -132,10 +124,7 @@ module Dto =
         { Id = i.CategoryId |> CategoryId.serialize
           CustomerId = null
           DocumentKind = DtoTypes.DocumentKind.Category
-          Etag =
-              i.Etag
-              |> Option.map (Etag.tag)
-              |> Option.defaultValue null
+          Etag = i.Etag |> Option.map (Etag.tag) |> Option.defaultValue null
           IsDeleted = isDeleted
           Timestamp = Nullable<int>()
           Content = { CategoryName = i.CategoryName |> CategoryName.asText } }
@@ -170,10 +159,7 @@ module Dto =
         { Id = i.StoreId |> StoreId.serialize
           CustomerId = null
           DocumentKind = DtoTypes.DocumentKind.Store
-          Etag =
-              i.Etag
-              |> Option.map (Etag.tag)
-              |> Option.defaultValue null
+          Etag = i.Etag |> Option.map (Etag.tag) |> Option.defaultValue null
           IsDeleted = isDeleted
           Timestamp = Nullable<int>()
           Content = { StoreName = i.StoreName |> StoreName.asText } }
@@ -243,17 +229,25 @@ module Dto =
             |> Seq.map (fun (i, isDeleted) -> f isDeleted i)
             |> Seq.toArray
 
-        { DtoTypes.Changes.Items = collect State.itemsTable serializeItem
-          DtoTypes.Changes.Categories = collect State.categoriesTable serializeCategory
-          DtoTypes.Changes.Stores = collect State.storesTable serializeStore
-          DtoTypes.Changes.NotSoldItems = collect State.notSoldTable serializeNotSoldItem }
+        let changes =
+            { DtoTypes.Changes.Items = collect State.itemsTable serializeItem
+              DtoTypes.Changes.Categories = collect State.categoriesTable serializeCategory
+              DtoTypes.Changes.Stores = collect State.storesTable serializeStore
+              DtoTypes.Changes.NotSoldItems = collect State.notSoldTable serializeNotSoldItem }
+
+        let hasChanges =
+            changes.Items.Length > 0
+            || changes.Categories.Length > 0
+            || changes.Stores.Length > 0
+            || changes.NotSoldItems.Length > 0
+
+        match hasChanges with
+        | true -> Some changes
+        | false -> None
 
     // maybe should take what works, not throw
     let private deserialize<'T, 'U> (f: DtoTypes.Document<'T> -> Result<'U, string>) (i: DtoTypes.Document<'T> seq) =
-        i
-        |> Seq.map f
-        |> Result.fromResults
-        |> Result.okOrThrow
+        i |> Seq.map f |> Result.fromResults |> Result.okOrThrow
 
     let pullResponse items categories stores notSoldItems =
         { StateTypes.ImportChanges.ItemChanges = deserialize<_, _> deserializeItem items
@@ -261,8 +255,7 @@ module Dto =
           StateTypes.ImportChanges.StoreChanges = deserialize<_, _> deserializeStore stores
           StateTypes.ImportChanges.NotSoldItemChanges = deserialize<_, _> deserializeNotSoldItem notSoldItems
           StateTypes.ImportChanges.LatestTimestamp =
-              [ items
-                |> Seq.map (fun i -> i.Timestamp |> Option.ofNullable)
+              [ items |> Seq.map (fun i -> i.Timestamp |> Option.ofNullable)
                 stores
                 |> Seq.map (fun i -> i.Timestamp |> Option.ofNullable)
                 categories
@@ -272,7 +265,4 @@ module Dto =
               |> Seq.concat
               |> Seq.choose id
               |> Seq.toList
-              |> Seq.fold (fun m i ->
-                  m
-                  |> Option.map (fun m -> max m i)
-                  |> Option.orElse (Some i)) None }
+              |> Seq.fold (fun m i -> m |> Option.map (fun m -> max m i) |> Option.orElse (Some i)) None }
