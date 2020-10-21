@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using Microsoft.FSharp.Core;
 
 namespace WebApp.Common {
@@ -14,6 +15,12 @@ namespace WebApp.Common {
         public static void Do<T>(this FSharpOption<T> o, Action<T> action) {
             if (o.IsSome()) {
                 action(o.Value);
+            }
+        }
+
+        public static async Task DoAsync<T>(this FSharpOption<T> o, Func<T, Task> action) {
+            if (o.IsSome()) {
+                await action(o.Value);
             }
         }
 
