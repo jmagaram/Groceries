@@ -149,6 +149,7 @@ let importChanges (i: ImportChanges) (s: StateTypes.State) =
               i.NotSoldItemChanges
               |> Seq.fold (fun dt i -> dt |> DataTable.acceptChange i) s.NotSoldItems
           LastCosmosTimestamp = i.LatestTimestamp }
+    |> fixForeignKeys
 
 let acceptAllChanges s =
     s
