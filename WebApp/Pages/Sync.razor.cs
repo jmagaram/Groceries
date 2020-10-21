@@ -41,7 +41,7 @@ namespace WebApp.Pages {
             await Cosmos.CreateDatabase();
             StateService.Update(StateTypes.StateMessage.ResetToSampleData);
             await Cosmos.Push(StateService.Current);
-            var changes = await Cosmos.Pull(null, StateService.Current);
+            var changes = await Cosmos.Pull(null);
             StateService.Update(StateTypes.StateMessage.NewImport(changes));
             ModalStatusMessage = "";
         }
@@ -56,7 +56,7 @@ namespace WebApp.Pages {
         protected async Task PullAsync() {
             LogMessage($"PULL start");
             var state = StateService.Current;
-            var pullResponse = await Cosmos.Pull(state.LastCosmosTimestamp.AsNullable(), state);
+            var pullResponse = await Cosmos.Pull(state.LastCosmosTimestamp.AsNullable());
             var msg = StateTypes.StateMessage.NewImport(pullResponse);
             StateService.Update(msg);
             LogMessage($"PULL done");

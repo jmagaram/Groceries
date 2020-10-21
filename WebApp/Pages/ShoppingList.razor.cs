@@ -130,7 +130,7 @@ namespace WebApp.Pages {
             await Cosmos.CreateDatabase();
             await Cosmos.Push(StateService.Current);
             var state = StateService.Current;
-            var pullResponse = await Cosmos.Pull(state.LastCosmosTimestamp.AsNullable(), state);
+            var pullResponse = await Cosmos.Pull(state.LastCosmosTimestamp.AsNullable());
             var msg = StateMessage.NewImport(pullResponse);
             StateService.Update(msg);
         }

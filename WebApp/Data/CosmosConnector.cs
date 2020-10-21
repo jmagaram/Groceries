@@ -81,7 +81,7 @@ namespace WebApp.Data {
             return docs;
         }
 
-        public async Task<StateTypes.ImportChanges> Pull(int? lastSyncTimestamp, StateTypes.State s) {
+        public async Task<StateTypes.ImportChanges> Pull(int? lastSyncTimestamp) {
             var items = await PullCore<Item>(_customerId, lastSyncTimestamp, DocumentKind.Item);
             var stores = await PullCore<Store>(_customerId, lastSyncTimestamp, DocumentKind.Store);
             var categories = await PullCore<Category>(_customerId, lastSyncTimestamp, DocumentKind.Category);

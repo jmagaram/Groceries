@@ -1,5 +1,5 @@
-using Models;
 using System.Threading.Tasks;
+using Models;
 using WebApp.Data;
 using Xunit;
 
@@ -23,7 +23,7 @@ namespace WebAppTest {
             var x = StateModule.createSampleData();
             await c.Push(x);
             var y = StateModule.createDefault;
-            var imp = await c.Pull(null, x);
+            var imp = await c.Pull(null);
             var z = StateModule.importChanges(imp, y);
             Assert.Equal(x.Items.Item.Count, z.Items.Item.Count);
             Assert.Equal(x.Categories.Item.Count, z.Categories.Item.Count);
