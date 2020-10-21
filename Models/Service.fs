@@ -17,3 +17,4 @@ type Service(state, clock) =
     member me.ItemEditPage = stateObs |> Observable.choose (fun i -> i.ItemEditPage)
     member me.ShoppingList = stateObs |> Observable.map (ShoppingList.create (clock ()))
     member me.Current = stateSub.Value
+    member me.PushRequest() = stateSub.Value |> Dto.pushRequest

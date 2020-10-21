@@ -1,5 +1,6 @@
 using System.Threading.Tasks;
 using Models;
+using WebApp.Common;
 using WebApp.Data;
 using Xunit;
 
@@ -21,7 +22,7 @@ namespace WebAppTest {
             await c.DeleteDatabase();
             await c.CreateDatabase();
             var x = StateModule.createSampleData();
-            await c.Push(x);
+            await Dto.pushRequest(x).DoAsync(changes => c.Push(changes));
             var y = StateModule.createDefault;
             var imp = await c.Pull(null);
             var z = StateModule.importChanges(imp, y);

@@ -1,10 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Threading.Tasks;
-
 using Microsoft.AspNetCore.Components;
-
 using Models;
-
 using WebApp.Common;
 using WebApp.Data;
 
@@ -40,7 +37,7 @@ namespace WebApp.Pages {
             await Cosmos.DeleteDatabase();
             await Cosmos.CreateDatabase();
             StateService.Update(StateTypes.StateMessage.ResetToSampleData);
-            await Cosmos.Push(StateService.Current);
+            await StateService.PushRequest().DoAsync(c => Cosmos.Push(c));
             var changes = await Cosmos.Pull(null);
             StateService.Update(StateTypes.StateMessage.NewImport(changes));
             ModalStatusMessage = "";
@@ -49,7 +46,7 @@ namespace WebApp.Pages {
         protected async Task PushAsync() {
             LogMessage($"PUSH start");
             await Cosmos.CreateDatabase();
-            await Cosmos.Push(StateService.Current);
+            await StateService.PushRequest().DoAsync(c => Cosmos.Push(c));
             LogMessage($"PUSH done");
         }
 

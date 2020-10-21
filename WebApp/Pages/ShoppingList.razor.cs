@@ -128,7 +128,7 @@ namespace WebApp.Pages {
 
         private async Task OnSync() {
             await Cosmos.CreateDatabase();
-            await Cosmos.Push(StateService.Current);
+            await StateService.PushRequest().DoAsync(c => Cosmos.Push(c));
             var state = StateService.Current;
             var pullResponse = await Cosmos.Pull(state.LastCosmosTimestamp.AsNullable());
             var msg = StateMessage.NewImport(pullResponse);
