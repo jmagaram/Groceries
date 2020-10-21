@@ -1,14 +1,17 @@
-﻿using Microsoft.AspNetCore.Components;
-using Models;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Threading.Tasks;
+
+using Microsoft.AspNetCore.Components;
+
+using Models;
+
 using WebApp.Common;
 using WebApp.Data;
 
 namespace WebApp.Pages {
     public partial class Sync : ComponentBase {
         [Inject]
-        public ApplicationStateService StateService { get; set; }
+        public Models.Service StateService { get; set; }
 
         [Inject]
         public CosmosConnector Cosmos { get; set; }

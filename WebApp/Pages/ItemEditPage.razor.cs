@@ -1,6 +1,9 @@
-﻿using Microsoft.AspNetCore.Components;
+﻿using System;
+
+using Microsoft.AspNetCore.Components;
+
 using Models;
-using System;
+
 using FormMessage = Models.ItemFormModule.Message;
 using PageMessage = Models.StateTypes.ItemEditPageMessage;
 using StateMessage = Models.StateTypes.StateMessage;
@@ -27,7 +30,7 @@ namespace WebApp.Pages {
         }
 
         [Inject]
-        public Data.ApplicationStateService StateService { get; set; }
+        public Models.Service StateService { get; set; }
 
         [Inject]
         NavigationManager Navigation { get; set; }

@@ -31,7 +31,7 @@ namespace WebApp.Pages {
         readonly BehaviorSubject<string> _textFilterTyped = new BehaviorSubject<string>("");
 
         [Inject]
-        public Data.ApplicationStateService StateService { get; set; }
+        public Models.Service StateService { get; set; }
 
         [Inject]
         NavigationManager Navigation { get; set; }
