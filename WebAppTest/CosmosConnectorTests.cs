@@ -26,8 +26,8 @@ namespace WebAppTest {
             await Dto.pushRequest(x).DoAsync(changes => c.PushAsync(changes, CancellationToken.None));
             var y = StateModule.createDefault;
             var changes = await c.PullEverythingAsync(CancellationToken.None);
-            var import = Dto.pullResponse(changes.Items, changes.Categories, changes.Stores, changes.NotSoldItems);
-            var z = StateModule.importChanges(import, y);
+            var import = Dto.changesAsImport(changes);
+            var z = StateModule.importChanges(import.Value, y);
             Assert.Equal(x.Items.Item.Count, z.Items.Item.Count);
             Assert.Equal(x.Categories.Item.Count, z.Categories.Item.Count);
             Assert.Equal(x.Stores.Item.Count, z.Stores.Item.Count);

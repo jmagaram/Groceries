@@ -11,7 +11,7 @@ open System.Threading
 type ICosmosConnector =
     abstract CreateDatabaseAsync: unit -> Task
     abstract DeleteDatabaseAsync: unit -> Task
-    abstract PullSinceAsync: lastSync:int -> token:CancellationToken  -> Task<DtoTypes.Changes>
+    abstract PullSinceAsync: lastSync:int -> token:CancellationToken -> Task<DtoTypes.Changes>
     abstract PullEverythingAsync: token:CancellationToken -> Task<DtoTypes.Changes>
     abstract PushAsync: DtoTypes.Changes -> token:CancellationToken -> Task
 
@@ -29,30 +29,41 @@ type Service(state: StateTypes.State, clock, cosmos: ICosmosConnector) =
     let pull t =
         async {
             use source = new CancellationTokenSource(cosmosDelay)
+
             let! changes =
                 match t with
                 | None -> cosmos.PullEverythingAsync source.Token
                 | Some t -> cosmos.PullSinceAsync t source.Token
                 |> Async.AwaitTask
 
-            let import = changes |> Dto.changesAsImport
-            let message = import |> Import
-            update message
+            changes
+            |> Dto.changesAsImport
+            |> Option.map Import
+            |> Option.iter update
         }
 
     let push =
         async {
             use source = new CancellationTokenSource(cosmosDelay)
-            match stateSub.Value |> Dto.pushRequest with
-            | None -> ()
-            | Some changes -> cosmos.PushAsync changes source.Token |> Async.AwaitTask |> ignore
+
+            stateSub.Value
+            |> Dto.pushRequest
+            |> Option.iter (fun changes ->
+                cosmos.PushAsync changes source.Token
+                |> Async.AwaitTask
+                |> ignore)
         }
 
     new(cosmos) = Service(State.createDefault, clock, cosmos)
 
     member me.Update(msg) = update msg
     member me.PullEverything() = pull None |> startAsyncUnit
-    member me.PullIncremental() = pull (stateSub.Value.LastCosmosTimestamp) |> startAsyncUnit
+
+    member me.PullIncremental() =
+        let ts = stateSub.Value.LastCosmosTimestamp
+        let tss = ts |> toString
+        pull ts |> startAsyncUnit
+
     member me.Push() = push |> startAsyncUnit
     member me.StoreEditPage = stateObs |> Observable.choose (fun i -> i.StoreEditPage)
     member me.CategoryEditPage = stateObs |> Observable.choose (fun i -> i.CategoryEditPage)

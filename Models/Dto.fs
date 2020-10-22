@@ -209,6 +209,12 @@ module Dto =
 
     let withCustomerId id (i: DtoTypes.Document<_>) = { i with CustomerId = id }
 
+    let hasChanges (changes: DtoTypes.Changes) =
+        changes.Items.Length > 0
+        || changes.Categories.Length > 0
+        || changes.Stores.Length > 0
+        || changes.NotSoldItems.Length > 0
+
     let pushRequest (s: Models.StateTypes.State) =
         let collect table f =
             let upsert =
@@ -234,13 +240,7 @@ module Dto =
               DtoTypes.Changes.Stores = collect State.storesTable serializeStore
               DtoTypes.Changes.NotSoldItems = collect State.notSoldTable serializeNotSoldItem }
 
-        let hasChanges =
-            changes.Items.Length > 0
-            || changes.Categories.Length > 0
-            || changes.Stores.Length > 0
-            || changes.NotSoldItems.Length > 0
-
-        match hasChanges with
+        match changes |> hasChanges with
         | true -> Some changes
         | false -> None
 
@@ -248,22 +248,27 @@ module Dto =
     let private deserialize<'T, 'U> (f: DtoTypes.Document<'T> -> Result<'U, string>) (i: DtoTypes.Document<'T> seq) =
         i |> Seq.map f |> Result.fromResults |> Result.okOrThrow
 
-    let pullResponse items categories stores notSoldItems =
-        { StateTypes.ImportChanges.ItemChanges = deserialize<_, _> deserializeItem items
-          StateTypes.ImportChanges.CategoryChanges = deserialize<_, _> deserializeCategory categories
-          StateTypes.ImportChanges.StoreChanges = deserialize<_, _> deserializeStore stores
-          StateTypes.ImportChanges.NotSoldItemChanges = deserialize<_, _> deserializeNotSoldItem notSoldItems
-          StateTypes.ImportChanges.LatestTimestamp =
-              [ items |> Seq.map (fun i -> i.Timestamp |> Option.ofNullable)
-                stores
-                |> Seq.map (fun i -> i.Timestamp |> Option.ofNullable)
-                categories
-                |> Seq.map (fun i -> i.Timestamp |> Option.ofNullable)
-                notSoldItems
-                |> Seq.map (fun i -> i.Timestamp |> Option.ofNullable) ]
-              |> Seq.concat
-              |> Seq.choose id
-              |> Seq.toList
-              |> Seq.fold (fun m i -> m |> Option.map (fun m -> max m i) |> Option.orElse (Some i)) None }
+    let changesAsImport (c: DtoTypes.Changes) =
+        match c |> hasChanges with
+        | false -> None
+        | true ->
+            let import =
+                { StateTypes.ImportChanges.ItemChanges = deserialize<_, _> deserializeItem c.Items
+                  StateTypes.ImportChanges.CategoryChanges = deserialize<_, _> deserializeCategory c.Categories
+                  StateTypes.ImportChanges.StoreChanges = deserialize<_, _> deserializeStore c.Stores
+                  StateTypes.ImportChanges.NotSoldItemChanges = deserialize<_, _> deserializeNotSoldItem c.NotSoldItems
+                  StateTypes.ImportChanges.LatestTimestamp =
+                      [ c.Items
+                        |> Seq.map (fun i -> i.Timestamp |> Option.ofNullable)
+                        c.Stores
+                        |> Seq.map (fun i -> i.Timestamp |> Option.ofNullable)
+                        c.Categories
+                        |> Seq.map (fun i -> i.Timestamp |> Option.ofNullable)
+                        c.NotSoldItems
+                        |> Seq.map (fun i -> i.Timestamp |> Option.ofNullable) ]
+                      |> Seq.concat
+                      |> Seq.choose id
+                      |> Seq.toList
+                      |> Seq.fold (fun m i -> m |> Option.map (fun m -> max m i) |> Option.orElse (Some i)) None }
 
-    let changesAsImport (c:DtoTypes.Changes) = pullResponse (c.Items) (c.Categories) (c.Stores) (c.NotSoldItems)
+            Some import
