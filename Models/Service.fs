@@ -42,17 +42,13 @@ type Service(state: StateTypes.State, clock, cosmos: ICosmosConnector) =
             |> Option.iter update
         }
 
-    let push =
-        async {
-            use source = new CancellationTokenSource(cosmosDelay)
+    let push () =
+        use source = new CancellationTokenSource(cosmosDelay)
 
-            stateSub.Value
-            |> Dto.pushRequest
-            |> Option.iter (fun changes ->
-                cosmos.PushAsync changes source.Token
-                |> Async.AwaitTask
-                |> ignore)
-        }
+        stateSub.Value
+        |> Dto.pushRequest
+        |> Option.map (fun c -> cosmos.PushAsync c source.Token |> Async.AwaitTask)
+        |> Option.defaultValue (async { () })
 
     new(cosmos) = Service(State.createDefault, clock, cosmos)
 
@@ -64,7 +60,7 @@ type Service(state: StateTypes.State, clock, cosmos: ICosmosConnector) =
         let tss = ts |> toString
         pull ts |> startAsyncUnit
 
-    member me.Push() = push |> startAsyncUnit
+    member me.Push() = push () |> startAsyncUnit
     member me.StoreEditPage = stateObs |> Observable.choose (fun i -> i.StoreEditPage)
     member me.CategoryEditPage = stateObs |> Observable.choose (fun i -> i.CategoryEditPage)
     member me.ItemEditPage = stateObs |> Observable.choose (fun i -> i.ItemEditPage)
