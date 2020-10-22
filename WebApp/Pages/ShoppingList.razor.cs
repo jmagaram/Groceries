@@ -21,7 +21,6 @@ namespace WebApp.Pages {
 
     public partial class ShoppingList : ComponentBase, IDisposable {
         CompositeDisposable _disposables;
-
         string _textFilter;
         readonly BehaviorSubject<string> _textFilterTyped = new BehaviorSubject<string>("");
 
@@ -33,6 +32,8 @@ namespace WebApp.Pages {
 
         public SyncStatus SyncStatus { get; set; } = SyncStatus.NoChangesToPush;
 
+        protected ISubject<object> ClickManualSync { get; set; } = new Subject<object>();
+
         protected override void OnInitialized() {
             base.OnInitialized();
             OnTextFilterClear();
@@ -42,7 +43,7 @@ namespace WebApp.Pages {
                 UpdateStoreFilterPickerList(),
                 UpdateStoreFilterSelectedItem(),
                 UpdateTextFilter(),
-                UpdateCanSync(),
+                ManageAutomaticAndManualSync(),
                 ProcessTextFilterTyped()
             };
         }
@@ -57,33 +58,52 @@ namespace WebApp.Pages {
                 InvokeAsync(() => StateHasChanged());
             });
 
-        private IDisposable UpdateCanSync() =>
-            StateService.ShoppingList
-            .Select(i => i.HasChanges)
-            .Subscribe(async hasChanges =>
-            {
-                if (hasChanges) {
-                    if (SyncStatus != SyncStatus.SynchronizingNow) {
-                        SyncStatus = SyncStatus.SynchronizingNow;
-                        await InvokeAsync(() => StateHasChanged());
+        enum SyncAction {
+            NoChangesNeedToBePushed,
+            ChagesNeedToBePushed,
+            UserRequestedManualSync
+        }
+
+        // Hack; how to avoid this re-entrancy?
+        int _syncDepth = 0;
+
+        public IDisposable ManageAutomaticAndManualSync() {
+            var manual = ClickManualSync.Select(_ => SyncAction.UserRequestedManualSync);
+            var hasChanges = StateService.ShoppingList.Select(i => i.HasChanges);
+            var automatic = hasChanges.Select(i => i ? SyncAction.ChagesNeedToBePushed : SyncAction.NoChangesNeedToBePushed);
+            return
+                manual
+                .Merge(automatic)
+                .WithLatestFrom(hasChanges, (i, j) => new { Source = i, HasChanges = j })
+                .Subscribe(async i =>
+                {
+                    _syncDepth++;
+                    if (i.Source == SyncAction.ChagesNeedToBePushed || i.Source == SyncAction.UserRequestedManualSync) {
+                        var before = SyncStatus;
+                        if (SyncStatus != SyncStatus.SynchronizingNow) {
+                            SyncStatus = SyncStatus.SynchronizingNow;
+                            await InvokeAsync(() => StateHasChanged());
+                        }
+                        try {
+                            await StateService.Push();
+                            await StateService.PullIncremental(); // can cause re-entrancy
+                        }
+                        catch {
+                        }
+                        if (_syncDepth == 1) {
+                            SyncStatus = i.HasChanges ? SyncStatus.ShouldSync : SyncStatus.NoChangesToPush;
+                            await InvokeAsync(() => StateHasChanged());
+                            await Task.Delay(TimeSpan.FromSeconds(0.5));
+                        }
                     }
-                    try {
-                        await OnSync();
-                    }
-                    catch {
-                        SyncStatus = SyncStatus.ShouldSync;
+                    else {
+                        SyncStatus = SyncStatus.NoChangesToPush;
                         await InvokeAsync(() => StateHasChanged());
                         await Task.Delay(TimeSpan.FromSeconds(0.5));
                     }
-                }
-                else {
-                    if (SyncStatus != SyncStatus.NoChangesToPush) {
-                        SyncStatus = SyncStatus.NoChangesToPush;
-                        await Task.Delay(TimeSpan.FromSeconds(1));
-                        await InvokeAsync(() => StateHasChanged());
-                    }
-                }
-            });
+                    _syncDepth--;
+                });
+        }
 
         private IDisposable UpdateStoreFilterSelectedItem() =>
             StateService.ShoppingList
@@ -116,11 +136,6 @@ namespace WebApp.Pages {
         private void OnNavigateToCategory(CategoryId id) {
             string categoryId = CategoryIdModule.serialize(id);
             Navigation.NavigateTo($"categoryedit/{categoryId}");
-        }
-
-        private async Task OnSync() {
-            await StateService.Push();
-            await StateService.PullIncremental();
         }
 
         private void OnStoreFilterClear() =>

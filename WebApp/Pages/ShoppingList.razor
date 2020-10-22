@@ -58,14 +58,19 @@
             </div>
             if (SyncStatus == SyncStatus.ShouldSync) {
                 <div class="nav-item">
-                    <button style="margin-left:5px" @onclick="OnSync" class="btn btn-sm btn-danger nav-item" type="button">
+                    <button style="margin-left:5px" @onclick="@(e=>ClickManualSync.OnNext(null))" class="btn btn-sm btn-warning nav-item" type="button">
                         <span class="oi oi-cloud-upload" aria-hidden="true">&nbsp;</span>Sync
                     </button>
                 </div>
             }
-            if (SyncStatus == SyncStatus.SynchronizingNow) {
+            else if (SyncStatus == SyncStatus.SynchronizingNow) {
                 <button style="margin-left:5px" disabled class="btn btn-sm btn-success nav-item" type="button">
-                    <span class="oi oi-cloud-upload" aria-hidden="true"></span></button>
+                    <span class="oi oi-cloud-upload" aria-hidden="true"></span>&nbsp;Syncing...</button>
+            }
+            else if (SyncStatus == SyncStatus.NoChangesToPush){
+                    <button style="margin-left:5px" @onclick="@(e=>ClickManualSync.OnNext(null))" class="btn btn-sm btn-secondary nav-item" type="button">
+                        <span class="oi oi-cloud-upload" aria-hidden="true">&nbsp;</span>
+                    </button>
             }
         }
     </div>

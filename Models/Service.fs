@@ -18,7 +18,7 @@ type ICosmosConnector =
 type Service(state: StateTypes.State, clock, cosmos: ICosmosConnector) =
     let stateSub = state |> Subject.behavior
     let stateObs = stateSub |> Observable.asObservable
-    let cosmosDelay = System.TimeSpan.FromSeconds(5.0)
+    let cosmosDelay = System.TimeSpan.FromSeconds(10.0)
 
     let update msg =
         let state' = stateSub.Value |> State.update clock msg
