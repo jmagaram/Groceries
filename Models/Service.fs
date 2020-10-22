@@ -18,6 +18,7 @@ type ICosmosConnector =
 type Service(state: StateTypes.State, clock, cosmos: ICosmosConnector) =
     let stateSub = state |> Subject.behavior
     let stateObs = stateSub |> Observable.asObservable
+    let cosmosDelay = System.TimeSpan.FromSeconds(5.0)
 
     let update msg =
         let state' = stateSub.Value |> State.update clock msg
@@ -27,10 +28,11 @@ type Service(state: StateTypes.State, clock, cosmos: ICosmosConnector) =
 
     let pull t =
         async {
+            use source = new CancellationTokenSource(cosmosDelay)
             let! changes =
                 match t with
-                | None -> cosmos.PullEverythingAsync CancellationToken.None
-                | Some t -> cosmos.PullSinceAsync t CancellationToken.None
+                | None -> cosmos.PullEverythingAsync source.Token
+                | Some t -> cosmos.PullSinceAsync t source.Token
                 |> Async.AwaitTask
 
             let import = changes |> Dto.changesAsImport
@@ -40,16 +42,15 @@ type Service(state: StateTypes.State, clock, cosmos: ICosmosConnector) =
 
     let push =
         async {
+            use source = new CancellationTokenSource(cosmosDelay)
             match stateSub.Value |> Dto.pushRequest with
             | None -> ()
-            | Some changes -> cosmos.PushAsync changes CancellationToken.None |> Async.AwaitTask |> ignore
+            | Some changes -> cosmos.PushAsync changes source.Token |> Async.AwaitTask |> ignore
         }
 
     new(cosmos) = Service(State.createDefault, clock, cosmos)
 
     member me.Update(msg) = update msg
-    member me.Current = stateSub.Value
-    member me.PushRequest() = stateSub.Value |> Dto.pushRequest
     member me.PullEverything() = pull None |> startAsyncUnit
     member me.PullIncremental() = pull (stateSub.Value.LastCosmosTimestamp) |> startAsyncUnit
     member me.Push() = push |> startAsyncUnit
