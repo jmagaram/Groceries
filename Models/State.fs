@@ -343,9 +343,7 @@ let handleStoreEditPageMessage (msg: StoreEditPageMessage) (s: State) =
 
         let form = StoreEditForm.editExisting str
         { s with StoreEditPage = Some form }
-    | BeginCreateNewStore ->
-        { s with
-              StoreEditPage = StoreEditForm.createNew |> Some }
+    | BeginCreateNewStore -> { s with StoreEditPage = StoreEditForm.createNew |> Some }
     | StoreEditFormMessage msg ->
         { s with
               StoreEditPage = s |> form |> StoreEditForm.update msg |> Some }
@@ -353,10 +351,7 @@ let handleStoreEditPageMessage (msg: StoreEditPageMessage) (s: State) =
         match s |> form |> StoreEditForm.tryCommit |> Result.okOrThrow with
         | StoreEditForm.FormResult.InsertStore n ->
             s
-            |> insertStore
-                { StoreName = n
-                  StoreId = StoreId.create ()
-                  Etag = None }
+            |> insertStore { StoreName = n; StoreId = StoreId.create (); Etag = None }
             |> cancel
         | StoreEditForm.FormResult.EditStore c -> s |> updateStore c |> cancel
     | CancelStoreEditForm -> s |> cancel
@@ -365,7 +360,8 @@ let handleStoreEditPageMessage (msg: StoreEditPageMessage) (s: State) =
         s |> deleteStore id |> cancel
 
 let handleShoppingListSettingsMessage (msg: ShoppingListSettings.Message) (s: State) =
-    s |> mapShoppingListSettings (ShoppingListSettings.update msg)
+    s
+    |> mapShoppingListSettings (ShoppingListSettings.update msg)
 
 let handleItemEditPageMessage (now: DateTimeOffset) (msg: ItemEditPageMessage) (s: State) =
     let form state =
@@ -458,6 +454,7 @@ let handleItemEditPageMessage (now: DateTimeOffset) (msg: ItemEditPageMessage) (
 let update: Update =
     fun clock msg s ->
         let now = clock ()
+        (sprintf "Update: %A" msg) |> String.ellipsize 100 |> dprintln
 
         match msg with
         | ItemMessage msg -> s |> handleItemMessage now msg
