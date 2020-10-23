@@ -211,8 +211,11 @@ namespace WebApp.Pages {
             get { return _textFilter; }
             set
             {
+                bool isInitializing = _textFilter == null && value != null;
                 _textFilter = value;
-                _textFilterTyped.OnNext(value);
+                if (!isInitializing) {
+                    _textFilterTyped.OnNext(value);
+                }
             }
         }
 
