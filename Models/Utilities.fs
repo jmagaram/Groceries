@@ -107,7 +107,16 @@ module String =
 
     let toString v = sprintf "%A" v
 
-    let trim (s: String) = s.Trim()
+    let fromChars c = String(c |> Seq.toArray)
+
+    let ellipsize n s =
+        if (String.length s > n) then
+            Seq.append (s |> Seq.truncate n) (Seq.replicate 3 '.')
+            |> fromChars
+        else
+            s
+
+    let trim (s:String) = s.Trim()
 
     let isNullOrWhiteSpace s = String.IsNullOrWhiteSpace(s)
 
