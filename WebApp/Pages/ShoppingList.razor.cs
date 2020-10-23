@@ -37,14 +37,17 @@ namespace WebApp.Pages {
         protected override void OnInitialized() {
             base.OnInitialized();
             OnTextFilterClear();
+            var shoppingList =
+                StateService.ShoppingList.Publish();
             _disposables = new CompositeDisposable
             {
-                UpdateItems(),
-                UpdateStoreFilterPickerList(),
-                UpdateStoreFilterSelectedItem(),
-                UpdateTextFilter(),
-                ManageAutomaticAndManualSync(),
-                ProcessTextFilterTyped()
+                UpdateItems(shoppingList),
+                UpdateStoreFilterPickerList(shoppingList),
+                UpdateStoreFilterSelectedItem(shoppingList),
+                UpdateTextFilter(shoppingList),
+                ManageAutomaticAndManualSync(shoppingList),
+                ProcessTextFilterTyped(),
+                shoppingList.Connect()
             };
         }
 
@@ -67,9 +70,9 @@ namespace WebApp.Pages {
         // Hack; how to avoid this re-entrancy?
         int _syncDepth = 0;
 
-        public IDisposable ManageAutomaticAndManualSync() {
+        public IDisposable ManageAutomaticAndManualSync(IObservable<ShoppingListModule.ShoppingList> shoppingList) {
             var manual = ClickManualSync.Select(_ => SyncAction.UserRequestedManualSync);
-            var hasChanges = StateService.ShoppingList.Select(i => i.HasChanges);
+            var hasChanges = shoppingList.Select(i => i.HasChanges);
             var automatic = hasChanges.Select(i => i ? SyncAction.ChagesNeedToBePushed : SyncAction.NoChangesNeedToBePushed);
             return
                 manual
@@ -105,14 +108,14 @@ namespace WebApp.Pages {
                 });
         }
 
-        private IDisposable UpdateStoreFilterSelectedItem() =>
-            StateService.ShoppingList
+        private IDisposable UpdateStoreFilterSelectedItem(IObservable<ShoppingListModule.ShoppingList> shoppingList) =>
+            shoppingList
             .Select(i => i.StoreFilter)
             .DistinctUntilChanged()
             .Subscribe(s => StoreFilter = s.IsNone() ? Guid.Empty : s.Value.StoreId.Item);
 
-        private IDisposable UpdateTextFilter() =>
-            StateService.ShoppingList
+        private IDisposable UpdateTextFilter(IObservable<ShoppingListModule.ShoppingList> shoppingList) =>
+            shoppingList
             .Select(i => i.SearchTerm)
             .DistinctUntilChanged()
             .Subscribe(s =>
@@ -120,15 +123,14 @@ namespace WebApp.Pages {
                 TextFilter = s.IsNone() ? "" : s.Value.Item;
             });
 
-        private IDisposable UpdateStoreFilterPickerList() =>
-            StateService.ShoppingList
+        private IDisposable UpdateStoreFilterPickerList(IObservable<ShoppingListModule.ShoppingList> shoppingList) =>
+            shoppingList
             .Select(i => i.Stores)
             .DistinctUntilChanged()
             .Subscribe(s => StoreFilterChoices = s.OrderBy(i => i.StoreName).ToList());
 
-        private IDisposable UpdateItems() =>
-            StateService
-            .ShoppingList
+        private IDisposable UpdateItems(IObservable<ShoppingListModule.ShoppingList> shoppingList) =>
+            shoppingList
             .Select(i => i.Items)
             .DistinctUntilChanged()
             .Subscribe(i => Items = i.ToList());
