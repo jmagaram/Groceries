@@ -22,7 +22,7 @@ namespace WebApp.Pages {
     public partial class ShoppingList : ComponentBase, IDisposable {
         CompositeDisposable _disposables;
         string _textFilter;
-        readonly BehaviorSubject<string> _textFilterTyped = new BehaviorSubject<string>("");
+        readonly Subject<string> _textFilterTyped = new Subject<string>();
 
         [Inject]
         public Service StateService { get; set; }
