@@ -1,9 +1,9 @@
 ﻿using System;
-
+using System.Reactive.Linq;
 using Microsoft.AspNetCore.Components;
 
 using Models;
-
+using WebApp.Common;
 using FormMessage = Models.ItemFormModule.Message;
 using PageMessage = Models.StateTypes.ItemEditPageMessage;
 using StateMessage = Models.StateTypes.StateMessage;
@@ -26,7 +26,13 @@ namespace WebApp.Pages {
                 var stateMessage = StateMessage.NewItemEditPageMessage(pageMessage);
                 StateService.Update(stateMessage);
             }
-            _subscription = StateService.ItemEditPage.Subscribe(i => Form = i);
+            _subscription =
+                StateService.State
+                .Select(i => i.ItemEditPage)
+                .Where(i => i.IsSome())
+                .Select(i => i.Value)
+                .DistinctUntilChanged()
+                .Subscribe(i => Form = i);
         }
 
         [Inject]

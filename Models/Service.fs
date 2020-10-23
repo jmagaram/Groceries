@@ -1,12 +1,14 @@
 ﻿namespace Models
 
+open System
 open System.Reactive
 open System.Reactive.Linq
+open System.Threading.Tasks
+open System.Threading
+open System.Runtime.CompilerServices
 open FSharp.Control.Reactive
 open CoreTypes
 open StateTypes
-open System.Threading.Tasks
-open System.Threading
 
 type ICosmosConnector =
     abstract CreateDatabaseAsync: unit -> Task
@@ -14,6 +16,11 @@ type ICosmosConnector =
     abstract PullSinceAsync: lastSync:int -> token:CancellationToken -> Task<DtoTypes.Changes>
     abstract PullEverythingAsync: token:CancellationToken -> Task<DtoTypes.Changes>
     abstract PushAsync: DtoTypes.Changes -> token:CancellationToken -> Task
+
+[<Extension>]
+type StateExtensions =
+    [<Extension>]
+    static member ShoppingList(me: StateTypes.State, now: DateTimeOffset) = me |> ShoppingList.create (now)
 
 type Service(state: StateTypes.State, clock, cosmos: ICosmosConnector) =
     let stateSub = state |> Subject.behavior
@@ -62,7 +69,4 @@ type Service(state: StateTypes.State, clock, cosmos: ICosmosConnector) =
         pull ts |> startAsyncUnit
 
     member me.Push() = push |> startAsyncUnit
-    member me.StoreEditPage = stateObs |> Observable.choose (fun i -> i.StoreEditPage)
-    member me.CategoryEditPage = stateObs |> Observable.choose (fun i -> i.CategoryEditPage)
-    member me.ItemEditPage = stateObs |> Observable.choose (fun i -> i.ItemEditPage)
-    member me.ShoppingList = stateObs |> Observable.map (ShoppingList.create (clock ()))
+    member me.State = stateObs

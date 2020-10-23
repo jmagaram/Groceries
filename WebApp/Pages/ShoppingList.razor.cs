@@ -9,7 +9,6 @@ using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
 using Models;
 using WebApp.Common;
-using WebApp.Data;
 using static Models.CoreTypes;
 using ItemMessage = Models.ItemModule.Message;
 using SettingsMessage = Models.ShoppingListSettingsModule.Message;
@@ -38,7 +37,10 @@ namespace WebApp.Pages {
             base.OnInitialized();
             OnTextFilterClear();
             var shoppingList =
-                StateService.ShoppingList.Publish();
+                StateService.State
+                .Select(i => i.ShoppingList(DateTimeOffset.Now))
+                .Publish();
+
             _disposables = new CompositeDisposable
             {
                 UpdateItems(shoppingList),

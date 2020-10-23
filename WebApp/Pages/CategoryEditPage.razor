@@ -53,7 +53,14 @@ else {
     public void Dispose() => _subscription?.Dispose();
 
     protected override void OnInitialized() {
-        _subscription = StateService.CategoryEditPage.Subscribe(i => Form = i);
+        _subscription =
+            StateService.State
+            .Select(i => i.CategoryEditPage)
+            .Where(i => i.IsSome())
+            .Select(i => i.Value)
+            .DistinctUntilChanged()
+            .Subscribe(i => Form = i);
+
         if (!string.IsNullOrWhiteSpace(Id)) {
             var pageMessage = PageMessage.NewBeginEditCategory(Id);
             var stateMessage = StateMessage.NewCategoryEditPageMessage(pageMessage);
