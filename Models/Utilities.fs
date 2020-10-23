@@ -14,6 +14,11 @@ module Miscellaneous =
 
     let newGuid () = Guid.NewGuid()
 
+    let inline dprintln s = System.Diagnostics.Debug.WriteLine(s)
+    let inline dprintlnIf f s = System.Diagnostics.Debug.WriteLineIf(f, s)
+    let inline dprint s = System.Diagnostics.Debug.Write(s)
+    let inline dprintIf f s = System.Diagnostics.Debug.WriteIf(f, s)
+
 [<AutoOpen>]
 module Map =
 
@@ -45,10 +50,7 @@ module Option =
 
     let option = OptionBuilder()
 
-    let asResult e o =
-        o
-        |> Option.map Ok
-        |> Option.defaultValue (Error e)
+    let asResult e o = o |> Option.map Ok |> Option.defaultValue (Error e)
 
 [<AutoOpen>]
 module Result =
