@@ -644,7 +644,7 @@ module ItemForm =
 
     let updateQuantity msg (f: ItemForm) = f.Quantity |> TextBox.update Quantity.normalizer msg |> fun q -> { f with Quantity = q }
 
-    let updateNote msg (f: ItemForm) = f.Quantity |> TextBox.update Note.normalizer msg |> fun n -> { f with Note = n }
+    let updateNote msg (f: ItemForm) = f.Note |> TextBox.update Note.normalizer msg |> fun n -> { f with Note = n }
 
     let noteValidation (f: ItemForm) = f.Note.ValueTyping |> String.tryParseOptional Note.tryParse
 
