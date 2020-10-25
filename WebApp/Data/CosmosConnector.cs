@@ -9,6 +9,7 @@ using Microsoft.FSharp.Core;
 using Models;
 using WebApp.Common;
 using static Models.DtoTypes;
+using static Models.ServiceTypes;
 
 namespace WebApp.Data {
     public class CosmosConnector : ICosmosConnector, IDisposable {
@@ -19,12 +20,28 @@ namespace WebApp.Data {
         private const string _partitionKeyPath = "/CustomerId";
         private const string _customerId = "justin@magaram.com";
 
+#if DEBUG
+        private bool _delay = true;
+#else
+        private bool _delay = false;
+#endif
+        private int _delaySeconds = 3;
+
         public CosmosConnector(string connectionString) {
             _client = new CosmosClient(connectionString);
         }
 
         public CosmosConnector(string endpointUri, string primaryKey, string applicationName) {
             _client = new CosmosClient(endpointUri, primaryKey, new CosmosClientOptions() { ApplicationName = applicationName });
+        }
+
+        private async Task ArtificialDelay() {
+            if (_delay) {
+                await Task.Delay(_delaySeconds * 1000);
+            }
+            else {
+                await Task.CompletedTask;
+            }
         }
 
         public async Task CreateDatabaseAsync() {
@@ -42,6 +59,7 @@ namespace WebApp.Data {
             await PushCore(c.Categories.Select(i => Dto.withCustomerId(_customerId, i)), i => i.Etag, cancel);
             await PushCore(c.Stores.Select(i => Dto.withCustomerId(_customerId, i)), i => i.Etag, cancel);
             await PushCore(c.NotSoldItems.Select(i => Dto.withCustomerId(_customerId, i)), i => i.Etag, cancel);
+            await ArtificialDelay();
         }
 
         private async Task PushCore<T>(IEnumerable<T> items, Func<T, string> etag, CancellationToken cancel) {
@@ -65,6 +83,7 @@ namespace WebApp.Data {
             var categories = await PullByKindCore<Category>(_customerId, lastSync, DocumentKind.Category, cancel);
             var notSoldItems = await PullByKindCore<Unit>(_customerId, lastSync, DocumentKind.NotSoldItem, cancel);
             var import = new Changes(items, categories, stores, notSoldItems);
+            await ArtificialDelay();
             return import;
         }
 

@@ -1,5 +1,6 @@
 ﻿[<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
 module Models.ShoppingList
+
 open System
 open CoreTypes
 open StateTypes
@@ -36,10 +37,7 @@ let private createItem find (item: CoreTypes.Item) state =
       Quantity = item.Quantity |> Option.map (Quantity.asText >> find)
       Category =
           item.CategoryId
-          |> Option.map (fun c ->
-              state
-              |> State.categoriesTable
-              |> DataTable.findCurrent c)
+          |> Option.map (fun c -> state |> State.categoriesTable |> DataTable.findCurrent c)
       Schedule = item.Schedule
       Availability =
           state
@@ -57,7 +55,7 @@ let create now state =
 
     let find = settings.ItemTextFilter |> Option.map Highlighter.create
 
-    let items (now:DateTimeOffset) =
+    let items (now: DateTimeOffset) =
         state
         |> State.items
         |> Seq.map (fun item -> createItem find item state)
@@ -74,10 +72,10 @@ let create now state =
                     |> fun a -> a.IsSold)
                 |> Option.defaultValue true
 
-            let isPostponedMatch = 
+            let isPostponedMatch =
                 i.Schedule
                 |> Schedule.postponedUntil
-                |> Option.map (fun postponedUntil -> 
+                |> Option.map (fun postponedUntil ->
                     let horizon = now.AddDays(settings.PostponedViewHorizon |> float)
                     postponedUntil <= horizon)
                 |> Option.defaultValue true

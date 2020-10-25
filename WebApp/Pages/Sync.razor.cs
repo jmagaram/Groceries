@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Components;
 using Models;
 using WebApp.Common;
 using WebApp.Data;
+using static Models.ServiceTypes;
 
 namespace WebApp.Pages {
     public partial class Sync : ComponentBase {
@@ -30,22 +31,21 @@ namespace WebApp.Pages {
             LogMessage("Resetting to sample data...");
             await Cosmos.DeleteDatabaseAsync();
             await Cosmos.CreateDatabaseAsync();
-            StateService.Update(StateTypes.StateMessage.ResetToSampleData);
-            await StateService.Push();
-            await StateService.PullIncremental();
+            await StateService.UpdateAsync(StateTypes.StateMessage.ResetToSampleData);
+            await StateService.SyncEverythingAsync();
             ModalStatusMessage = "";
         }
 
-        protected async Task PushAsync() {
-            LogMessage($"PUSH start");
-            await StateService.Push();
-            LogMessage($"PUSH done");
+        protected async Task SyncIncrementalAsync() {
+            LogMessage($"INCREMENTAL start");
+            await StateService.SyncIncrementalAsync();
+            LogMessage($"INCREMENTAL done");
         }
 
-        protected async Task PullAsync() {
-            LogMessage($"PULL start");
-            await StateService.PullIncremental();
-            LogMessage($"PULL done");
+        protected async Task SyncEverythingAsync() {
+            LogMessage($"EVERYTHING start");
+            await StateService.SyncEverythingAsync();
+            LogMessage($"EVERYTHING done");
         }
 
         protected bool IsReady => ModalStatusMessage == "";

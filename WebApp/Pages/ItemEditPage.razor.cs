@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Reactive.Linq;
+using System.Threading.Tasks;
 using Microsoft.AspNetCore.Components;
-
 using Models;
 using WebApp.Common;
 using FormMessage = Models.ItemFormModule.Message;
@@ -12,11 +12,11 @@ namespace WebApp.Pages {
     public partial class ItemEditPage : ComponentBase, IDisposable {
         IDisposable _subscription;
 
-        protected override void OnInitialized() {
+        protected override async Task OnInitializedAsync() {
             if (!string.IsNullOrWhiteSpace(Id)) {
                 var pageMessage = PageMessage.NewBeginEditItem(Id);
                 var stateMessage = StateMessage.NewItemEditPageMessage(pageMessage);
-                StateService.Update(stateMessage);
+                await StateService.UpdateAsync(stateMessage);
             }
             else {
                 var pageMessage =
@@ -24,7 +24,7 @@ namespace WebApp.Pages {
                     ? PageMessage.BeginCreateNewItem
                     : PageMessage.NewBeginCreateNewItemWithName(ItemName);
                 var stateMessage = StateMessage.NewItemEditPageMessage(pageMessage);
-                StateService.Update(stateMessage);
+                await StateService.UpdateAsync(stateMessage);
             }
             _subscription =
                 StateService.State
@@ -49,31 +49,34 @@ namespace WebApp.Pages {
 
         public CoreTypes.ItemForm Form { get; private set; }
 
-        protected void OnFormMessage(FormMessage message) {
+        protected async Task OnFormMessage(FormMessage message) {
             var pageMessage = PageMessage.NewItemEditFormMessage(message);
             var stateMessage = StateMessage.NewItemEditPageMessage(pageMessage);
-            StateService.Update(stateMessage);
+            await StateService.UpdateAsync(stateMessage);
         }
 
-        protected void OnClickOk() {
+        protected async Task OnClickOk() {
             var pageMessage = PageMessage.SubmitItemEditForm;
             var stateMessage = StateMessage.NewItemEditPageMessage(pageMessage);
-            StateService.Update(stateMessage);
+            Dispose();
             Navigation.NavigateTo("shoppinglist");
+            await StateService.UpdateAsync(stateMessage);
         }
 
-        protected void OnDelete() {
+        protected async Task OnDelete() {
             var pageMessage = PageMessage.DeleteItem;
             var stateMessage = StateMessage.NewItemEditPageMessage(pageMessage);
-            StateService.Update(stateMessage);
+            Dispose();
             Navigation.NavigateTo("shoppinglist");
+            await StateService.UpdateAsync(stateMessage);
         }
 
-        protected void OnCancel() {
+        protected async Task OnCancel() {
             var pageMessage = PageMessage.CancelItemEditForm;
             var stateMessage = StateMessage.NewItemEditPageMessage(pageMessage);
-            StateService.Update(stateMessage);
+            Dispose();
             Navigation.NavigateTo("shoppinglist");
+            await StateService.UpdateAsync(stateMessage);
         }
 
         public void Dispose() => _subscription?.Dispose();

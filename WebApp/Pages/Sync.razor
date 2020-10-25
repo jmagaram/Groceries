@@ -12,8 +12,8 @@
     <button type="button" class="btn btn-outline-primary" @onclick="@(async () => await ResetToEmpty())">Clear database</button>
     <button type="button" class="btn btn-outline-primary" @onclick="@(async () => await ResetToSampleData())">Sample data</button>
     <a class="btn btn-outline-primary" href="https://localhost:8081/_explorer/index.html" target="_blank">Data Explorer</a>
-    <button type="button" class="btn btn-outline-primary" @onclick="@(async () => await PushAsync())">Push</button>
-    <button type="button" class="btn btn-outline-primary" @onclick="@(async () => await PullAsync())">Pull</button>
+    <button type="button" class="btn btn-outline-primary" @onclick="@SyncEverythingAsync">Sync Everything</button>
+    <button type="button" class="btn btn-outline-primary" @onclick="@SyncIncrementalAsync">Sync Incremental</button>
 }
 
 @if (ModalStatusMessage != "") {

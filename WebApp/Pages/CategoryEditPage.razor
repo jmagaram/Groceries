@@ -17,42 +17,46 @@
     }
 </style>
 
-@if (Form.Mode().IsCreateNewCategoryMode) {
-    <h3>New category</h3>
+@if (Form != null) {
+    @if (Form.Mode().IsCreateNewCategoryMode) {
+        <h3>New category</h3>
+    }
+    else {
+        <h3>Edit category</h3>
+    }
+    <form>
+        <div class="form-group">
+            <label for="categoryNameInput">Category name</label>
+            <input id="categoryNameInput" class="form-control" @oninput="OnNameChange" @onfocusout="OnNameFocusOut" value="@Form.CategoryName.ValueCommitted" />
+            @if (Form.CategoryNameErrors().IsSome()) {
+                <small class="form-text text-danger">
+                    @Form.CategoryNameErrors().Value
+                </small>
+            }
+        </div>
+
+        <ul class="nav nav-pills">
+            @if (Form.Mode().IsEditExistingCategoryMode) {
+                <li>
+                    <button class="btn btn-secondary" type="button" @onclick="OnDelete"><span class="oi oi-trash" aria-hidden="true"></span></button>
+                </li>
+            }
+            <li>
+                <button class="btn btn-primary" type="button" @onclick="OnSubmit" disabled="@(Form.HasErrors())">Submit</button>
+            </li>
+        </ul>
+    </form>
 }
 else {
-    <h3>Edit category</h3>
+    <p>Loading...</p>
 }
-
-<form>
-    <div class="form-group">
-        <label for="categoryNameInput">Category name</label>
-        <input id="categoryNameInput" class="form-control" @oninput="OnNameChange" @onfocusout="OnNameFocusOut" value="@Form.CategoryName.ValueCommitted" />
-        @if (Form.CategoryNameErrors().IsSome()) {
-            <small class="form-text text-danger">
-                @Form.CategoryNameErrors().Value
-            </small>
-        }
-    </div>
-
-    <ul class="nav nav-pills">
-        @if (Form.Mode().IsEditExistingCategoryMode) {
-            <li>
-                <button class="btn btn-secondary" type="button" @onclick="e=>OnDelete()"><span class="oi oi-trash" aria-hidden="true"></span></button>
-            </li>
-        }
-        <li>
-            <button class="btn btn-primary" type="button" @onclick="OnSubmit" disabled="@(Form.HasErrors())">Submit</button>
-        </li>
-    </ul>
-</form>
 
 @code {
     IDisposable _subscription = null;
 
     public void Dispose() => _subscription?.Dispose();
 
-    protected override void OnInitialized() {
+    protected override async Task OnInitializedAsync() {
         _subscription =
             StateService.State
             .Select(i => i.CategoryEditPage)
@@ -64,12 +68,12 @@ else {
         if (!string.IsNullOrWhiteSpace(Id)) {
             var pageMessage = PageMessage.NewBeginEditCategory(Id);
             var stateMessage = StateMessage.NewCategoryEditPageMessage(pageMessage);
-            StateService.Update(stateMessage);
+            await StateService.UpdateAsync(stateMessage);
         }
         else {
             var pageMessage = PageMessage.BeginCreateNewCategory;
             var stateMessage = StateMessage.NewCategoryEditPageMessage(pageMessage);
-            StateService.Update(stateMessage);
+            await StateService.UpdateAsync(stateMessage);
         }
     }
 
@@ -84,40 +88,35 @@ else {
 
     protected CoreTypes.CategoryEditForm Form { get; set; }
 
-    protected void OnNameChange(ChangeEventArgs e) {
+    protected async Task OnNameChange(ChangeEventArgs e) {
         var textBoxMessage = TextBoxMessage.NewTypeText((string)e.Value);
         var formMessage = FormMessage.NewCategoryNameMessage(textBoxMessage);
         var pageMessage = PageMessage.NewCategoryEditFormMessage(formMessage);
         var stateMessage = StateMessage.NewCategoryEditPageMessage(pageMessage);
-        StateService.Update(stateMessage);
+        await StateService.UpdateAsync(stateMessage);
     }
 
-    protected void OnNameFocusOut(FocusEventArgs e) {
+    protected async Task OnNameFocusOut(FocusEventArgs e) {
         var textBoxMessage = TextBoxMessage.LoseFocus;
         var formMessage = FormMessage.NewCategoryNameMessage(textBoxMessage);
         var pageMessage = PageMessage.NewCategoryEditFormMessage(formMessage);
         var stateMessage = StateMessage.NewCategoryEditPageMessage(pageMessage);
-        StateService.Update(stateMessage);
+        await StateService.UpdateAsync(stateMessage);
     }
 
-    protected void OnDelete() {
+    protected async Task OnDelete(MouseEventArgs e) {
         var pageMessage = PageMessage.DeleteCategory;
         var stateMessage = StateMessage.NewCategoryEditPageMessage(pageMessage);
-        StateService.Update(stateMessage);
+        Dispose();
         Navigation.NavigateTo("shoppinglist");
+        await StateService.UpdateAsync(stateMessage);
     }
 
-    protected void OnSubmit() {
+    protected async Task OnSubmit(MouseEventArgs e) {
         var pageMessage = PageMessage.SubmitCategoryEditForm;
         var stateMessage = StateMessage.NewCategoryEditPageMessage(pageMessage);
-        StateService.Update(stateMessage);
-        Navigation.NavigateTo("shoppinglist");
-    }
-
-    protected void OnCancel() {
-        var pageMessage = PageMessage.CancelCategoryEditForm;
-        var stateMessage = StateMessage.NewCategoryEditPageMessage(pageMessage);
-        StateService.Update(stateMessage);
-        Navigation.NavigateTo("shoppinglist");
+        Dispose();
+        Navigation.NavigateTo ("shoppinglist");
+        await StateService.UpdateAsync(stateMessage);
     }
 }

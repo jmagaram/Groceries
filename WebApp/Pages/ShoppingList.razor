@@ -4,7 +4,7 @@
 @using Microsoft.FSharp.Core;
 @using WebApp.Shared;
 @using static Models.ScheduleModule.ScheduleExtensions;
- 
+
 <style>
     .categoryHeader {
         margin-top: 1.0rem;
@@ -13,7 +13,6 @@
         max-width: 250px;
     }
 </style>
-
 <div class="row justify-content-between align-items-center sticky-top" style="padding-bottom:7px; margin-left:0; margin-right:0; border-bottom:solid 1px #d3d3d3">
     <div class="col nav col-auto">
         @{
@@ -24,11 +23,11 @@
                 @currentStoreName
             </button>
             <div class="dropdown-menu nav-item" aria-labelledby="storeDropdown">
-                <button class="dropdown-item btn-sm" @onclick="e=>OnStoreFilterClear()">All Stores</button>
+                <button class="dropdown-item btn-sm" @onclick="async e=>await OnStoreFilterClear()">All Stores</button>
                 <div class="dropdown-divider"></div>
                 @foreach (var s in StoreFilterChoices) {
                     string description = s.StoreName.Item;
-                    <button class="dropdown-item btn-small" href="#" @onclick="e=>OnStoreFilter(s.StoreId)">@description</button>
+                    <button class="dropdown-item btn-small" href="#" @onclick="async e=>await OnStoreFilter(s.StoreId)">@description</button>
                 }
                 <div class="dropdown-divider"></div>
                 <a class="dropdown-item btn-small" href="storeedit">New store...</a>
@@ -45,32 +44,33 @@
                 </button>
                 <div class="dropdown-menu nav-item" aria-labelledby="viewDropdown">
                     <h6 class="dropdown-header">POSTPONED ITEMS</h6>
-                    <button @onclick="_=>ShowPostponedWithinNext(0)" class="dropdown-item">Overdue only</button>
-                    <button @onclick="_=>ShowPostponedWithinNext(3)" class="dropdown-item">Next few days</button>
-                    <button @onclick="_=>ShowPostponedWithinNext(7)" class="dropdown-item">+1 week</button>
-                    <button @onclick="_=>ShowPostponedWithinNext(14)" class="dropdown-item">+2 weeks</button>
-                    <button @onclick="_=>ShowPostponedWithinNext(int.MaxValue)" class="dropdown-item">All</button>
+                    <button @onclick="async _=>await ShowPostponedWithinNext(0)" class="dropdown-item">Overdue only</button>
+                    <button @onclick="async _=>await ShowPostponedWithinNext(3)" class="dropdown-item">Next few days</button>
+                    <button @onclick="async _=>await ShowPostponedWithinNext(7)" class="dropdown-item">+1 week</button>
+                    <button @onclick="async _=>await ShowPostponedWithinNext(14)" class="dropdown-item">+2 weeks</button>
+                    <button @onclick="async _=>await ShowPostponedWithinNext(int.MaxValue)" class="dropdown-item">All</button>
                     <div class="dropdown-divider"></div>
                     <h6 class="dropdown-header">COMPLETED ITEMS</h6>
-                    <button @onclick="_=>OnClickShowCompletedItems()" class="dropdown-item">Show completed</button>
-                    <button @onclick="_=>OnClickHideCompletedItems()" class="dropdown-item">Hide completed</button>
+                    <button @onclick="async _=>await OnClickShowCompletedItems()" class="dropdown-item">Show completed</button>
+                    <button @onclick="async _=>await OnClickHideCompletedItems()" class="dropdown-item">Hide completed</button>
                 </div>
             </div>
-            if (SyncStatus == SyncStatus.ShouldSync) {
+            if (SyncStatus.IsHasChanges) {
                 <div class="nav-item">
-                    <button style="margin-left:5px" @onclick="@(e=>ClickManualSync.OnNext(null))" class="btn btn-sm btn-warning nav-item" type="button">
+                    <button style="margin-left:5px" @onclick="@OnClickSync" class="btn btn-sm btn-warning nav-item" type="button">
                         <span class="oi oi-cloud-upload" aria-hidden="true">&nbsp;</span>Sync
                     </button>
                 </div>
             }
-            else if (SyncStatus == SyncStatus.SynchronizingNow) {
+            else if (SyncStatus.IsSynchronizing) {
                 <button style="margin-left:5px" disabled class="btn btn-sm btn-success nav-item" type="button">
-                    <span class="oi oi-cloud-upload" aria-hidden="true"></span>&nbsp;Syncing...</button>
+                    <span class="oi oi-cloud-upload" aria-hidden="true"></span>&nbsp;Syncing...
+                </button>
             }
-            else if (SyncStatus == SyncStatus.NoChangesToPush){
-                    <button style="margin-left:5px" @onclick="@(e=>ClickManualSync.OnNext(null))" class="btn btn-sm btn-secondary nav-item" type="button">
-                        <span class="oi oi-cloud-upload" aria-hidden="true">&nbsp;</span>
-                    </button>
+            else if (SyncStatus.IsNoChanges) {
+                <button style="margin-left:5px" @onclick="@OnClickSync" class="btn btn-sm btn-secondary nav-item" type="button">
+                    <span class="oi oi-cloud-upload" aria-hidden="true">&nbsp;</span>
+                </button>
             }
         }
     </div>
@@ -81,14 +81,14 @@
             var ralign = (TextFilter.Length > 0) ? "20px" : "0px";
         }
 
-        <input autocomplete="off" type="text" id="textFilter" class="form-control form-control-sm" style="max-width:@width; position:relative; right:@ralign" @onkeydown="OnTextFilterKeyDown" @bind-value="@TextFilter" @bind-value:event="oninput" placeholder="Find or add" @onfocusout="OnTextFilterBlur" />
+        <input autocomplete="off" type="text" id="textFilter" class="form-control form-control-sm" style="max-width:@width; position:relative; right:@ralign" @onkeydown="@(async e => await OnTextFilterKeyDown(e))" @bind-value="@TextFilter" @bind-value:event="oninput" placeholder="Find or add" @onfocusout="OnTextFilterBlur" />
         @if (TextFilter.Length > 0) {
-        <button type="button" class="btn btn-link btn-sm" style="margin-left: -30px;
+            <button type="button" class="btn btn-link btn-sm" style="margin-left: -30px;
         position: relative;
-        right: 20px" @onclick="OnTextFilterClear">
-            <span class="oi oi-x" aria-hidden="true"></span>
-        </button>
-        <a style="margin-left:-10px" class="btn btn-sm btn-outline-dark" href="itemnew/@TextFilter">Add</a>
+        right: 20px" @onclick="async _ => await OnTextFilterClear()">
+                <span class="oi oi-x" aria-hidden="true"></span>
+            </button>
+            <button style="margin-left:-10px"  @onclick="@(async _ => await OnStartCreateNew())" @onclick:stopPropagation @onclick:preventDefault class="btn btn-sm btn-outline-dark">Add</button>
         }
     </form>
 </div>
@@ -108,7 +108,7 @@
         }
 
         foreach (var item in Items.Where(i => object.Equals(i.Category, cat)).OrderBy(j => j.Schedule.DueDate(now).GetOr(DateTimeOffset.MaxValue)).ThenBy(j => j.ItemName)) {
-            <WebApp.Shared.Item HideCategory="true" OnClickPostpone="OnClickPostpone" OnClickRemovePostpone="OnClickRemovePostpone" OnClickBuyAgain="OnClickBuyAgain" OnClickDelete="OnClickDelete" OnClickComplete="OnClickComplete" ItemQry="@item" />
+            <WebApp.Shared.Item HideCategory="true" OnClickPostpone="@(async i => await OnClickPostpone(i))" OnClickRemovePostpone="@(async i => await OnClickRemovePostpone(i))" OnClickBuyAgain="@(async i => await OnClickBuyAgain(i))" OnClickDelete="OnClickDelete" OnClickComplete="OnClickComplete" ItemQry="@item" />
         }
     }
 }

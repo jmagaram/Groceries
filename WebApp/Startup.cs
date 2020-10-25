@@ -6,6 +6,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Models;
 using WebApp.Data;
+using static Models.ServiceTypes;
 
 namespace WebApp {
     public class Startup {
