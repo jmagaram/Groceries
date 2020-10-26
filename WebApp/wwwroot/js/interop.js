@@ -11,3 +11,10 @@ ElixMenuButton.addCloseEventListener = function (element, assemblyName, method, 
         }
     })
 };
+
+window.interopFunctions =
+{
+    focusElement: function (element) {
+        element.focus();
+    }
+};
