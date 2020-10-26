@@ -12,8 +12,43 @@
         cursor: pointer;
         max-width: 250px;
     }
+
+    .filterRow {
+        animation-duration: 0.2s;
+        animation-name: slidein;
+        animation-timing-function: ease-out;
+        width: 30ch;
+    }
+
+    .filterInput {
+        width:20ch;
+    }
+
+    @@keyframes slidein {
+        from {
+            margin-left: 60%;
+            width: 1ch;
+        }
+
+        to {
+            margin-left: 0%;
+            width: 30ch;
+        }
+    }
 </style>
 <div class="row justify-content-between align-items-center sticky-top" style="padding-bottom:7px; margin-left:0; margin-right:0; border-bottom:solid 1px #d3d3d3">
+    @if(ShowFilter) {
+    <div style="display:flex; flex-direction:row" class="filterRow">
+        <input @ref="filterTextInput" autocomplete="off" type="text" id="textFilter" class="form-control form-control-sm filterInput" @onkeydown="@(async e => await OnTextFilterKeyDown(e))" @bind-value="@TextFilter" @bind-value:event="oninput" placeholder="Find or add" @onfocusout="OnTextFilterBlur" />
+        <button type="button" class="btn btn-link btn-sm" style="position: relative; right: 4ch" @onclick="HideTextFilter">
+            <span class="oi oi-x" aria-hidden="true"></span>
+        </button>
+        @if(TextFilter.Length>0) {
+        <button style="margin-left:-3ch" @onclick="@(async _ => await OnStartCreateNew())" @onclick:stopPropagation @onclick:preventDefault class="btn btn-sm btn-primary">Add</button>
+        }
+    </div>
+    }
+    else {
     <div class="col nav col-auto">
         @{
             var currentStoreName = StoreFilterChoices.FirstOrDefault(i => i.StoreId.Item == StoreFilter)?.StoreName.Item ?? "All Stores";
@@ -27,50 +62,50 @@
                 <div class="dropdown-divider"></div>
                 @foreach (var s in StoreFilterChoices) {
                     string description = s.StoreName.Item;
-                    <button class="dropdown-item btn-small" href="#" @onclick="async e=>await OnStoreFilter(s.StoreId)">@description</button>
+                <button class="dropdown-item btn-small" href="#" @onclick="async e=>await OnStoreFilter(s.StoreId)">@description</button>
                 }
                 <div class="dropdown-divider"></div>
                 <a class="dropdown-item btn-small" href="storeedit">New store...</a>
                 @if (StoreFilter != Guid.Empty) {
                     var storeId = StoreFilter.ToString(); // use StoreId serialize and deserialize instead
-                    <a class="dropdown-item" href="storeEdit/@storeId">Edit @currentStoreName...</a>
+                <a class="dropdown-item" href="storeEdit/@storeId">Edit @currentStoreName...</a>
                 }
             </div>
         </div>
         @if (TextFilter.Length == 0) {
-            <div class="nav-item">
-                <button class="btn btn-sm btn-outline-dark dropdown-toggle nav-item" style="margin-left:5px" type="button" id="viewDropdown" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                    View
-                </button>
-                <div class="dropdown-menu nav-item" aria-labelledby="viewDropdown">
-                    <h6 class="dropdown-header">POSTPONED ITEMS</h6>
-                    <button @onclick="async _=>await ShowPostponedWithinNext(0)" class="dropdown-item">Overdue only</button>
-                    <button @onclick="async _=>await ShowPostponedWithinNext(3)" class="dropdown-item">Next few days</button>
-                    <button @onclick="async _=>await ShowPostponedWithinNext(7)" class="dropdown-item">+1 week</button>
-                    <button @onclick="async _=>await ShowPostponedWithinNext(14)" class="dropdown-item">+2 weeks</button>
-                    <button @onclick="async _=>await ShowPostponedWithinNext(int.MaxValue)" class="dropdown-item">All</button>
-                    <div class="dropdown-divider"></div>
-                    <h6 class="dropdown-header">COMPLETED ITEMS</h6>
-                    <button @onclick="async _=>await OnClickShowCompletedItems()" class="dropdown-item">Show completed</button>
-                    <button @onclick="async _=>await OnClickHideCompletedItems()" class="dropdown-item">Hide completed</button>
-                </div>
+        <div class="nav-item">
+            <button class="btn btn-sm btn-outline-dark dropdown-toggle nav-item" style="margin-left:5px" type="button" id="viewDropdown" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                View
+            </button>
+            <div class="dropdown-menu nav-item" aria-labelledby="viewDropdown">
+                <h6 class="dropdown-header">POSTPONED ITEMS</h6>
+                <button @onclick="async _=>await ShowPostponedWithinNext(0)" class="dropdown-item">Overdue only</button>
+                <button @onclick="async _=>await ShowPostponedWithinNext(3)" class="dropdown-item">Next few days</button>
+                <button @onclick="async _=>await ShowPostponedWithinNext(7)" class="dropdown-item">+1 week</button>
+                <button @onclick="async _=>await ShowPostponedWithinNext(14)" class="dropdown-item">+2 weeks</button>
+                <button @onclick="async _=>await ShowPostponedWithinNext(int.MaxValue)" class="dropdown-item">All</button>
+                <div class="dropdown-divider"></div>
+                <h6 class="dropdown-header">COMPLETED ITEMS</h6>
+                <button @onclick="async _=>await OnClickShowCompletedItems()" class="dropdown-item">Show completed</button>
+                <button @onclick="async _=>await OnClickHideCompletedItems()" class="dropdown-item">Hide completed</button>
             </div>
+        </div>
             if (SyncStatus.IsHasChanges) {
-                <div class="nav-item">
-                    <button style="margin-left:5px" @onclick="@OnClickSync" class="btn btn-sm btn-warning nav-item" type="button">
-                        <span class="oi oi-cloud-upload" aria-hidden="true">&nbsp;</span>Sync
-                    </button>
-                </div>
+        <div class="nav-item">
+            <button style="margin-left:5px" @onclick="@OnClickSync" class="btn btn-sm btn-warning nav-item" type="button">
+                <span class="oi oi-cloud-upload" aria-hidden="true">&nbsp;</span>Sync
+            </button>
+        </div>
             }
             else if (SyncStatus.IsSynchronizing) {
-                <button style="margin-left:5px" disabled class="btn btn-sm btn-success nav-item" type="button">
-                    <span class="oi oi-cloud-upload" aria-hidden="true"></span>&nbsp;Syncing...
-                </button>
+        <button style="margin-left:5px" disabled class="btn btn-sm btn-success nav-item" type="button">
+            <span class="oi oi-cloud-upload" aria-hidden="true"></span>&nbsp;Syncing...
+        </button>
             }
             else if (SyncStatus.IsNoChanges) {
-                <button style="margin-left:5px" @onclick="@OnClickSync" class="btn btn-sm btn-secondary nav-item" type="button">
-                    <span class="oi oi-cloud-upload" aria-hidden="true">&nbsp;</span>
-                </button>
+        <button style="margin-left:5px" @onclick="@OnClickSync" class="btn btn-sm btn-secondary nav-item" type="button">
+            <span class="oi oi-cloud-upload" aria-hidden="true">&nbsp;</span>
+        </button>
             }
         }
     </div>
@@ -80,43 +115,35 @@
             var width = (TextFilter.Length > 0) ? "120px" : "90px";
             var ralign = (TextFilter.Length > 0) ? "20px" : "0px";
         }
-
-        <input autocomplete="off" type="text" id="textFilter" class="form-control form-control-sm" style="max-width:@width; position:relative; right:@ralign" @onkeydown="@(async e => await OnTextFilterKeyDown(e))" @bind-value="@TextFilter" @bind-value:event="oninput" placeholder="Find or add" @onfocusout="OnTextFilterBlur" />
-        @if (TextFilter.Length > 0) {
-            <button type="button" class="btn btn-link btn-sm" style="margin-left: -30px;
-        position: relative;
-        right: 20px" @onclick="async _ => await OnTextFilterClear()">
-                <span class="oi oi-x" aria-hidden="true"></span>
-            </button>
-            <button style="margin-left:-10px"  @onclick="@(async _ => await OnStartCreateNew())" @onclick:stopPropagation @onclick:preventDefault class="btn btn-sm btn-outline-dark">Add</button>
-        }
     </form>
+    <button class="btn btn-sm btn-secondary" @onclick="ShowTextFilter"><span class="oi oi-magnifying-glass" aria-hidden="true"></span>&nbsp;Add</button>
+    }
 </div>
 @if (Items.Count > 0) {
     foreach (var cat in Items.Select(j => j.Category).Distinct().OrderBy(i => i.IsSome() ? i.Value.CategoryName.Item : "")) {
         var now = DateTimeOffset.Now;
         var categoryName = cat.IsNone() ? "(Uncategorized)" : cat.Value.CategoryName.Item;
-        @if (cat.IsSome()) {
-            <p @onclick="e=>OnNavigateToCategory(cat.Value.CategoryId)" class="categoryHeader">
-                @categoryName
-            </p>
+@if (cat.IsSome()) {
+<p @onclick="e=>OnNavigateToCategory(cat.Value.CategoryId)" class="categoryHeader">
+    @categoryName
+</p>
         }
         else {
-            <p class="categoryHeader" style="cursor:inherit">
-                @categoryName
-            </p>
+<p class="categoryHeader" style="cursor:inherit">
+    @categoryName
+</p>
         }
 
         foreach (var item in Items.Where(i => object.Equals(i.Category, cat)).OrderBy(j => j.Schedule.DueDate(now).GetOr(DateTimeOffset.MaxValue)).ThenBy(j => j.ItemName)) {
-            <WebApp.Shared.Item HideCategory="true" OnClickPostpone="@(async i => await OnClickPostpone(i))" OnClickRemovePostpone="@(async i => await OnClickRemovePostpone(i))" OnClickBuyAgain="@(async i => await OnClickBuyAgain(i))" OnClickDelete="OnClickDelete" OnClickComplete="OnClickComplete" ItemQry="@item" />
+<WebApp.Shared.Item HideCategory="true" OnClickPostpone="@(async i => await OnClickPostpone(i))" OnClickRemovePostpone="@(async i => await OnClickRemovePostpone(i))" OnClickBuyAgain="@(async i => await OnClickBuyAgain(i))" OnClickDelete="OnClickDelete" OnClickComplete="OnClickComplete" ItemQry="@item" />
         }
     }
 }
 else {
     if (TextFilter.Length > 0) {
-        <p>Couldn't find anything like that, but it sounds tasty!</p>
+<p>Couldn't find anything like that, but it sounds tasty!</p>
     }
     else {
-        <p>No shopping list items.</p>
+<p>No shopping list items.</p>
     }
 }

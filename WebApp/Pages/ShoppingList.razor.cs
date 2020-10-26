@@ -7,6 +7,7 @@ using System.Reactive.Subjects;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
+using Microsoft.JSInterop;
 using Models;
 using WebApp.Common;
 using static Models.CoreTypes;
@@ -21,6 +22,31 @@ namespace WebApp.Pages {
         CompositeDisposable _disposables;
         string _textFilter = "";
         readonly Subject<string> _textFilterTyped = new Subject<string>();
+        public bool _moveFocusToTextFilter = false;
+
+        public bool ShowFilter { get; set; }
+
+        public void ShowTextFilter(MouseEventArgs e) {
+            ShowFilter = true;
+            _moveFocusToTextFilter = true;
+        }
+
+        protected override async Task OnAfterRenderAsync(bool firstRender) {
+            await base.OnAfterRenderAsync(firstRender);
+            if (ShowFilter && _moveFocusToTextFilter) {
+                await JSRuntime.InvokeVoidAsync("interopFunctions.focusElement", filterTextInput);
+                _moveFocusToTextFilter = false;
+            }
+        }
+
+        public async Task HideTextFilter(MouseEventArgs e) {
+            ShowFilter = false;
+            await OnTextFilterClear();
+        }
+
+        private ElementReference filterTextInput;
+
+        [Inject] IJSRuntime JSRuntime { get; set; }
 
         [Inject]
         public Service StateService { get; set; }
@@ -169,7 +195,11 @@ namespace WebApp.Pages {
 
         protected async Task OnTextFilterKeyDown(KeyboardEventArgs e) {
             if (e.Key == "Escape") {
+                bool shouldCancelFilter = TextFilter.Length == 0;
                 await OnTextFilterClear();
+                if (shouldCancelFilter) {
+                    ShowFilter = false;
+                }
             }
         }
 
