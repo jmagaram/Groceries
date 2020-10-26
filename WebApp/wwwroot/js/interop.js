@@ -12,6 +12,13 @@ ElixMenuButton.addCloseEventListener = function (element, assemblyName, method, 
     })
 };
 
+ElixMenuButton.addOpenChangedEventListener = function (element, assemblyName, method, helper) {
+    element.addEventListener("openedchange", (event) => {
+        const isOpened = event.currentTarget.opened;
+        helper.invokeMethodAsync(assemblyName, method, isOpened);
+    })
+};
+
 window.interopFunctions =
 {
     focusElement: function (element) {
