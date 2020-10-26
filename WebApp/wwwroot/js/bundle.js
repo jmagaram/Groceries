@@ -478,7 +478,7 @@
           <slot></slot>
         </div>
       </div>
-    `),an(e.content,this[Be]),e}})))),hn=(X,ve,Ie,Ze,Symbol("documentMousemoveListener"));function pn(e){const t=this,{hasHoveredOverItemSinceOpened:s,opened:n}=t[Be];if(n){const n=e.composedPath?e.composedPath()[0]:e.target;if(n&&n instanceof Node){const e=t.items,r=E(e,n),o=e[r],i=o&&!o.disabled?r:-1;(s||i>=0)&&i!==t[Be].currentIndex&&(t[Ee]=!0,t[Ae]({currentIndex:i}),i>=0&&!s&&t[Ae]({hasHoveredOverItemSinceOpened:!0}),t[Ee]=!1)}}}function gn(e){e[Be].opened&&e.isConnected?e[hn]||(e[hn]=pn.bind(e),document.addEventListener("mousemove",e[hn])):e[hn]&&(document.removeEventListener("mousemove",e[hn]),e[hn]=null)}async function mn(e){const t=e[Ee],s=e[Be].currentIndex>=0,n=s?e.items[e[Be].currentIndex]:void 0,r=e[Be].popupList;s&&"flashCurrentItem"in r&&await r.flashCurrentItem();const o=e[Ee];e[Ee]=t,await e.close(n),e[Ee]=o}const bn=function(e){return class extends e{connectedCallback(){super.connectedCallback(),gn(this)}get[X](){return Object.assign(super[X],{currentIndex:-1,hasHoveredOverItemSinceOpened:!1,popupList:null})}disconnectedCallback(){super.disconnectedCallback&&super.disconnectedCallback(),gn(this)}[ve](e){let t=!1;switch(e.key){case"Enter":this.opened&&(mn(this),t=!0)}return t||super[ve]&&super[ve](e)||!1}[Ie](e){if(super[Ie]&&super[Ie](e),e.popupList){const{popupList:e}=this[Be];e&&(e.addEventListener("mouseup",(async e=>{const t=this[Be].currentIndex;this[Be].dragSelect||t>=0?(e.stopPropagation(),this[Ee]=!0,await mn(this),this[Ee]=!1):e.stopPropagation()})),e.addEventListener("currentindexchange",(e=>{this[Ee]=!0;const t=e;this[Ae]({currentIndex:t.detail.currentIndex}),this[Ee]=!1})))}if(e.currentIndex||e.popupList){const{currentIndex:e,popupList:t}=this[Be];t&&"currentIndex"in t&&(t.currentIndex=e)}}[Ce](e){if(super[Ce]&&super[Ce](e),e.opened){if(this[Be].opened){const{popupList:e}=this[Be];e.scrollCurrentItemIntoView&&setTimeout((()=>{e.scrollCurrentItemIntoView()}))}gn(this)}}[Fe](e,t){const s=super[Fe]?super[Fe](e,t):{};return t.opened&&e.opened&&Object.assign(s,{hasHoveredOverItemSinceOpened:!1}),s}}}(class extends dn{get[X](){return Object.assign(super[X],{sourcePartType:"button"})}[ve](e){let t;switch(e.key){case" ":case"ArrowDown":case"ArrowUp":this.closed&&(this.open(),t=!0);break;case"Enter":this.opened||(this.open(),t=!0)}if(t=super[ve]&&super[ve](e),!t&&this.opened&&!e.metaKey&&!e.altKey)switch(e.key){case"ArrowDown":case"ArrowLeft":case"ArrowRight":case"ArrowUp":case"End":case"Home":case"PageDown":case"PageUp":case" ":t=!0}return t}[Ie](e){if(super[Ie](e),this[se]&&this[fe].source.addEventListener("focus",(async e=>{const t=I(this[fe].popup,e),s=null!==this[Be].popupHeight;!t&&this.opened&&s&&(this[Ee]=!0,await this.close(),this[Ee]=!1)})),e.opened){const{opened:e}=this[Be];this.toggleAttribute("opened",e),this[fe].source.setAttribute("aria-expanded",e.toString())}e.sourcePartType&&this[fe].source.addEventListener("mousedown",(e=>{if(this.disabled)return void e.preventDefault();const t=e;t.button&&0!==t.button||(setTimeout((()=>{this.opened||(this[Ee]=!0,this.open(),this[Ee]=!1)})),e.stopPropagation())})),e.popupPartType&&this[fe].popup.removeAttribute("tabindex")}get[Ze](){const e=super[Ze];return e.content.append(O`
+    `),an(e.content,this[Be]),e}})))),hn=class extends dn{get[X](){return Object.assign(super[X],{sourcePartType:"button"})}[ve](e){let t;switch(e.key){case" ":case"ArrowDown":case"ArrowUp":this.closed&&(this.open(),t=!0);break;case"Enter":this.opened||(this.open(),t=!0)}if(t=super[ve]&&super[ve](e),!t&&this.opened&&!e.metaKey&&!e.altKey)switch(e.key){case"ArrowDown":case"ArrowLeft":case"ArrowRight":case"ArrowUp":case"End":case"Home":case"PageDown":case"PageUp":case" ":t=!0}return t}[Ie](e){if(super[Ie](e),this[se]&&this[fe].source.addEventListener("focus",(async e=>{const t=I(this[fe].popup,e),s=null!==this[Be].popupHeight;!t&&this.opened&&s&&(this[Ee]=!0,await this.close(),this[Ee]=!1)})),e.opened){const{opened:e}=this[Be];this.toggleAttribute("opened",e),this[fe].source.setAttribute("aria-expanded",e.toString())}e.sourcePartType&&this[fe].source.addEventListener("mousedown",(e=>{if(this.disabled)return void e.preventDefault();const t=e;t.button&&0!==t.button||(setTimeout((()=>{this.opened||(this[Ee]=!0,this.open(),this[Ee]=!1)})),e.stopPropagation())})),e.popupPartType&&this[fe].popup.removeAttribute("tabindex")}get[Ze](){const e=super[Ze];return e.content.append(O`
         <style>
           [part~="source"] {
             cursor: default;
@@ -495,17 +495,17 @@
             outline: none;
           }
         </style>
-      `),e}});function fn(e,t,s){if(!s||s.menuPartType){const{menuPartType:s}=t,n=e.getElementById("menu");n&&Z(n,s)}}const yn=class extends bn{get[X](){return Object.assign(super[X],{menuPartType:Ds})}get items(){const e=this[fe]&&this[fe].menu;return e?e.items:null}get menuPartType(){return this[Be].menuPartType}set menuPartType(e){this[Ae]({menuPartType:e})}[Ie](e){super[Ie](e),fn(this[De],this[Be],e),e.menuPartType&&(this[fe].menu.addEventListener("blur",(async e=>{const t=e.relatedTarget||document.activeElement;this.opened&&!x(this[fe].menu,t)&&(this[Ee]=!0,await this.close(),this[Ee]=!1)})),this[fe].menu.addEventListener("mousedown",(e=>{0===e.button&&this.opened&&(e.stopPropagation(),e.preventDefault())})))}[Ce](e){super[Ce](e),e.menuPartType&&this[Ae]({popupList:this[fe].menu})}[Fe](e,t){const s=super[Fe](e,t);return t.opened&&!e.opened&&Object.assign(s,{currentIndex:-1}),s}get[Ze](){const e=super[Ze],t=e.content.querySelector("slot:not([name])");return t&&t.replaceWith(O`
+      `),e}},pn=Symbol("documentMousemoveListener");function gn(e){const t=this,{hasHoveredOverItemSinceOpened:s,opened:n}=t[Be];if(n){const n=e.composedPath?e.composedPath()[0]:e.target;if(n&&n instanceof Node){const e=t.items,r=E(e,n),o=e[r],i=o&&!o.disabled?r:-1;(s||i>=0)&&i!==t[Be].currentIndex&&(t[Ee]=!0,t[Ae]({currentIndex:i}),i>=0&&!s&&t[Ae]({hasHoveredOverItemSinceOpened:!0}),t[Ee]=!1)}}}function mn(e){e[Be].opened&&e.isConnected?e[pn]||(e[pn]=gn.bind(e),document.addEventListener("mousemove",e[pn])):e[pn]&&(document.removeEventListener("mousemove",e[pn]),e[pn]=null)}async function bn(e){const t=e[Ee],s=e[Be].currentIndex>=0,n=s?e.items[e[Be].currentIndex]:void 0,r=e[Be].popupList;s&&"flashCurrentItem"in r&&await r.flashCurrentItem();const o=e[Ee];e[Ee]=t,await e.close(n),e[Ee]=o}const fn=function(e){return class extends e{connectedCallback(){super.connectedCallback(),mn(this)}get[X](){return Object.assign(super[X],{currentIndex:-1,hasHoveredOverItemSinceOpened:!1,popupList:null})}disconnectedCallback(){super.disconnectedCallback&&super.disconnectedCallback(),mn(this)}[ve](e){let t=!1;switch(e.key){case"Enter":this.opened&&(bn(this),t=!0)}return t||super[ve]&&super[ve](e)||!1}[Ie](e){if(super[Ie]&&super[Ie](e),e.popupList){const{popupList:e}=this[Be];e&&(e.addEventListener("mouseup",(async e=>{const t=this[Be].currentIndex;this[Be].dragSelect||t>=0?(e.stopPropagation(),this[Ee]=!0,await bn(this),this[Ee]=!1):e.stopPropagation()})),e.addEventListener("currentindexchange",(e=>{this[Ee]=!0;const t=e;this[Ae]({currentIndex:t.detail.currentIndex}),this[Ee]=!1})))}if(e.currentIndex||e.popupList){const{currentIndex:e,popupList:t}=this[Be];t&&"currentIndex"in t&&(t.currentIndex=e)}}[Ce](e){if(super[Ce]&&super[Ce](e),e.opened){if(this[Be].opened){const{popupList:e}=this[Be];e.scrollCurrentItemIntoView&&setTimeout((()=>{e.scrollCurrentItemIntoView()}))}mn(this)}}[Fe](e,t){const s=super[Fe]?super[Fe](e,t):{};return t.opened&&e.opened&&Object.assign(s,{hasHoveredOverItemSinceOpened:!1}),s}}}(hn);function yn(e,t,s){if(!s||s.menuPartType){const{menuPartType:s}=t,n=e.getElementById("menu");n&&Z(n,s)}}const wn=class extends fn{get[X](){return Object.assign(super[X],{menuPartType:Ds})}get items(){const e=this[fe]&&this[fe].menu;return e?e.items:null}get menuPartType(){return this[Be].menuPartType}set menuPartType(e){this[Ae]({menuPartType:e})}[Ie](e){super[Ie](e),yn(this[De],this[Be],e),e.menuPartType&&(this[fe].menu.addEventListener("blur",(async e=>{const t=e.relatedTarget||document.activeElement;this.opened&&!x(this[fe].menu,t)&&(this[Ee]=!0,await this.close(),this[Ee]=!1)})),this[fe].menu.addEventListener("mousedown",(e=>{0===e.button&&this.opened&&(e.stopPropagation(),e.preventDefault())})))}[Ce](e){super[Ce](e),e.menuPartType&&this[Ae]({popupList:this[fe].menu})}[Fe](e,t){const s=super[Fe](e,t);return t.opened&&!e.opened&&Object.assign(s,{currentIndex:-1}),s}get[Ze](){const e=super[Ze],t=e.content.querySelector("slot:not([name])");return t&&t.replaceWith(O`
         <div id="menu" part="menu">
           <slot></slot>
         </div>
-      `),fn(e.content,this[Be]),e.content.append(O`
+      `),yn(e.content,this[Be]),e.content.append(O`
       <style>
         [part~="menu"] {
           max-height: 100%;
         }
       </style>
-    `),e}},wn=class extends cs{get[Ze](){const e=super[Ze];return e.content.append(O`
+    `),e}},vn=class extends cs{get[Ze](){const e=super[Ze];return e.content.append(O`
         <style>
           [part~="inner"] {
             background: #eee;
@@ -513,7 +513,7 @@
             padding: 0.25em 0.5em;
           }
         </style>
-      `),e}},vn=class extends cn{get[Ze](){const e=super[Ze],t=e.content.getElementById("downIcon"),s=O`
+      `),e}},xn=class extends cn{get[Ze](){const e=super[Ze],t=e.content.getElementById("downIcon"),s=O`
       <svg
         id="downIcon"
         part="toggle-icon down-icon"
@@ -550,7 +550,7 @@
             width: 10px;
           }
         </style>
-      `),e}},xn=class extends Vs{},Tn=class extends Ys{get[Ze](){const e=super[Ze];return e.content.append(O`
+      `),e}},Tn=class extends Vs{},Pn=class extends Ys{get[Ze](){const e=super[Ze];return e.content.append(O`
         <style>
           :host {
             background: white;
@@ -559,7 +559,7 @@
             box-sizing: border-box;
           }
         </style>
-      `),e}},Pn=class extends sn{get[X](){return Object.assign(super[X],{backdropPartType:xn,framePartType:Tn})}},En=class extends yn{get[X](){return Object.assign(super[X],{menuPartType:Ms,popupPartType:Pn,popupTogglePartType:vn,sourcePartType:wn})}get[Ze](){const e=super[Ze];return e.content.append(O`
+      `),e}},En=class extends sn{get[X](){return Object.assign(super[X],{backdropPartType:Tn,framePartType:Pn})}},In=class extends wn{get[X](){return Object.assign(super[X],{menuPartType:Ms,popupPartType:En,popupTogglePartType:xn,sourcePartType:vn})}get[Ze](){const e=super[Ze];return e.content.append(O`
         <style>
           [part~="menu"] {
             background: window;
@@ -567,7 +567,7 @@
             padding: 0.5em 0;
           }
         </style>
-      `),e}};customElements.define("elix-menu-button",class extends En{});class In extends(function(e){return class extends e{constructor(){super();!this[Pe]&&this.attachInternals&&(this[Pe]=this.attachInternals())}attributeChangedCallback(e,t,s){if("current"===e){const t=w(e,s);this.current!==t&&(this.current=t)}else super.attributeChangedCallback(e,t,s)}get[X](){return Object.assign(super[X]||{},{current:!1})}[Ie](e){if(super[Ie](e),e.current){const{current:e}=this[Be];S(this,"current",e)}}[Ce](e){if(super[Ce]&&super[Ce](e),e.current){const{current:e}=this[Be],t=new CustomEvent("current-changed",{bubbles:!0,detail:{current:e}});this.dispatchEvent(t);const s=new CustomEvent("currentchange",{bubbles:!0,detail:{current:e}});this.dispatchEvent(s)}}get current(){return this[Be].current}set current(e){this[Ae]({current:e})}}}(js(zt(U)))){}const kn=In,Sn=class extends kn{get[Ze](){return A.html`
+      `),e}};customElements.define("elix-menu-button",class extends In{});class kn extends(function(e){return class extends e{constructor(){super();!this[Pe]&&this.attachInternals&&(this[Pe]=this.attachInternals())}attributeChangedCallback(e,t,s){if("current"===e){const t=w(e,s);this.current!==t&&(this.current=t)}else super.attributeChangedCallback(e,t,s)}get[X](){return Object.assign(super[X]||{},{current:!1})}[Ie](e){if(super[Ie](e),e.current){const{current:e}=this[Be];S(this,"current",e)}}[Ce](e){if(super[Ce]&&super[Ce](e),e.current){const{current:e}=this[Be],t=new CustomEvent("current-changed",{bubbles:!0,detail:{current:e}});this.dispatchEvent(t);const s=new CustomEvent("currentchange",{bubbles:!0,detail:{current:e}});this.dispatchEvent(s)}}get current(){return this[Be].current}set current(e){this[Ae]({current:e})}}}(js(zt(U)))){}const Sn=kn,Cn=class extends Sn{get[Ze](){return A.html`
       <style>
         :host {
           font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
@@ -594,7 +594,7 @@
         <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z"/>
       </svg>
       <slot></slot>
-    `}};customElements.define("elix-menu-item",class extends Sn{});const Cn=class extends U{get disabled(){return!0}[Ie](e){super[Ie](e),this[se]&&this.setAttribute("aria-hidden","true")}},Ln=class extends Cn{get[Ze](){return A.html`
+    `}};customElements.define("elix-menu-item",class extends Cn{});const Ln=class extends U{get disabled(){return!0}[Ie](e){super[Ie](e),this[se]&&this.setAttribute("aria-hidden","true")}},On=class extends Ln{get[Ze](){return A.html`
       <style>
         :host {
           padding: 0 !important;
@@ -608,4 +608,4 @@
         }
       </style>
       <hr>
-    `}};customElements.define("elix-menu-separator",class extends Ln{})})();
+    `}};customElements.define("elix-menu-separator",class extends On{});const An=class extends hn{get[X](){return Object.assign(super[X],{popupPartType:En,sourcePartType:vn})}};customElements.define("elix-popup-button",class extends An{}),customElements.define("elix-popup",class extends En{})})();
