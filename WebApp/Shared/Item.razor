@@ -50,18 +50,17 @@
     .menu {
         transition: all ease-out 0.05s; /*when returning to this*/
         border: 1px solid rgba(229, 229, 229, 0.00);
-        padding:0px;
+        padding: 0px;
         background-color: inherit;
     }
 
         .menu.opened {
             border: 1px solid rgba(229, 229, 229, 1.00);
-            padding:4px;
-            margin-left:-4px;
-            margin-top:-4px;
+            padding: 4px;
+            margin-left: -4px;
+            margin-top: -4px;
             background-color: #ededed;
         }
-
 </style>
 
 <elix-menu-button class="@MenuClass" @ref="ContextMenu" id="sampleMenu" aria-label="Sample Menu" source-part-type="div" style="display:block">
@@ -162,16 +161,15 @@
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender) {
+        await base.OnAfterRenderAsync(firstRender);
         if (firstRender) {
             InvokeActionHelper<string> invokeHelper = new InvokeActionHelper<string>(OnClose);
             _contextMenuCallback = DotNetObjectReference.Create(invokeHelper);
             await JSRuntime.InvokeVoidAsync("ElixMenuButton.addCloseEventListener", ContextMenu, "WebApp", "Invoke", _contextMenuCallback);
-
             InvokeActionHelper<bool> openClosedHelper = new InvokeActionHelper<bool>(OnOpenedOrClosed);
             _isMenuOpened = DotNetObjectReference.Create(openClosedHelper);
             await JSRuntime.InvokeVoidAsync("ElixMenuButton.addOpenChangedEventListener", ContextMenu, "WebApp", "Invoke", _isMenuOpened);
         }
-        await base.OnAfterRenderAsync(firstRender);
     }
 
     public string MenuClass { get; set; } = "menu";

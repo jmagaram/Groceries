@@ -13,6 +13,8 @@ ElixMenuButton.addCloseEventListener = function (element, assemblyName, method, 
 };
 
 ElixMenuButton.addOpenChangedEventListener = function (element, assemblyName, method, helper) {
+    if (element == null)
+        return;
     element.addEventListener("openedchange", (event) => {
         const isOpened = event.currentTarget.opened;
         helper.invokeMethodAsync(assemblyName, method, isOpened);
