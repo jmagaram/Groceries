@@ -168,7 +168,7 @@
             await JSRuntime.InvokeVoidAsync("ElixMenuButton.addCloseEventListener", ContextMenu, "WebApp", "Invoke", _contextMenuCallback);
             InvokeActionHelper<bool> openClosedHelper = new InvokeActionHelper<bool>(OnOpenedOrClosed);
             _isMenuOpened = DotNetObjectReference.Create(openClosedHelper);
-            await JSRuntime.InvokeVoidAsync("ElixMenuButton.addOpenChangedEventListener", ContextMenu, "WebApp", "Invoke", _isMenuOpened);
+            await JSRuntime.InvokeVoidAsync("ElixMenuButton.addOpenedChangeEventListener", ContextMenu, "WebApp", "Invoke", _isMenuOpened);
         }
     }
 
