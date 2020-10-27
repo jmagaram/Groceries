@@ -37,7 +37,7 @@
         }
     }
 </style>
-<div class="row justify-content-between align-items-center sticky-top" style="background-color:white; padding-bottom:7px; margin-left:0; margin-right:0; border-bottom:solid 1px #d3d3d3">
+<div class="row justify-content-between align-items-center sticky-top" style="background-color:white; padding-bottom:7px; margin-left:0; margin-right:0; padding-top:7px; border-bottom:solid 1px #d3d3d3">
     @if(ShowFilter) {
     <div style="display:flex; flex-direction:row" class="filterRow">
         <input @ref="filterTextInput" autocomplete="off" type="text" id="textFilter" class="form-control form-control-sm filterInput" @onkeydown="@(async e => await OnTextFilterKeyDown(e))" @bind-value="@TextFilter" @bind-value:event="oninput" placeholder="Find or add" @onfocusout="OnTextFilterBlur" />
