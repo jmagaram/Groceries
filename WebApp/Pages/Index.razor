@@ -1,14 +1,15 @@
 ﻿@page "/"
 <h1>Groceries</h1>
-<style>
-/*    elix-menu-button::part(source) {
-        background: pink;
-        border:none;
-    }
-*/</style>
 <a href="shoppinglist">Shopping list</a>
 <hr />
-<elix-calendar-month-navigator></elix-calendar-month-navigator>
+<ElixMenuButton OnMenuItemSelected="MenuSelected" OnOpenedChange="MenuOpenedChange">
+    <Content>
+        <elix-menu-item id="a">A</elix-menu-item>
+        <elix-menu-item id="b">B</elix-menu-item>
+        <elix-menu-item id="c">C</elix-menu-item>
+    </Content>
+</ElixMenuButton>
+<hr />
 <elix-menu-button id="sampleMenuButton" aria-label="Sample Menu">
     <elix-menu-item>New Tab</elix-menu-item>
     <elix-menu-item>New Window</elix-menu-item>
@@ -20,15 +21,13 @@
     <elix-menu-item>Zoom</elix-menu-item>
     <elix-menu-item>Settings</elix-menu-item>
 </elix-menu-button>
-<elix-menu-button source-part-type="div">
-    <span slot="source">open the menu!</span> @*this is going inside the Source part*@
-    <elix-menu-item>One</elix-menu-item>
-    <elix-menu-item>Two</elix-menu-item>
-    <elix-menu-separator></elix-menu-separator>
-    <elix-menu-item>Three</elix-menu-item>
-    <elix-menu-item>Four</elix-menu-item>
-    <div class="popup">
-        @*        <elix-menu id="sampleMenuButton" aria-label="Sample Menu">*@
-        @*      </elix-menu>*@
-    </div>
-</elix-menu-button>
+
+@code {
+    public void MenuSelected(string id) {
+        System.Diagnostics.Debug.WriteLine(id);
+    }
+
+    public void MenuOpenedChange(bool isOpened) {
+        System.Diagnostics.Debug.WriteLine(isOpened);
+    }
+}
