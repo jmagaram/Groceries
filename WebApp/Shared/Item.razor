@@ -147,8 +147,8 @@
 @code {
 
     ElementReference ContextMenu;
-    DotNetObjectReference<InvokeActionHelper<string>> _contextMenuCallback;
-    DotNetObjectReference<InvokeActionHelper<bool>> _isMenuOpened;
+    DotNetObjectReference<CallbackHelper<string>> _contextMenuCallback;
+    DotNetObjectReference<CallbackHelper<bool>> _isMenuOpened;
 
     enum MenuChoice {
         Complete,
@@ -163,10 +163,10 @@
     protected override async Task OnAfterRenderAsync(bool firstRender) {
         await base.OnAfterRenderAsync(firstRender);
         if (firstRender) {
-            InvokeActionHelper<string> invokeHelper = new InvokeActionHelper<string>(OnClose);
+            CallbackHelper<string> invokeHelper = new CallbackHelper<string>(OnClose);
             _contextMenuCallback = DotNetObjectReference.Create(invokeHelper);
             await JSRuntime.InvokeVoidAsync("ElixMenuButton.addCloseEventListener", ContextMenu, "WebApp", "Invoke", _contextMenuCallback);
-            InvokeActionHelper<bool> openClosedHelper = new InvokeActionHelper<bool>(OnOpenedOrClosed);
+            CallbackHelper<bool> openClosedHelper = new CallbackHelper<bool>(OnOpenedOrClosed);
             _isMenuOpened = DotNetObjectReference.Create(openClosedHelper);
             await JSRuntime.InvokeVoidAsync("ElixMenuButton.addOpenedChangeEventListener", ContextMenu, "WebApp", "Invoke", _isMenuOpened);
         }

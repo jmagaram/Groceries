@@ -3,10 +3,10 @@ using System.Threading.Tasks;
 using Microsoft.JSInterop;
 
 namespace WebApp.Common {
-    public class InvokeActionHelper<T> {
+    public class CallbackHelper<T> {
         private readonly Func<T,Task> _action;
 
-        public InvokeActionHelper(Func<T, Task> action) =>
+        public CallbackHelper(Func<T, Task> action) =>
             _action = action;
 
         [JSInvokable("WebApp")]

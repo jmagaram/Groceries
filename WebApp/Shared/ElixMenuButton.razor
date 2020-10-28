@@ -10,8 +10,8 @@
 @code {
     private ElementReference _menu;
     private CompositeDisposable _disposables = new CompositeDisposable();
-    private DotNetObjectReference<InvokeActionHelper<string>> _closeCallbackReference;
-    private DotNetObjectReference<InvokeActionHelper<bool>> _openedChangeCallbackReference;
+    private DotNetObjectReference<CallbackHelper<string>> _closeCallbackReference;
+    private DotNetObjectReference<CallbackHelper<bool>> _openedChangeCallbackReference;
 
     [Parameter]
     public EventCallback<string> OnMenuItemSelected { get; set; }
@@ -22,12 +22,12 @@
     protected override async Task OnAfterRenderAsync(bool firstRender) {
         await base.OnAfterRenderAsync(firstRender);
         if (firstRender) {
-            var _closeCallback = new InvokeActionHelper<string>(OnMenuItemSelectedCore);
+            var _closeCallback = new CallbackHelper<string>(OnMenuItemSelectedCore);
             _closeCallbackReference = DotNetObjectReference.Create(_closeCallback);
             _disposables.Add(_closeCallbackReference);
             await JSRuntime.InvokeVoidAsync("ElixMenuButton.addCloseEventListener", _menu, "WebApp", "Invoke", _closeCallbackReference);
 
-            var _openedChangeCallback = new InvokeActionHelper<bool>(OnOpenedChangeCore);
+            var _openedChangeCallback = new CallbackHelper<bool>(OnOpenedChangeCore);
             _openedChangeCallbackReference = DotNetObjectReference.Create(_openedChangeCallback);
             _disposables.Add(_openedChangeCallbackReference);
             await JSRuntime.InvokeVoidAsync("ElixMenuButton.addOpenedChangeEventListener", _menu, "WebApp", "Invoke", _openedChangeCallbackReference);
