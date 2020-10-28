@@ -2,13 +2,47 @@
 @using static Models.ItemFormModule;
 @using static Common.OptionExtensions;
 @using static Models.ItemFormModule.ItemFormExtensions;
+
 <style>
     .nav-pills li {
         margin-right: 5px;
     }
+
+    .modalDialog {
+        display: flex;
+        flex-direction: column;
+        width: 300px;
+        border: 1px solid black;
+        padding: 10px;
+        margin-left: auto;
+        margin-right: auto;
+        background-color: white;
+    }
+
+    .dialog3ColumnHeader {
+        display: flex;
+        flex-direction: row;
+        justify-content: space-between;
+        margin-bottom: 2ex;
+    }
+
+        .dialog3ColumnHeader > :nth-child(2) {
+            font-weight: bold;
+        }
+
+    .iconButton {
+        display: flex;
+        flex-direction: row;
+        margin-bottom: 4px;
+    }
+
+        .iconButton > :nth-child(1) {
+            font-weight: bold;
+            margin-right: 0.5em;
+        }
 </style>
 @if (Form != null) {
-    <div class="row justify-content-between align-items-center sticky-top" style="padding-bottom:7px; margin-left:0; margin-right:0; border-bottom:solid 1px #d3d3d3">
+    <div class="row justify-content-between align-items-center sticky-top" style="padding-bottom:7px; padding-top:7px; margin-left:0; margin-right:0; border-bottom:solid 1px #d3d3d3; background-color:white">
         <div class="col nav col-auto">
             @if (Form.ItemId.IsNone()) {
                 <h4>New item</h4>
@@ -83,64 +117,94 @@
             }
         </div>
         <div class="form-row align-items-center">
+            @{
+                string frequencyText = "";
+                if (Form.ScheduleKind.IsRepeat) {
+                    frequencyText = Models.ItemFormModule.frequencyAsText(Form.Frequency);
+                }
+                else {
+                    frequencyText = "Only once";
+                }
+            }
+            <button class="iconButton btn btn-outline-dark" style="margin-left:5px" @onclick:preventDefault @onclick="ShowFrequencyDialog">
+                <div>
+                    @if (Form.ScheduleKind.IsRepeat) {<span style="color:blue" class="oi oi-loop-circular"></span>}
+                    else { <span class="oi oi-loop-circular" style="opacity:0.2"></span>}
+            </div><div>@frequencyText</div>
+        </button>
+        @if (Form.ScheduleKind.IsRepeat) {
+        <div class="col-auto">
+            <div class="form-check" style="margin-left: 5px;">
+                <input @onchange="OnPostponeToggle" checked="@Form.Postpone.IsSome()" class="form-check-input" type="checkbox" value="" id="postponeToggle" required>
+                <label class="form-check-label" for="postponeToggle">
+                    Postpone
+                </label>
+            </div>
+        </div>
+            Dictionary<string, object> attr = new Dictionary<string, object>();
+            if (Form.Postpone.IsNone()) {
+                attr.Add("style", "visibility:hidden");
+            }
             <div class="col-auto">
-                <label for="selectFrequency">Frequency</label>
-                <select class="form-control" @onchange="OnRepeatChange" id="selectFrequency">
-                    @foreach (var i in Form.FrequencyChoices()) {
-                        string description = Models.ItemFormModule.frequencyAsText(i);
-                        string key = i.Item.ToString();
-                        bool isSelected = i.Equals(Form.Frequency);
-                        <option selected="@isSelected" value="@key">@description</option>
+                <select @attributes="@attr" class="form-control" @onchange="OnPostponeChange">
+                    @foreach (var i in Form.PostponeChoices()) {
+                        string description = Models.ItemFormModule.postponeDurationAsText(i);
+                        string key = i.ToString();
+                        bool isSelected = Form.Postpone.IsSomeValue(i);
+                        <option selected="@isSelected" value="@key">+@description</option>
                     }
-                    <option selected="@(!Form.ScheduleKind.IsRepeat)" value="@notRepeating">Only once</option>
                 </select>
             </div>
-            @if (Form.ScheduleKind.IsRepeat) {
-                <div class="col-auto">
-                    <label>&nbsp;</label>
-                    <div class="form-check" style="margin-left: 5px;">
-                        <input @onchange="OnPostponeToggle" checked="@Form.Postpone.IsSome()" class="form-check-input" type="checkbox" value="" id="postponeToggle" required>
-                        <label class="form-check-label" for="postponeToggle">
-                            Postpone
-                        </label>
-                    </div>
-                </div>
-                Dictionary<string, object> attr = new Dictionary<string, object>();
-                if (Form.Postpone.IsNone()) {
-                    attr.Add("style", "visibility:hidden");
-                }
-                <div class="col-auto">
-                    <label>&nbsp;</label>
-                    <select @attributes="@attr" class="form-control" @onchange="OnPostponeChange">
-                        @foreach (var i in Form.PostponeChoices()) {
-                            string description = Models.ItemFormModule.postponeDurationAsText(i);
-                            string key = i.ToString();
-                            bool isSelected = Form.Postpone.IsSomeValue(i);
-                            <option selected="@isSelected" value="@key">+@description</option>
-                        }
-                    </select>
-                </div>
-            }
-        </div>
-        @if (!Form.Stores.IsEmpty) {
-            <div class="form-group">
-                <label style="margin-top:15px">Stores</label>
-                @foreach (var i in Form.Stores) {
-                    <div class="form-check">
-                        <input class="form-check-input" type="checkbox" @oninput="e =>OnStoreChange(e, i.Store.StoreId)" id="@i.Store.StoreId" name="@i.Store.StoreId" checked="@i.IsSold" />
-                        <label class="form-check-label" for="@i.Store.StoreId">@i.Store.StoreName.Item</label>
-                    </div>
-                }
-            </div>
         }
+    </div>
+    @if (!Form.Stores.IsEmpty) {
         <div class="form-group">
-            <label for="noteTextArea">Note</label>
-            <textarea id="noteTextArea" class="form-control" style="width:400px" rows="3" @oninput="OnNoteChange" @onfocusout="OnNoteFocusOut" placeholder="preferred brand, extra soft!, ..." value="@Form.Note.ValueCommitted" />
-            @if (Form.NoteValidation().IsError) {
-                <small class="form-text text-danger">@Form.NoteValidation().ErrorValue</small>
+            <label style="margin-top:15px">Stores</label>
+            @foreach (var i in Form.Stores) {
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" @oninput="e =>OnStoreChange(e, i.Store.StoreId)" id="@i.Store.StoreId" name="@i.Store.StoreId" checked="@i.IsSold" />
+                    <label class="form-check-label" for="@i.Store.StoreId">@i.Store.StoreName.Item</label>
+                </div>
             }
         </div>
-    </form>
+    }
+    <div class="form-group">
+        <label for="noteTextArea">Note</label>
+        <textarea id="noteTextArea" class="form-control" style="width:400px" rows="3" @oninput="OnNoteChange" @onfocusout="OnNoteFocusOut" placeholder="preferred brand, extra soft!, ..." value="@Form.Note.ValueCommitted" />
+        @if (Form.NoteValidation().IsError) {
+            <small class="form-text text-danger">@Form.NoteValidation().ErrorValue</small>
+        }
+    </div>
+    <ElixDialog @bind-IsOpen="@IsFrequencyDialogOpen" @bind-IsOpen:event="IsOpenChanged">
+        <Content>
+            <div class="modalDialog">
+                <div class="dialog3ColumnHeader">
+                    <div>&nbsp;</div>
+                    <div>Frequency</div>
+                    <div>
+                        <button class="btn btn-sm btn-link" @onclick="HideFrequencyDialog" @onclick:preventDefault>Cancel</button>
+                    </div>
+                </div>
+                @foreach (var i in Form.FrequencyChoices()) {
+                    string description = Models.ItemFormModule.frequencyAsText(i);
+                    bool isSelected = Form.ScheduleKind.IsRepeat && i.Equals(Form.Frequency);
+                    <button class="iconButton btn btn-sm btn-outline-secondary" @onclick="_=>OnFrequencySelect(i.Item)" @onclick:preventDefault>
+                        <div>
+                            @if (isSelected) {<span class="oi oi-caret-right" aria-hidden="true"></span>}
+                            else {<span></span>}
+                        </div><div>@description</div>
+                    </button>
+                }
+                <button class="iconButton btn btn-sm btn-outline-secondary" @onclick="_=>OnFrequencySelect(notRepeating)" @onclick:preventDefault>
+                    <div>
+                        @if (!Form.ScheduleKind.IsRepeat) {<span class="oi oi-caret-right" aria-hidden="true"></span>}
+                        else { <span></span>}
+                    </div><div>Does not repeat</div>
+                </button>
+            </div>
+        </Content>
+    </ElixDialog>
+</form>
 }
 else {
-    <p>Loading...</p>}
+<p>Loading...</p>}

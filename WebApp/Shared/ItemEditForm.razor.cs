@@ -16,6 +16,13 @@ namespace WebApp.Shared {
         [Parameter]
         public CoreTypes.ItemForm Form { get; set; }
 
+        public bool IsFrequencyDialogOpen { get; set; }
+
+        public void ShowFrequencyDialog() => IsFrequencyDialogOpen = true;
+
+        public void HideFrequencyDialog() => IsFrequencyDialogOpen = false;
+
+
         private void Process(FormMessage msg) =>
             OnItemFormMessage.InvokeAsync(msg);
 
@@ -96,6 +103,23 @@ namespace WebApp.Shared {
         }
 
         const int notRepeating = -1;
+
+        protected void OnFrequencySelect(int d) {
+            if (d == notRepeating) {
+                var removePostpone = FormMessage.PostponeClear;
+                var scheduleOnce = FormMessage.ScheduleOnce;
+                var trans = FormMessage.NewTransaction(new List<FormMessage> { removePostpone, scheduleOnce });
+                Process(trans);
+                HideFrequencyDialog();
+            }
+            else {
+                var scheduleIsRepeat = FormMessage.ScheduleRepeat;
+                var setFrequency = FormMessage.NewFrequencySet(d);
+                var trans = FormMessage.NewTransaction(new List<FormMessage> { scheduleIsRepeat, setFrequency });
+                Process(trans);
+                HideFrequencyDialog();
+            }
+        }
 
         protected void OnRepeatChange(ChangeEventArgs e) {
             if (int.TryParse((string)(e.Value), out int d)) {
