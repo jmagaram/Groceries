@@ -3,26 +3,45 @@
 <a href="shoppinglist">Shopping list</a>
 <hr />
 <ElixMenuButton OnMenuItemSelected="MenuSelected" OnOpenedChange="MenuOpenedChange">
-    <Content>
-        <elix-menu-item id="a">A</elix-menu-item>
-        <elix-menu-item id="b">B</elix-menu-item>
-        <elix-menu-item id="c">C</elix-menu-item>
-    </Content>
-</ElixMenuButton>
+        <Content>
+            <elix-menu-item id="a">A</elix-menu-item>
+            <elix-menu-item id="b">B</elix-menu-item>
+            <elix-menu-item id="c">C</elix-menu-item>
+        </Content>
+    </ElixMenuButton>
 <hr />
-<elix-menu-button id="sampleMenuButton" aria-label="Sample Menu">
-    <elix-menu-item>New Tab</elix-menu-item>
-    <elix-menu-item>New Window</elix-menu-item>
-    <elix-menu-separator></elix-menu-separator>
-    <elix-menu-item>History</elix-menu-item>
-    <elix-menu-item>Downloads</elix-menu-item>
-    <elix-menu-item>Bookmarks</elix-menu-item>
-    <elix-menu-separator></elix-menu-separator>
-    <elix-menu-item>Zoom</elix-menu-item>
-    <elix-menu-item>Settings</elix-menu-item>
-</elix-menu-button>
+<button @onclick="OpenDialog">open dialog!</button>
+
+<ElixDialog @bind-IsOpen="@IsOpen">
+    <Content>
+        <p>Save changes?</p>
+        <button @onclick="CloseDialog">Ok</button>
+        <button @onclick="CloseDialog">Cancel</button>
+    </Content>
+</ElixDialog>
 
 @code {
+    private bool _isOpen;
+
+    public void OpenDialog(MouseEventArgs e) {
+        IsOpen = true;
+    }
+
+    public void CloseDialog(MouseEventArgs e) {
+        IsOpen = false;
+    }
+
+    public bool IsOpen
+    {
+        get { return _isOpen; }
+        set
+        {
+            if (_isOpen != value) {
+                _isOpen = value;
+            }
+        }
+    }
+
     public void MenuSelected(string id) {
         System.Diagnostics.Debug.WriteLine(id);
     }
