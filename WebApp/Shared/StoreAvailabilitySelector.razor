@@ -1,0 +1,73 @@
+﻿@using static Models.CoreTypes
+<style>
+    .modalDialog {
+        display: flex;
+        flex-direction: column;
+        width: 300px;
+        padding: 10px;
+        margin-left: auto;
+        margin-right: auto;
+        background-color: white;
+    }
+
+    .dialog3ColumnHeader {
+        display: flex;
+        flex-direction: row;
+        justify-content: space-between;
+        margin-bottom: 2ex;
+    }
+
+        .dialog3ColumnHeader > :nth-child(2) {
+            font-weight: bold;
+        }
+
+    .checkBoxRow {
+        margin-bottom: 6px;
+    }
+</style>
+
+<div class="modalDialog">
+    <div class="dialog3ColumnHeader">
+        <div>
+            <button class="btn btn-sm btn-link" @onclick="_=>OnCancel.InvokeAsync(null)" @onclick:preventDefault>Cancel</button>
+        </div>
+        <div>Stores</div>
+        <div>
+            <button class="btn btn-sm btn-link" @onclick="OnSubmit" @onclick:preventDefault>Done</button>
+        </div>
+    </div>
+    @foreach (var i in Availability.OrderBy(j => j.Store.StoreName)) {
+        <div class="form-check checkBoxRow">
+            <input class="form-check-input" type="checkbox" @oninput="e =>Change(i.Store,(bool)e.Value)" id="@i.Store.StoreId" checked="@i.IsSold" />
+            <label class="form-check-label" for="@i.Store.StoreId">@i.Store.StoreName.Item</label>
+        </div>
+    }
+</div>
+
+@code {
+    Dictionary<Store, bool> _availability;
+
+    protected void Change(Store s, bool isSold) => _availability[s]=isSold;
+
+    protected override void OnParametersSet() {
+        base.OnParametersSet();
+        _availability = new Dictionary<Store, bool>();
+        foreach (var i in Availability) {
+            _availability.Add(i.Store, i.IsSold);
+        }
+    }
+
+    protected async Task OnSubmit() {
+        var result = _availability.Select(i => new ItemAvailability(i.Key, i.Value)).ToArray();
+        await OnChoose.InvokeAsync(result);
+    }
+
+    [Parameter]
+    public ItemAvailability[] Availability { get; set; }
+
+    [Parameter]
+    public EventCallback<ItemAvailability[]> OnChoose { get; set; }
+
+    [Parameter]
+    public EventCallback OnCancel { get; set; }
+}

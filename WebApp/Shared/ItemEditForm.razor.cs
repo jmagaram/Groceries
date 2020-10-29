@@ -18,6 +18,22 @@ namespace WebApp.Shared {
 
         public bool IsFrequencyDialogOpen { get; set; }
 
+        public bool IsStoreAvailabilityDialogOpen { get; set; }
+
+        public void ShowStoreAvailabilityDialog() => IsStoreAvailabilityDialogOpen = true;
+
+        public void HideStoreAvailabilityDialog() => IsStoreAvailabilityDialogOpen = false;
+
+        public void ProcessStoreAvailability(IEnumerable<CoreTypes.ItemAvailability> result) {
+            List<FormMessage> messages = new List<FormMessage>();
+            foreach (var r in result) {
+                messages.Add(FormMessage.NewStoresSetAvailability(r.Store.StoreId, r.IsSold));
+            }
+            var transaction = FormMessage.NewTransaction(messages);
+            Process(transaction);
+            HideStoreAvailabilityDialog();
+        }
+
         public void ShowFrequencyDialog() => IsFrequencyDialogOpen = true;
 
         public void HideFrequencyDialog() => IsFrequencyDialogOpen = false;
