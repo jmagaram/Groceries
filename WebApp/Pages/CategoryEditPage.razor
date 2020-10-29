@@ -11,40 +11,30 @@
 @using StateMessage = Models.StateTypes.StateMessage;
 @using TextBoxMessage = Models.CoreTypes.TextBoxMessage;
 
-<style>
-    .nav-pills li {
-        margin-right: 5px;
-    }
-</style>
-
 @if (Form != null) {
-    @if (Form.Mode().IsCreateNewCategoryMode) {
-        <h3>New category</h3>
-    }
-    else {
-        <h3>Edit category</h3>
-    }
+    string pageTitle = Form.Mode().IsCreateNewCategoryMode ? "New category" : "Edit category";
+    string categoryNameClass = Form.CategoryNameErrors().IsSome() ? "is-invalid" : "";
+    <nav class="navbar navbar-dark bg-dark sticky-top">
+        <span class="navbar-text">@pageTitle</span>
+        <form class="form-inline">
+            <div role="group">
+                @if (Form.Mode().IsEditExistingCategoryMode) {
+                    <button style="margin-right:5px" type="button" class="btn btn-secondary" @onclick="OnDelete"><span class="oi oi-trash" aria-hidden="true"></span></button>
+                }
+                <button type="button" class="btn btn-primary" @onclick="OnSubmit" disabled="@(Form.HasErrors())">Done</button>
+            </div>
+        </form>
+    </nav>
     <form>
         <div class="form-group">
-            <label for="categoryNameInput">Category name</label>
-            <input id="categoryNameInput" class="form-control" @oninput="OnNameChange" @onfocusout="OnNameFocusOut" value="@Form.CategoryName.ValueCommitted" />
-            @if (Form.CategoryNameErrors().IsSome()) {
-                <small class="form-text text-danger">
-                    @Form.CategoryNameErrors().Value
-                </small>
-            }
+            <label for="inputCategoryName" class="col-sm-2 col-form-label">Category name</label>
+            <div class="col-sm-10">
+                <input type="text" class="form-control @categoryNameClass" id="inputCategoryName" @oninput="OnNameChange" @onfocusout="OnNameFocusOut" value="@Form.CategoryName.ValueCommitted">
+                @if (Form.CategoryNameErrors().IsSome()) {
+                    <div class="invalid-feedback">@Form.CategoryNameErrors().Value</div>
+                }
+            </div>
         </div>
-
-        <ul class="nav nav-pills">
-            @if (Form.Mode().IsEditExistingCategoryMode) {
-                <li>
-                    <button class="btn btn-secondary" type="button" @onclick="OnDelete"><span class="oi oi-trash" aria-hidden="true"></span></button>
-                </li>
-            }
-            <li>
-                <button class="btn btn-primary" type="button" @onclick="OnSubmit" disabled="@(Form.HasErrors())">Submit</button>
-            </li>
-        </ul>
     </form>
 }
 else {
@@ -116,7 +106,7 @@ else {
         var pageMessage = PageMessage.SubmitCategoryEditForm;
         var stateMessage = StateMessage.NewCategoryEditPageMessage(pageMessage);
         Dispose();
-        Navigation.NavigateTo ("shoppinglist");
+        Navigation.NavigateTo("shoppinglist");
         await StateService.UpdateAsync(stateMessage);
     }
 }
