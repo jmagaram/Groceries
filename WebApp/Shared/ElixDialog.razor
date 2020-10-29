@@ -1,5 +1,5 @@
 ﻿<elix-dialog @bind-opened="@IsOpen" @bind-opened:event="openedchange">
-    @Content
+    @ChildContent
 </elix-dialog>
 
 @code {
@@ -7,7 +7,7 @@
     bool _isOpenChanged = false;
 
     [Parameter]
-    public RenderFragment Content { get; set; }
+    public RenderFragment ChildContent { get; set; }
 
     [Parameter]
     public bool IsOpen
