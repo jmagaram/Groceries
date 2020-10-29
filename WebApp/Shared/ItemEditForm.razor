@@ -177,17 +177,6 @@
                 </button>
             }
         }
-        @if (!Form.Stores.IsEmpty) {
-            <div class="form-group">
-                <label style="margin-top:15px">Stores</label>
-                @foreach (var i in Form.Stores) {
-                    <div class="form-check">
-                        <input class="form-check-input" type="checkbox" @oninput="e =>OnStoreChange(e, i.Store.StoreId)" id="@i.Store.StoreId" name="@i.Store.StoreId" checked="@i.IsSold" />
-                        <label class="form-check-label" for="@i.Store.StoreId">@i.Store.StoreName.Item</label>
-                    </div>
-                }
-            </div>
-        }
         <div class="form-group">
             <label for="noteTextArea">Note</label>
             <textarea id="noteTextArea" class="form-control" style="width:400px" rows="3" @oninput="OnNoteChange" @onfocusout="OnNoteFocusOut" placeholder="preferred brand, extra soft!, ..." value="@Form.Note.ValueCommitted" />
