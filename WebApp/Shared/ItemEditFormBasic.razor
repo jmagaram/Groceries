@@ -29,8 +29,8 @@
     </nav>
     <form class="col">
         <div class="form-group form-row" style="margin-top:5px">
-            <label for="inputItemName" class="col-sm-2 col-form-label">Item</label>
-            <div class="col-sm-10">
+            <label for="inputItemName" class="col-xs-3 col-form-label">Item</label>
+            <div class="col-9">
                 <input type="text" class="form-control @itemNameClass" id="inputItemName" placeholder="Apples, Chocolate, Canned..." @oninput="OnItemNameChange" @onfocusout="OnItemNameFocusOut" value="@Form.ItemName.ValueCommitted">
                 @if (Form.ItemNameValidation().IsError) {
                     <div class="invalid-feedback">@Form.ItemNameValidation().ErrorValue</div>
@@ -38,8 +38,8 @@
             </div>
         </div>
         <div class="form-group form-row">
-            <label for="inputQuantity" class="col-sm-2 col-form-label">Quantity</label>
-            <div class="col-sm-10">
+            <label for="inputQuantity" class="col-xs-3 col-form-label">Quantity</label>
+            <div class="col-7">
                 <input type="text" class="form-control @quantityClass" id="inputQuantity" placeholder="3 bags, 2 pounds, lots!, ..." @oninput="OnQuantityChange" @onfocusout="OnQuantityFocusOut" value="@Form.Quantity.ValueCommitted">
                 @if (Form.QuantityValidation().IsError) {
                     <div class="invalid-feedback">@Form.QuantityValidation().ErrorValue</div>
@@ -47,7 +47,7 @@
             </div>
         </div>
         <div class="form-group form-row">
-            <label for="inputCategory" class="col-sm-2 col-form-label">Category</label>
+            <label for="inputCategory" class="col-xs-3 col-form-label">Category</label>
             <div class="col-auto" style="padding-right:0px">
                 <select class="form-control" id="inputCategory" @onchange="OnExistingCategoryChange">
                     <option selected="@(Form.CategoryMode.IsChooseExisting && Form.CategoryChoice.IsNone())" value="@chooseUncategorized">Uncategorized</option>
@@ -64,7 +64,7 @@
                 </select>
             </div>
             @if (Form.CategoryMode.IsCreateNew) {
-                <div class="col-sm-4">
+                <div class="col-4">
                     <input type="text" class="form-control @newCategoryNameClass" id="inputNewCategoryName" placeholder="New category name" value="@Form.NewCategoryName.ValueCommitted" @oninput="OnNewCategoryNameChange" @onfocusout="OnNewCategoryNameFocusOut">
                     @if (Form.CategoryNameValidation().IsError) {
                         <div class="invalid-feedback">@Form.CategoryNameValidation().ErrorValue</div>
@@ -73,7 +73,7 @@
             }
         </div>
         <div class="form-group form-row" style="margin-bottom:0.5rem">
-            <label for="inputFrequency" class="col-sm-2 col-form-label">Frequency</label>
+            <label for="inputFrequency" class="col-xs-3 col-form-label">Frequency</label>
             <div class="col-auto">
                 <select class="form-control" id="inputFrequency" @onchange="OnRepeatChange">
                     @foreach (var i in Form.FrequencyChoices()) {
@@ -92,7 +92,7 @@
                 attr.Add("style", "visibility:hidden");
             }
             <div class="form-group form-row">
-                <label for="inputPostpone" class="col-sm-2 col-form-label"></label>
+                <label for="inputPostpone" class="col-xs-3 col-form-label"></label>
                 <div class="form-check col-auto" style="margin-top:7px; margin-left:16px">
                     <input @onchange="OnPostponeToggle" checked="@Form.Postpone.IsSome()" class="form-check-input" type="checkbox" id="postponeCheck" value="">
                     <label class="form-check-label" for="postponeCheck">Postpone</label>
@@ -110,8 +110,8 @@
             </div>
         }
         <div class="form-group form-row">
-            <label for="inputNote" class="col-sm-2 col-form-label">Note</label>
-            <div class="col-sm-10">
+            <label for="inputNote" class="col-xs-3 col-form-label">Note</label>
+            <div class="col-9">
                 <textarea rows="3" class="form-control @noteClass" id="inputNote" placeholder="Preferred brand, ..." @oninput="OnNoteChange" @onfocusout="OnNoteFocusOut" value="@Form.Note.ValueCommitted"></textarea>
                 @if (Form.NoteValidation().IsError) {
                     <div class="invalid-feedback">@Form.NoteValidation().ErrorValue</div>
@@ -120,8 +120,8 @@
         </div>
         @if (!Form.Stores.IsEmpty) {
             <div class="form-group form-row">
-                <div class="col-sm-2">Stores</div>
-                <div class="col-sm-10">
+                <div class="col-xs-3">Stores</div>
+                <div class="col-9">
                     @foreach (var i in Form.Stores) {
                         <div class="form-check">
                             <input class="form-check-input" type="checkbox" @oninput="e =>OnStoreChange(e, i.Store.StoreId)" id="@i.Store.StoreId" name="@i.Store.StoreId" checked="@i.IsSold">
