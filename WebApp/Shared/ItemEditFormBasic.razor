@@ -10,128 +10,126 @@
     string newCategoryNameClass = Form.CategoryNameValidation().IsError ? "is-invalid" : "";
     string noteClass = Form.NoteValidation().IsError ? "is-invalid" : "";
 
-    <nav class="navbar navbar-dark bg-dark sticky-top">
-        <span class="navbar-text">@pageTitle</span>
-        <form class="form-inline">
-            <div role="group">
-                @if (Form.CanDelete()) {
-                    <button style="margin-right:5px" type="button" class="btn btn-secondary" @onclick="OnDelete"><span class="oi oi-trash" aria-hidden="true"></span></button>
+<nav class="navbar navbar-dark bg-dark sticky-top">
+    <span class="navbar-text">@pageTitle</span>
+    <form class="form-inline">
+        <div role="group">
+            @if (Form.CanDelete()) {
+            <button style="margin-right:5px" type="button" class="btn btn-secondary" @onclick="OnDelete"><span class="oi oi-trash" aria-hidden="true"></span></button>
                 }
-                @if (!Form.ScheduleKind.IsCompleted) {
-                    <button type="button" class="btn btn-secondary" disabled="@Form.HasErrors()" @onclick="OnSubmitPurchased">Complete</button>
-                    <button type="button" class="btn btn-primary" disabled="@Form.HasErrors()" @onclick="OnSaveChanges">Save</button>
+            @if (!Form.ScheduleKind.IsCompleted) {
+            <button type="button" class="btn btn-secondary" disabled="@Form.HasErrors()" @onclick="OnSubmitPurchased">Complete</button>
+            <button type="button" class="btn btn-primary" disabled="@Form.HasErrors()" @onclick="OnSaveChanges">Save</button>
                 }
                 else {
-                    <button type="button" class="btn btn-primary" disabled="@Form.HasErrors()" @onclick="AddToShoppingListAgain">Buy again</button>
+            <button type="button" class="btn btn-primary" disabled="@Form.HasErrors()" @onclick="AddToShoppingListAgain">Buy again</button>
                 }
-            </div>
-        </form>
-    </nav>
-    <form class="col">
-        <div class="form-group form-row" style="margin-top:5px">
-            <label for="inputItemName" class="col-xs-3 col-form-label">Item</label>
-            <div class="col-9">
-                <input type="text" class="form-control @itemNameClass" id="inputItemName" placeholder="Apples, Chocolate, Canned..." @oninput="OnItemNameChange" @onfocusout="OnItemNameFocusOut" value="@Form.ItemName.ValueCommitted">
-                @if (Form.ItemNameValidation().IsError) {
-                    <div class="invalid-feedback">@Form.ItemNameValidation().ErrorValue</div>
-                }
-            </div>
         </div>
-        <div class="form-group form-row">
-            <label for="inputQuantity" class="col-xs-3 col-form-label">Quantity</label>
-            <div class="col-7">
-                <input type="text" class="form-control @quantityClass" id="inputQuantity" placeholder="3 bags, 2 pounds, lots!, ..." @oninput="OnQuantityChange" @onfocusout="OnQuantityFocusOut" value="@Form.Quantity.ValueCommitted">
-                @if (Form.QuantityValidation().IsError) {
-                    <div class="invalid-feedback">@Form.QuantityValidation().ErrorValue</div>
+    </form>
+</nav>
+<form class="col">
+    <div class="form-group form-row" style="margin-top:5px">
+        <label for="inputItemName" class="col-xs-3 col-form-label">Item</label>
+        <div class="col-9">
+            <input type="text" class="form-control @itemNameClass" id="inputItemName" placeholder="Apples, Chocolate, Canned..." @oninput="OnItemNameChange" @onfocusout="OnItemNameFocusOut" value="@Form.ItemName.ValueCommitted">
+            @if (Form.ItemNameValidation().IsError) {
+            <div class="invalid-feedback">@Form.ItemNameValidation().ErrorValue</div>
                 }
-            </div>
         </div>
-        <div class="form-group form-row">
-            <label for="inputCategory" class="col-xs-3 col-form-label">Category</label>
-            <div class="col-auto" style="padding-right:0px">
-                <select class="form-control" id="inputCategory" @onchange="OnExistingCategoryChange">
-                    <option selected="@(Form.CategoryMode.IsChooseExisting && Form.CategoryChoice.IsNone())" value="@chooseUncategorized">Uncategorized</option>
-                    @foreach (var i in Form.CategoryChoiceList) {
+    </div>
+    <div class="form-group form-row">
+        <label for="inputQuantity" class="col-xs-3 col-form-label">Quantity</label>
+        <div class="col-7">
+            <input type="text" class="form-control @quantityClass" id="inputQuantity" placeholder="3 bags, 2 pounds, lots!, ..." @oninput="OnQuantityChange" @onfocusout="OnQuantityFocusOut" value="@Form.Quantity.ValueCommitted">
+            @if (Form.QuantityValidation().IsError) {
+            <div class="invalid-feedback">@Form.QuantityValidation().ErrorValue</div>
+                }
+        </div>
+    </div>
+    <div class="form-group form-row">
+        <label for="inputCategory" class="col-xs-3 col-form-label">Category</label>
+        <div class="col-auto">
+            <select class="form-control" id="inputCategory" @onchange="OnExistingCategoryChange">
+                <option selected="@(Form.CategoryMode.IsChooseExisting && Form.CategoryChoice.IsNone())" value="@chooseUncategorized">Uncategorized</option>
+                @foreach (var i in Form.CategoryChoiceList) {
                         string description = i.CategoryName.Item;
                         string key = i.CategoryId.Item.ToString();
                         bool isSelected = Form.CategoryMode.IsChooseExisting && Form.CategoryChoice.IsSomeValue(i);
-                        <option selected="@isSelected" value="@key">
-                            @description
-                        </option>
+                <option selected="@isSelected" value="@key">
+                    @description
+                </option>
                     }
-                    <option selected="@Form.CategoryMode.IsCreateNew" value="@chooseCreateNewCategory">New category...</option>
-                    }
-                </select>
-            </div>
+                <option selected="@Form.CategoryMode.IsCreateNew" value="@chooseCreateNewCategory">New category...</option>
+                }
+            </select>
             @if (Form.CategoryMode.IsCreateNew) {
-                <div class="col-4">
-                    <input type="text" class="form-control @newCategoryNameClass" id="inputNewCategoryName" placeholder="New category name" value="@Form.NewCategoryName.ValueCommitted" @oninput="OnNewCategoryNameChange" @onfocusout="OnNewCategoryNameFocusOut">
-                    @if (Form.CategoryNameValidation().IsError) {
-                        <div class="invalid-feedback">@Form.CategoryNameValidation().ErrorValue</div>
+            <input type="text" class="form-control @newCategoryNameClass" style="margin-top:0.5rem" id="inputNewCategoryName" placeholder="New category name" value="@Form.NewCategoryName.ValueCommitted" @oninput="OnNewCategoryNameChange" @onfocusout="OnNewCategoryNameFocusOut">
+            @if (Form.CategoryNameValidation().IsError) {
+            <div class="invalid-feedback">@Form.CategoryNameValidation().ErrorValue</div>
                     }
-                </div>
             }
         </div>
-        <div class="form-group form-row" style="margin-bottom:0.5rem">
-            <label for="inputFrequency" class="col-xs-3 col-form-label">Frequency</label>
-            <div class="col-auto">
-                <select class="form-control" id="inputFrequency" @onchange="OnRepeatChange">
-                    @foreach (var i in Form.FrequencyChoices()) {
+    </div>
+    <div class="form-group form-row" style="margin-bottom:0.5rem">
+        <label for="inputFrequency" class="col-xs-3 col-form-label">Frequency</label>
+        <div class="col-auto">
+            <select class="form-control" id="inputFrequency" @onchange="OnRepeatChange">
+                @foreach (var i in Form.FrequencyChoices()) {
                         string description = Models.ItemFormModule.frequencyAsText(i);
                         string key = i.Item.ToString();
                         bool isSelected = Form.ScheduleKind.IsRepeat && i.Equals(Form.Frequency);
-                        <option selected="@isSelected" value="@key">@description</option>
+                <option selected="@isSelected" value="@key">@description</option>
                     }
-                    <option selected="@(!Form.ScheduleKind.IsRepeat)" value="@notRepeating">Only once</option>
-                </select>
-            </div>
+                <option selected="@(!Form.ScheduleKind.IsRepeat)" value="@notRepeating">Only once</option>
+            </select>
         </div>
-        @if (Form.ScheduleKind.IsRepeat) {
+    </div>
+    @if (Form.ScheduleKind.IsRepeat) {
             var attr = new Dictionary<string, object>();
             if (Form.Postpone.IsNone()) {
                 attr.Add("style", "visibility:hidden");
             }
-            <div class="form-group form-row">
-                <label for="inputPostpone" class="col-xs-3 col-form-label"></label>
-                <div class="form-check col-auto" style="margin-top:7px; margin-left:16px">
-                    <input @onchange="OnPostponeToggle" checked="@Form.Postpone.IsSome()" class="form-check-input" type="checkbox" id="postponeCheck" value="">
-                    <label class="form-check-label" for="postponeCheck">Postpone</label>
-                </div>
-                <div class="col-auto" style="padding-left:0px">
-                    <select class="form-control" @attributes="@attr" id="inputPostpone" @onchange="OnPostponeChange">
-                        @foreach (var i in Form.PostponeChoices()) {
+    <div class="form-group form-row">
+        <label for="inputPostpone" class="col-xs-3 col-form-label"></label>
+        <div class="form-check col-auto" style="margin-top:7px; margin-left:16px">
+            <input @onchange="OnPostponeToggle" checked="@Form.Postpone.IsSome()" class="form-check-input" type="checkbox" id="postponeCheck" value="">
+            <label class="form-check-label" for="postponeCheck">Postpone</label>
+        </div>
+        <div class="col-auto" style="padding-left:0px">
+            <select class="form-control" @attributes="@attr" id="inputPostpone" @onchange="OnPostponeChange">
+                @foreach (var i in Form.PostponeChoices()) {
                             string description = Models.ItemFormModule.postponeDurationAsText(i);
                             string key = i.ToString();
                             bool isSelected = Form.Postpone.IsSomeValue(i);
-                            <option selected="@isSelected" value="@key">+@description</option>
+                <option selected="@isSelected" value="@key">+@description</option>
                         }
-                    </select>
-                </div>
-            </div>
-        }
-        <div class="form-group form-row">
-            <label for="inputNote" class="col-xs-3 col-form-label">Note</label>
-            <div class="col-9">
-                <textarea rows="3" class="form-control @noteClass" id="inputNote" placeholder="Preferred brand, ..." @oninput="OnNoteChange" @onfocusout="OnNoteFocusOut" value="@Form.Note.ValueCommitted"></textarea>
-                @if (Form.NoteValidation().IsError) {
-                    <div class="invalid-feedback">@Form.NoteValidation().ErrorValue</div>
-                }
-            </div>
+            </select>
         </div>
-        @if (!Form.Stores.IsEmpty) {
-            <div class="form-group form-row">
-                <div class="col-xs-3">Stores</div>
-                <div class="col-9">
-                    @foreach (var i in Form.Stores) {
-                        <div class="form-check">
-                            <input class="form-check-input" type="checkbox" @oninput="e =>OnStoreChange(e, i.Store.StoreId)" id="@i.Store.StoreId" name="@i.Store.StoreId" checked="@i.IsSold">
-                            <label class="form-check-label" for="@i.Store.StoreId">@i.Store.StoreName.Item</label>
-                        </div>
-                    }
-                </div>
-            </div>
+    </div>
         }
-    </form>
+    <div class="form-group form-row">
+        <label for="inputNote" class="col-xs-3 col-form-label">Note</label>
+        <div class="col-9">
+            <textarea rows="3" class="form-control @noteClass" id="inputNote" placeholder="Preferred brand, ..." @oninput="OnNoteChange" @onfocusout="OnNoteFocusOut" value="@Form.Note.ValueCommitted"></textarea>
+            @if (Form.NoteValidation().IsError) {
+            <div class="invalid-feedback">@Form.NoteValidation().ErrorValue</div>
+                }
+        </div>
+    </div>
+    @if (!Form.Stores.IsEmpty) {
+    <div class="form-group form-row">
+        <div class="col-xs-3">Stores</div>
+        <div class="col-9">
+            @foreach (var i in Form.Stores) {
+            <div class="form-check">
+                <input class="form-check-input" type="checkbox" @oninput="e =>OnStoreChange(e, i.Store.StoreId)" id="@i.Store.StoreId" name="@i.Store.StoreId" checked="@i.IsSold">
+                <label class="form-check-label" for="@i.Store.StoreId">@i.Store.StoreName.Item</label>
+            </div>
+                    }
+        </div>
+    </div>
+        }
+</form>
 }
 else {
-    <p>Loading...</p>}
+<p>Loading...</p>}
