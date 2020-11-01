@@ -1,50 +1,17 @@
 ﻿@page "/"
-<h1>Groceries</h1>
-<a href="shoppinglist">Shopping list</a>
-<hr />
-<ElixMenuButton OnMenuItemSelected="MenuSelected" OnOpenedChange="MenuOpenedChange">
-    <Content>
-        <elix-menu-item id="a">A</elix-menu-item>
-        <elix-menu-item id="b">B</elix-menu-item>
-        <elix-menu-item id="c">C</elix-menu-item>
-    </Content>
-</ElixMenuButton>
-<hr />
-<button @onclick="OpenDialog">open dialog!</button>
+    <div class="col">
+        <h1>Index</h1>
+        <hr />
+        <a href="/shoppinglist">Shopping list</a>
+        <div style="font-size:18pt">
+            <p><Icon Kind="IconKind.Shop" />&nbsp;Shop</p>
+            <p><Icon Kind="IconKind.Calendar" />&nbsp;Calendar</p>
+            <p><Icon Kind="IconKind.Check" />&nbsp;Check</p>
+            <p><Icon Kind="IconKind.CloudUpload" />&nbsp;Upload</p>
+            <p><Icon Kind="IconKind.Repeat" />&nbsp;Repeat</p>
+            <p><Icon Kind="IconKind.Trash" />&nbsp;Trash</p>
+        </div>
 
-<ElixDialog @bind-IsOpen="@IsOpen">
-    <p>Save changes?</p>
-    <button @onclick="CloseDialog">Ok</button>
-    <button @onclick="CloseDialog">Cancel</button>
-</ElixDialog>
-
-@code {
-    private bool _isOpen;
-
-    public void OpenDialog(MouseEventArgs e) {
-        IsOpen = true;
+    </div>
+    @code {
     }
-
-    public void CloseDialog(MouseEventArgs e) {
-        IsOpen = false;
-    }
-
-    public bool IsOpen
-    {
-        get { return _isOpen; }
-        set
-        {
-            if (_isOpen != value) {
-                _isOpen = value;
-            }
-        }
-    }
-
-    public void MenuSelected(string id) {
-        System.Diagnostics.Debug.WriteLine(id);
-    }
-
-    public void MenuOpenedChange(bool isOpened) {
-        System.Diagnostics.Debug.WriteLine(isOpened);
-    }
-}
