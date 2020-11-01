@@ -1,17 +1,18 @@
 ﻿@page "/"
-    <div class="col">
-        <h1>Index</h1>
-        <hr />
-        <a href="/shoppinglist">Shopping list</a>
-        <div style="font-size:18pt">
-            <p><Icon Kind="IconKind.Shop" />&nbsp;Shop</p>
-            <p><Icon Kind="IconKind.Calendar" />&nbsp;Calendar</p>
-            <p><Icon Kind="IconKind.Check" />&nbsp;Check</p>
-            <p><Icon Kind="IconKind.CloudUpload" />&nbsp;Upload</p>
-            <p><Icon Kind="IconKind.Repeat" />&nbsp;Repeat</p>
-            <p><Icon Kind="IconKind.Trash" />&nbsp;Trash</p>
-        </div>
-
+<div class="col">
+    <h1>Index</h1>
+    <hr />
+    <a href="/shoppinglist">Shopping list</a>
+    <div style="font-size:18pt">
+        <p><Icon Kind="IconKind.Shop" />&nbsp;Shop</p>
+        <p><Icon Kind="IconKind.Calendar" />&nbsp;Calendar</p>
+        <p><Icon Kind="IconKind.Check" />&nbsp;Check</p>
+        <p><Icon Kind="IconKind.CloudUpload" />&nbsp;Upload</p>
+        <p><Icon Kind="IconKind.Repeat" />&nbsp;Repeat</p>
+        <p><Icon Kind="IconKind.Trash" />&nbsp;Trash</p>
     </div>
-    @code {
-    }
+    <button @onclick="ThrowException">Throw exception</button>
+</div>
+@code {
+    public void ThrowException() => throw new InvalidOperationException("Purposely threw this!");
+}
