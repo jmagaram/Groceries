@@ -10,6 +10,8 @@ namespace WebApp.Shared {
         CloudUpload,
         Calendar,
         Trash,
-        Check
+        Check,
+        Search,
+        Cancel
     }
 }
