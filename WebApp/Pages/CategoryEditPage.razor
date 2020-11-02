@@ -13,7 +13,7 @@
 @if (Form != null) {
     string pageTitle = Form.Mode().IsCreateNewCategoryMode ? "New category" : "Edit category";
     string categoryNameClass = Form.CategoryNameErrors().IsSome() ? "is-invalid" : "";
-    <form>
+    <form onsubmit="return false;">
         <nav class="navbar navbar-dark bg-dark sticky-top">
             <span class="navbar-text">@pageTitle</span>
             <div class="form-inline">
