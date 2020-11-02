@@ -121,8 +121,9 @@ namespace WebApp.Pages {
             .DistinctUntilChanged()
             .Subscribe(i => Items = i.ToList());
 
-        private void OnNavigateToCategory(CategoryId id) {
+        private async Task OnNavigateToCategory(CategoryId id) {
             string categoryId = CategoryIdModule.serialize(id);
+            await ClearTextFilter();
             Navigation.NavigateTo($"categoryedit/{categoryId}");
         }
 
@@ -206,6 +207,8 @@ namespace WebApp.Pages {
         protected void OnTextFilterBlur(FocusEventArgs e) { }
 
         // Can probably get rid of this since I took out the Throttle ability
+        // But might be needed since not yet using a TextBox, and this caused
+        // problems with editing on ios 
         protected string TextFilter
         {
             get { return _textFilter; }
@@ -224,9 +227,15 @@ namespace WebApp.Pages {
                 Navigation.NavigateTo("itemnew");
             }
             else {
-                await StateService.UpdateAsync(StateMessage.NewShoppingListSettingsMessage(SettingsMessage.ClearItemFilter));
+                await ClearTextFilter();
                 Navigation.NavigateTo($"/itemnew/{TextFilter}");
             }
+        }
+
+        private async Task ClearTextFilter() {
+            SettingsMessage settingsMessage = SettingsMessage.ClearItemFilter;
+            StateMessage stateMessage = StateMessage.NewShoppingListSettingsMessage(settingsMessage);
+            await StateService.UpdateAsync(stateMessage);
         }
 
         protected Guid StoreFilter { get; private set; } = Guid.Empty;
