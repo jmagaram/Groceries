@@ -15,7 +15,7 @@
     <form class="form-inline">
         <div role="group">
             @if (Form.CanDelete()) {
-            <button style="margin-right:5px" type="button" class="btn btn-secondary" @onclick="OnDelete"><span class="oi oi-trash" aria-hidden="true"></span></button>
+            <button style="margin-right:5px" type="button" class="btn btn-secondary" @onclick="OnDelete"><Icon Kind="IconKind.Trash"/></button>
                 }
             @if (!Form.ScheduleKind.IsCompleted) {
             <button type="button" class="btn btn-secondary" disabled="@Form.HasErrors()" @onclick="OnSubmitPurchased">Complete</button>

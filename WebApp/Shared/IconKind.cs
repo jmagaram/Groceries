@@ -12,6 +12,7 @@ namespace WebApp.Shared {
         Trash,
         Check,
         Search,
-        Cancel
+        Cancel,
+        Bell
     }
 }

@@ -102,14 +102,14 @@
                         <span class="badge badge-success">@($"{daysAway}d")</span>
                     }
                     else {
-                        <span class="badge badge-danger"><span class="oi oi-bell" aria-hidden="true"></span></span>
+                        <span class="badge badge-danger"><Icon Kind="IconKind.Bell" /></span>
                     }
                 }
             }
         </div>
         <div class="repeater">
             @if (ItemQry.Schedule.IsRepeat) {
-                <span class="oi oi-loop-circular" style="display:inline-flex" aria-hidden="true"></span>
+                <span style="display:inline-flex" aria-hidden="true"><Icon Kind="IconKind.Repeat" /></span>
             }
             else {
                 <text>&nbsp;</text>

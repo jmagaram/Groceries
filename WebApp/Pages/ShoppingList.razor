@@ -42,7 +42,7 @@
         <div style="display:flex; flex-direction:row" class="filterRow">
             <input @ref="filterTextInput" autocomplete="off" type="text" id="textFilter" class="form-control form-control-sm filterInput" @onkeydown="@(async e => await OnTextFilterKeyDown(e))" @bind-value="@TextFilter" @bind-value:event="oninput" placeholder="Find or add" @onfocusout="OnTextFilterBlur" />
             <button type="button" class="btn btn-link btn-sm" style="position: relative; right: 4ch" @onclick="HideTextFilter">
-                <span class="oi oi-x" aria-hidden="true"></span>
+                <Icon Kind="IconKind.Cancel" />
             </button>
             @if (TextFilter.Length > 0) {
                 <button style="margin-left:-3ch" @onclick="OnStartCreateNew" @onclick:stopPropagation @onclick:preventDefault class="btn btn-sm btn-primary">Add</button>
@@ -94,18 +94,18 @@
                 if (SyncStatus.IsHasChanges) {
                     <div class="nav-item">
                         <button style="margin-left:5px" @onclick="@OnClickSync" class="btn btn-sm btn-warning nav-item" type="button">
-                            <span class="oi oi-cloud-upload" aria-hidden="true">&nbsp;</span>Sync
+                            <Icon Kind="IconKind.CloudUpload" />&nbsp;Sync
                         </button>
                     </div>
                 }
                 else if (SyncStatus.IsSynchronizing) {
                     <button style="margin-left:5px" disabled class="btn btn-sm btn-success nav-item" type="button">
-                        <span class="oi oi-cloud-upload" aria-hidden="true"></span>&nbsp;Syncing...
+                        <Icon Kind="IconKind.CloudUpload" />&nbsp;Syncing...
                     </button>
                 }
                 else if (SyncStatus.IsNoChanges) {
                     <button style="margin-left:5px" @onclick="@OnClickSync" class="btn btn-sm btn-secondary nav-item" type="button">
-                        <span class="oi oi-cloud-upload" aria-hidden="true">&nbsp;</span>
+                        <Icon Kind="IconKind.CloudUpload" />&nbsp;
                     </button>
                 }
             }
@@ -113,7 +113,7 @@
         <form class="col col-auto form-inline" style="padding-right:0px">
             <label for="textFilter"></label>
         </form>
-        <button class="btn btn-sm btn-secondary" @onclick="ShowTextFilter"><span class="oi oi-magnifying-glass" aria-hidden="true"></span>&nbsp;Add</button>
+        <button class="btn btn-sm btn-secondary" @onclick="ShowTextFilter"><Icon Kind="IconKind.Search" />&nbsp;Add</button>
     }
 </nav>
 <div class="col">
