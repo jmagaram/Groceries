@@ -30,12 +30,17 @@ let mapItems f s = { s with Items = f s.Items }
 let mapNotSoldItems f s = { s with NotSoldItems = f s.NotSoldItems }
 
 let mapShoppingListSettings f s =
-    { s with
-          ShoppingListSettings =
-              s
-              |> shoppingListSettingsRow
-              |> DataRow.tryMap f
-              |> Result.okOrThrow }
+    let s1 = s |> shoppingListSettings
+    let s2 = s |> shoppingListSettings |> f
+
+    match s1 = s2 with
+    | true -> s
+    | false ->
+        { s with
+              ShoppingListSettings =
+                  s.ShoppingListSettings
+                  |> DataRow.tryUpdate s2
+                  |> Result.okOrThrow }
 
 let itemHasInvalidCategory (i: Item) s =
     i.CategoryId
@@ -454,7 +459,10 @@ let handleItemEditPageMessage (now: DateTimeOffset) (msg: ItemEditPageMessage) (
 let update: Update =
     fun clock msg s ->
         let now = clock ()
-        (sprintf "Update: %A" msg) |> String.ellipsize 100 |> dprintln
+
+        (sprintf "Update: %A" msg)
+        |> String.ellipsize 100
+        |> dprintln
 
         match msg with
         | ItemMessage msg -> s |> handleItemMessage now msg
