@@ -3,6 +3,7 @@
   <PropertyGroup>
     <TargetFramework>netcoreapp3.1</TargetFramework>
     <UserSecretsId>b198830a-eaeb-4c56-9d66-8e5002da5e5e</UserSecretsId>
+    <ApplicationInsightsResourceId>/subscriptions/dc564a78-27d4-4e3d-b182-36fc992382b3/resourceGroups/Groceries/providers/microsoft.insights/components/groceriesbeta</ApplicationInsightsResourceId>
   </PropertyGroup>
 
   <ItemGroup>
@@ -10,6 +11,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <PackageReference Include="Microsoft.ApplicationInsights.AspNetCore" Version="2.15.0" />
     <PackageReference Include="Microsoft.Azure.Cosmos" Version="3.13.0" />
     <PackageReference Include="Microsoft.Azure.Cosmos.Direct" Version="3.13.3" />
     <PackageReference Include="System.Reactive" Version="4.4.1" />

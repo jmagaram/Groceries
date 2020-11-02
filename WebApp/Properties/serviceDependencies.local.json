@@ -4,13 +4,16 @@
       "resourceId": "/subscriptions/[parameters('subscriptionId')]/resourceGroups/[parameters('resourceGroupName')]/providers/Microsoft.DocumentDB/databaseAccounts/justinmagaram",
       "type": "cosmosdb.azure",
       "connectionId": "azurecosmosconnect",
-      "secretStore": "AzureAppSettings"
+      "secretStore": "LocalSecretsFile"
     },
     "appInsights1": {
       "resourceId": "/subscriptions/[parameters('subscriptionId')]/resourceGroups/[parameters('resourceGroupName')]/providers/microsoft.insights/components/groceriesbeta",
       "type": "appInsights.azure",
       "connectionId": "APPINSIGHTS_CONNECTIONSTRING",
-      "secretStore": null
+      "secretStore": "LocalSecretsFile"
+    },
+    "secrets1": {
+      "type": "secrets.user"
     }
   }
 }

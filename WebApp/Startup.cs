@@ -24,6 +24,7 @@ namespace WebApp {
             services.AddSingleton<ICosmosConnector, CosmosConnector>(i => new CosmosConnector(Configuration.GetValue<string>("CosmosConnectionString")));
             services.AddSingleton<Service>();
             services.AddServerSideBlazor().AddCircuitOptions(options => { options.DetailedErrors = true; });
+            services.AddApplicationInsightsTelemetry(Configuration["APPINSIGHTS_CONNECTIONSTRING"]);
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
