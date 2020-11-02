@@ -45,7 +45,7 @@
                 <span class="oi oi-x" aria-hidden="true"></span>
             </button>
             @if (TextFilter.Length > 0) {
-                <button style="margin-left:-3ch" @onclick="@(async _ => await OnStartCreateNew())" @onclick:stopPropagation @onclick:preventDefault class="btn btn-sm btn-primary">Add</button>
+                <button style="margin-left:-3ch" @onclick="OnStartCreateNew" @onclick:stopPropagation @onclick:preventDefault class="btn btn-sm btn-primary">Add</button>
             }
         </div>
     }

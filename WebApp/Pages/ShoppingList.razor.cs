@@ -32,7 +32,6 @@ namespace WebApp.Pages {
         }
 
         protected override async Task OnAfterRenderAsync(bool firstRender) {
-            await base.OnAfterRenderAsync(firstRender);
             if (ShowFilter && _moveFocusToTextFilter) {
                 await JSRuntime.InvokeVoidAsync("interopFunctions.focusElement", filterTextInput);
                 _moveFocusToTextFilter = false;
@@ -55,7 +54,7 @@ namespace WebApp.Pages {
         NavigationManager Navigation { get; set; }
 
         protected override async Task OnInitializedAsync() {
-            await base.OnInitializedAsync();
+            await OnTextFilterClear();
             var shoppingList =
                 StateService.State
                 .Select(i => i.ShoppingList(DateTimeOffset.Now))
@@ -121,9 +120,9 @@ namespace WebApp.Pages {
             .DistinctUntilChanged()
             .Subscribe(i => Items = i.ToList());
 
-        private async Task OnNavigateToCategory(CategoryId id) {
+        private void OnNavigateToCategory(CategoryId id) {
             string categoryId = CategoryIdModule.serialize(id);
-            await ClearTextFilter();
+            Dispose();
             Navigation.NavigateTo($"categoryedit/{categoryId}");
         }
 
@@ -191,8 +190,11 @@ namespace WebApp.Pages {
             _textFilterTyped.OnNext(valueTyped);
         }
 
-        protected async Task OnTextFilterClear() =>
-            await StateService.UpdateAsync(StateMessage.NewShoppingListSettingsMessage(SettingsMessage.ClearItemFilter));
+        protected async Task OnTextFilterClear() {
+            SettingsMessage settingsMessage = SettingsMessage.ClearItemFilter;
+            StateMessage stateMessage = StateMessage.NewShoppingListSettingsMessage(settingsMessage);
+            await StateService.UpdateAsync(stateMessage);
+        }
 
         protected async Task OnTextFilterKeyDown(KeyboardEventArgs e) {
             if (e.Key == "Escape") {
@@ -221,21 +223,14 @@ namespace WebApp.Pages {
             }
         }
 
-        protected async Task OnStartCreateNew() {
+        protected void OnStartCreateNew() {
             Dispose();
             if (string.IsNullOrWhiteSpace(TextFilter)) {
                 Navigation.NavigateTo("itemnew");
             }
             else {
-                await ClearTextFilter();
                 Navigation.NavigateTo($"/itemnew/{TextFilter}");
             }
-        }
-
-        private async Task ClearTextFilter() {
-            SettingsMessage settingsMessage = SettingsMessage.ClearItemFilter;
-            StateMessage stateMessage = StateMessage.NewShoppingListSettingsMessage(settingsMessage);
-            await StateService.UpdateAsync(stateMessage);
         }
 
         protected Guid StoreFilter { get; private set; } = Guid.Empty;
