@@ -2,7 +2,6 @@
 @page "/categoryedit/{ID}"
 @implements IDisposable
 @using System.Reactive.Linq;
-@using Data;
 @using Models
 @using static Common.OptionExtensions;
 @using static Models.CategoryEditFormModule.CategoryEditFormExtensions;
@@ -14,37 +13,42 @@
 @if (Form != null) {
     string pageTitle = Form.Mode().IsCreateNewCategoryMode ? "New category" : "Edit category";
     string categoryNameClass = Form.CategoryNameErrors().IsSome() ? "is-invalid" : "";
-    <nav class="navbar navbar-dark bg-dark sticky-top">
-        <span class="navbar-text">@pageTitle</span>
-        <form class="form-inline">
-            <div role="group">
-                @if (Form.Mode().IsEditExistingCategoryMode) {
-                    <button style="margin-right:5px" type="button" class="btn btn-secondary" @onclick="OnDelete"><span class="oi oi-trash" aria-hidden="true"></span></button>
-                }
-                <button type="button" class="btn btn-primary" @onclick="OnSubmit" disabled="@(Form.HasErrors())">Done</button>
-            </div>
-        </form>
-    </nav>
     <form>
-        <div class="form-group">
-            <label for="inputCategoryName" class="col-sm-2 col-form-label">Category name</label>
-            <div class="col-sm-10">
-                <input type="text" class="form-control @categoryNameClass" id="inputCategoryName" @oninput="OnNameChange" @onfocusout="OnNameFocusOut" value="@Form.CategoryName.ValueCommitted">
-                @if (Form.CategoryNameErrors().IsSome()) {
-                    <div class="invalid-feedback">@Form.CategoryNameErrors().Value</div>
-                }
+        <nav class="navbar navbar-dark bg-dark sticky-top">
+            <span class="navbar-text">@pageTitle</span>
+            <div class="form-inline">
+                <div role="group">
+                    @if (Form.Mode().IsEditExistingCategoryMode) {
+                        <button style="margin-right:5px" type="button" class="btn btn-secondary" @onclick="OnDelete"><Icon Kind="IconKind.Trash" /></button>
+                    }
+                    @*Hidden submit button because Enter is causing the form to get submitted without first causing the name field to lose focus. Can't get it to work properly.*@
+                    <button type="submit" hidden disabled />
+                    <button type="button" class="btn btn-primary"
+                            @onclick="OnSubmit"
+                            disabled="@(Form.HasErrors())">
+                        Done
+                    </button>
+                </div>
+            </div>
+        </nav>
+        <div class="col" style="width:40ch">
+            <div class="form-group">
+                <label for="inputCategoryName" class="col-form-label">Category name</label>
+                <div>
+                    <input type="text" class="form-control @categoryNameClass" id="inputCategoryName" @oninput="OnNameChange" @onfocusout="OnNameFocusOut" value="@Form.CategoryName.ValueCommitted">
+                    @if (Form.CategoryNameErrors().IsSome()) {
+                        <div class="invalid-feedback">@Form.CategoryNameErrors().Value</div>
+                    }
+                </div>
             </div>
         </div>
-    </form>
-}
+    </form>}
 else {
     <p>Loading...</p>
 }
 
 @code {
-    IDisposable _subscription = null;
-
-    public void Dispose() => _subscription?.Dispose();
+    private IDisposable _subscription = null;
 
     protected override async Task OnInitializedAsync() {
         _subscription =
@@ -71,7 +75,7 @@ else {
     public Models.Service StateService { get; set; }
 
     [Inject]
-    NavigationManager Navigation { get; set; }
+    public NavigationManager Navigation { get; set; }
 
     [Parameter]
     public string Id { get; set; }
@@ -95,18 +99,20 @@ else {
     }
 
     protected async Task OnDelete(MouseEventArgs e) {
+        Dispose();
         var pageMessage = PageMessage.DeleteCategory;
         var stateMessage = StateMessage.NewCategoryEditPageMessage(pageMessage);
-        Dispose();
-        Navigation.NavigateTo("shoppinglist");
         await StateService.UpdateAsync(stateMessage);
+        Navigation.NavigateTo("shoppinglist");
     }
 
     protected async Task OnSubmit(MouseEventArgs e) {
+        Dispose();
         var pageMessage = PageMessage.SubmitCategoryEditForm;
         var stateMessage = StateMessage.NewCategoryEditPageMessage(pageMessage);
-        Dispose();
-        Navigation.NavigateTo("shoppinglist");
         await StateService.UpdateAsync(stateMessage);
+        Navigation.NavigateTo("shoppinglist");
     }
+
+    public void Dispose() => _subscription?.Dispose();
 }

@@ -2,8 +2,7 @@
 @page "/storeedit/{ID}"
 @implements IDisposable
 @using System.Reactive.Linq;
-@using Data;
-@using Models;
+@using Models
 @using static Common.OptionExtensions;
 @using static Models.StoreEditFormModule.StoreEditFormExtensions;
 @using FormMessage = Models.StoreEditFormModule.Message;
@@ -14,37 +13,42 @@
 @if (Form != null) {
     string pageTitle = Form.Mode().IsCreateNewStoreMode ? "New store" : "Edit store";
     string storeNameClass = Form.StoreNameErrors().IsSome() ? "is-invalid" : "";
-    <nav class="navbar navbar-dark bg-dark sticky-top">
-        <span class="navbar-text">@pageTitle</span>
-        <form class="form-inline">
-            <div role="group">
-                @if (Form.Mode().IsEditExistingStoreMode) {
-                    <button style="margin-right:5px" type="button" class="btn btn-secondary" @onclick="OnDelete"><span class="oi oi-trash" aria-hidden="true"></span></button>
-                }
-                <button type="button" class="btn btn-primary" @onclick="OnSubmit" disabled="@(Form.HasErrors())">Done</button>
-            </div>
-        </form>
-    </nav>
     <form>
-        <div class="form-group">
-            <label for="inputStoreName" class="col-sm-2 col-form-label">Store name</label>
-            <div class="col-sm-10">
-                <input type="text" class="form-control @storeNameClass" id="inputStoreName" @oninput="OnNameChange" @onfocusout="OnNameFocusOut" value="@Form.StoreName.ValueCommitted">
-                @if (Form.StoreNameErrors().IsSome()) {
-                    <div class="invalid-feedback">@Form.StoreNameErrors().Value</div>
-                }
+        <nav class="navbar navbar-dark bg-dark sticky-top">
+            <span class="navbar-text">@pageTitle</span>
+            <div class="form-inline">
+                <div role="group">
+                    @if (Form.Mode().IsEditExistingStoreMode) {
+                        <button style="margin-right:5px" type="button" class="btn btn-secondary" @onclick="OnDelete"><Icon Kind="IconKind.Trash" /></button>
+                    }
+                    @*Hidden submit button because Enter is causing the form to get submitted without first causing the name field to lose focus. Can't get it to work properly.*@
+                    <button type="submit" hidden disabled />
+                    <button type="button" class="btn btn-primary"
+                            @onclick="OnSubmit"
+                            disabled="@(Form.HasErrors())">
+                        Done
+                    </button>
+                </div>
+            </div>
+        </nav>
+        <div class="col" style="width:40ch">
+            <div class="form-group">
+                <label for="inputStoreName" class="col-form-label">Store name</label>
+                <div>
+                    <input type="text" class="form-control @storeNameClass" id="inputStoreName" @oninput="OnNameChange" @onfocusout="OnNameFocusOut" value="@Form.StoreName.ValueCommitted">
+                    @if (Form.StoreNameErrors().IsSome()) {
+                        <div class="invalid-feedback">@Form.StoreNameErrors().Value</div>
+                    }
+                </div>
             </div>
         </div>
-    </form>
-}
+    </form>}
 else {
     <p>Loading...</p>
 }
 
 @code {
-    IDisposable _subscription = null;
-
-    public void Dispose() => _subscription?.Dispose();
+    private IDisposable _subscription = null;
 
     protected override async Task OnInitializedAsync() {
         _subscription =
@@ -71,7 +75,7 @@ else {
     public Models.Service StateService { get; set; }
 
     [Inject]
-    NavigationManager Navigation { get; set; }
+    public NavigationManager Navigation { get; set; }
 
     [Parameter]
     public string Id { get; set; }
@@ -88,24 +92,27 @@ else {
 
     protected async Task OnNameFocusOut(FocusEventArgs e) {
         var textBoxMessage = TextBoxMessage.LoseFocus;
-        var formMessage = StoreEditFormModule.Message.NewStoreNameMessage(textBoxMessage);
+        var formMessage = FormMessage.NewStoreNameMessage(textBoxMessage);
         var pageMessage = PageMessage.NewStoreEditFormMessage(formMessage);
         var stateMessage = StateMessage.NewStoreEditPageMessage(pageMessage);
         await StateService.UpdateAsync(stateMessage);
     }
 
     protected async Task OnDelete(MouseEventArgs e) {
+        Dispose();
         var pageMessage = PageMessage.DeleteStore;
         var stateMessage = StateMessage.NewStoreEditPageMessage(pageMessage);
-        Dispose();
-        Navigation.NavigateTo("shoppinglist");
         await StateService.UpdateAsync(stateMessage);
+        Navigation.NavigateTo("shoppinglist");
     }
 
     protected async Task OnSubmit(MouseEventArgs e) {
+        Dispose();
         var pageMessage = PageMessage.SubmitStoreEditForm;
         var stateMessage = StateMessage.NewStoreEditPageMessage(pageMessage);
-        Navigation.NavigateTo("shoppinglist");
         await StateService.UpdateAsync(stateMessage);
+        Navigation.NavigateTo("shoppinglist");
     }
+
+    public void Dispose() => _subscription?.Dispose();
 }
