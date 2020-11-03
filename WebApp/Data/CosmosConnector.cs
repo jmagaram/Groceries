@@ -59,7 +59,7 @@ namespace WebApp.Data {
             await PushCore(c.Categories.Select(i => Dto.withCustomerId(_customerId, i)), i => i.Etag, cancel);
             await PushCore(c.Stores.Select(i => Dto.withCustomerId(_customerId, i)), i => i.Etag, cancel);
             await PushCore(c.NotSoldItems.Select(i => Dto.withCustomerId(_customerId, i)), i => i.Etag, cancel);
-            //await ArtificialDelay();
+            await ArtificialDelay();
         }
 
         private async Task PushCore<T>(IEnumerable<T> items, Func<T, string> etag, CancellationToken cancel) {
@@ -83,7 +83,7 @@ namespace WebApp.Data {
             var categories = await PullByKindCore<Category>(_customerId, lastSync, DocumentKind.Category, cancel);
             var notSoldItems = await PullByKindCore<Unit>(_customerId, lastSync, DocumentKind.NotSoldItem, cancel);
             var import = new Changes(items, categories, stores, notSoldItems);
-            //await ArtificialDelay();
+            await ArtificialDelay();
             return import;
         }
 
