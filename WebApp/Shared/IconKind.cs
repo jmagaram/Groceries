@@ -13,6 +13,7 @@ namespace WebApp.Shared {
         Check,
         Search,
         Cancel,
-        Bell
+        Bell,
+        GoBack
     }
 }
