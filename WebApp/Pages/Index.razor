@@ -1,18 +1,15 @@
 ﻿@page "/"
+<nav class="navbar navbar-dark bg-dark sticky-top">
+    <span class="navbar-text">Groceries</span>
+    <button class="btn btn-primary">abc</button>
+</nav>
+<style>
+</style>
 <div class="col">
-    <h1>Index</h1>
+    <h5>Plan</h5>
+    <h5>Shop</h5>
     <hr />
     <a href="/shoppinglist">Shopping list</a>
-    <div style="font-size:18pt">
-        <p><Icon Kind="IconKind.Shop" />&nbsp;Shop</p>
-        <p><Icon Kind="IconKind.Calendar" />&nbsp;Calendar</p>
-        <p><Icon Kind="IconKind.Check" />&nbsp;Check</p>
-        <p><Icon Kind="IconKind.CloudUpload" />&nbsp;Upload</p>
-        <p><Icon Kind="IconKind.Repeat" />&nbsp;Repeat</p>
-        <p><Icon Kind="IconKind.Trash" />&nbsp;Trash</p>
-    </div>
-    <button @onclick="ThrowException">Throw exception</button>
 </div>
 @code {
-    public void ThrowException() => throw new InvalidOperationException("Purposely threw this!");
 }

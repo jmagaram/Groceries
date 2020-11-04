@@ -22,8 +22,7 @@ type ShoppingList =
       ItemEdited: ItemForm option
       StoreFilter: Store option
       Stores: Store list
-      SearchTerm: SearchTerm option
-      HasChanges: bool }
+      SearchTerm: SearchTerm option }
 
 let private createItem find (item: CoreTypes.Item) state =
     let find =
@@ -111,7 +110,4 @@ let create now state =
       StoreFilter = storeFilter
       SearchTerm = settings.ItemTextFilter
       Stores = stores
-      HasChanges =
-          state |> State.hasChanges
-          || state.LastCosmosTimestamp.IsNone
       ItemEdited = None }
