@@ -1,0 +1,28 @@
+﻿@using static Models.ServiceTypes;
+@using System.Reactive.Linq;
+
+<Observable Context="i" Source="StateService.SyncronizationStatus">
+    <Loading>
+        <button class="btn btn-sm btn-secondary nav-item" type="button" disabled><Icon Kind="IconKind.CloudUpload" /></button>
+    </Loading>
+    <Loaded>
+        @if (i.IsSynchronizing) {
+            <button class="btn btn-sm btn-outline-light nav-item" style="@Style" type="button" disabled><div class="spinner-border text-success spinner-border-sm" role="status" /></button>
+        }
+        else {
+            string color =
+                i.IsHasChanges ? "btn-danger" :
+                i.IsNoChanges ? "btn-scondary" :
+                throw new NotImplementedException("Unexpected synchronization status; can't choose color for it.");
+            <button class="btn btn-sm btn-secondary @color nav-item" style="@Style" type="button" disabled="@i.IsSynchronizing" @onclick:preventDefault @onclick="StateService.SyncIncrementalAsync"><Icon Kind="IconKind.CloudUpload" /></button>
+        }
+    </Loaded>
+</Observable>
+
+@code {
+    [Inject]
+    public Models.Service StateService { get; set; }
+
+    [Parameter]
+    public string Style { get; set; }
+}

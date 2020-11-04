@@ -91,23 +91,7 @@
                         <button @onclick="async _=>await OnClickHideCompletedItems()" class="dropdown-item">Hide completed</button>
                     </div>
                 </div>
-                if (SyncStatus.IsHasChanges) {
-                    <div class="nav-item">
-                        <button style="margin-left:5px" @onclick="@OnClickSync" class="btn btn-sm btn-warning nav-item" type="button">
-                            <Icon Kind="IconKind.CloudUpload" />&nbsp;Sync
-                        </button>
-                    </div>
-                }
-                else if (SyncStatus.IsSynchronizing) {
-                    <button style="margin-left:5px" disabled class="btn btn-sm btn-success nav-item" type="button">
-                        <Icon Kind="IconKind.CloudUpload" />&nbsp;Syncing...
-                    </button>
-                }
-                else if (SyncStatus.IsNoChanges) {
-                    <button style="margin-left:5px" @onclick="@OnClickSync" class="btn btn-sm btn-secondary nav-item" type="button">
-                        <Icon Kind="IconKind.CloudUpload" />&nbsp;
-                    </button>
-                }
+                <SyncButton Style="margin-left:5px" />
             }
         </div>
         <form class="col col-auto form-inline" style="padding-right:0px">
