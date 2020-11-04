@@ -21,8 +21,4 @@
     <ProjectReference Include="..\Models\Models.fsproj" />
   </ItemGroup>
 
-  <ItemGroup>
-    <Folder Include="wwwroot\img\" />
-  </ItemGroup>
-
 </Project>
