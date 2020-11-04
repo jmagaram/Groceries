@@ -1,0 +1,37 @@
+﻿@implements IDisposable
+@typeparam T
+
+@if (IsLoaded) {
+    @Loaded(Value)
+}
+else {
+    @Loading
+}
+
+@code {
+    IDisposable _subscription;
+
+    protected override void OnInitialized() {
+        _subscription = Source.Subscribe(i =>
+        {
+            IsLoaded = true;
+            Value = i;
+            InvokeAsync(() => StateHasChanged());
+        });
+    }
+
+    public bool IsLoaded { get; set; } = false;
+
+    public T Value { get; set; }
+
+    [Parameter]
+    public IObservable<T> Source { get; set; }
+
+    [Parameter]
+    public RenderFragment<T> Loaded { get; set; }
+
+    [Parameter]
+    public RenderFragment Loading { get; set; }
+
+    public void Dispose() => _subscription?.Dispose();
+}
