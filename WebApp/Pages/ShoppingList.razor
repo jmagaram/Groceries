@@ -4,7 +4,6 @@
 @using Microsoft.FSharp.Core;
 @using WebApp.Shared;
 @using static Models.ScheduleModule.ScheduleExtensions;
-
 <style>
     .categoryHeader {
         margin-top: 1.0rem;
@@ -55,6 +54,7 @@
                 var currentStoreName = StoreFilterChoices.FirstOrDefault(i => i.StoreId.Item == StoreFilter)?.StoreName.Item ?? "All Stores";
             }
             <div class="nav-item">
+                <a class="btn btn-sm btn-secondary" href="\"><Icon Kind="IconKind.GoBack" /></a>
                 <button class="btn btn-sm btn-primary dropdown-toggle nav-item" type="button" id="storeDropdown" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                     @currentStoreName
                 </button>
