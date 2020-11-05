@@ -4,6 +4,8 @@
 @using Microsoft.FSharp.Core;
 @using WebApp.Shared;
 @using static Models.ScheduleModule.ScheduleExtensions;
+@using System.Reactive.Linq;
+
 <style>
     .categoryHeader {
         margin-top: 1.0rem;
@@ -49,57 +51,62 @@
         </div>
     }
     else {
-        <div class="col nav col-auto">
-            @{
-                var currentStoreName = StoreFilterChoices.FirstOrDefault(i => i.StoreId.Item == StoreFilter)?.StoreName.Item ?? "All Stores";
-            }
-            <div class="nav-item">
-                <a class="btn btn-sm btn-secondary" href="\"><Icon Kind="IconKind.GoBack" /></a>
-                <button class="btn btn-sm btn-primary dropdown-toggle nav-item" type="button" id="storeDropdown" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                    @currentStoreName
-                </button>
-                <div class="dropdown-menu nav-item" aria-labelledby="storeDropdown">
-                    <button class="dropdown-item btn-sm" @onclick="async e=>await OnStoreFilterClear()">All Stores</button>
-                    <div class="dropdown-divider"></div>
-                    @foreach (var s in StoreFilterChoices) {
-                        string description = s.StoreName.Item;
-                        <button class="dropdown-item btn-small" href="#" @onclick="async e=>await OnStoreFilter(s.StoreId)">@description</button>
-                    }
-                    <div class="dropdown-divider"></div>
-                    <a class="dropdown-item btn-small" href="storeedit">New store...</a>
-                    @if (StoreFilter != Guid.Empty) {
-                        var storeId = StoreFilter.ToString(); // use StoreId serialize and deserialize instead
-                        <a class="dropdown-item" href="storeEdit/@storeId">Edit @currentStoreName...</a>
-                    }
+<div class="col nav col-auto">
+    @{
+        var currentStoreName = StoreFilterChoices.FirstOrDefault(i => i.StoreId.Item == StoreFilter)?.StoreName.Item ?? "All Stores";
+    }
+    <a class="btn btn-sm btn-secondary" style="align-self:center; margin-right:0.7rem" href="\"><Icon Kind="IconKind.GoBack" /></a>
+    <div class="nav-item">
+        <ElixMenuButton SourcePartType="div" OnMenuItemSelected="@OnMenuItemSelected">
+            <Content>
+                <elix-menu-item disabled><strong>Plan</strong></elix-menu-item>
+                <elix-menu-item id="plan7">Next 7 days</elix-menu-item>
+                <elix-menu-item id="plan14">Next 2 weeks</elix-menu-item>
+                <elix-menu-item id="planfuture">All future purchases</elix-menu-item>
+                <elix-menu-separator></elix-menu-separator>
+                <elix-menu-item disabled><strong>Shop</strong></elix-menu-item>
+                <elix-menu-item id="shopall">All Stores</elix-menu-item>
+                @foreach (var s in StoreFilterChoices) {
+                    string id = $"s{Models.StoreIdModule.serialize(s.StoreId)}";
+                    <elix-menu-item id="@id">@s.StoreName.Item</elix-menu-item>
+                }
+                <div slot="source" style="display:flex; flex-direction:column;">
+                    <Observable Source="StateService.State.Select(i=>DataRow.current(i.ShoppingListSettings).Value)" Context="i">
+                        <Loaded>
+                            @{
+                                string superTitle = null;
+                                string title = null;
+                                if (i.HideCompletedItems) {
+                                    superTitle = "Shop";
+                                    title =
+                                        i.StoreFilter.IsSome()
+                                        ? StoreFilterChoices.FirstOrDefault(j => j.StoreId.Equals(i.StoreFilter.Value)).StoreName.Item
+                                        : "All Stores";
+                                }
+                                else {
+                                    superTitle = "Plan";
+                                    title =
+                                        (i.PostponedViewHorizon == 14) ? "Next 2 weeks"
+                                        : (i.PostponedViewHorizon == 7) ? "Next 7 days"
+                                        : "All future purchases";
+                                }
+                            }
+                            <small class="text-light">@superTitle</small>
+                            <div class="text-light" style="font-weight:bold">@title</div>
+                        </Loaded>
+                    </Observable>
                 </div>
-            </div>
-            @if (TextFilter.Length == 0) {
-                <div class="nav-item">
-                    <button class="btn btn-sm btn-secondary dropdown-toggle nav-item" style="margin-left:5px" type="button" id="viewDropdown" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                        View
-                    </button>
-                    <div class="dropdown-menu nav-item" aria-labelledby="viewDropdown">
-                        <h6 class="dropdown-header">POSTPONED ITEMS</h6>
-                        <button @onclick="async _=>await ShowPostponedWithinNext(0)" class="dropdown-item">Overdue only</button>
-                        <button @onclick="async _=>await ShowPostponedWithinNext(3)" class="dropdown-item">Next few days</button>
-                        <button @onclick="async _=>await ShowPostponedWithinNext(7)" class="dropdown-item">+1 week</button>
-                        <button @onclick="async _=>await ShowPostponedWithinNext(14)" class="dropdown-item">+2 weeks</button>
-                        <button @onclick="async _=>await ShowPostponedWithinNext(int.MaxValue)" class="dropdown-item">All</button>
-                        <div class="dropdown-divider"></div>
-                        <h6 class="dropdown-header">COMPLETED ITEMS</h6>
-                        <button @onclick="async _=>await OnClickShowCompletedItems()" class="dropdown-item">Show completed</button>
-                        <button @onclick="async _=>await OnClickHideCompletedItems()" class="dropdown-item">Hide completed</button>
-                    </div>
-                </div>
-            }
-        </div>
+            </Content>
+        </ElixMenuButton>
+    </div>
+</div>
         <form class="col col-auto form-inline" style="padding-right:0px">
             <label for="textFilter"></label>
         </form>
         <div>
             <SyncButton Style="margin-left:5px" />
             <button class="btn btn-sm btn-secondary" @onclick="ShowTextFilter"><Icon Kind="IconKind.Search" />&nbsp;Add</button>
-        </div>    }
+        </div>}
 </nav>
 <div class="col">
     @if (Items.Count > 0) {

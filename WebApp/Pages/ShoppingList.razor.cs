@@ -122,6 +122,57 @@ namespace WebApp.Pages {
         private async Task OnStoreFilter(StoreId id) =>
             await StateService.UpdateAsync(StateMessage.NewShoppingListSettingsMessage(SettingsMessage.NewSetStoreFilterTo(id)));
 
+        private async Task OnMenuItemSelected(string id) {
+            await Task.CompletedTask;
+            if (id == "shopall") {
+                await ShopAt(null);
+            }
+            else if (id.StartsWith("s")) {
+                await ShopAt(id.Substring(1));
+            }
+            else if (id == "planfuture") {
+                await PlanDaysAhead(365);
+            }
+            else if (id == "plan7") {
+                await PlanDaysAhead(7);
+            }
+            else if (id == "plan14") {
+                await PlanDaysAhead(14);
+            }
+            else throw new NotImplementedException();
+        }
+
+        private async Task ShopAt(string storeId) {
+            var messages = new List<SettingsMessage>
+            {
+                SettingsMessage.ClearItemFilter,
+                SettingsMessage.NewHideCompletedItems(true),
+                SettingsMessage.NewSetPostponedViewHorizon(-365),
+            };
+            if (!string.IsNullOrWhiteSpace(storeId)) {
+                messages.Add(SettingsMessage.NewSetStoreFilterTo(StoreIdModule.deserialize(storeId).Value));
+            }
+            else {
+                messages.Add(SettingsMessage.ClearStoreFilter);
+            }
+            var settingsMessage = SettingsMessage.NewTransaction(messages);
+            var stateMessage = StateTypes.StateMessage.NewShoppingListSettingsMessage(settingsMessage);
+            await StateService.UpdateAsync(stateMessage);
+        }
+
+        private async Task PlanDaysAhead(int days) {
+            var messages = new List<SettingsMessage>
+            {
+                SettingsMessage.ClearItemFilter,
+                SettingsMessage.NewHideCompletedItems(false),
+                SettingsMessage.NewSetPostponedViewHorizon(days),
+                SettingsMessage.ClearStoreFilter
+            };
+            var settingsMessage = SettingsMessage.NewTransaction(messages);
+            var stateMessage = StateTypes.StateMessage.NewShoppingListSettingsMessage(settingsMessage);
+            await StateService.UpdateAsync(stateMessage);
+        }
+
         private async Task OnClickDelete(ItemId itemId) {
             var stateItemMessage = StateItemMessage.NewDeleteItem(itemId);
             var stateMessage = StateMessage.NewItemMessage(stateItemMessage);

@@ -3,7 +3,7 @@
 @using System.Reactive.Disposables
 @using Common
 
-<elix-menu-button @ref="_menu">
+<elix-menu-button @ref="_menu" source-part-type="@SourcePartType">
     @Content
 </elix-menu-button>
 
@@ -40,6 +40,9 @@
 
     [Parameter]
     public RenderFragment Content { get; set; }
+
+    [Parameter]
+    public string SourcePartType { get; set; }
 
     public void Dispose() => _disposables.Dispose();
 }

@@ -12,8 +12,9 @@
         padding-left: 0px;
         list-style-type: none;
     }
+
     h5 {
-        margin-top:1rem;
+        margin-top: 1rem;
     }
 </style>
 <div class="col">
@@ -42,7 +43,7 @@
 
     public async Task ShopAtStore(string storeId) {
         var messages = new List<Message>
-    {
+{
             Message.ClearItemFilter,
             Message.NewHideCompletedItems(true),
             Message.NewSetPostponedViewHorizon(-365),
@@ -61,7 +62,7 @@
 
     public async Task EditShoppingList() {
         var messages = new List<Message>
-        {
+{
             Message.ClearItemFilter,
             Message.NewHideCompletedItems(false),
             Message.NewSetPostponedViewHorizon(14),
