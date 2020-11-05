@@ -91,14 +91,15 @@
                         <button @onclick="async _=>await OnClickHideCompletedItems()" class="dropdown-item">Hide completed</button>
                     </div>
                 </div>
-                <SyncButton Style="margin-left:5px" />
             }
         </div>
         <form class="col col-auto form-inline" style="padding-right:0px">
             <label for="textFilter"></label>
         </form>
-        <button class="btn btn-sm btn-secondary" @onclick="ShowTextFilter"><Icon Kind="IconKind.Search" />&nbsp;Add</button>
-    }
+        <div>
+            <SyncButton Style="margin-left:5px" />
+            <button class="btn btn-sm btn-secondary" @onclick="ShowTextFilter"><Icon Kind="IconKind.Search" />&nbsp;Add</button>
+        </div>    }
 </nav>
 <div class="col">
     @if (Items.Count > 0) {
