@@ -66,7 +66,6 @@ namespace WebApp.Pages {
                 UpdateStoreFilterPickerList(shoppingList),
                 UpdateStoreFilterSelectedItem(shoppingList),
                 UpdateTextFilter(shoppingList),
-                UpdateSynchronizationStatus(),
                 ProcessTextFilterTyped(),
                 shoppingList.Connect()
             };
@@ -82,15 +81,6 @@ namespace WebApp.Pages {
                 StateMessage stateMessage = StateMessage.NewShoppingListSettingsMessage(settingsMessage);
                 await StateService.UpdateAsync(stateMessage);
                 await InvokeAsync(() => StateHasChanged());
-            });
-
-        public SynchronizationStatus SyncStatus { get; set; } = SynchronizationStatus.NoChanges;
-
-        public IDisposable UpdateSynchronizationStatus() =>
-            StateService.SyncronizationStatus.Subscribe(i =>
-            {
-                SyncStatus = i;
-                StateHasChanged();
             });
 
         private IDisposable UpdateStoreFilterSelectedItem(IObservable<ShoppingListModule.ShoppingList> shoppingList) =>
@@ -131,15 +121,6 @@ namespace WebApp.Pages {
 
         private async Task OnStoreFilter(StoreId id) =>
             await StateService.UpdateAsync(StateMessage.NewShoppingListSettingsMessage(SettingsMessage.NewSetStoreFilterTo(id)));
-
-        private async Task OnClickSync() {
-            if (SyncStatus.IsHasChanges) {
-                await StateService.SyncIncrementalAsync();
-            }
-            else {
-                await StateService.SyncEverythingAsync();
-            }
-        }
 
         private async Task OnClickDelete(ItemId itemId) {
             var stateItemMessage = StateItemMessage.NewDeleteItem(itemId);
