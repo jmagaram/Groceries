@@ -4,7 +4,10 @@
 @using static Models.ShoppingListSettingsModule
 
 <nav class="navbar navbar-dark bg-dark sticky-top">
+    <div>
+    <img src="img/watermelon32.png"/>
     <span class="navbar-text">Groceries</span>
+    </div>
     <SyncButton />
 </nav>
 <style>
@@ -18,21 +21,28 @@
     }
 </style>
 <div class="col">
-    <h5>Plan</h5>
-    <button class="btn btn-sm btn-link" @onclick="EditShoppingList">Edit shopping list</button>
-    <h5>Shop</h5>
-    <Observable Context="i" Source="StateService.State.Select(i=>Models.DataTable.current(i.Stores).OrderBy(i=>i.StoreName).ToArray())">
-        <Loaded>
-            <ul>
-                <li><button class="btn btn-sm btn-link" @onclick="_ => ShopAtStore(null)">Any store</button></li>
-                @foreach (var s in i) {
-                    <li>
-                        <button class="btn btn-sm btn-link" @onclick="_ => ShopAtStore(StoreIdModule.serialize(s.StoreId))">@s.StoreName.Item</button>
-                    </li>
-                }
-            </ul>
-        </Loaded>
-    </Observable>
+    <ul style="margin-top:1rem">
+        <li style="margin-bottom:0.5rem"><a href="/shoppinglist">Shopping list</a></li>
+        <li><a href="#">Edit store list</a></li>
+        <li><a href="#">Edit category list</a></li>
+        <li><a href="#">My account</a></li>
+        <li><a href="#">Send suggestion about this product</a></li>
+    </ul>
+    @*<h5>Plan</h5>
+        <button class="btn btn-sm btn-link" @onclick="EditShoppingList">Edit shopping list</button>
+        <h5>Shop</h5>
+        <Observable Context="i" Source="StateService.State.Select(i=>Models.DataTable.current(i.Stores).OrderBy(i=>i.StoreName).ToArray())">
+            <Loaded>
+                <ul>
+                    <li><button class="btn btn-sm btn-link" @onclick="_ => ShopAtStore(null)">Any store</button></li>
+                    @foreach (var s in i) {
+                        <li>
+                            <button class="btn btn-sm btn-link" @onclick="_ => ShopAtStore(StoreIdModule.serialize(s.StoreId))">@s.StoreName.Item</button>
+                        </li>
+                    }
+                </ul>
+            </Loaded>
+        </Observable>*@
 </div>
 @code {
     [Inject]

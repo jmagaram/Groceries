@@ -55,7 +55,7 @@
     @{
         var currentStoreName = StoreFilterChoices.FirstOrDefault(i => i.StoreId.Item == StoreFilter)?.StoreName.Item ?? "All Stores";
     }
-    <a class="btn btn-sm btn-secondary" style="align-self:center; margin-right:0.7rem" href="\"><Icon Kind="IconKind.GoBack" /></a>
+    <a class="btn btn-sm btn-outline-secondary" style="align-self:center; margin-right:0.7rem" href="\"><Icon Kind="IconKind.GoBack" /></a>
     <div class="nav-item">
         <ElixMenuButton SourcePartType="div" OnMenuItemSelected="@OnMenuItemSelected">
             <Content>
@@ -77,7 +77,7 @@
                                 string superTitle = null;
                                 string title = null;
                                 if (i.HideCompletedItems) {
-                                    superTitle = "Shop";
+                                    superTitle = "Shopping list";
                                     title =
                                         i.StoreFilter.IsSome()
                                         ? StoreFilterChoices.FirstOrDefault(j => j.StoreId.Equals(i.StoreFilter.Value)).StoreName.Item
