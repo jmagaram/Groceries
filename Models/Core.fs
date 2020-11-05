@@ -497,8 +497,9 @@ module ShoppingListSettings =
         | HideCompletedItems of bool
         | SetItemFilter of string
         | ClearItemFilter
+        | Transaction of Message seq
 
-    let update (msg: Message) s =
+    let rec update (msg: Message) s =
         match msg with
         | ClearStoreFilter -> s |> clearStoreFilter
         | SetStoreFilterTo k -> s |> setStoreFilter k
@@ -506,6 +507,7 @@ module ShoppingListSettings =
         | HideCompletedItems b -> s |> hideCompletedItems b
         | SetItemFilter txt -> s |> setItemFilter txt
         | ClearItemFilter -> s |> clearItemFilter
+        | Transaction msgs -> msgs |> Seq.fold (fun res i -> res |> update i) s
 
 [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
 module CategoryEditForm =
