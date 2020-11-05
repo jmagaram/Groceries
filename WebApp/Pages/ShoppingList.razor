@@ -60,7 +60,7 @@
         <ElixMenuButton SourcePartType="div" OnMenuItemSelected="@OnMenuItemSelected">
             <Content>
                 <elix-menu-item disabled><strong>Plan</strong></elix-menu-item>
-                <elix-menu-item id="plan7">Next 7 days</elix-menu-item>
+                <elix-menu-item id="plan7">Upcoming week</elix-menu-item>
                 <elix-menu-item id="plan14">Next 2 weeks</elix-menu-item>
                 <elix-menu-item id="planfuture">All future purchases</elix-menu-item>
                 <elix-menu-separator></elix-menu-separator>
@@ -87,7 +87,7 @@
                                     superTitle = "Plan";
                                     title =
                                         (i.PostponedViewHorizon == 14) ? "Next 2 weeks"
-                                        : (i.PostponedViewHorizon == 7) ? "Next 7 days"
+                                        : (i.PostponedViewHorizon == 7) ? "Upcoming week"
                                         : "All future purchases";
                                 }
                             }
