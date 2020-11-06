@@ -1,4 +1,14 @@
-﻿var ElixMenuButton = ElixMenuButton || {};
+﻿var HtmlElement = HtmlElement || {};
+
+HtmlElement.setProperty = function (element, k, v) {
+    element[k] = v;
+}
+
+HtmlElement.getProperty = function (element, k) {
+    return element[k];
+}
+
+var ElixMenuButton = ElixMenuButton || {};
 
 // Attaches an event listener to the "close" event on an elix-menu-button. When
 // the user selects an item from the menu, the supplied method is called with
@@ -24,6 +34,19 @@ ElixMenuButton.addOpenedChangeEventListener = function (element, assemblyName, m
         helper.invokeMethodAsync(assemblyName, method, isOpened);
     })
 };
+
+var ElixDropdownList = ElixDropdownList || {};
+
+ElixDropdownList.addSelectedIndexChangeEventListener = function (element, assemblyName, method, helper) {
+    element.addEventListener("selectedindexchange", (event) => {
+        if (event.detail.selectedIndex == -1) {
+            helper.invokeMethodAsync(assemblyName, method, "");
+        }
+        else {
+            helper.invokeMethodAsync(assemblyName, method, element["value"])
+        }
+    });
+}
 
 window.interopFunctions =
 {

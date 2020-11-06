@@ -1,0 +1,37 @@
+﻿@inject IJSRuntime JSRuntime
+@implements IDisposable
+@using Microsoft.JSInterop
+@using WebApp.Common
+
+<elix-dropdown-list @ref="_element" aria-labelledby="@AriaLabelledBy">
+    @ChildContent
+</elix-dropdown-list>
+
+@code {
+    private DotNetObjectReference<CallbackHelper<string>> _selectedValueCallbackReference;
+    private ElementReference _element;
+
+    [Parameter]
+    public RenderFragment ChildContent { get; set; }
+
+    [Parameter]
+    public string AriaLabelledBy { get; set; }
+
+    public async ValueTask<string> GetValue() => await JSRuntime.InvokeAsync<string>("HtmlElement.getProperty", _element, "value");
+
+    public async ValueTask SetValue(string s) => await JSRuntime.InvokeVoidAsync("HtmlElement.setProperty", _element, "value", s);
+
+    public void Dispose() => _selectedValueCallbackReference?.Dispose();
+
+    [Parameter]
+    public EventCallback<string> ValueChanged { get; set; }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender) {
+        await base.OnAfterRenderAsync(firstRender);
+        if (firstRender) {
+            var selectedValueCallback = new CallbackHelper<string>(s => ValueChanged.InvokeAsync(s));
+            _selectedValueCallbackReference = DotNetObjectReference.Create(selectedValueCallback);
+            await JSRuntime.InvokeVoidAsync("ElixDropdownList.addSelectedIndexChangeEventListener", _element, "WebApp", "Invoke", _selectedValueCallbackReference);
+        }
+    }
+}
