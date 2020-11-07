@@ -271,6 +271,6 @@ namespace WebApp.Pages {
 
         protected List<Store> StoreFilterChoices { get; private set; } = new List<Store>();
 
-        public void Dispose() => _disposables.Dispose();
+        public void Dispose() => _disposables?.Dispose();
     }
 }
