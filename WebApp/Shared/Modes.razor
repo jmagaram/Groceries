@@ -1,0 +1,20 @@
+﻿<CascadingValue Value="this">
+    @ChildContent
+</CascadingValue>
+
+@code {
+    private List<ModesItem> _items = new List<ModesItem>();
+
+    [Parameter]
+    public RenderFragment ChildContent { get; set; }
+
+    public ModesItem ActiveItem => ActiveIndex < 0 || ActiveIndex >= _items.Count ? null : _items[ActiveIndex];
+
+    [Parameter]
+    public int ActiveIndex { get; set; }
+
+    internal void AddItem(ModesItem item) {
+        _items.Add(item);
+        StateHasChanged();
+    }
+}
