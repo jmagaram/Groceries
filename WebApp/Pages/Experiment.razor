@@ -44,8 +44,65 @@
         .background.deactivatebackground {
             background-color: rgba(230, 230, 227, 1.0);
         }
+
+    .activeFromLeft {
+        animation-name: appearFromLeft;
+        animation-duration: 0.25s;
+        animation-fill-mode: forwards;
+    }
+
+    @@keyframes appearFromLeft {
+        from {
+            margin-left: -100%;
+            opacity: 0.5;
+        }
+
+        to {
+            margin-left: 0%;
+            opacity: 1.0;
+        }
+    }
+
+    .activeFromRight {
+        animation-name: appearFromRight;
+        animation-duration: 0.25s;
+        animation-fill-mode: forwards;
+    }
+
+    @@keyframes appearFromRight {
+        from {
+            margin-left: 100%;
+            opacity: 0.5;
+        }
+
+        to {
+            margin-left: 0%;
+            opacity: 1.0;
+        }
+    }
 </style>
-<div @onclick="e=>OnMainDivClick()" class="@BackgroundClass" style="transition:background-color ease-in 0.2s">
+
+<button @onclick="DecrementMode" @onclick:preventDefault @onclick:stopPropagation>dec</button>
+<button @onclick="IncrementMode" @onclick:preventDefault @onclick:stopPropagation>inc</button>
+<Modes ActiveIndex="@ModesIndex">
+    <ModesItem>AAAAAAAAAAAAAAAAAA</ModesItem>
+    <ModesItem><div class="activeFromLeft">BBBBBBBBBBBBBBBBBB</div></ModesItem>
+    <ModesItem><div class="activeFromRight">CCCCCCCCCCCCCCCCCC</div></ModesItem>
+</Modes>
+<hr style="margin-bottom:40px" />
+
+@*<Modes2 SelectedIndex="@BoundIndex">
+        <Container Context="i">
+            <div style="margin-left:30px;width:400px;height:200px">@i</div>
+        </Container>
+        <Mode1>Apple</Mode1>
+        <Mode2><div class="activeFromLeft"><h3>Item Details</h3><ul><li>Category <strong @onclick="Forward">Produce</strong></li><li>ItemName: <strong>Fish sauce</strong></li></ul></div></Mode2>
+        <Mode3><div class="activeFromRight"><h3>Choose Category</h3><ul @onclick="Backward"><li>Produce</li><li>Meat and Seafood</li><li>Dairy</li><li>Bakery</li></ul></div></Mode3>
+    </Modes2>
+    <button @onclick="Backward">back</button>
+    <button @onclick="Forward">forward</button>*@
+
+<div @onclick="e => OnMainDivClick()" class="@BackgroundClass" style="transition:background-color ease-in 0.2s">
     <h3>Grocery items</h3>
     <button @onclick="InsertNew">Insert</button>
     <ul>
@@ -56,7 +113,7 @@
             <li class="@c">
                 @if (groceryItem != null) {
                     var itemClass = groceryItem.IsCompleted ? "isCompleted" : "";
-                    <div @onclick="_=>BeginEdit(groceryItem.Id)">
+                    <div @onclick="_ => BeginEdit(groceryItem.Id)">
                         <div class="@itemClass">@groceryItem.Name</div>
                         @if (!groceryItem.IsCompleted) {
                             <div>@groceryItem.Note</div>
@@ -73,8 +130,8 @@
                             <input @onchange="UpdateNote" value="@editor.Note" />
                         </div>
                         <div>
-                            <button @onclick="_=>CancelEdit()">cancel</button>
-                            <button disabled="@(!View.CanCommit)" style="margin-left:0.2em" @onclick="_=>Save()">save</button>
+                            <button @onclick="_ => CancelEdit()">cancel</button>
+                            <button disabled="@(!View.CanCommit)" style="margin-left:0.2em" @onclick="_ => Save()">save</button>
                         </div>
                     </div>
                 }
@@ -88,6 +145,28 @@
     </ul>
 </div>
 @code {
+    public int ModesIndex { get; set; } = 0;
+    public void IncrementMode() { 
+        ModesIndex = System.Math.Min(ModesIndex + 1, 2); 
+    }
+    public void DecrementMode() { 
+        ModesIndex = System.Math.Max(ModesIndex - 1, 0); 
+    }
+
+    public void Forward() {
+        if (BoundIndex != 3) {
+            BoundIndex++;
+        }
+    }
+    public void Backward() {
+        if (BoundIndex != 1) {
+            BoundIndex--;
+        }
+    }
+
+    public int BoundIndex { get; set; } = 1;
+
+
     protected override void OnInitialized() {
         base.OnInitialized();
     }
