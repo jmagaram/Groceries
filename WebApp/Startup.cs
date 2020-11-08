@@ -22,7 +22,7 @@ namespace WebApp {
             services.AddRazorPages();
             services.AddServerSideBlazor();
             services.AddSingleton<ICosmosConnector, CosmosConnector>(i => new CosmosConnector(Configuration.GetValue<string>("CosmosConnectionString")));
-            services.AddSingleton<Service>();
+            services.AddScoped<Service>();
             services.AddServerSideBlazor().AddCircuitOptions(options => { options.DetailedErrors = true; });
             services.AddApplicationInsightsTelemetry(Configuration["APPINSIGHTS_CONNECTIONSTRING"]);
         }
