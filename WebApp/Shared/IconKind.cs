@@ -14,6 +14,7 @@ namespace WebApp.Shared {
         Search,
         Cancel,
         Bell,
-        GoBack
+        GoBack,
+        GoForward
     }
 }
