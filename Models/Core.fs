@@ -39,7 +39,7 @@ module ItemName =
 [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
 module Note =
 
-    let rules = multipleLine 3<chars> 200<chars>
+    let rules = multipleLine 1<chars> 200<chars>
     let normalizer = String.trim
 
     let validator = rules |> StringValidation.createValidator
@@ -638,15 +638,24 @@ module ItemForm =
 
     let itemNameValidation (f: ItemForm) = f.ItemName.ValueTyping |> ItemName.tryParse
 
-    let updateItemName msg (f: ItemForm) = f.ItemName |> TextBox.update ItemName.normalizer msg |> fun n -> { f with ItemName = n }
+    let updateItemName msg (f: ItemForm) =
+        f.ItemName
+        |> TextBox.update ItemName.normalizer msg
+        |> fun n -> { f with ItemName = n }
 
     let quantityValidation (f: ItemForm) =
         f.Quantity.ValueTyping
         |> String.tryParseOptional Quantity.tryParse
 
-    let updateQuantity msg (f: ItemForm) = f.Quantity |> TextBox.update Quantity.normalizer msg |> fun q -> { f with Quantity = q }
+    let updateQuantity msg (f: ItemForm) =
+        f.Quantity
+        |> TextBox.update Quantity.normalizer msg
+        |> fun q -> { f with Quantity = q }
 
-    let updateNote msg (f: ItemForm) = f.Note |> TextBox.update Note.normalizer msg |> fun n -> { f with Note = n }
+    let updateNote msg (f: ItemForm) =
+        f.Note
+        |> TextBox.update Note.normalizer msg
+        |> fun n -> { f with Note = n }
 
     let noteValidation (f: ItemForm) = f.Note.ValueTyping |> String.tryParseOptional Note.tryParse
 
@@ -692,6 +701,14 @@ module ItemForm =
                   CategoryMode = ChooseExisting
                   CategoryChoice = Some c
                   NewCategoryName = TextBox.create "" }
+
+    let categoryCommittedName (f: ItemForm) =
+        match f.CategoryMode with
+        | CategoryMode.ChooseExisting ->
+            f.CategoryChoice
+            |> Option.map (fun c -> c.CategoryName |> CategoryName.asText)
+            |> Option.defaultValue ""
+        | CategoryMode.CreateNew -> f.NewCategoryName.ValueCommitted
 
     let scheduleOnce f = { f with ScheduleKind = Once }
     let scheduleCompleted f = { f with ScheduleKind = Completed }
@@ -956,3 +973,6 @@ module ItemForm =
 
         [<Extension>]
         static member CanDelete(me: ItemForm) = me |> canDelete
+
+        [<Extension>]
+        static member CategoryCommittedName (me:ItemForm) = me |> categoryCommittedName
