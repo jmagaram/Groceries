@@ -1,0 +1,87 @@
+﻿<style>
+    :root {
+        --color: rebeccapurple;
+        --disabled: #959495;
+    }
+
+    *, *:before, *:after {
+        box-sizing: border-box;
+    }
+
+    .checkbox {
+        display: grid;
+        grid-template-columns: min-content auto;
+        grid-gap: 0.5em;
+        color: var(--color);
+    }
+
+    .checkbox--disabled {
+        color: var(--disabled);
+    }
+
+    .checkbox__control {
+        display: inline-grid;
+        width: 1em;
+        height: 1em;
+        border-radius: 0.25em;
+        border: 0.1em solid currentColor;
+    }
+
+        .checkbox__control svg {
+            transition: transform 0.1s ease-in 20ms;
+            transform: scale(0);
+            transform-origin: center center;
+        }
+
+    .checkbox__input {
+        display: grid;
+        grid-template-areas: "checkbox";
+    }
+
+        .checkbox__input > * {
+            grid-area: checkbox;
+        }
+
+        .checkbox__input input {
+            opacity: 0;
+            width: 1em;
+            height: 1em;
+        }
+
+            .checkbox__input input:focus + .checkbox__control {
+                box-shadow: 0 0 0 0.05em #fff, 0 0 0.15em 0.1em currentColor;
+            }
+
+            .checkbox__input input:checked + .checkbox__control svg {
+                transform: scale(1.25);
+            }
+
+            .checkbox__input input:disabled + .checkbox__control {
+                color: var(--disabled);
+            }
+
+    .checkbox__label {
+        line-height: 1;
+    }
+</style>
+
+<label class="checkbox @(IsDisabled ? "checkbox--disabled" : "")">
+    <span class="checkbox__input">
+        <input type="checkbox" disabled="@IsDisabled" name="checkbox">
+        <span class="checkbox__control">
+            <svg xmlns='http://www.w3.org/2000/svg' class='ionicon' viewBox='0 0 512 512' aria-hidden="true" fill="currentColor" stroke="white" stroke-width="0" focusable="false"><title>Checkbox</title><path d='M400 48H112a64.07 64.07 0 00-64 64v288a64.07 64.07 0 0064 64h288a64.07 64.07 0 0064-64V112a64.07 64.07 0 00-64-64zm-35.75 138.29l-134.4 160a16 16 0 01-12 5.71h-.27a16 16 0 01-11.89-5.3l-57.6-64a16 16 0 1123.78-21.4l45.29 50.32 122.59-145.91a16 16 0 0124.5 20.58z' /></svg>
+        </span>
+    </span>
+    <span class="checkbox__label">@Title</span>
+</label>
+
+@code {
+    // Based on https://moderncss.dev/pure-css-custom-checkbox-style/
+    // Icon from https://ionicons.com/
+
+    [Parameter]
+    public string Title { get; set; }
+
+    [Parameter]
+    public bool IsDisabled { get; set; }
+}
