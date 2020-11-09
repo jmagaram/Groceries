@@ -1,0 +1,38 @@
+﻿<label class="radio @(IsDisabled ? "radio--disabled" : "")">
+    <span class="radio__input">
+        <input @onchange="e=>IsCheckedChanged.InvokeAsync((string)e.Value)"
+               @onclick="e=>OnClick.InvokeAsync(Value)"
+               type="radio"
+               value="@Value"
+               checked="@IsChecked"
+               disabled="@IsDisabled"
+               name="radio">
+        <span class="radio__control">
+            <svg xmlns='http://www.w3.org/2000/svg' class='ionicon' viewBox='0 0 512 512' aria-hidden="true" fill="currentColor" stroke="white" stroke-width="0" focusable="false"><title>RadioButton</title><path d='M448 256c0-106-86-192-192-192S64 150 64 256s86 192 192 192 192-86 192-192z' fill='none' stroke='currentColor' stroke-miterlimit='10' stroke-width='32' /><circle cx='256' cy='256' r='144' /></svg>
+        </span>
+    </span>
+    <span class="radio__label">@Title</span>
+</label>
+
+@code {
+    // Based on https://moderncss.dev/pure-css-custom-checkbox-style/
+    // Icon from https://ionicons.com/
+
+    [Parameter]
+    public string Title { get; set; }
+
+    [Parameter]
+    public bool IsDisabled { get; set; }
+
+    [Parameter]
+    public bool IsChecked { get; set; }
+
+    [Parameter]
+    public string Value { get; set; }
+
+    [Parameter]
+    public EventCallback<string> IsCheckedChanged { get; set; }
+
+    [Parameter]
+    public EventCallback<string> OnClick { get; set; }
+}
