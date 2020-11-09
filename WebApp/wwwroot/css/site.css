@@ -54,7 +54,7 @@
         }
 
         .checkbox__input input:checked + .checkbox__control svg {
-            transform: scale(1.25);
+            transform: scale(1.3);
         }
 
         .checkbox__input input:disabled + .checkbox__control {
