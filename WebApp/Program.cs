@@ -14,10 +14,6 @@ namespace WebApp {
     public class Program {
         public static async Task Main(string[] args) {
             var webHost = CreateHostBuilder(args).Build();
-            using (var scope = webHost.Services.CreateScope()) {
-                var service = scope.ServiceProvider.GetRequiredService<Models.Service>();
-                await service.InitializeAsync();
-            }
             await webHost.RunAsync();
         }
 
