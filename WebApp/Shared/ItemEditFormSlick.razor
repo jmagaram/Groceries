@@ -96,7 +96,6 @@
             height: 1.4em;
             font-size: 1.1em
         }
-
 </style>
 @if (Form == null) {
     <span>Loading...</span>
@@ -123,7 +122,7 @@
                 </div>
             </form>
         </nav>
-        <div class="propertyGrid enterLeft" style="margin-top:1rem; grid-column:1/2">
+        <div class="propertyGrid enterLeft" style="margin-top:1rem; grid-column:1/3">
             <div>
                 <input type="text" placeholder="Item to buy" @oninput="OnItemNameChange" @onfocusout="OnItemNameFocusOut" value="@Form.ItemName.ValueCommitted" />
                 @if (Form.ItemNameValidation().IsError) {
@@ -131,7 +130,7 @@
                 }
             </div>
         </div>
-        <div class="propertyGrid enterLeft" style="grid-column:1/2">
+        <div class="propertyGrid enterLeft" style="grid-column:1/3">
             <div>
                 <input type="text" placeholder="Quantity (optional)" @oninput="e=>OnQuantityChange((string)e.Value)" @onfocusout="OnQuantityFocusOut" value="@Form.Quantity.ValueCommitted" />
                 @if (Form.QuantityValidation().IsError) {
