@@ -43,6 +43,23 @@
         }
     }
 
+    .fadeIn {
+        animation-name:fadeIn;
+        animation-fill-mode:forwards;
+        animation-duration:0.25s;
+        animation-timing-function:ease;
+    }
+
+    @@keyframes fadeIn {
+        from {
+            opacity: 0;
+        }
+
+        to {
+            opacity: 1;
+        }
+    }
+
     .radioList {
         list-style-type: none;
         margin-top: 1rem;
@@ -96,6 +113,7 @@
             height: 1.4em;
             font-size: 1.1em
         }
+
 </style>
 @if (Form == null) {
     <span>Loading...</span>
@@ -104,7 +122,14 @@
 <Modes ActiveIndex="@ActiveIndex">
     <ModesItem>
         <nav class="navbar navbar-dark bg-dark sticky-top">
-            <button class="btn btn-dark enterLeft iconButton" @onclick="OnCancel"><ion-icon name="arrow-undo-outline"></ion-icon></button>
+            <div class="enterLeft">
+                @if (Form.HasErrors()) {
+                    <button class="btn btn-dark iconButton fadeIn" @onclick="OnCancel"><ion-icon name="arrow-undo-outline"></ion-icon></button>
+                }
+                else {
+                    <button class="btn btn-dark iconButton fadeIn" @onclick="OnSaveChanges"><ion-icon name="chevron-back-outline"></ion-icon></button>
+                }
+            </div>
             @*<strong class="navbar-text enterLeft">@(Form.ItemId.IsNone() ? "New" : "Edit")</strong>*@
             <strong class="navbar-text enterLeft">&nbsp;</strong>
             <form class="form-inline enterLeft">
