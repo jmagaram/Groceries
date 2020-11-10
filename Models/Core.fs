@@ -725,9 +725,10 @@ module ItemForm =
             |> Option.defaultValue ""
         | CategoryMode.CreateNew -> f.NewCategoryName.ValueCommitted
 
-    let scheduleOnce f = { f with ScheduleKind = Once }
-    let scheduleCompleted f = { f with ScheduleKind = Completed }
-    let scheduleRepeat f = { f with ScheduleKind = Repeat }
+    let scheduleOnce f = { f with ScheduleKind = Once; IsComplete = false }
+
+    let scheduleCompleted f = { f with ScheduleKind = Completed; IsComplete = true }
+    let scheduleRepeat f = { f with ScheduleKind = Repeat; IsComplete = false }
 
     let frequencyCoerceIntoBounds d = Frequency.rules |> RangeValidation.forceIntoBounds d
 
@@ -764,11 +765,24 @@ module ItemForm =
         |> Option.orElse weeksExactly
         |> Option.defaultWith (fun () -> if d = 1 then "Daily" else sprintf "Every %i days" d)
 
-    let postponeSet v f = { f with Postpone = Some v }
+    let postponeSet v f =
+        { f with
+              Postpone = Some v
+              IsComplete =
+                  match f.ScheduleKind with
+                  | Completed -> false
+                  | Once -> false
+                  | Repeat ->
+                      match f.Postpone with
+                      | None -> false
+                      | Some _ -> f.IsComplete }
 
-    let postponeUntilFrequency f = { f with Postpone = f.Frequency |> Frequency.days |> Some }
+    let postponeUntilFrequency f =
+        { f with
+              Postpone = f.Frequency |> Frequency.days |> Some
+              IsComplete = false }
 
-    let postponeClear f = { f with Postpone = None }
+    let postponeClear f = { f with Postpone = None; IsComplete = false }
 
     let purchased f =
         match f.ScheduleKind with
@@ -778,9 +792,15 @@ module ItemForm =
 
     let toggleComplete f =
         match f.ScheduleKind with
-        | Once -> f |> purchased
-        | Repeat -> f |> postponeUntilFrequency
-        | Completed -> f |> scheduleOnce
+        | Once -> { f with ScheduleKind = Completed; IsComplete = true }
+        | Completed -> { f with ScheduleKind = Once; IsComplete = false }
+        | Repeat ->
+            match f.IsComplete with
+            | false ->
+                { f with
+                      Postpone = f.Frequency |> Frequency.days |> Some
+                      IsComplete = true }
+            | true -> { f with Postpone = None; IsComplete = false }
 
     let postponeDurationAsText (d: int<days>) =
         let d = d |> int
@@ -820,6 +840,7 @@ module ItemForm =
           Quantity = TextBox.create ""
           Note = TextBox.create ""
           ScheduleKind = ScheduleKind.Once
+          IsComplete = false
           Frequency = Frequency.frequencyDefault
           Postpone = None
           CategoryMode = CategoryMode.ChooseExisting
@@ -856,6 +877,7 @@ module ItemForm =
               | Schedule.Completed -> Completed
               | Schedule.Once -> Once
               | Schedule.Repeat _ -> Repeat
+          IsComplete = i.Schedule |> Schedule.isCompleted
           Frequency =
               match i.Schedule with
               | Schedule.Completed -> Frequency.frequencyDefault

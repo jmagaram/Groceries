@@ -100,6 +100,7 @@ type ItemForm =
       Quantity: TextBox
       Note: TextBox
       ScheduleKind: ScheduleKind
+      IsComplete : bool
       Frequency: Frequency
       Postpone: int<days> option
       CategoryMode: CategoryMode

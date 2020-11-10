@@ -48,6 +48,8 @@ namespace WebApp.Shared {
         private void Process(FormMessage msg) =>
             OnItemFormMessage.InvokeAsync(msg);
 
+        protected void OnToggleComplete() => Process(FormMessage.ToggleComplete);
+
         protected void OnItemNameChange(ChangeEventArgs e) =>
             Process(FormMessage.NewItemName(TextBoxMessage.NewTypeText((string)e.Value)));
 
