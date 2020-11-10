@@ -54,7 +54,7 @@
             margin-bottom: 1.5rem
         }
 
-    .propertygrid {
+    .propertyGrid {
         display: grid;
         grid-column-gap: 0.5em;
         grid-template-columns: 1em auto;
@@ -66,24 +66,8 @@
         padding-right: 3rem;
     }
 
-        .propertygrid input {
+        .propertyGrid input {
             width: 18rem;
-        }
-
-    .oneColumnPropertyGrid {
-        display: grid;
-        grid-column-gap: 0.5em;
-        grid-template-columns: auto;
-        width: 100%;
-        margin-bottom: 1.25rem;
-        margin-left: 1.25em;
-        text-align: left;
-        align-items: center;
-        padding-right: 3rem;
-    }
-
-        .oneColumnPropertyGrid input {
-            width: 20rem;
         }
 
     .divButton:hover {
@@ -91,7 +75,7 @@
     }
 
     /* Could not get this to work on ios */
-    button.propertygrid {
+    button.propertyGrid {
         background-color: transparent;
         padding-left: 0px;
         border: 0px;
@@ -139,7 +123,7 @@
                 </div>
             </form>
         </nav>
-        <div class="oneColumnPropertyGrid enterLeft" style="margin-top:1rem">
+        <div class="propertyGrid enterLeft" style="margin-top:1rem; grid-column:1/2">
             <div>
                 <input type="text" placeholder="Item to buy" @oninput="OnItemNameChange" @onfocusout="OnItemNameFocusOut" value="@Form.ItemName.ValueCommitted" />
                 @if (Form.ItemNameValidation().IsError) {
@@ -147,7 +131,7 @@
                 }
             </div>
         </div>
-        <div class="oneColumnPropertyGrid enterLeft">
+        <div class="propertyGrid enterLeft" style="grid-column:1/2">
             <div>
                 <input type="text" placeholder="Quantity (optional)" @oninput="e=>OnQuantityChange((string)e.Value)" @onfocusout="OnQuantityFocusOut" value="@Form.Quantity.ValueCommitted" />
                 @if (Form.QuantityValidation().IsError) {
@@ -155,7 +139,7 @@
                 }
             </div>
         </div>
-        <div class="propertygrid enterLeft divButton" @onclick="e=>GoCategories()">
+        <div class="propertyGrid enterLeft divButton" @onclick="e=>GoCategories()">
             <ion-icon name="color-palette"></ion-icon>
             @if (!string.IsNullOrWhiteSpace(Form.CategoryCommittedName())) {
                 <div>@Form.CategoryCommittedName()</div>
@@ -164,7 +148,7 @@
                 <div>Uncategorized</div>
             }
         </div>
-        <div class="propertygrid enterLeft divButton" @onclick="e=>GoFrequency()">
+        <div class="propertyGrid enterLeft divButton" @onclick="e=>GoFrequency()">
             <ion-icon name="repeat-outline"></ion-icon>
             @if (Form.ScheduleKind.IsRepeat) {
                 <div>@Models.ItemFormModule.frequencyAsText(Form.Frequency)</div>
@@ -174,7 +158,7 @@
             }
         </div>
         @if (Form.ScheduleKind.IsRepeat) {
-            <div class="propertygrid enterLeft divButton" @onclick="e=>GoPostpone()">
+            <div class="propertyGrid enterLeft divButton" @onclick="e=>GoPostpone()">
                 <div><ion-icon name="calendar-outline"></ion-icon></div>
                 @if (Form.Postpone.IsSome()) {
                     int daysAway = Form.Postpone.Value;
@@ -188,7 +172,7 @@
             </div>
         }
         @if (Form.Stores.Any()) {
-            <div class="propertygrid enterLeft divButton" @onclick="e=>GoStores()">
+            <div class="propertyGrid enterLeft divButton" @onclick="e=>GoStores()">
                 <ion-icon name="storefront-outline"></ion-icon>
                 @if (Form.Stores.All(i => i.IsSold)) {
                     <div class="text-secondary">All stores</div>
@@ -202,7 +186,7 @@
                 }
             </div>
         }
-        <div class="propertygrid enterLeft divButton" @onclick="e=>GoNote()">
+        <div class="propertyGrid enterLeft divButton" @onclick="e=>GoNote()">
             <ion-icon name="newspaper-outline"></ion-icon>
             @if (Form.Note.ValueCommitted.Length > 0) {
                 <div style="line-height:1"><small>@Form.Note.ValueCommitted</small></div>
