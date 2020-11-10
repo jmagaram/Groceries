@@ -194,6 +194,13 @@ namespace WebApp.Pages {
             await StateService.UpdateAsync(stateMessage);
         }
 
+        private async Task OnClickBuyAgainRepeat((ItemId itemId, int days) i) {
+            var itemMessage = ItemMessage.BuyAgainWithRepeat.NewBuyAgainWithRepeat(i.days);
+            var stateItemMessage = StateItemMessage.NewModifyItem(i.itemId, itemMessage);
+            var stateMessage = StateMessage.NewItemMessage(stateItemMessage);
+            await StateService.UpdateAsync(stateMessage);
+        }
+
         private async Task OnClickRemovePostpone(ItemId itemId) {
             var itemMessage = ItemMessage.RemovePostpone;
             var stateItemMessage = StateItemMessage.NewModifyItem(itemId, itemMessage);

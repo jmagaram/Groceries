@@ -221,6 +221,17 @@ module Schedule =
         | Schedule.Once -> s
         | Schedule.Repeat _ -> s
 
+    let repeat d s =
+        let f =
+            d
+            |> Frequency.create
+            |> Result.okOrDefaultValue Frequency.frequencyDefault
+
+        match s with
+        | Schedule.Completed -> Schedule.Repeat { Repeat.Frequency = f; Repeat.PostponedUntil = None }
+        | Schedule.Once -> Schedule.Repeat { Repeat.Frequency = f; Repeat.PostponedUntil = None }
+        | Schedule.Repeat r -> if (r.Frequency = f) then s else Schedule.Repeat { r with Frequency = f }
+
     let withoutPostpone s =
         match s with
         | Schedule.Repeat ({ PostponedUntil = Some _ } as r) -> { r with PostponedUntil = None } |> Schedule.Repeat
@@ -254,6 +265,8 @@ module Item =
 
     let buyAgain i = i |> mapSchedule Schedule.activate
 
+    let buyAgainWithRepeat d i = i |> mapSchedule (Schedule.repeat d)
+
     let removePostpone i = i |> mapSchedule Schedule.withoutPostpone
 
     let postpone now days i =
@@ -263,6 +276,7 @@ module Item =
     type Message =
         | MarkComplete
         | BuyAgain
+        | BuyAgainWithRepeat of int<days>
         | RemovePostpone
         | Postpone of int<days>
 
@@ -270,6 +284,7 @@ module Item =
         match msg with
         | MarkComplete -> i |> markComplete now
         | BuyAgain -> i |> buyAgain
+        | BuyAgainWithRepeat d -> i |> buyAgainWithRepeat d
         | RemovePostpone -> i |> removePostpone
         | Postpone d -> i |> postpone now d
 
@@ -975,4 +990,4 @@ module ItemForm =
         static member CanDelete(me: ItemForm) = me |> canDelete
 
         [<Extension>]
-        static member CategoryCommittedName (me:ItemForm) = me |> categoryCommittedName
+        static member CategoryCommittedName(me: ItemForm) = me |> categoryCommittedName

@@ -69,6 +69,7 @@
     }
     @if (ItemQry.Schedule.IsCompleted) {
         <elix-menu-item id="@MenuChoice.BuyAgain">Buy again</elix-menu-item>
+        <elix-menu-item id="@MenuChoice.BuyAgainWeekly">Buy again (weekly)</elix-menu-item>
     }
     @if (!ItemQry.Schedule.IsRepeat) {
         <elix-menu-item id="@MenuChoice.Delete">Delete</elix-menu-item>
@@ -82,7 +83,7 @@
         <elix-menu-item id="@MenuChoice.Plus2Wk">Postpone +2 Weeks</elix-menu-item>
         <elix-menu-separator></elix-menu-separator>
     }
-    <elix-menu-item id="@MenuChoice.Details">Details...</elix-menu-item>
+    <elix-menu-item id="@MenuChoice.Details">Options...</elix-menu-item>
     <div slot="source" class="wholething" style="display:flex; flex-direction:row">
         @{
             var itemNameClass = ItemQry.Schedule.IsCompleted ? "completed" : "";
@@ -153,6 +154,8 @@
     enum MenuChoice {
         Complete,
         BuyAgain,
+        BuyAgainWeekly,
+        BuyAgainEvery2Weeks,
         Delete,
         Now,
         Plus1Wk,
@@ -186,6 +189,8 @@
             switch (choice) {
                 case MenuChoice.Complete: await OnClickComplete.InvokeAsync(ItemQry.ItemId); break;
                 case MenuChoice.BuyAgain: await OnClickBuyAgain.InvokeAsync(ItemQry.ItemId); break;
+                case MenuChoice.BuyAgainWeekly: await OnClickBuyAgainRepeat.InvokeAsync((ItemQry.ItemId, 7)); break;
+                case MenuChoice.BuyAgainEvery2Weeks: await OnClickBuyAgainRepeat.InvokeAsync((ItemQry.ItemId, 14)); break;
                 case MenuChoice.Delete: await OnClickDelete.InvokeAsync(ItemQry.ItemId); break;
                 case MenuChoice.Now: await OnClickRemovePostpone.InvokeAsync(ItemQry.ItemId); break;
                 case MenuChoice.Plus1Wk: await OnClickPostpone.InvokeAsync((ItemQry.ItemId, 7)); break;
@@ -210,6 +215,9 @@
 
     [Parameter]
     public EventCallback<Models.CoreTypes.ItemId> OnClickBuyAgain { get; set; }
+
+    [Parameter]
+    public EventCallback<(Models.CoreTypes.ItemId item, int days)> OnClickBuyAgainRepeat { get; set; }
 
     [Parameter]
     public EventCallback<Models.CoreTypes.ItemId> OnClickRemovePostpone { get; set; }

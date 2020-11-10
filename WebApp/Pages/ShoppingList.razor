@@ -125,7 +125,7 @@
             }
 
             foreach (var item in Items.Where(i => object.Equals(i.Category, cat)).OrderBy(j => j.Schedule.DueDate(now).GetOr(DateTimeOffset.MaxValue)).ThenBy(j => j.ItemName)) {
-                <WebApp.Shared.Item HideCategory="true" OnClickPostpone="@(async i => await OnClickPostpone(i))" OnClickRemovePostpone="@(async i => await OnClickRemovePostpone(i))" OnClickBuyAgain="@(async i => await OnClickBuyAgain(i))" OnClickDelete="OnClickDelete" OnClickComplete="OnClickComplete" ItemQry="@item" />
+                <WebApp.Shared.Item HideCategory="true" OnClickBuyAgainRepeat="OnClickBuyAgainRepeat" OnClickPostpone="@(async i => await OnClickPostpone(i))" OnClickRemovePostpone="@(async i => await OnClickRemovePostpone(i))" OnClickBuyAgain="@(async i => await OnClickBuyAgain(i))" OnClickDelete="OnClickDelete" OnClickComplete="OnClickComplete" ItemQry="@item" />
             }
         }
     }
