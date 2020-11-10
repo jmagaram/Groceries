@@ -39,7 +39,7 @@ module ItemName =
 [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
 module Note =
 
-    let rules = multipleLine 1<chars> 200<chars>
+    let rules = multipleLine 1<chars> 600<chars>
     let normalizer = String.trim
 
     let validator = rules |> StringValidation.createValidator
