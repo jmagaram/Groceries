@@ -1,0 +1,298 @@
+﻿@using System;
+@using System.Collections.Generic;
+@using Microsoft.AspNetCore.Components;
+@using Microsoft.AspNetCore.Components.Web;
+@using Models;
+@using WebApp.Common;
+@using static Models.ItemFormModule.ItemFormExtensions;
+
+<style>
+    .enterRight {
+        animation: enterRightAnimation;
+        animation-duration: 0.25s;
+        animation-fill-mode: forwards;
+        animation-timing-function: ease;
+        position: relative;
+    }
+
+    @@keyframes enterRightAnimation {
+        from {
+            left: 125px;
+        }
+
+        to {
+            left: 0px;
+        }
+    }
+
+    .enterLeft {
+        animation: enterLeftAnimation;
+        animation-duration: 0.25s;
+        animation-fill-mode: forwards;
+        animation-timing-function: ease;
+        position: relative;
+    }
+
+    @@keyframes enterLeftAnimation {
+        from {
+            right: 125px;
+        }
+
+        to {
+            right: 0px;
+        }
+    }
+
+    .radioList {
+        list-style-type: none;
+        margin-top: 1rem;
+        padding-left: 0px;
+        margin-left: 1rem;
+    }
+
+        .radioList li {
+            margin-bottom: 1.5rem
+        }
+
+    .propertygrid {
+        display: grid;
+        grid-column-gap: 0.5em;
+        grid-template-columns: 1em auto;
+        width: 100%;
+        margin-bottom: 1.25rem;
+        margin-left: 1.25em;
+        text-align: left;
+        align-items: center;
+        padding-right: 3rem;
+    }
+
+        .propertygrid input {
+            width: 18rem;
+        }
+
+    .oneColumnPropertyGrid {
+        display: grid;
+        grid-column-gap: 0.5em;
+        grid-template-columns: auto;
+        width: 100%;
+        margin-bottom: 1.25rem;
+        margin-left: 1.25em;
+        text-align: left;
+        align-items: center;
+        padding-right: 3rem;
+    }
+
+        .oneColumnPropertyGrid input {
+            width: 20rem;
+        }
+
+    .divButton:hover {
+        cursor: pointer;
+    }
+
+    /* Could not get this to work on ios */
+    button.propertygrid {
+        background-color: transparent;
+        padding-left: 0px;
+        border: 0px;
+    }
+
+    .errorMessage {
+        font-size: 80%;
+        color: #dc3545;
+        margin-top: .25rem;
+    }
+
+    .iconButton {
+    }
+
+        .iconButton ion-icon {
+            display: inline-block;
+            vertical-align: bottom;
+            height: 1.4em;
+            font-size: 1.1em
+        }
+
+</style>
+@if (Form == null) {
+    <span>Loading...</span>
+    return;
+}
+<Modes ActiveIndex="@ActiveIndex">
+    <ModesItem>
+        <nav class="navbar navbar-dark bg-dark sticky-top">
+            <button class="btn btn-dark enterLeft iconButton" @onclick="OnCancel"><ion-icon name="arrow-undo-outline"></ion-icon></button>
+            @*<strong class="navbar-text enterLeft">@(Form.ItemId.IsNone() ? "New" : "Edit")</strong>*@
+            <strong class="navbar-text enterLeft">&nbsp;</strong>
+            <form class="form-inline enterLeft">
+                <div role="group">
+                    @if (Form.CanDelete()) {
+                        <button style="margin-right:5px" type="button" class="btn btn-dark iconButton" @onclick="OnDelete"><ion-icon name="trash-outline"></ion-icon></button>
+                    }
+                    @if (!Form.ScheduleKind.IsCompleted) {
+                        <button type="button" class="btn btn-dark iconButton" disabled="@Form.HasErrors()" @onclick="OnSubmitPurchased"><ion-icon name="checkmark-circle-outline"></ion-icon>&nbsp;Complete</button>
+                        <button type="button" class="btn btn-dark iconButton" disabled="@Form.HasErrors()" @onclick="OnSaveChanges">Save</button>
+                    }
+                    else {
+                        <button type="button" class="btn btn-dark iconButton" disabled="@Form.HasErrors()" @onclick="AddToShoppingListAgain"><ion-icon name="cart-outline"></ion-icon>&nbsp;Buy again</button>
+                    }
+                </div>
+            </form>
+        </nav>
+        <div class="oneColumnPropertyGrid enterLeft" style="margin-top:1rem">
+            <div>
+                <input type="text" placeholder="Item to buy" @oninput="OnItemNameChange" @onfocusout="OnItemNameFocusOut" value="@Form.ItemName.ValueCommitted" />
+                @if (Form.ItemNameValidation().IsError) {
+                    <div class="errorMessage">@Form.ItemNameValidation().ErrorValue</div>
+                }
+            </div>
+        </div>
+        <div class="oneColumnPropertyGrid enterLeft">
+            <div>
+                <input type="text" placeholder="Quantity (optional)" @oninput="e=>OnQuantityChange((string)e.Value)" @onfocusout="OnQuantityFocusOut" value="@Form.Quantity.ValueCommitted" />
+                @if (Form.QuantityValidation().IsError) {
+                    <div class="errorMessage text-danger">@Form.QuantityValidation().ErrorValue</div>
+                }
+            </div>
+        </div>
+        <div class="propertygrid enterLeft divButton" @onclick="e=>GoCategories()">
+            <ion-icon name="color-palette"></ion-icon>
+            @if (!string.IsNullOrWhiteSpace(Form.CategoryCommittedName())) {
+                <div>@Form.CategoryCommittedName()</div>
+            }
+            else {
+                <div>Uncategorized</div>
+            }
+        </div>
+        <div class="propertygrid enterLeft divButton" @onclick="e=>GoFrequency()">
+            <ion-icon name="repeat-outline"></ion-icon>
+            @if (Form.ScheduleKind.IsRepeat) {
+                <div>@Models.ItemFormModule.frequencyAsText(Form.Frequency)</div>
+            }
+            else {
+                <div class="text-secondary">Repeat...</div>
+            }
+        </div>
+        @if (Form.ScheduleKind.IsRepeat) {
+            <div class="propertygrid enterLeft divButton" @onclick="e=>GoPostpone()">
+                <div><ion-icon name="calendar-outline"></ion-icon></div>
+                @if (Form.Postpone.IsSome()) {
+                    int daysAway = Form.Postpone.Value;
+                    <div>
+                        Postpone&nbsp;@ItemFormModule.postponeDurationAsText(Form.Postpone.Value)
+                    </div>
+                }
+                else {
+                    <div class="text-secondary">Postpone...</div>
+                }
+            </div>
+        }
+        @if (Form.Stores.Any()) {
+            <div class="propertygrid enterLeft divButton" @onclick="e=>GoStores()">
+                <ion-icon name="storefront-outline"></ion-icon>
+                @if (Form.Stores.All(i => i.IsSold)) {
+                    <div class="text-secondary">All stores</div>
+                }
+                else {
+                    <ul style="list-style-type:none; padding-left:0px;margin:0px;">
+                        @foreach (var s in Form.Stores.Where(i => !i.IsSold)) {
+                            <li style="margin-right:0.5rem; text-decoration:line-through; text-decoration-color:#808080; display:inline">@StoreNameModule.asText(s.Store.StoreName)</li>
+                        }
+                    </ul>
+                }
+            </div>
+        }
+        <div class="propertygrid enterLeft divButton" @onclick="e=>GoNote()">
+            <ion-icon name="newspaper-outline"></ion-icon>
+            @if (Form.Note.ValueCommitted.Length > 0) {
+                <div style="line-height:1"><small>@Form.Note.ValueCommitted</small></div>
+            }
+            else {
+                <div class="text-secondary">Note...</div>
+            }
+        </div>
+    </ModesItem>
+    <ModesItem>
+        <nav class="navbar navbar-dark bg-dark sticky-top">
+            <button @onclick="_=>OnCategoryCancel()" class="btn btn-dark enterRight"><ion-icon name="chevron-back-outline"></ion-icon></button>
+            <strong class="navbar-text enterRight">Category</strong>
+            <span>&nbsp;</span>
+        </nav>
+        <ul class="enterRight radioList">
+            <li>
+                <Radio GroupName="cat" Value="uncat" Title="Uncategorized" IsChecked="@(Form.CategoryMode.IsChooseExisting && Form.CategoryChoice.IsNone())" OnClick="_=>OnCategoryChooseUncategorized()" />
+            </li>
+            @foreach (var i in Form.CategoryChoiceList) {
+                string description = CategoryNameModule.asText(i.CategoryName);
+                string key = CategoryIdModule.serialize(i.CategoryId);
+                bool isSelected = Form.CategoryMode.IsChooseExisting && Form.CategoryChoice.IsSomeValue(i);
+                <li>
+                    <Radio GroupName="cat" Title="@description" IsChecked="@isSelected" OnClick="_=>OnCategoryChooseExisting(key)" />
+                </li>
+            }
+        </ul>
+    </ModesItem>
+    <ModesItem>
+        <nav class="navbar navbar-dark bg-dark sticky-top">
+            <button @onclick="_=>GoBackHome()" class="btn btn-dark enterRight"><ion-icon name="chevron-back-outline"></ion-icon></button>
+            <strong class="navbar-text enterRight">Frequency</strong>
+            <span>&nbsp;</span>
+        </nav>
+        <ul class="enterRight radioList">
+            <li><Radio GroupName="freq" Title="Only once (does not repeat)" IsChecked="@(Form.ScheduleKind.IsRepeat==false)" OnClick="s=>OnRepeatChange(-1)" /></li>
+            @foreach (var i in Form.FrequencyChoices()) {
+                string description = Models.ItemFormModule.frequencyAsText(i);
+                string key = i.Item.ToString();
+                bool isSelected = Form.ScheduleKind.IsRepeat && i.Equals(Form.Frequency);
+                <li><Radio GroupName="freq" Title="@description" IsChecked="@isSelected" Value="@key" OnClick="s=>OnRepeatChange(FrequencyModule.days(i))" /></li>
+            }
+        </ul>
+    </ModesItem>
+    <ModesItem>
+        <nav class="navbar navbar-dark bg-dark sticky-top">
+            <button @onclick="_=>GoBackHome()" class="btn btn-dark enterRight"><ion-icon name="chevron-back-outline"></ion-icon></button>
+            <strong class="navbar-text enterRight">Stores</strong>
+            <button @onclick="_=>GoBackHome()" class="btn btn-dark enterRight">Save</button>
+        </nav>
+        <ul class="enterRight radioList">
+            @foreach (var s in Form.Stores) {
+                string description = @StoreNameModule.asText(s.Store.StoreName);
+                <li>
+                    <Checkbox Title="@description" IsCheckedChanged="b=>OnStoreChange(b, s.Store.StoreId)" IsChecked="@(s.IsSold)" />
+                </li>
+            }
+        </ul>
+    </ModesItem>
+    <ModesItem>
+        <nav class="navbar navbar-dark bg-dark sticky-top">
+            <button @onclick="_=>GoBackHome()" class="btn btn-dark enterRight"><ion-icon name="chevron-back-outline"></ion-icon></button>
+            <strong class="navbar-text enterRight">Note</strong>
+            <button @onclick="_=>GoBackHome()" class="btn btn-dark enterRight">Save</button>
+        </nav>
+        <div class="col enterRight" style="margin-top:1rem">
+            <textarea rows="5" class="form-control" id="inputNote" placeholder="Preferred brand, selection criteria, alternates, price guidelines, ..." @oninput="e=>OnNoteChange((string)e.Value)" @onfocusout="OnNoteFocusOut" value="@Form.Note.ValueCommitted"></textarea>
+            @if (Form.NoteValidation().IsError) {
+                <div class="errorMessage">@Form.NoteValidation().ErrorValue</div>
+            }
+        </div>
+    </ModesItem>
+    <ModesItem>
+        <nav class="navbar navbar-dark bg-dark sticky-top">
+            <button @onclick="_=>GoBackHome()" class="btn btn-dark enterRight"><ion-icon name="chevron-back-outline"></ion-icon></button>
+            <strong class="navbar-text enterRight">Postpone</strong>
+            <span>&nbsp;</span>
+        </nav>
+        <ul class="enterRight radioList">
+            <li>
+                <Radio GroupName="post" IsChecked="@Form.Postpone.IsNone()" Title="On shopping list now" IsCheckedChanged="_=>OnPostponeRemove()" />
+            </li>
+            @foreach (var i in Form.PostponeChoices()) {
+                string description = $"+{Models.ItemFormModule.postponeDurationAsText(i)}";
+                bool isSelected = Form.ScheduleKind.IsRepeat && Form.Postpone.IsSomeValue(i);
+                <li>
+                    <Radio GroupName="post" IsChecked="@isSelected" Title="@description" IsCheckedChanged="_=>OnPostponeDays(i)" />
+                </li>
+            }
+        </ul>
+    </ModesItem>
+</Modes>

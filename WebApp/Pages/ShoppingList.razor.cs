@@ -54,6 +54,7 @@ namespace WebApp.Pages {
         NavigationManager Navigation { get; set; }
 
         protected override async Task OnInitializedAsync() {
+            await StateService.InitializeAsync();
             await OnTextFilterClear();
             var shoppingList =
                 StateService.State

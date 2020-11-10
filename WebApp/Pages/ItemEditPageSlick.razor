@@ -1,0 +1,10 @@
+﻿@page "/itemedit/{ID}"
+@page "/itemnew/{ItemName}"
+@page "/itemnew"
+
+<ItemEditFormSlick 
+    OnItemFormMessage="@OnFormMessage" 
+    OnDeleteCallback="@OnDelete" 
+    OnCancelCallback="@OnCancel" 
+    OnSaveChangesCallback="@OnClickOk" 
+    Form="@Form"></ItemEditFormSlick>
