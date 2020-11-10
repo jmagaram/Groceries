@@ -776,6 +776,12 @@ module ItemForm =
         | Repeat -> f |> postponeUntilFrequency
         | Completed -> f
 
+    let toggleComplete f =
+        match f.ScheduleKind with
+        | Once -> f |> purchased
+        | Repeat -> f |> postponeUntilFrequency
+        | Completed -> f |> scheduleOnce
+
     let postponeDurationAsText (d: int<days>) =
         let d = d |> int
 
@@ -940,6 +946,7 @@ module ItemForm =
         | NewCategoryName of TextBoxMessage
         | StoresSetAvailability of store: StoreId * isSold: bool
         | Purchased
+        | ToggleComplete
         | Transaction of Message seq
 
     let rec update msg (f: ItemForm) =
@@ -961,6 +968,7 @@ module ItemForm =
         | NewCategoryName (TextBoxMessage.LoseFocus) -> f |> categoryNameBlur
         | StoresSetAvailability (id: StoreId, isSold: bool) -> f |> storesSetAvailability id isSold
         | Purchased -> f |> purchased
+        | ToggleComplete -> f |> toggleComplete
         | Message.Transaction msgs -> msgs |> Seq.fold (fun f m -> update m f) f
 
     [<Extension>]
