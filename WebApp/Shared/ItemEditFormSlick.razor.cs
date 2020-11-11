@@ -48,7 +48,12 @@ namespace WebApp.Shared {
         private void Process(FormMessage msg) =>
             OnItemFormMessage.InvokeAsync(msg);
 
-        protected void OnToggleComplete() => Process(FormMessage.ToggleComplete);
+        protected void OnToggleComplete() {
+            HighlightPostpone = !Form.IsComplete && Form.ScheduleKind.IsRepeat;
+            Process(FormMessage.ToggleComplete);
+        }
+
+        protected bool HighlightPostpone { get; set; }
 
         protected void OnItemNameChange(ChangeEventArgs e) =>
             Process(FormMessage.NewItemName(TextBoxMessage.NewTypeText((string)e.Value)));

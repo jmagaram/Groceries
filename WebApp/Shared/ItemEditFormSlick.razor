@@ -120,6 +120,126 @@
             height: 1.4em;
             font-size: 1.1em
         }
+
+    .bounce-top {
+        -webkit-animation: bounce-top 0.9s both;
+        animation: bounce-top 0.9s both;
+    }
+
+    @@-webkit-keyframes bounce-top {
+        0% {
+            -webkit-transform: translateY(-45px);
+            transform: translateY(-45px);
+            -webkit-animation-timing-function: ease-in;
+            animation-timing-function: ease-in;
+            opacity: 1;
+        }
+
+        24% {
+            opacity: 1;
+        }
+
+        40% {
+            -webkit-transform: translateY(-24px);
+            transform: translateY(-24px);
+            -webkit-animation-timing-function: ease-in;
+            animation-timing-function: ease-in;
+        }
+
+        65% {
+            -webkit-transform: translateY(-12px);
+            transform: translateY(-12px);
+            -webkit-animation-timing-function: ease-in;
+            animation-timing-function: ease-in;
+        }
+
+        82% {
+            -webkit-transform: translateY(-6px);
+            transform: translateY(-6px);
+            -webkit-animation-timing-function: ease-in;
+            animation-timing-function: ease-in;
+        }
+
+        93% {
+            -webkit-transform: translateY(-4px);
+            transform: translateY(-4px);
+            -webkit-animation-timing-function: ease-in;
+            animation-timing-function: ease-in;
+        }
+
+        25%, 55%, 75%, 87% {
+            -webkit-transform: translateY(0px);
+            transform: translateY(0px);
+            -webkit-animation-timing-function: ease-out;
+            animation-timing-function: ease-out;
+        }
+
+        100% {
+            -webkit-transform: translateY(0px);
+            transform: translateY(0px);
+            -webkit-animation-timing-function: ease-out;
+            animation-timing-function: ease-out;
+            opacity: 1;
+        }
+    }
+
+    @@keyframes bounce-top {
+        0% {
+            -webkit-transform: translateY(-45px);
+            transform: translateY(-45px);
+            -webkit-animation-timing-function: ease-in;
+            animation-timing-function: ease-in;
+            opacity: 1;
+        }
+
+        24% {
+            opacity: 1;
+        }
+
+        40% {
+            -webkit-transform: translateY(-24px);
+            transform: translateY(-24px);
+            -webkit-animation-timing-function: ease-in;
+            animation-timing-function: ease-in;
+        }
+
+        65% {
+            -webkit-transform: translateY(-12px);
+            transform: translateY(-12px);
+            -webkit-animation-timing-function: ease-in;
+            animation-timing-function: ease-in;
+        }
+
+        82% {
+            -webkit-transform: translateY(-6px);
+            transform: translateY(-6px);
+            -webkit-animation-timing-function: ease-in;
+            animation-timing-function: ease-in;
+        }
+
+        93% {
+            -webkit-transform: translateY(-4px);
+            transform: translateY(-4px);
+            -webkit-animation-timing-function: ease-in;
+            animation-timing-function: ease-in;
+        }
+
+        25%, 55%, 75%, 87% {
+            -webkit-transform: translateY(0px);
+            transform: translateY(0px);
+            -webkit-animation-timing-function: ease-out;
+            animation-timing-function: ease-out;
+        }
+
+        100% {
+            -webkit-transform: translateY(0px);
+            transform: translateY(0px);
+            -webkit-animation-timing-function: ease-out;
+            animation-timing-function: ease-out;
+            opacity: 1;
+        }
+    }
+
 </style>
 @if (Form == null) {
     <span>Loading...</span>
@@ -150,7 +270,7 @@
                     bool isHardComplete = Form.ScheduleKind.IsCompleted;
                     string c = (isHardComplete ? "hardComplete" : "");
                 }
-                <input class="@c" disabled="@isHardComplete" type="text" placeholder="Item to buy" @oninput="OnItemNameChange" @onfocusout="OnItemNameFocusOut" value="@Form.ItemName.ValueCommitted" />
+                <input class="@c" type="text" placeholder="Item to buy" @oninput="OnItemNameChange" @onfocusout="OnItemNameFocusOut" value="@Form.ItemName.ValueCommitted" />
                 @if (Form.ItemNameValidation().IsError) {
                     <div class="errorMessage">@Form.ItemNameValidation().ErrorValue</div>
                 }
@@ -184,11 +304,13 @@
             }
         </div>
         @if (Form.ScheduleKind.IsRepeat) {
+            string postponeClass = HighlightPostpone ? "bounce-top" : "";
+            HighlightPostpone = false;
             <div class="propertyGrid enterLeft divButton" @onclick="e=>GoPostpone()">
                 <div><ion-icon name="calendar-outline"></ion-icon></div>
                 @if (Form.Postpone.IsSome()) {
                     int daysAway = Form.Postpone.Value;
-                    <div>
+                    <div class="@postponeClass">
                         @ItemFormModule.postponeDurationAsText(Form.Postpone.Value)&nbsp;from now
                     </div>
                 }
