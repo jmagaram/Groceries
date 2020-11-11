@@ -239,7 +239,6 @@
             opacity: 1;
         }
     }
-
 </style>
 @if (Form == null) {
     <span>Loading...</span>
@@ -285,45 +284,40 @@
                 }
             </div>
         </div>
-        <div class="propertyGrid enterLeft divButton" @onclick="e=>GoCategories()">
+        @{
+            bool hasCategory = !string.IsNullOrWhiteSpace(Form.CategoryCommittedName());
+            bool hasRepeat = Form.ScheduleKind.IsRepeat;
+            bool hasPostpone = Form.Postpone.IsSome();
+            bool hasStores = Form.Stores.Any(i => !i.IsSold);
+            bool hasNote = Form.Note.ValueCommitted.Length > 0;
+
+            string hasCategoryClass = !hasCategory ? "text-secondary" : "";
+            string hasRepeatClass = !hasRepeat ? "text-secondary" : "";
+            string hasPostponeClass = !hasPostpone ? "text-secondary" : "";
+            string hasStoresClass = !hasStores ? "text-secondary" : "";
+            string hasNoteClass = !hasNote ? "text-secondary" : "";
+        }
+        <div class="propertyGrid enterLeft divButton @hasCategoryClass" @onclick="e=>GoCategories()">
             <ion-icon name="color-palette"></ion-icon>
-            @if (!string.IsNullOrWhiteSpace(Form.CategoryCommittedName())) {
-                <div>@Form.CategoryCommittedName()</div>
-            }
-            else {
-                <div class="text-secondary">Category...</div>
-            }
+            <div>@(hasCategory ? Form.CategoryCommittedName() : "Category...")</div>
         </div>
-        <div class="propertyGrid enterLeft divButton" @onclick="e=>GoFrequency()">
+        <div class="propertyGrid enterLeft divButton @hasRepeatClass" @onclick="e=>GoFrequency()">
             <ion-icon name="repeat-outline"></ion-icon>
-            @if (Form.ScheduleKind.IsRepeat) {
-                <div>@Models.ItemFormModule.frequencyAsText(Form.Frequency)</div>
-            }
-            else {
-                <div class="text-secondary">Repeat...</div>
-            }
+            <div>@(hasRepeat ? Models.ItemFormModule.frequencyAsText(Form.Frequency) : "Repeat...")</div>
         </div>
         @if (Form.ScheduleKind.IsRepeat) {
-            string postponeClass = HighlightPostpone ? "bounce-top" : "";
+            string animateClass = HighlightPostpone ? "bounce-top" : "";
             HighlightPostpone = false;
             <div class="propertyGrid enterLeft divButton" @onclick="e=>GoPostpone()">
-                <div><ion-icon name="calendar-outline"></ion-icon></div>
-                @if (Form.Postpone.IsSome()) {
-                    int daysAway = Form.Postpone.Value;
-                    <div class="@postponeClass">
-                        @ItemFormModule.postponeDurationAsText(Form.Postpone.Value)&nbsp;from now
-                    </div>
-                }
-                else {
-                    <div class="text-secondary">Postpone...</div>
-                }
+                <div class="@animateClass @hasPostponeClass"><ion-icon name="calendar-outline"></ion-icon></div>
+                <div class="@animateClass @hasPostponeClass">@(hasPostpone ? $"{@ItemFormModule.postponeDurationAsText(Form.Postpone.Value)} from now" : "Postpone...")</div>
             </div>
         }
         @if (Form.Stores.Any()) {
-            <div class="propertyGrid enterLeft divButton" @onclick="e=>GoStores()">
+            <div class="propertyGrid enterLeft divButton @hasStoresClass" @onclick="e=>GoStores()">
                 <ion-icon name="storefront-outline"></ion-icon>
                 @if (Form.Stores.All(i => i.IsSold)) {
-                    <div class="text-secondary">All stores</div>
+                    <div>All stores</div>
                 }
                 else {
                     <ul style="list-style-type:none; padding-left:0px;margin:0px;">
@@ -334,14 +328,9 @@
                 }
             </div>
         }
-        <div class="propertyGrid enterLeft divButton" @onclick="e=>GoNote()">
+        <div class="propertyGrid enterLeft divButton @hasNoteClass" @onclick="e=>GoNote()">
             <ion-icon name="newspaper-outline"></ion-icon>
-            @if (Form.Note.ValueCommitted.Length > 0) {
-                <div style="line-height:1"><small>@Form.Note.ValueCommitted</small></div>
-            }
-            else {
-                <div class="text-secondary">Note...</div>
-            }
+            <div style="line-height:1"><small>@(hasNote ? Form.Note.ValueCommitted : "Note...")</small></div>
         </div>
         @if (Form.CanDelete()) {
             <button style="margin-top:1.0rem; margin-left:0.5rem" type="button" class="btn btn-light" @onclick="OnDelete"><ion-icon name="trash-outline"></ion-icon>&nbsp;Delete</button>
@@ -370,11 +359,11 @@
     <ModesItem>
         <nav class="navbar navbar-dark bg-dark sticky-top">
             <button @onclick="_=>GoBackHome()" class="btn btn-dark enterRight"><ion-icon name="chevron-back-outline"></ion-icon></button>
-            <strong class="navbar-text enterRight">Frequency</strong>
+            <strong class="navbar-text enterRight">Repeat</strong>
             <span>&nbsp;</span>
         </nav>
         <ul class="enterRight radioList">
-            <li><Radio GroupName="freq" Title="Only once (does not repeat)" IsChecked="@(Form.ScheduleKind.IsRepeat==false)" OnClick="s=>OnRepeatChange(-1)" /></li>
+            <li><Radio GroupName="freq" Title="One-time-only" IsChecked="@(Form.ScheduleKind.IsRepeat==false)" OnClick="s=>OnRepeatChange(-1)" /></li>
             @foreach (var i in Form.FrequencyChoices()) {
                 string description = Models.ItemFormModule.frequencyAsText(i);
                 string key = i.Item.ToString();
