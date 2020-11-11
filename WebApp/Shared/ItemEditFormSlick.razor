@@ -363,7 +363,7 @@
             <span>&nbsp;</span>
         </nav>
         <ul class="enterRight radioList">
-            <li><Radio GroupName="freq" Title="One-time-only" IsChecked="@(Form.ScheduleKind.IsRepeat==false)" OnClick="s=>OnRepeatChange(-1)" /></li>
+            <li><Radio GroupName="freq" Title="Only once" IsChecked="@(Form.ScheduleKind.IsRepeat==false)" OnClick="s=>OnRepeatChange(-1)" /></li>
             @foreach (var i in Form.FrequencyChoices()) {
                 string description = Models.ItemFormModule.frequencyAsText(i);
                 string key = i.Item.ToString();
