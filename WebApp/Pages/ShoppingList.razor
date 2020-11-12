@@ -118,13 +118,18 @@
             margin-left: 0px;
         }
     }
+
+    ion-icon {
+        font-size: 24px;
+    }
+
 </style>
 @{
     string searchClass = ShowFilter ? "search" : "";
 }
 <div class="jm-navbar bg-dark @searchClass">
     <div>
-        <a style="margin-right:0.5rem; color:white" href="\"><ion-icon size="large" name="chevron-back-outline"></ion-icon></a>
+        <a style="margin-right:0.5rem; color:white" href="\"><ion-icon  name="chevron-back-outline"></ion-icon></a>
         <ElixMenuButton SourcePartType="div" OnMenuItemSelected="@OnMenuItemSelected">
             <Content>
                 <elix-menu-item disabled><strong>Plan</strong></elix-menu-item>
@@ -171,7 +176,7 @@
         <SyncButton Style="padding:0px;margin-right:2em" />
         <div id="searchElements">
             <div id="searchTrigger" class="@searchClass">
-                <div id="decoy"><ion-icon size="large" name="search-outline"></ion-icon><span style="margin-left:-5px"><ion-icon size="large" name="add-outline"></ion-icon></span></div>
+                <div id="decoy"><ion-icon  name="search-outline"></ion-icon><span style="margin-left:-5px"><ion-icon  name="add-outline"></ion-icon></span></div>
                 <input @onclick="_=>ShowFilter=true"
                        @bind-value="@TextFilter"
                        @bind-value:event="oninput"

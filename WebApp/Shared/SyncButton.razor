@@ -14,7 +14,7 @@
                 i.IsHasChanges ? "btn-danger" :
                 i.IsNoChanges ? "" :
                 throw new NotImplementedException("Unexpected synchronization status; can't choose color for it.");
-            <button class="btn text-light @color" style="@Style" type="button" disabled="@i.IsSynchronizing" @onclick:preventDefault @onclick="StateService.SyncIncrementalAsync"><ion-icon size="large" name="cloud-upload-outline"></ion-icon></button>
+            <button class="btn text-light @color" style="@Style" type="button" disabled="@i.IsSynchronizing" @onclick:preventDefault @onclick="StateService.SyncIncrementalAsync"><div style="font-size:24px"><ion-icon name="cloud-upload-outline"></ion-icon></div></button>
         }
     </Loaded>
 </Observable>
