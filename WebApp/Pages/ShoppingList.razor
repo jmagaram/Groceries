@@ -37,26 +37,94 @@
             width: 30ch;
         }
     }
+
+    .jm-navbar {
+        display: flex;
+        flex-direction: row;
+        justify-content: space-between;
+        padding: 5px 10px 5px 10px;
+        position: sticky;
+        top: 0;
+        z-index: 1;
+    }
+
+        .jm-navbar * {
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+        }
+
+        .jm-navbar:not(.search) #cancelSearch {
+            display: none;
+        }
+
+        .jm-navbar.search > :first-child {
+            display: none;
+        }
+
+    #searchColumn.search > :not(#searchElements) {
+        display: none;
+    }
+
+    #searchTrigger {
+        display: inline-grid;
+    }
+
+        #searchTrigger > #decoy {
+            z-index: 99;
+            justify-content: center;
+            color: white;
+        }
+
+        #searchTrigger > #searchInput {
+            z-index: 100;
+            opacity: 0;
+            width: 4em;
+            border: none;
+            border-radius: 3px;
+            padding: 4px;
+            cursor: pointer;
+        }
+
+        #searchTrigger.search > #decoy {
+            display: none;
+        }
+
+        #searchTrigger.search > #searchInput {
+            opacity: 1;
+            width: 17em;
+            cursor: text;
+        }
+
+        #searchTrigger > * {
+            grid-column: 1;
+            grid-row: 1;
+        }
+
+    #searchColumn.search > #searchElements {
+        animation: startSearch;
+        animation-duration: 0.25s;
+        animation-timing-function: ease;
+    }
+
+    @@keyframes startSearch {
+        from {
+            opacity: 0;
+            margin-left: 12em;
+        }
+
+        to {
+            opacity: 1;
+            margin-left: 0px;
+        }
+    }
 </style>
-<nav class="navbar navbar-dark bg-dark sticky-top">
-    @if (ShowFilter) {
-        <div style="display:flex; flex-direction:row" class="filterRow">
-            <input @ref="filterTextInput" autocomplete="off" type="text" id="textFilter" class="form-control form-control-sm filterInput" @onkeydown="@(async e => await OnTextFilterKeyDown(e))" @bind-value="@TextFilter" @bind-value:event="oninput" placeholder="Find or add" @onfocusout="OnTextFilterBlur" />
-            <button type="button" class="btn btn-link btn-sm" style="position: relative; right: 4ch" @onclick="HideTextFilter">
-                <Icon Kind="IconKind.Cancel" />
-            </button>
-            @if (TextFilter.Length > 0) {
-                <button style="margin-left:-3ch" @onclick="OnStartCreateNew" @onclick:stopPropagation @onclick:preventDefault class="btn btn-sm btn-primary">Add</button>
-            }
-        </div>
-    }
-    else {
-<div class="col nav col-auto">
-    @{
-        var currentStoreName = StoreFilterChoices.FirstOrDefault(i => i.StoreId.Item == StoreFilter)?.StoreName.Item ?? "All Stores";
-    }
-    <a class="btn btn-sm btn-outline-secondary" style="align-self:center; margin-right:0.7rem" href="\"><Icon Kind="IconKind.GoBack" /></a>
-    <div class="nav-item">
+@{
+    string searchClass = ShowFilter ? "search" : "";
+}
+<div class="jm-navbar bg-dark @searchClass">
+    <div>
+        <a style="margin-right:0.5rem; color:white" href="\"><ion-icon size="large" name="chevron-back-outline"></ion-icon></a>
         <ElixMenuButton SourcePartType="div" OnMenuItemSelected="@OnMenuItemSelected">
             <Content>
                 <elix-menu-item disabled><strong>Plan</strong></elix-menu-item>
@@ -70,7 +138,7 @@
                     string id = $"s{Models.StoreIdModule.serialize(s.StoreId)}";
                     <elix-menu-item id="@id">@s.StoreName.Item</elix-menu-item>
                 }
-                <div slot="source" style="display:flex; flex-direction:column;">
+                <div slot="source" style="display:flex; flex-direction:column; align-items:flex-start">
                     <Observable Source="StateService.State.Select(i=>DataRow.current(i.ShoppingListSettings).Value)" Context="i">
                         <Loaded>
                             @{
@@ -99,42 +167,55 @@
             </Content>
         </ElixMenuButton>
     </div>
+    <div id="searchColumn" class="@searchClass">
+        <SyncButton Style="padding:0px;margin-right:2em" />
+        <div id="searchElements">
+            <div id="searchTrigger" class="@searchClass">
+                <div id="decoy"><ion-icon size="large" name="search-outline"></ion-icon><span style="margin-left:-5px"><ion-icon size="large" name="add-outline"></ion-icon></span></div>
+                <input @onclick="_=>ShowFilter=true"
+                       @bind-value="@TextFilter"
+                       @bind-value:event="oninput"
+                       @onfocusout="OnTextFilterBlur"
+                       @onkeydown="@(e => OnTextFilterKeyDown(e))"
+                       id="searchInput"
+                       placeholder="Find or add"
+                       autocomplete="off"
+                       type="text" />
+            </div>
+            <button class="btn text-light" @onclick="HideTextFilter" id="cancelSearch">Cancel</button>
+        </div>
+    </div>
 </div>
-        <form class="col col-auto form-inline" style="padding-right:0px">
-            <label for="textFilter"></label>
-        </form>
-        <div>
-            <SyncButton Style="margin-left:5px" />
-            <button class="btn btn-sm btn-secondary" @onclick="ShowTextFilter"><Icon Kind="IconKind.Search" />&nbsp;Add</button>
-        </div>}
-</nav>
 <div class="col">
-    @if (Items.Count > 0) {
-        foreach (var cat in Items.Select(j => j.Category).Distinct().OrderBy(i => i.IsSome() ? i.Value.CategoryName.Item : "")) {
-            var now = DateTimeOffset.Now;
-            var categoryName = cat.IsNone() ? "(Uncategorized)" : cat.Value.CategoryName.Item;
-            @if (cat.IsSome()) {
-                <p @onclick="e=>OnNavigateToCategory(cat.Value.CategoryId)" class="categoryHeader">
-                    @categoryName
-                </p>
-            }
-            else {
-                <p class="categoryHeader" style="cursor:inherit">
-                    @categoryName
-                </p>
-            }
-
-            foreach (var item in Items.Where(i => object.Equals(i.Category, cat)).OrderBy(j => j.Schedule.DueDate(now).GetOr(DateTimeOffset.MaxValue)).ThenBy(j => j.ItemName)) {
-                <WebApp.Shared.Item HideCategory="true" OnClickBuyAgainRepeat="OnClickBuyAgainRepeat" OnClickPostpone="@(async i => await OnClickPostpone(i))" OnClickRemovePostpone="@(async i => await OnClickRemovePostpone(i))" OnClickBuyAgain="@(async i => await OnClickBuyAgain(i))" OnClickDelete="OnClickDelete" OnClickComplete="OnClickComplete" ItemQry="@item" />
-            }
-        }
-    }
-    else {
-        if (TextFilter.Length > 0) {
-            <p>Couldn't find anything like that, but it sounds tasty!</p>
+    @foreach (var cat in Items.Select(j => j.Category).Distinct().OrderBy(i => i.IsSome() ? i.Value.CategoryName.Item : "")) {
+        var now = DateTimeOffset.Now;
+        var categoryName = cat.IsNone() ? "(Uncategorized)" : cat.Value.CategoryName.Item;
+        @if (cat.IsSome()) {
+            <p @onclick="e=>OnNavigateToCategory(cat.Value.CategoryId)" class="categoryHeader">
+                @categoryName
+            </p>
         }
         else {
-            <p>No shopping list items.</p>
+            <p class="categoryHeader" style="cursor:inherit">
+                @categoryName
+            </p>
         }
+
+        foreach (var item in Items.Where(i => object.Equals(i.Category, cat)).OrderBy(j => j.Schedule.DueDate(now).GetOr(DateTimeOffset.MaxValue)).ThenBy(j => j.ItemName)) {
+            <WebApp.Shared.Item HideCategory="true" OnClickBuyAgainRepeat="OnClickBuyAgainRepeat" OnClickPostpone="@(async i => await OnClickPostpone(i))" OnClickRemovePostpone="@(async i => await OnClickRemovePostpone(i))" OnClickBuyAgain="@(async i => await OnClickBuyAgain(i))" OnClickDelete="OnClickDelete" OnClickComplete="OnClickComplete" ItemQry="@item" />
+        }
+    }
+    @if (TextFilter.Length >= 1) {
+        if (Items.Count == 0) {
+            <p style="margin-top:1rem">Nothing found like that.</p>
+            <button style="margin-top:0rem" class="btn btn-outline-primary" @onclick="OnStartCreateNew">Create new item <ion-icon name="chevron-forward-outline"></ion-icon></button>
+        }
+        else {
+            <p style="margin-top:1rem; margin-bottom:0px; border-top:1px solid #acacac">&nbsp;</p>
+            <button class="btn btn-outline-primary" @onclick="OnStartCreateNew">Create new item <ion-icon name="chevron-forward-outline"></ion-icon></button>
+        }
+    }
+    else if (Items.Count == 0) {
+        <p style="margin-top:1rem">No items on your shopping list.</p>
     }
 </div>

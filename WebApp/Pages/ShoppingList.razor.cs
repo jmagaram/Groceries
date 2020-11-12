@@ -7,7 +7,6 @@ using System.Reactive.Subjects;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
-using Microsoft.JSInterop;
 using Models;
 using WebApp.Common;
 using static Models.CoreTypes;
@@ -31,21 +30,10 @@ namespace WebApp.Pages {
             _moveFocusToTextFilter = true;
         }
 
-        protected override async Task OnAfterRenderAsync(bool firstRender) {
-            if (ShowFilter && _moveFocusToTextFilter) {
-                await JSRuntime.InvokeVoidAsync("interopFunctions.focusElement", filterTextInput);
-                _moveFocusToTextFilter = false;
-            }
-        }
-
         public async Task HideTextFilter(MouseEventArgs e) {
             ShowFilter = false;
             await OnTextFilterClear();
         }
-
-        private ElementReference filterTextInput;
-
-        [Inject] IJSRuntime JSRuntime { get; set; }
 
         [Inject]
         public Service StateService { get; set; }
@@ -116,12 +104,6 @@ namespace WebApp.Pages {
             Dispose();
             Navigation.NavigateTo($"categoryedit/{categoryId}");
         }
-
-        private async Task OnStoreFilterClear() =>
-            await StateService.UpdateAsync(StateMessage.NewShoppingListSettingsMessage(SettingsMessage.ClearStoreFilter));
-
-        private async Task OnStoreFilter(StoreId id) =>
-            await StateService.UpdateAsync(StateMessage.NewShoppingListSettingsMessage(SettingsMessage.NewSetStoreFilterTo(id)));
 
         private async Task OnMenuItemSelected(string id) {
             await Task.CompletedTask;
@@ -213,16 +195,6 @@ namespace WebApp.Pages {
             var stateItemMessage = StateItemMessage.NewModifyItem(i.itemId, itemMessage);
             var stateMessage = StateMessage.NewItemMessage(stateItemMessage);
             await StateService.UpdateAsync(stateMessage);
-        }
-
-        private async Task OnClickHideCompletedItems() =>
-            await StateService.UpdateAsync(StateMessage.NewShoppingListSettingsMessage(SettingsMessage.NewHideCompletedItems(true)));
-
-        private async Task OnClickShowCompletedItems() =>
-            await StateService.UpdateAsync(StateMessage.NewShoppingListSettingsMessage(SettingsMessage.NewHideCompletedItems(false)));
-
-        private async Task ShowPostponedWithinNext(int days) {
-            await StateService.UpdateAsync(StateMessage.NewShoppingListSettingsMessage(SettingsMessage.NewSetPostponedViewHorizon(days)));
         }
 
         protected void OnTextFilterChange(ChangeEventArgs e) {

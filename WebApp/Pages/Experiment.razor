@@ -5,6 +5,9 @@
 @using WebApp.Shared;
 @using static Models.Experiment.GroceryItemsViewModule
 @using System.Linq
+@using static Common.ElementExtensions;
+@inject IJSRuntime JSRuntime
+@*@using JsInteropClasses*@
 
 <style>
     ul {
@@ -82,6 +85,10 @@
     }
 </style>
 
+<input @onclick="MoveToReal" @ref="_decoy" placeholder="decoy" />
+<hr />
+<input @ref="_real" placeholder="real" />
+
 <button @onclick="DecrementMode" @onclick:preventDefault @onclick:stopPropagation>dec</button>
 <button @onclick="IncrementMode" @onclick:preventDefault @onclick:stopPropagation>inc</button>
 <Modes ActiveIndex="@ModesIndex">
@@ -145,12 +152,17 @@
     </ul>
 </div>
 @code {
+
+    ElementReference _decoy;
+    ElementReference _real;
+    public async Task MoveToReal() => await _real.FocusAsync(JSRuntime);
+
     public int ModesIndex { get; set; } = 0;
-    public void IncrementMode() { 
-        ModesIndex = System.Math.Min(ModesIndex + 1, 2); 
+    public void IncrementMode() {
+        ModesIndex = System.Math.Min(ModesIndex + 1, 2);
     }
-    public void DecrementMode() { 
-        ModesIndex = System.Math.Max(ModesIndex - 1, 0); 
+    public void DecrementMode() {
+        ModesIndex = System.Math.Max(ModesIndex - 1, 0);
     }
 
     public void Forward() {

@@ -3,18 +3,18 @@
 
 <Observable Context="i" Source="StateService.SyncronizationStatus">
     <Loading>
-        <button class="btn btn-sm btn-secondary nav-item" type="button" disabled><Icon Kind="IconKind.CloudUpload" /></button>
+        <button class="btn text-light" type="button" disabled><Icon Kind="IconKind.CloudUpload" /></button>
     </Loading>
     <Loaded>
         @if (i.IsSynchronizing) {
-            <button class="btn btn-sm btn-outline-light nav-item" style="@Style" type="button" disabled><div class="spinner-border text-success spinner-border-sm" role="status" /></button>
+            <button class="btn text-light" style="@Style" type="button" disabled><div class="spinner-border text-light spinner-border-sm" role="status" /></button>
         }
         else {
             string color =
                 i.IsHasChanges ? "btn-danger" :
-                i.IsNoChanges ? "btn-scondary" :
+                i.IsNoChanges ? "" :
                 throw new NotImplementedException("Unexpected synchronization status; can't choose color for it.");
-            <button class="btn btn-sm btn-secondary @color nav-item" style="@Style" type="button" disabled="@i.IsSynchronizing" @onclick:preventDefault @onclick="StateService.SyncIncrementalAsync"><Icon Kind="IconKind.CloudUpload" /></button>
+            <button class="btn text-light @color" style="@Style" type="button" disabled="@i.IsSynchronizing" @onclick:preventDefault @onclick="StateService.SyncIncrementalAsync"><ion-icon size="large" name="cloud-upload-outline"></ion-icon></button>
         }
     </Loaded>
 </Observable>
