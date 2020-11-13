@@ -9,6 +9,8 @@ open StateTypes
 open ServiceTypes
 
 type Service(state: StateTypes.State, clock, cosmos: ICosmosConnector) =
+    // Hack for now; probably better to make this step a part of the state observable
+    let mutable isInitialized = false
     let stateSub = state |> Subject.behavior
     // Eventaully might want to use DistinctUntilChanged with
     // System.Collections.Generic.ReferenceEqualityComparer
@@ -102,9 +104,16 @@ type Service(state: StateTypes.State, clock, cosmos: ICosmosConnector) =
             do! sync (state.LastCosmosTimestamp)
         }
 
+    let initialize =
+        async {
+            if isInitialized = false then
+                isInitialized <- true
+                do! syncIncremental
+        }
+
     new(cosmos) = Service(State.createDefault, clock, cosmos)
 
-    member me.InitializeAsync() = syncIncremental |> startAsyncUnit
+    member me.InitializeAsync() = initialize |> startAsyncUnit
     member me.UpdateAsync(msg) = updateAsync msg |> startAsyncUnit
     member me.SyncEverythingAsync() = syncEverything |> startAsyncUnit
     member me.SyncIncrementalAsync() = syncIncremental |> startAsyncUnit
