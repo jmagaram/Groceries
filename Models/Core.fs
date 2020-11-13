@@ -486,7 +486,7 @@ module ShoppingListSettings =
     let create =
         { ShoppingListSettings.StoreFilter = None
           PostponedViewHorizon = 7<days>
-          HideCompletedItems = true
+          HideCompletedItems = false
           ItemTextFilter = None }
 
     let setStoreFilter k s = { s with StoreFilter = Some k }
