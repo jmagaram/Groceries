@@ -213,11 +213,11 @@
     @if (TextFilter.Length >= 1) {
         if (Items.Count == 0) {
             <p style="margin-top:1rem">Nothing found like that.</p>
-            <button style="margin-top:0rem" class="btn btn-outline-primary" @onclick="OnStartCreateNew">Create new item <ion-icon name="chevron-forward-outline"></ion-icon></button>
+            <button style="margin-top:0rem" class="btn btn-primary" @onclick="OnStartCreateNew">Create new item...</button>
         }
         else {
             <p style="margin-top:1rem; margin-bottom:0px; border-top:1px solid #acacac">&nbsp;</p>
-            <button class="btn btn-outline-primary" @onclick="OnStartCreateNew">Create new item <ion-icon name="chevron-forward-outline"></ion-icon></button>
+            <button class="btn btn-primary" @onclick="OnStartCreateNew">Create new item...</button>
         }
     }
     else if (Items.Count == 0) {
