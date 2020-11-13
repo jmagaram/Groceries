@@ -460,16 +460,20 @@ let update: Update =
     fun clock msg s ->
         let now = clock ()
 
-        (sprintf "Update: %A" msg)
-        |> String.ellipsize 100
-        |> dprintln
+        let rec go msg s =
+            (sprintf "Update: %A" msg)
+            |> String.ellipsize 100
+            |> dprintln
 
-        match msg with
-        | ItemMessage msg -> s |> handleItemMessage now msg
-        | CategoryEditPageMessage msg -> s |> handleCategoryEditPageMessage msg
-        | StoreEditPageMessage msg -> s |> handleStoreEditPageMessage msg
-        | AcceptAllChanges -> s |> acceptAllChanges
-        | Import c -> s |> importChanges c
-        | ResetToSampleData -> createSampleData ()
-        | ShoppingListSettingsMessage msg -> s |> handleShoppingListSettingsMessage msg
-        | ItemEditPageMessage msg -> s |> handleItemEditPageMessage now msg
+            match msg with
+            | ItemMessage msg -> s |> handleItemMessage now msg
+            | CategoryEditPageMessage msg -> s |> handleCategoryEditPageMessage msg
+            | StoreEditPageMessage msg -> s |> handleStoreEditPageMessage msg
+            | AcceptAllChanges -> s |> acceptAllChanges
+            | Import c -> s |> importChanges c
+            | ResetToSampleData -> createSampleData ()
+            | ShoppingListSettingsMessage msg -> s |> handleShoppingListSettingsMessage msg
+            | ItemEditPageMessage msg -> s |> handleItemEditPageMessage now msg
+            | Transaction msg -> msg |> Seq.fold (fun res i -> go i res) s
+
+        go msg s

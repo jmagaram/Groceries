@@ -24,6 +24,7 @@ type StateMessage =
     | Import of ImportChanges
     | AcceptAllChanges
     | ResetToSampleData
+    | Transaction of StateMessage seq
 
 and ImportChanges =
     { ItemChanges: Change<Item, ItemId> list
