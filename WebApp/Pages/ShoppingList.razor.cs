@@ -32,7 +32,7 @@ namespace WebApp.Pages {
 
         public async Task HideTextFilter(MouseEventArgs e) {
             ShowFilter = false;
-            await OnTextFilterClear();
+            await ClearTextFilter();
         }
 
         [Inject]
@@ -43,7 +43,7 @@ namespace WebApp.Pages {
 
         protected override async Task OnInitializedAsync() {
             await StateService.InitializeAsync();
-            await OnTextFilterClear();
+            await ClearTextFilter(force: true);
             var shoppingList =
                 StateService.State
                 .Select(i => i.ShoppingList(DateTimeOffset.Now))
@@ -160,6 +160,7 @@ namespace WebApp.Pages {
             var stateItemMessage = StateItemMessage.NewDeleteItem(itemId);
             var stateMessage = StateMessage.NewItemMessage(stateItemMessage);
             await StateService.UpdateAsync(stateMessage);
+            await ClearTextFilter();
         }
 
         private async Task OnClickComplete(ItemId itemId) {
@@ -202,16 +203,18 @@ namespace WebApp.Pages {
             _textFilterTyped.OnNext(valueTyped);
         }
 
-        protected async Task OnTextFilterClear() {
-            SettingsMessage settingsMessage = SettingsMessage.ClearItemFilter;
-            StateMessage stateMessage = StateMessage.NewShoppingListSettingsMessage(settingsMessage);
-            await StateService.UpdateAsync(stateMessage);
+        protected async Task ClearTextFilter(bool force = false) {
+            if (force || !string.IsNullOrWhiteSpace(TextFilter)) {
+                SettingsMessage settingsMessage = SettingsMessage.ClearItemFilter;
+                StateMessage stateMessage = StateMessage.NewShoppingListSettingsMessage(settingsMessage);
+                await StateService.UpdateAsync(stateMessage);
+            }
         }
 
         protected async Task OnTextFilterKeyDown(KeyboardEventArgs e) {
             if (e.Key == "Escape") {
                 bool shouldCancelFilter = TextFilter.Length == 0;
-                await OnTextFilterClear();
+                await ClearTextFilter();
                 if (shouldCancelFilter) {
                     ShowFilter = false;
                 }
