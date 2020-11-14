@@ -70,6 +70,11 @@ module Result =
         | Ok v -> Some v
         | Error _ -> None
 
+    let asErrorOption r =
+        match r with
+        | Ok _ -> None
+        | Error e -> Some e
+
     let isOk r =
         match r with
         | Ok _ -> true
