@@ -21,19 +21,8 @@ namespace WebApp.Pages {
         CompositeDisposable _disposables;
         string _textFilter = "";
         readonly Subject<string> _textFilterTyped = new Subject<string>();
-        public bool _moveFocusToTextFilter = false;
 
         public bool ShowFilter { get; set; }
-
-        public void ShowTextFilter(MouseEventArgs e) {
-            ShowFilter = true;
-            _moveFocusToTextFilter = true;
-        }
-
-        public async Task HideTextFilter(MouseEventArgs e) {
-            ShowFilter = false;
-            await ClearTextFilter();
-        }
 
         [Inject]
         public Service StateService { get; set; }
@@ -157,17 +146,19 @@ namespace WebApp.Pages {
         }
 
         private async Task OnClickDelete(ItemId itemId) {
-            var stateItemMessage = StateItemMessage.NewDeleteItem(itemId);
-            var stateMessage = StateMessage.NewItemMessage(stateItemMessage);
-            await StateService.UpdateAsync(stateMessage);
-            await ClearTextFilter();
+            var itemMessage = StateMessage.NewItemMessage(StateItemMessage.NewDeleteItem(itemId));
+            var settingsMessage = StateMessage.NewShoppingListSettingsMessage(SettingsMessage.ClearItemFilter);
+            var transaction = StateMessage.NewTransaction(new List<StateMessage> { settingsMessage, itemMessage });
+            ShowFilter = false;
+            await StateService.UpdateAsync(transaction);
         }
 
         private async Task OnClickComplete(ItemId itemId) {
-            var itemMessage = ItemMessage.MarkComplete;
-            var stateItemMessage = StateItemMessage.NewModifyItem(itemId, itemMessage);
-            var stateMessage = StateMessage.NewItemMessage(stateItemMessage);
-            await StateService.UpdateAsync(stateMessage);
+            var itemMessage = StateMessage.NewItemMessage(StateItemMessage.NewModifyItem(itemId, ItemMessage.MarkComplete));
+            var settingsStateMessage = StateMessage.NewShoppingListSettingsMessage(SettingsMessage.ClearItemFilter);
+            var transaction = StateMessage.NewTransaction(new List<StateMessage> { itemMessage, settingsStateMessage });
+            ShowFilter = false;
+            await StateService.UpdateAsync(transaction);
         }
 
         private async Task OnClickBuyAgain(ItemId itemId) {
@@ -201,6 +192,11 @@ namespace WebApp.Pages {
         protected void OnTextFilterChange(ChangeEventArgs e) {
             string valueTyped = (string)e.Value;
             _textFilterTyped.OnNext(valueTyped);
+        }
+
+        protected async Task HideTextFilter() {
+            ShowFilter = false;
+            await ClearTextFilter();
         }
 
         protected async Task ClearTextFilter(bool force = false) {
