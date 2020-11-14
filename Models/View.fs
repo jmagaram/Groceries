@@ -1,5 +1,4 @@
-﻿
-namespace Models
+﻿namespace Models
 
 open System
 open System.Reactive.Linq
@@ -23,8 +22,7 @@ module FormattedText =
 
     let fromList spans = FormattedText spans
 
-    let normal s =
-        s |> TextSpan.normal |> List.singleton |> fromList
+    let normal s = s |> TextSpan.normal |> List.singleton |> fromList
 
     let hasHighlight ft =
         ft
@@ -61,3 +59,27 @@ module Highlighter =
                     }
                     |> List.ofSeq
                     |> FormattedText.fromList
+
+[<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
+module SetString =
+
+    let private normalizeItems normalize items =
+        items
+        |> Seq.filter (String.isNullOrWhiteSpace >> not)
+        |> Seq.map normalize
+        |> Seq.distinctBy (fun (i: string) -> i.ToLowerInvariant())
+
+    let fromItems normalize delimeter items =
+        items
+        |> normalizeItems normalize
+        |> fun items -> String.Join(delimeter, items)
+
+    let fromString normalize (splitOn: string []) delimeter (s: string) =
+        s.Split(separator = splitOn, options = StringSplitOptions.RemoveEmptyEntries)
+        |> fromItems normalize delimeter
+
+    let toItems normalize (splitOn: string []) (s:String) = 
+        s.Split(splitOn, StringSplitOptions.RemoveEmptyEntries)
+        |> normalizeItems normalize
+      
+

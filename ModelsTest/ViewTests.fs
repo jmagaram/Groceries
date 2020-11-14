@@ -5,6 +5,7 @@ open Xunit
 open FsUnit.Xunit
 open FsCheck
 open FsCheck.Xunit
+open Models
 open Models.CoreTypes
 open Models.ValidationTypes
 
@@ -14,7 +15,7 @@ module ReactiveTests =
     open FSharp.Control.Reactive
 
     [<Fact>]
-    let ``can create sample data``() =
+    let ``can create sample data`` () =
         let x = Models.State.createSampleData
         true
 
@@ -310,3 +311,54 @@ module HighlighterTests =
             |> List.ofSeq
 
         withUpperSource = withLowerSource
+
+module SetStringTests =
+
+    let testData =
+        [ ("a,b;c|d", "a|b|c|d")
+          ("", "")
+          (",,,,","")
+          ("a|||b", "a|b")
+          ("a|   |     |b", "a|b")
+          ("a", "a")
+          (" a    ", "a")
+          ("a|b|c", "a|b|c")
+          (" a  |  b|c    ", "a|b|c")
+          ("a|b|b|c|c|a", "a|b|c")
+          ("a|B|b|c|C|a", "a|B|c") ]
+        |> Seq.map (fun i -> [| i |> fst; i |> snd |])
+
+    [<Theory>]
+    [<MemberData(nameof(testData))>]
+    let ``fromItems - normalize each, remove empty and duplicates by case, insert separator`` (source: string)
+                                                                                              (expected: string)
+                                                                                              =
+        let items = source.Split('|',';',',')
+
+        let result = SetString.fromItems String.trim "|" items
+
+        result |> should equal expected
+
+    [<Theory>]
+    [<MemberData(nameof(testData))>]
+    let ``createFromString - split on delimeters, normalize each, remove duplicates by case, insert separator`` (source: string)
+                                                                                                                (expected: string)
+                                                                                                                =
+        let splitOn = [| "|"; ","; ";" |]
+        let delimeter = "|"
+
+        let result = SetString.fromString String.trim splitOn delimeter source
+
+        result |> should equal expected
+
+    [<Theory>]
+    [<MemberData(nameof(testData))>]
+    let ``toItems - split on delimeters, normalize each, remove duplicates by case`` (source: string) (expected: string) =
+        let splitOn = [| "|"; ","; ";" |]
+        let result = SetString.toItems String.trim splitOn source |> List.ofSeq
+
+        let expected =
+            expected.Split('|', StringSplitOptions.RemoveEmptyEntries)
+            |> List.ofSeq
+
+        result |> should equal expected
