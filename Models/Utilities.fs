@@ -24,6 +24,8 @@ module Map =
 
     let values m = m |> Map.toSeq |> Seq.map snd
 
+    let keys m = m |> Map.toSeq |> Seq.map fst
+
 [<AutoOpen>]
 module Seq =
 
@@ -112,6 +114,9 @@ module String =
 
     let toString v = sprintf "%A" v
 
+    let equalsInvariantCultureIgnoreCase x y =
+        String.Equals(x, y, StringComparison.InvariantCultureIgnoreCase)
+
     let fromChars c = String(c |> Seq.toArray)
 
     let ellipsize n s =
@@ -121,7 +126,7 @@ module String =
         else
             s
 
-    let trim (s:String) = s.Trim()
+    let trim (s: String) = s.Trim()
 
     let isNullOrWhiteSpace s = String.IsNullOrWhiteSpace(s)
 
