@@ -30,18 +30,26 @@
     }
 
     .reassignRow {
-        display: flex;
-        flex-direction: row;
+        display: grid;
         align-items: center;
         margin-bottom: 1rem;
+        grid-template-columns: auto, auto
     }
 
-        .reassignRow > * {
+        .reassignRow > : {
             margin-right: 0.3em;
         }
 
     small {
         display: block;
+    }
+
+    .mapper {
+        display: inline-grid;
+        grid-template-columns: auto min-content auto;
+        column-gap: 1em;
+        grid-row-gap: 0.5em;
+        align-items: center;
     }
 </style>
 <Modes ActiveIndex="Form.BulkEdit.IsSome() ? 0 : 1">
@@ -80,19 +88,22 @@
             <div class="col" style="margin-top:1rem">
                 @if (f.MoveOrDelete.Any()) {
                     <h5 style="margin-top:1rem; margin-bottom:0">Deleted categories</h5>
-                    <small style="margin-bottom:1rem;display:block">You can reassign any grocery items that use a deleted category to one of your new ones.</small>
-                    @foreach (var i in f.MoveOrDelete.OrderBy(j => j.Key)) {
-                        <div class="reassignRow">
-                            <strong>@i.Key</strong><ion-icon name="arrow-forward-outline"></ion-icon>
+                    <small style="margin-bottom:1rem;display:block">Reassign grocery items that use a deleted category to one of your new ones.</small>
+                    <div class="mapper">
+                        <strong>Deleted</strong>
+                        <span>&nbsp;</span>
+                        <strong>New Category</strong>
+                        @foreach (var i in f.MoveOrDelete.OrderBy(j => j.Key)) {
+                            <span>@i.Key</span>
+                            <ion-icon name="arrow-forward-outline"></ion-icon>
                             <select @oninput="e=>Reassign(i.Key,(string)e.Value)">
                                 @foreach (var t in finalList) {
                                     <option selected="@(i.Value.IsSomeValue(t))" value="@t">@t</option>
                                 }
                                 <option selected="@i.Value.IsNone()" value="@NoCategory">(No Category)</option>
                             </select>
-                        </div>
-                    }
-                }
+                        }
+                    </div> }
                 else {
                     if (finalList.Any()) {
                         <h5 style="margin-top:1rem">Your categories</h5>
