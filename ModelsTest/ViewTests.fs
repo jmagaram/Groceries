@@ -317,7 +317,7 @@ module SetStringTests =
     let testData =
         [ ("a,b;c|d", "a|b|c|d")
           ("", "")
-          (",,,,","")
+          (",,,,", "")
           ("a|||b", "a|b")
           ("a|   |     |b", "a|b")
           ("a", "a")
@@ -329,18 +329,18 @@ module SetStringTests =
         |> Seq.map (fun i -> [| i |> fst; i |> snd |])
 
     [<Theory>]
-    [<MemberData(nameof(testData))>]
+    [<MemberData(nameof (testData))>]
     let ``fromItems - normalize each, remove empty and duplicates by case, insert separator`` (source: string)
                                                                                               (expected: string)
                                                                                               =
-        let items = source.Split('|',';',',')
+        let items = source.Split('|', ';', ',')
 
         let result = SetString.fromItems String.trim "|" items
 
         result |> should equal expected
 
     [<Theory>]
-    [<MemberData(nameof(testData))>]
+    [<MemberData(nameof (testData))>]
     let ``createFromString - split on delimeters, normalize each, remove duplicates by case, insert separator`` (source: string)
                                                                                                                 (expected: string)
                                                                                                                 =
@@ -352,7 +352,7 @@ module SetStringTests =
         result |> should equal expected
 
     [<Theory>]
-    [<MemberData(nameof(testData))>]
+    [<MemberData(nameof (testData))>]
     let ``toItems - split on delimeters, normalize each, remove duplicates by case`` (source: string) (expected: string) =
         let splitOn = [| "|"; ","; ";" |]
         let result = SetString.toItems String.trim splitOn source |> List.ofSeq
@@ -362,3 +362,48 @@ module SetStringTests =
             |> List.ofSeq
 
         result |> should equal expected
+
+module SetManagerTests =
+
+    open Models.SetManager
+    open CoreTypes
+
+    let normalizer = String.trim
+    let delimiter = ","
+    let splitOn = [| ","; ";" |]
+    let parseNeverFail s = Ok s
+
+    [<Theory>]
+    [<InlineData("unchanged", "a,b,c", "a,b,c", "a,b,c", "", "")>]
+    [<InlineData("empty", "", "", "", "", "")>]
+    [<InlineData("case renames", "a,b,c", "A,B,C", "", "A,B,C", "a:A,b:B,c:C")>]
+    [<InlineData("identify new items", "a,b,c", "a,b,c,d,e,f", "a,b,c", "d,e,f", "")>]
+    [<InlineData("identify deletions", "a,b,c", "c,d,e", "c", "d,e", "a:_,b:_")>]
+    [<InlineData("delete everything", "a,b,c", "", "", "", "a:_,b:_,c:_")>]
+    [<InlineData("mix", "a,b,c", "B,c,d,e", "c", "B,d,e", "b:B,a:_")>]
+    let summaryFromBulkEdit comment original proposed unchanged created moved =
+        let asSet (s: string) =
+            if (s |> String.isNullOrWhiteSpace) then
+                Set.empty
+            else
+                s.Split(',', StringSplitOptions.RemoveEmptyEntries)
+                |> Set.ofSeq
+
+        let parseMove (s: string) =
+            let parts = s.Split(':')
+            let source = parts.[0]
+            let target = if parts.[1] = "_" then None else Some parts.[1]
+            (source, target)
+
+        let result =
+            BulkEdit.create normalizer delimiter (original |> asSet)
+            |> BulkEdit.update normalizer splitOn delimiter (TextBoxMessage.TypeText proposed)
+            |> BulkEdit.update normalizer splitOn delimiter TextBoxMessage.LoseFocus
+            |> BulkEdit.summary normalizer splitOn parseNeverFail
+            |> Option.get
+
+        result.Create |> should equal (created |> asSet)
+        result.Unchanged |> should equal (unchanged |> asSet)
+
+        result.MoveOrDelete
+        |> should equal (moved |> asSet |> Seq.map parseMove |> Map.ofSeq)

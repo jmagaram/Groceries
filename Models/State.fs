@@ -456,6 +456,49 @@ let handleItemEditPageMessage (now: DateTimeOffset) (msg: ItemEditPageMessage) (
         }
         |> Result.okOrThrow
 
+let reorganizeCategories (msg: ReorganizeCategoriesMessage) (s: State) =
+    let categoryName n = CategoryName.tryParse n |> Result.okOrThrow
+
+    let findCat n s =
+        let n = n |> CategoryName
+        s |> categories |> Seq.find (fun i -> i.CategoryName = n)
+
+    let createCats ns s =
+        ns
+        |> Seq.fold (fun total n ->
+            let cat =
+                { Category.CategoryName = n |> categoryName
+                  CategoryId = CategoryId.create ()
+                  Etag = None }
+
+            total |> insertCategory cat) s
+
+    let deleteCats ns s =
+        ns
+        |> Seq.fold (fun total n ->
+            let cat = total |> findCat n
+            total |> deleteCategory cat.CategoryId) s
+
+    let setItemCat x y s =
+        let xCat = s |> findCat x
+        let yCat = s |> findCat y
+
+        s
+        |> items
+        |> Seq.filter (fun i -> i.CategoryId = Some xCat.CategoryId)
+        |> Seq.fold (fun total i ->
+            let i = { i with CategoryId = Some yCat.CategoryId }
+            total |> updateItem i) s
+
+    let setItemCats xys s =
+        xys
+        |> Seq.fold (fun total (x, y) -> setItemCat x y total) s
+
+    s
+    |> createCats msg.Create
+    |> setItemCats msg.Move
+    |> deleteCats msg.Delete
+
 let update: Update =
     fun clock msg s ->
         let now = clock ()
@@ -467,6 +510,7 @@ let update: Update =
 
             match msg with
             | ItemMessage msg -> s |> handleItemMessage now msg
+            | ReorganizeCategoriesMessage msg -> s |> reorganizeCategories msg
             | CategoryEditPageMessage msg -> s |> handleCategoryEditPageMessage msg
             | StoreEditPageMessage msg -> s |> handleStoreEditPageMessage msg
             | AcceptAllChanges -> s |> acceptAllChanges

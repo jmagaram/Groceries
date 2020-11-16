@@ -89,9 +89,8 @@ namespace WebApp.Pages {
             .Subscribe(i => Items = i.ToList());
 
         private void OnNavigateToCategory(CategoryId id) {
-            string categoryId = CategoryIdModule.serialize(id);
             Dispose();
-            Navigation.NavigateTo($"categoryedit/{categoryId}");
+            Navigation.NavigateTo($"/categories");
         }
 
         private async Task OnMenuItemSelected(string id) {

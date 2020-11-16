@@ -15,8 +15,14 @@ type State =
       StoreEditPage: StoreEditForm option
       ItemEditPage: ItemForm option }
 
+type ReorganizeCategoriesMessage =
+    { Delete : string list
+      Create : string list
+      Move : (string * string) list }
+
 type StateMessage =
     | ItemEditPageMessage of ItemEditPageMessage
+    | ReorganizeCategoriesMessage of ReorganizeCategoriesMessage
     | CategoryEditPageMessage of CategoryEditPageMessage
     | StoreEditPageMessage of StoreEditPageMessage
     | ItemMessage of ItemMessage

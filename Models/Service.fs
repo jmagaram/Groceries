@@ -119,6 +119,7 @@ type Service(state: StateTypes.State, clock, cosmos: ICosmosConnector) =
     member me.SyncIncrementalAsync() = syncIncremental |> startAsyncUnit
 
     member me.State = stateObs
+    member me.CurrentState = stateSub.Value
     member me.SyncronizationStatus = statusObs
 
 [<Extension>]
