@@ -499,6 +499,52 @@ let reorganizeCategories (msg: ReorganizeCategoriesMessage) (s: State) =
     |> setItemCats msg.Move
     |> deleteCats msg.Delete
 
+let reorganizeStores (msg: ReorganizeStoresMessage) (s: State) =
+    let storeName n = StoreName.tryParse n |> Result.okOrThrow
+
+    let findStore n s =
+        let n = n |> StoreName
+        s |> stores |> Seq.find (fun i -> i.StoreName = n)
+
+    let createStores ns s =
+        ns
+        |> Seq.fold (fun total n ->
+            let cat =
+                { Store.StoreName = n |> StoreName
+                  StoreId = StoreId.create ()
+                  Etag = None }
+
+            total |> insertStore cat) s
+
+    let deleteStores ns s =
+        ns
+        |> Seq.fold (fun total n ->
+            let cat = total |> findStore n
+            total |> deleteStore cat.StoreId) s
+
+    let setInventory x y s =
+        let x = s |> findStore x
+        let y = s |> findStore y
+
+        s
+        |> notSold
+        |> Seq.filter (fun i -> i.StoreId = x.StoreId)
+        |> Seq.fold (fun total i ->
+            total 
+            |> deleteNotSoldItem i 
+            |> insertNotSoldItem { i with StoreId = y.StoreId }) s
+
+    let setInventories xys s =
+        xys
+        |> Seq.fold (fun total (x, y) -> setInventory x y total) s
+
+    s
+    |> createStores msg.Create
+    |> setInventories msg.Move
+    |> deleteStores msg.Delete
+    |> fixForeignKeys
+
+
 let update: Update =
     fun clock msg s ->
         let now = clock ()
@@ -511,6 +557,7 @@ let update: Update =
             match msg with
             | ItemMessage msg -> s |> handleItemMessage now msg
             | ReorganizeCategoriesMessage msg -> s |> reorganizeCategories msg
+            | ReorganizeStoresMessage msg -> s |> reorganizeStores msg
             | CategoryEditPageMessage msg -> s |> handleCategoryEditPageMessage msg
             | StoreEditPageMessage msg -> s |> handleStoreEditPageMessage msg
             | AcceptAllChanges -> s |> acceptAllChanges

@@ -20,9 +20,15 @@ type ReorganizeCategoriesMessage =
       Create : string list
       Move : (string * string) list }
 
+type ReorganizeStoresMessage =
+    { Delete : string list
+      Create : string list
+      Move : (string * string) list }
+
 type StateMessage =
     | ItemEditPageMessage of ItemEditPageMessage
     | ReorganizeCategoriesMessage of ReorganizeCategoriesMessage
+    | ReorganizeStoresMessage of ReorganizeStoresMessage
     | CategoryEditPageMessage of CategoryEditPageMessage
     | StoreEditPageMessage of StoreEditPageMessage
     | ItemMessage of ItemMessage
