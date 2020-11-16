@@ -11,8 +11,6 @@ type State =
       NotSoldItems: DataTable<NotSoldItem, NotSoldItem>
       ShoppingListSettings: DataRow<ShoppingListSettings>
       LastCosmosTimestamp: int option
-      CategoryEditPage: CategoryEditForm option
-      StoreEditPage: StoreEditForm option
       ItemEditPage: ItemForm option }
 
 type ReorganizeCategoriesMessage =
@@ -29,8 +27,6 @@ type StateMessage =
     | ItemEditPageMessage of ItemEditPageMessage
     | ReorganizeCategoriesMessage of ReorganizeCategoriesMessage
     | ReorganizeStoresMessage of ReorganizeStoresMessage
-    | CategoryEditPageMessage of CategoryEditPageMessage
-    | StoreEditPageMessage of StoreEditPageMessage
     | ItemMessage of ItemMessage
     | ShoppingListSettingsMessage of ShoppingListSettings.Message
     | Import of ImportChanges
@@ -53,22 +49,6 @@ and ItemEditPageMessage =
     | SubmitItemEditForm
     | CancelItemEditForm
     | DeleteItem
-
-and CategoryEditPageMessage =
-    | BeginEditCategory of SerializedId
-    | BeginCreateNewCategory
-    | CategoryEditFormMessage of CategoryEditForm.Message
-    | SubmitCategoryEditForm
-    | CancelCategoryEditForm
-    | DeleteCategory
-
-and StoreEditPageMessage =
-    | BeginEditStore of SerializedId
-    | BeginCreateNewStore
-    | StoreEditFormMessage of StoreEditForm.Message
-    | SubmitStoreEditForm
-    | CancelStoreEditForm
-    | DeleteStore
 
 and ItemMessage =
     | ModifyItem of ItemId * Item.Message

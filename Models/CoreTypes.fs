@@ -129,13 +129,3 @@ type ItemDenormalized =
       Category: Category option
       Schedule: Schedule
       Availability: ItemAvailability seq }
-
-type CategoryEditForm =
-    { CategoryId: CategoryId option
-      CategoryName: TextBox
-      Etag: Etag option }
-
-type StoreEditForm =
-    { StoreId: StoreId option
-      StoreName: TextBox
-      Etag: Etag option }

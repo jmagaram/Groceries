@@ -171,8 +171,6 @@ let createDefault =
       NotSoldItems = DataTable.empty
       ShoppingListSettings = DataRow.unchanged ShoppingListSettings.create
       LastCosmosTimestamp = None
-      CategoryEditPage = None
-      StoreEditPage = None
       ItemEditPage = None }
 
 let createSampleData () =
@@ -302,67 +300,6 @@ let handleItemMessage now msg (s: State) =
         let item = s.Items |> DataTable.findCurrent k |> Item.update now msg
         s |> updateItem item
     | DeleteItem k -> s |> deleteItem k
-
-let handleCategoryEditPageMessage (msg: CategoryEditPageMessage) (s: State) =
-    let form (s: State) = s.CategoryEditPage |> Option.get
-    let cancel s = { s with CategoryEditPage = None }
-
-    match msg with
-    | BeginEditCategory id ->
-        let id = id |> CategoryId.deserialize |> Option.get
-
-        let cat = s |> categoriesTable |> DataTable.findCurrent id
-
-        let form = CategoryEditForm.editExisting cat
-        { s with CategoryEditPage = Some form }
-    | BeginCreateNewCategory ->
-        { s with
-              CategoryEditPage = CategoryEditForm.createNew |> Some }
-    | CategoryEditFormMessage msg ->
-        { s with
-              CategoryEditPage = s |> form |> CategoryEditForm.handle msg |> Some }
-    | SubmitCategoryEditForm ->
-        match s |> form |> CategoryEditForm.tryCommit |> Result.okOrThrow with
-        | CategoryEditForm.FormResult.InsertCategory n ->
-            s
-            |> insertCategory
-                { CategoryName = n
-                  CategoryId = CategoryId.create ()
-                  Etag = None }
-            |> cancel
-        | CategoryEditForm.FormResult.EditCategory c -> s |> updateCategory c |> cancel
-    | CancelCategoryEditForm -> s |> cancel
-    | DeleteCategory ->
-        let id = s |> form |> fun i -> i.CategoryId |> Option.get
-        s |> deleteCategory id |> cancel
-
-let handleStoreEditPageMessage (msg: StoreEditPageMessage) (s: State) =
-    let form (s: State) = s.StoreEditPage |> Option.get
-    let cancel s = { s with StoreEditPage = None }
-
-    match msg with
-    | BeginEditStore id ->
-        let id = id |> StoreId.deserialize |> Option.get
-
-        let str = s |> storesTable |> DataTable.findCurrent id
-
-        let form = StoreEditForm.editExisting str
-        { s with StoreEditPage = Some form }
-    | BeginCreateNewStore -> { s with StoreEditPage = StoreEditForm.createNew |> Some }
-    | StoreEditFormMessage msg ->
-        { s with
-              StoreEditPage = s |> form |> StoreEditForm.update msg |> Some }
-    | SubmitStoreEditForm ->
-        match s |> form |> StoreEditForm.tryCommit |> Result.okOrThrow with
-        | StoreEditForm.FormResult.InsertStore n ->
-            s
-            |> insertStore { StoreName = n; StoreId = StoreId.create (); Etag = None }
-            |> cancel
-        | StoreEditForm.FormResult.EditStore c -> s |> updateStore c |> cancel
-    | CancelStoreEditForm -> s |> cancel
-    | DeleteStore ->
-        let id = s |> form |> fun i -> i.StoreId |> Option.get
-        s |> deleteStore id |> cancel
 
 let handleShoppingListSettingsMessage (msg: ShoppingListSettings.Message) (s: State) =
     s
@@ -558,8 +495,6 @@ let update: Update =
             | ItemMessage msg -> s |> handleItemMessage now msg
             | ReorganizeCategoriesMessage msg -> s |> reorganizeCategories msg
             | ReorganizeStoresMessage msg -> s |> reorganizeStores msg
-            | CategoryEditPageMessage msg -> s |> handleCategoryEditPageMessage msg
-            | StoreEditPageMessage msg -> s |> handleStoreEditPageMessage msg
             | AcceptAllChanges -> s |> acceptAllChanges
             | Import c -> s |> importChanges c
             | ResetToSampleData -> createSampleData ()
