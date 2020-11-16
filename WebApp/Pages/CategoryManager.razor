@@ -52,8 +52,8 @@
                 <button disabled="@hasErrors" @onclick="_=>GoNext()" class="btn btn-dark iconButton">Next&nbsp;<ion-icon name="chevron-forward-outline"></ion-icon></button>
             </nav>
             <div class="col">
-                <h5 style="margin-top:1rem; margin-bottom:0">Type categories on a separate lines</h5>
-                <small class="text-secondary">It is best to use locations in the grocery store; this will help you get through your shopping faster. Ideas: Dry Goods, Produce, Dairy & Eggs, Frozen, Bakery, Meat and Seafood, Deli & Prepared, Household, Other.</small>
+                <h5 style="margin-top:1rem; margin-bottom:0">Type the categories you want</h5>
+                <small class="text-secondary">Examples: Dry Goods, Produce, Dairy & Eggs, Frozen, Bakery, Meat and Seafood, Deli & Prepared, Household, Other.</small>
                 <textarea class="form-control" style="width:100%; margin-top:1rem" spellcheck="false" rows=10 @oninput="e=>OnBulkTextEdit((string)e.Value)" @onfocusout="_=>OnFocusOut()" value="@f.Proposed.ValueCommitted">
     </textarea>
                 @if (hasErrors) {
