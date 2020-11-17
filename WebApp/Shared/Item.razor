@@ -193,8 +193,8 @@
                 case MenuChoice.BuyAgainEvery2Weeks: await OnClickBuyAgainRepeat.InvokeAsync((ItemQry.ItemId, 14)); break;
                 case MenuChoice.Delete: await OnClickDelete.InvokeAsync(ItemQry.ItemId); break;
                 case MenuChoice.Now: await OnClickRemovePostpone.InvokeAsync(ItemQry.ItemId); break;
-                case MenuChoice.Plus1Wk: await OnClickPostpone.InvokeAsync((ItemQry.ItemId, 7)); break;
-                case MenuChoice.Plus2Wk: await OnClickPostpone.InvokeAsync((ItemQry.ItemId, 14)); break;
+                case MenuChoice.Plus1Wk: await OnClickPostpone.InvokeAsync((ItemQry.ItemId, 8)); break;
+                case MenuChoice.Plus2Wk: await OnClickPostpone.InvokeAsync((ItemQry.ItemId, 15)); break;
                 case MenuChoice.Details: Navigation.NavigateTo($"./ItemEdit/{@ItemQry.ItemId.Item}"); break;
                 default: throw new NotImplementedException();
             }
