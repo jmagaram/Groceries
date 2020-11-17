@@ -4,6 +4,7 @@
 @using Microsoft.FSharp.Core;
 @using WebApp.Shared;
 @using static Models.ScheduleModule.ScheduleExtensions;
+@using static Models.ShoppingListSettingsModule
 @using System.Reactive.Linq;
 
 <style>
@@ -90,21 +91,23 @@
             display: none;
         }
 
-        #searchTrigger.search > #searchInput {
+        @{ var inputWidth = (StateService.CurrentState.GetGlobalSettings().LargerFontSize) ? "15em" : "17em"; }
+
+#searchTrigger.search > #searchInput {
             opacity: 1;
-            width: 17em;
+                    width: @inputWidth;
             cursor: text;
         }
 
-        #searchTrigger > * {
-            grid-column: 1;
+#searchTrigger > * {
+                grid-column: 1;
             grid-row: 1;
         }
 
-    #searchColumn.search > #searchElements {
+#searchColumn.search > #searchElements {
         animation: startSearch;
-        animation-duration: 0.25s;
-        animation-timing-function: ease;
+            animation-duration: 0.25s;
+            animation-timing-function: ease;
     }
 
     @@keyframes startSearch {
@@ -129,7 +132,7 @@
 }
 <div class="jm-navbar bg-dark @searchClass">
     <div>
-        <a style="margin-right:0.5rem; color:white" href="\"><ion-icon  name="chevron-back-outline"></ion-icon></a>
+        <a style="margin-right:0.5rem; color:white" href="\"><ion-icon name="chevron-back-outline"></ion-icon></a>
         <ElixMenuButton SourcePartType="div" OnMenuItemSelected="@OnMenuItemSelected">
             <Content>
                 <elix-menu-item disabled><strong>Plan</strong></elix-menu-item>
@@ -176,7 +179,7 @@
         <SyncButton Style="padding:0px;margin-right:2em" />
         <div id="searchElements">
             <div id="searchTrigger" class="@searchClass">
-                <div id="decoy"><ion-icon  name="search-outline"></ion-icon><span style="margin-left:-5px"><ion-icon  name="add-outline"></ion-icon></span></div>
+                <div id="decoy"><ion-icon name="search-outline"></ion-icon><span style="margin-left:-5px"><ion-icon name="add-outline"></ion-icon></span></div>
                 <input @onclick="_=>ShowFilter=true"
                        @bind-value="@TextFilter"
                        @bind-value:event="oninput"
