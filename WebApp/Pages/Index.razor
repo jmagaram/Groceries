@@ -15,72 +15,17 @@
         padding-left: 0px;
         list-style-type: none;
     }
-
-    h5 {
-        margin-top: 1rem;
+    li {
+        margin-bottom:1rem;
     }
+
 </style>
 <div class="col">
     <ul style="margin-top:1rem">
-        <li style="margin-bottom:0.5rem"><a href="/shoppinglist">Shopping list</a></li>
+        <li><a href="/shoppinglist">Shopping list</a></li>
         <li><a href="/categories">Manage categories</a></li>
         <li><a href="/stores">Manage stores</a></li>
-        <li><a href="#">My account</a></li>
-        <li><a href="#">Send suggestion about this product</a></li>
     </ul>
-    @*<h5>Plan</h5>
-        <button class="btn btn-sm btn-link" @onclick="EditShoppingList">Edit shopping list</button>
-        <h5>Shop</h5>
-        <Observable Context="i" Source="StateService.State.Select(i=>Models.DataTable.current(i.Stores).OrderBy(i=>i.StoreName).ToArray())">
-            <Loaded>
-                <ul>
-                    <li><button class="btn btn-sm btn-link" @onclick="_ => ShopAtStore(null)">Any store</button></li>
-                    @foreach (var s in i) {
-                        <li>
-                            <button class="btn btn-sm btn-link" @onclick="_ => ShopAtStore(StoreIdModule.serialize(s.StoreId))">@s.StoreName.Item</button>
-                        </li>
-                    }
-                </ul>
-            </Loaded>
-        </Observable>*@
 </div>
 @code {
-    [Inject]
-    public Models.Service StateService { get; set; }
-
-    [Inject]
-    public NavigationManager NavigationManager { get; set; }
-
-    public async Task ShopAtStore(string storeId) {
-        var messages = new List<Message>
-{
-            Message.ClearItemFilter,
-            Message.NewHideCompletedItems(true),
-            Message.NewSetPostponedViewHorizon(-365),
-        };
-        if (!string.IsNullOrWhiteSpace(storeId)) {
-            messages.Add(Message.NewSetStoreFilterTo(StoreIdModule.deserialize(storeId).Value));
-        }
-        else {
-            messages.Add(Message.ClearStoreFilter);
-        }
-        var settingsMessage = Message.NewTransaction(messages);
-        var stateMessage = StateTypes.StateMessage.NewShoppingListSettingsMessage(settingsMessage);
-        await StateService.UpdateAsync(stateMessage);
-        NavigationManager.NavigateTo("shoppinglist");
-    }
-
-    public async Task EditShoppingList() {
-        var messages = new List<Message>
-{
-            Message.ClearItemFilter,
-            Message.NewHideCompletedItems(false),
-            Message.NewSetPostponedViewHorizon(14),
-            Message.ClearStoreFilter
-        };
-        var settingsMessage = Message.NewTransaction(messages);
-        var stateMessage = StateTypes.StateMessage.NewShoppingListSettingsMessage(settingsMessage);
-        await StateService.UpdateAsync(stateMessage);
-        NavigationManager.NavigateTo("shoppinglist");
-    }
 }
