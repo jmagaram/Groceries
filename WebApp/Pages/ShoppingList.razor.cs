@@ -30,9 +30,8 @@ namespace WebApp.Pages {
         [Inject]
         NavigationManager Navigation { get; set; }
 
-        protected override async Task OnInitializedAsync() {
-            await StateService.InitializeAsync();
-            await ClearTextFilter(force: true);
+        protected override void OnInitialized() {
+            base.OnInitialized();
             var shoppingList =
                 StateService.State
                 .Select(i => i.ShoppingList(DateTimeOffset.Now))
@@ -47,6 +46,11 @@ namespace WebApp.Pages {
                 ProcessTextFilterTyped(),
                 shoppingList.Connect()
             };
+        }
+
+        protected override async Task OnInitializedAsync() {
+            await StateService.InitializeAsync();
+            await ClearTextFilter(force: true);
         }
 
         private IDisposable ProcessTextFilterTyped() =>
