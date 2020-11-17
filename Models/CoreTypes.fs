@@ -90,6 +90,12 @@ type ShoppingListSettings =
     interface IKey<string> with
         member this.Key = "singleton"
 
+type GlobalSettings = 
+    { LargerFontSize : bool
+    }
+    interface IKey<string> with
+        member this.Key = "singleton"
+
 // If this was a generic add-on to State, maybe could define this and it's
 // extension methods in one file (using implicit extensions) later in the
 // dependency order.

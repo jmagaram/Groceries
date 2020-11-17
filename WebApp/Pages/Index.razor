@@ -18,14 +18,24 @@
     li {
         margin-bottom:1rem;
     }
-
 </style>
-<div class="col">
+<div @key="StateService.CurrentState.GetGlobalSettings().LargerFontSize" class="col">
     <ul style="margin-top:1rem">
         <li><a href="/shoppinglist">Shopping list</a></li>
         <li><a href="/categories">Manage categories</a></li>
         <li><a href="/stores">Manage stores</a></li>
     </ul>
+    <div style="margin-top:2rem;margin-bottom:1rem">Settings</div>
+    <Checkbox IsChecked="StateService.CurrentState.GetGlobalSettings().LargerFontSize" Title="Larger text" IsCheckedChanged="SetLargerFontSize"/>
+    
 </div>
 @code {
+    [Inject]
+    public Service StateService { get; set; }
+
+    public async Task SetLargerFontSize(bool b) {
+        var settingsMessage = GlobalSettingsModule.Message.NewUseLargerFontSize(b);
+        var stateMessage = StateTypes.StateMessage.NewGlobalSettingsMessage(settingsMessage);
+        await StateService.UpdateAsync(stateMessage);
+    }
 }

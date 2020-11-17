@@ -481,6 +481,17 @@ module SearchTerm =
         new Regex(pattern, options)
 
 [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
+module GlobalSettings =
+
+    type Message = UseLargerFontSize of bool
+
+    let create = { GlobalSettings.LargerFontSize = true }
+
+    let update (msg: Message) (s: GlobalSettings) =
+        match msg with
+        | UseLargerFontSize b -> { s with LargerFontSize = b }
+
+[<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
 module ShoppingListSettings =
 
     let create =

@@ -170,6 +170,7 @@ let createDefault =
       Stores = DataTable.empty
       NotSoldItems = DataTable.empty
       ShoppingListSettings = DataRow.unchanged ShoppingListSettings.create
+      GlobalSettings = DataRow.unchanged GlobalSettings.create
       LastCosmosTimestamp = None
       ItemEditPage = None }
 
@@ -305,6 +306,13 @@ let handleShoppingListSettingsMessage (msg: ShoppingListSettings.Message) (s: St
     s
     |> mapShoppingListSettings (ShoppingListSettings.update msg)
 
+let handleGlobalSettingsMessage (msg: GlobalSettings.Message) (s: State) =
+    { s with
+          GlobalSettings =
+              s.GlobalSettings
+              |> DataRow.tryMap (GlobalSettings.update msg)
+              |> Result.okOrThrow }
+
 let handleItemEditPageMessage (now: DateTimeOffset) (msg: ItemEditPageMessage) (s: State) =
     let form state =
         state.ItemEditPage
@@ -427,9 +435,7 @@ let reorganizeCategories (msg: ReorganizeCategoriesMessage) (s: State) =
             let i = { i with CategoryId = Some yCat.CategoryId }
             total |> updateItem i) s
 
-    let setItemCats xys s =
-        xys
-        |> Seq.fold (fun total (x, y) -> setItemCat x y total) s
+    let setItemCats xys s = xys |> Seq.fold (fun total (x, y) -> setItemCat x y total) s
 
     s
     |> createCats msg.Create
@@ -467,8 +473,8 @@ let reorganizeStores (msg: ReorganizeStoresMessage) (s: State) =
         |> notSold
         |> Seq.filter (fun i -> i.StoreId = x.StoreId)
         |> Seq.fold (fun total i ->
-            total 
-            |> deleteNotSoldItem i 
+            total
+            |> deleteNotSoldItem i
             |> insertNotSoldItem { i with StoreId = y.StoreId }) s
 
     let setInventories xys s =
@@ -499,6 +505,7 @@ let update: Update =
             | Import c -> s |> importChanges c
             | ResetToSampleData -> createSampleData ()
             | ShoppingListSettingsMessage msg -> s |> handleShoppingListSettingsMessage msg
+            | GlobalSettingsMessage msg -> s |> handleGlobalSettingsMessage msg
             | ItemEditPageMessage msg -> s |> handleItemEditPageMessage now msg
             | Transaction msg -> msg |> Seq.fold (fun res i -> go i res) s
 

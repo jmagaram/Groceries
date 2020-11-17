@@ -126,3 +126,6 @@ type Service(state: StateTypes.State, clock, cosmos: ICosmosConnector) =
 type StateExtensions =
     [<Extension>]
     static member ShoppingList(me: StateTypes.State, now: DateTimeOffset) = me |> ShoppingList.create (now)
+
+    [<Extension>]
+    static member GetGlobalSettings(me: StateTypes.State) = me.GlobalSettings |> DataRow.current |> Option.get

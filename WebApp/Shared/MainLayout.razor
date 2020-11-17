@@ -1,4 +1,19 @@
 ﻿@inherits LayoutComponentBase
+@using Models
+@using static Models.StateExtensions
+
+@if (StateService.CurrentState.GetGlobalSettings().LargerFontSize) {
+    <style>
+        body {
+            font-size:larger;
+        }
+    </style>
+}
 <div class="container-fluid px-0">
     @Body
 </div>
+
+@code {
+    [Inject]
+    public Service StateService { get; set; }
+}
