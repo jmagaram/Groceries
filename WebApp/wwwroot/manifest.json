@@ -7,7 +7,7 @@
   "theme_color": "#03173d",
   "icons": [
     {
-      "src": "img/watermelon.png",
+      "src": "img/watermelon512.png",
       "type": "image/png",
       "sizes": "512x512"
     }
