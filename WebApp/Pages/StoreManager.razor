@@ -48,12 +48,12 @@
             var f = Form.BulkEdit?.Value;
             <nav class="navbar navbar-dark bg-dark sticky-top">
                 <button class="btn btn-dark iconButton" @onclick="_=>OnCancel()">Cancel</button>
-                <span class="navbar-text enterLeft">Manage stores</span>
+                <span class="navbar-text enterLeft">Stores</span>
                 <button disabled="@hasErrors" @onclick="_=>GoNext()" class="btn btn-dark iconButton">Next&nbsp;<ion-icon name="chevron-forward-outline"></ion-icon></button>
             </nav>
             <div class="col">
                 <h5 style="margin-top:1rem; margin-bottom:0">Where do you regularly shop?</h5>
-                <small class="text-secondary">Type the few stores you go to most often, each on a separate line. If you provide this information you can have specialized shopping lists for each store.</small>
+                <small class="text-secondary">Type the few stores you go to most often, each on a separate line.</small>
                 <textarea class="form-control" style="width:100%; margin-top:1rem" spellcheck="false" rows=10 @oninput="e=>OnBulkTextEdit((string)e.Value)" @onfocusout="_=>OnFocusOut()" value="@f.Proposed.ValueCommitted">
     </textarea>
                 @if (hasErrors) {
@@ -71,7 +71,7 @@
             var finalList = Models.SetManager.SummaryModule.targets(f).OrderBy(i => i);
             <nav class="navbar navbar-dark bg-dark sticky-top">
                 <button class="btn btn-dark iconButton" @onclick="_=> GoBulkEdit()"><ion-icon name="chevron-back-outline" /></button>
-                <span class="navbar-text enterLeft">Manage stores</span>
+                <span class="navbar-text enterLeft">Stores</span>
                 <button @onclick="_=>SaveChanges()" class="btn btn-dark iconButton">Save</button>
             </nav>
             <div class="col" style="margin-top:1rem">
