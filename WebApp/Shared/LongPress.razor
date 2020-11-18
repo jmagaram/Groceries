@@ -39,7 +39,7 @@
         if (_token != null) {
             CancelToken();
             if (_touchDurationReached) {
-                await Finished.InvokeAsync(null);
+                await Finished.InvokeAsync();
             }
         }
     }
@@ -47,7 +47,7 @@
     public async Task LongPressAsync(CancellationToken token) {
         try {
             await Task.Delay((int)MinimumDuration.TotalMilliseconds, token);
-            await Started.InvokeAsync(null);
+            await Started.InvokeAsync();
             _touchDurationReached = true;
         }
         catch (OperationCanceledException) {

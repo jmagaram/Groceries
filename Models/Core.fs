@@ -485,7 +485,7 @@ module GlobalSettings =
 
     type Message = UseLargerFontSize of bool
 
-    let create = { GlobalSettings.LargerFontSize = true }
+    let create = { GlobalSettings.LargerFontSize = false }
 
     let update (msg: Message) (s: GlobalSettings) =
         match msg with
