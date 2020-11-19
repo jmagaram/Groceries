@@ -90,7 +90,15 @@ namespace WebApp.Pages {
             shoppingList
             .Select(i => i.Items)
             .DistinctUntilChanged()
-            .Subscribe(i => Items = i.ToList());
+            .Subscribe(i =>
+            {
+                Items = i.ToList();
+                // This line seems to be necessary or else the list does not
+                // re-render after synchronization. There might be problems like
+                // this elsewhere. Not sure using RX is necessary and it is
+                // complicating things.
+                StateHasChanged();
+            });
 
         private void OnNavigateToCategory(CategoryId id) {
             Dispose();
