@@ -88,38 +88,42 @@
         @{
             var itemNameClass = ItemQry.Schedule.IsCompleted ? "completed" : "";
         }
-        <div class="postponeBadge">
-            @if (ItemQry.Schedule is Schedule.Repeat r) {
-                var postponedUntilDays = ItemQry.Schedule.PostponedUntilDays(DateTimeOffset.Now);
-                @if (postponedUntilDays.IsSome()) {
-                    var daysAway = postponedUntilDays.Value;
-                    if (daysAway >= 30) {
-                        <span class="badge badge-secondary">@($"{daysAway / 30}m")</span>
-                    }
-                    else if (daysAway >= 7) {
-                        <span class="badge badge-dark">@($"{daysAway / 7}w")</span>
-                    }
-                    else if (daysAway > 0) {
-                        <span class="badge badge-success">@($"{daysAway}d")</span>
-                    }
-                    else {
-                        <span class="badge badge-danger"><Icon Kind="IconKind.Bell" /></span>
+        @if (!HidePostponeDate) {
+            <div class="postponeBadge">
+                @if (ItemQry.Schedule is Schedule.Repeat r) {
+                    var postponedUntilDays = ItemQry.Schedule.PostponedUntilDays(DateTimeOffset.Now);
+                    @if (postponedUntilDays.IsSome()) {
+                        var daysAway = postponedUntilDays.Value;
+                        if (daysAway >= 30) {
+                            <span class="badge badge-secondary">@($"{daysAway / 30}m")</span>
+                        }
+                        else if (daysAway >= 7) {
+                            <span class="badge badge-dark">@($"{daysAway / 7}w")</span>
+                        }
+                        else if (daysAway > 0) {
+                            <span class="badge badge-success">@($"{daysAway}d")</span>
+                        }
+                        else {
+                            <span class="badge badge-danger"><Icon Kind="IconKind.Bell" /></span>
+                        }
                     }
                 }
-            }
-        </div>
-        <div class="repeater">
-            @if (ItemQry.Schedule.IsRepeat) {
-                <span style="display:inline-flex" aria-hidden="true"><Icon Kind="IconKind.Repeat" /></span>
-            }
-            else {
-                <text>&nbsp;</text>
-            }
-        </div>
+            </div>
+        }
+        @if (!HideRepeatIcon) {
+            <div class="repeater">
+                @if (ItemQry.Schedule.IsRepeat) {
+                    <span style="display:inline-flex" aria-hidden="true"><Icon Kind="IconKind.Repeat" /></span>
+                }
+                else {
+                    <text>&nbsp;</text>
+                }
+            </div>
+        }
         <div style="display:flex; flex-direction:column; cursor:pointer">
             <div style="display:flex; flex-direction:row">
                 <FormattedText Text="ItemQry.ItemName" Strikethrough="ItemQry.Schedule.IsCompleted" />
-                @if (ItemQry.Quantity.IsSome()) {
+                @if (!HideQuantity && ItemQry.Quantity.IsSome()) {
                     var quantity = ItemQry.Quantity.Value;
                     <div class="quantity">
                         <FormattedText Text="@ItemQry.Quantity.Value" />
@@ -129,17 +133,19 @@
                 <div class="category">
                     @catName
                 </div>}
-            @if (ItemQry.Note.IsSome()) {
+            @if (!HideNote && ItemQry.Note.IsSome()) {
                 var note = ItemQry.Note.Value;
                 <div class="note">
                     <FormattedText IsSmall="true" Text="@ItemQry.Note.Value" />
                 </div>}
             @{
-                var ns = string.Join(", ", ItemQry.Availability.Where(i => !i.IsSold).Select(i => i.Store.StoreName.Item));
-                if (ns != "") {
-                    <div class="stores">
-                        <small style="text-decoration:line-through; color:darkgray">@ns</small>
-                    </div> }
+                if (!HideStores) {
+                    var ns = string.Join(", ", ItemQry.Availability.Where(i => !i.IsSold).Select(i => i.Store.StoreName.Item));
+                    if (ns != "") {
+                        <div class="stores">
+                            <small style="text-decoration:line-through; color:darkgray">@ns</small>
+                        </div> }
+                }
             }
         </div>
     </div>
@@ -202,10 +208,25 @@
     }
 
     [Parameter]
+    public bool HidePostponeDate { get; set; } = false;
+
+    [Parameter]
+    public bool HideRepeatIcon { get; set; } = false;
+
+    [Parameter]
     public Models.ShoppingListModule.Item ItemQry { get; set; }
 
     [Parameter]
     public bool HideCategory { get; set; } = false;
+
+    [Parameter]
+    public bool HideQuantity { get; set; } = false;
+
+    [Parameter]
+    public bool HideStores { get; set; } = false;
+
+    [Parameter]
+    public bool HideNote { get; set; } = false;
 
     [Parameter]
     public EventCallback<Models.CoreTypes.ItemId> OnClickDelete { get; set; }
