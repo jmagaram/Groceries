@@ -4,6 +4,10 @@ HtmlElement.setProperty = function (element, k, v) {
     element[k] = v;
 }
 
+HtmlElement.setPropertyById = function (id, k, v) {
+    document.getElementById(id)[k] = v;
+}
+
 HtmlElement.getProperty = function (element, k) {
     return element[k];
 }

@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
+using Microsoft.JSInterop;
 using Models;
 using WebApp.Common;
 using static Models.CoreTypes;
@@ -132,11 +133,15 @@ namespace WebApp.Pages {
             await ClearTextFilter();
         }
 
+        [Inject]
+        public IJSRuntime JSRuntime { get; set; }
+
         protected async Task ClearTextFilter(bool force = false) {
             if (force || !string.IsNullOrWhiteSpace(TextFilter)) {
                 SettingsMessage settingsMessage = SettingsMessage.ClearItemFilter;
                 StateMessage stateMessage = StateMessage.NewShoppingListSettingsMessage(settingsMessage);
                 await StateService.UpdateAsync(stateMessage);
+                await JSRuntime.InvokeVoidAsync("HtmlElement.setPropertyById", "searchInput", "value", "");
             }
         }
 
