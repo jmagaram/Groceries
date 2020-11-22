@@ -141,7 +141,6 @@ namespace WebApp.Pages {
                 SettingsMessage settingsMessage = SettingsMessage.ClearItemFilter;
                 StateMessage stateMessage = StateMessage.NewShoppingListSettingsMessage(settingsMessage);
                 await StateService.UpdateAsync(stateMessage);
-                await JSRuntime.InvokeVoidAsync("HtmlElement.setPropertyById", "searchInput", "value", "");
             }
         }
 
@@ -149,6 +148,7 @@ namespace WebApp.Pages {
             if (e.Key == "Escape") {
                 bool shouldCancelFilter = TextFilter.Length == 0;
                 await ClearTextFilter();
+                await JSRuntime.InvokeVoidAsync("HtmlElement.setPropertyById", "searchInput", "value", "");
                 if (shouldCancelFilter) {
                     ShowFilter = false;
                 }
