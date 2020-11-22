@@ -201,9 +201,10 @@ module Schedule =
         match s with
         | Schedule.Repeat r ->
             r.PostponedUntil
-            |> Option.map (fun future ->
-                let duration = future - now
-                round (duration.TotalDays) |> int |> (*) 1<days>)
+            |> Option.map
+                (fun future ->
+                    let duration = future - now
+                    round (duration.TotalDays) |> int |> (*) 1<days>)
         | _ -> None
 
     let completeNext (now: DateTimeOffset) s =
@@ -439,13 +440,14 @@ module SearchTerm =
             let len = s |> String.length
 
             [ 1 .. len ]
-            |> Seq.choose (fun i ->
-                let endsWith = s.Substring(len - i)
-                let n = len / i
+            |> Seq.choose
+                (fun i ->
+                    let endsWith = s.Substring(len - i)
+                    let n = len / i
 
-                match (endsWith |> String.replicate n) = s with
-                | true -> Some(endsWith, n)
-                | false -> None)
+                    match (endsWith |> String.replicate n) = s with
+                    | true -> Some(endsWith, n)
+                    | false -> None)
             |> Seq.filter (fun (_, i) -> i > 1)
             |> Seq.tryHead
 
@@ -454,15 +456,16 @@ module SearchTerm =
             let maxEdgeLength = (len - 1) / 2
 
             seq { maxEdgeLength .. (-1) .. 1 }
-            |> Seq.choose (fun i ->
-                let starts = s.Substring(0, i)
-                let ends = s.Substring(len - i)
+            |> Seq.choose
+                (fun i ->
+                    let starts = s.Substring(0, i)
+                    let ends = s.Substring(len - i)
 
-                if starts = ends then
-                    let middle = s.Substring(i, len - i * 2)
-                    Some {| Edge = starts; Middle = middle |}
-                else
-                    None)
+                    if starts = ends then
+                        let middle = s.Substring(i, len - i * 2)
+                        Some {| Edge = starts; Middle = middle |}
+                    else
+                        None)
             |> Seq.tryHead
 
         let pattern =
@@ -498,7 +501,7 @@ module ShoppingListSettings =
         { ShoppingListSettings.StoreFilter = None
           PostponedViewHorizon = 7<days>
           HideCompletedItems = false
-          ItemTextFilter = None }
+          TextFilter = TextBox.create "" }
 
     let setStoreFilter k s = { s with StoreFilter = Some k }
 
@@ -506,9 +509,20 @@ module ShoppingListSettings =
 
     let clearStoreFilterIf k s = if s.StoreFilter = Some k then s |> clearStoreFilter else s
 
-    let setItemFilter txt s = { s with ItemTextFilter = txt |> SearchTerm.tryCoerce }
+    let private coerceSearchText s =
+        s
+        |> SearchTerm.tryCoerce
+        |> Option.map SearchTerm.value
+        |> Option.defaultValue ""
 
-    let clearItemFilter s = { s with ItemTextFilter = None }
+    let updateTextFilter msg s =
+        { s with
+              TextFilter = s.TextFilter |> TextBox.update coerceSearchText msg }
+
+    let clearItemFilter s =
+        s
+        |> updateTextFilter (TextBoxMessage.TypeText "")
+        |> updateTextFilter TextBoxMessage.LoseFocus
 
     let hideCompletedItems b s = { s with HideCompletedItems = b }
 
@@ -521,7 +535,7 @@ module ShoppingListSettings =
         | SetStoreFilterTo of StoreId
         | SetPostponedViewHorizon of int<days>
         | HideCompletedItems of bool
-        | SetItemFilter of string
+        | TextFilter of TextBoxMessage
         | ClearItemFilter
         | Transaction of Message seq
 
@@ -531,8 +545,8 @@ module ShoppingListSettings =
         | SetStoreFilterTo k -> s |> setStoreFilter k
         | SetPostponedViewHorizon d -> s |> setPostponedViewHorizon d
         | HideCompletedItems b -> s |> hideCompletedItems b
-        | SetItemFilter txt -> s |> setItemFilter txt
         | ClearItemFilter -> s |> clearItemFilter
+        | TextFilter msg -> s |> updateTextFilter msg
         | Transaction msgs -> msgs |> Seq.fold (fun res i -> res |> update i) s
 
 [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
@@ -590,11 +604,12 @@ module ItemForm =
 
         let exists =
             f.CategoryChoiceList
-            |> Seq.tryFind (fun i ->
-                String.Equals
-                    (i.CategoryName |> CategoryName.asText,
-                     normalized.ValueCommitted,
-                     StringComparison.InvariantCultureIgnoreCase))
+            |> Seq.tryFind
+                (fun i ->
+                    String.Equals
+                        (i.CategoryName |> CategoryName.asText,
+                         normalized.ValueCommitted,
+                         StringComparison.InvariantCultureIgnoreCase))
 
         match exists with
         | None -> { f with NewCategoryName = normalized }
@@ -739,9 +754,10 @@ module ItemForm =
               |> List.ofSeq
           Stores =
               stores
-              |> Seq.map (fun i ->
-                  { ItemAvailability.Store = i
-                    ItemAvailability.IsSold = true })
+              |> Seq.map
+                  (fun i ->
+                      { ItemAvailability.Store = i
+                        ItemAvailability.IsSold = true })
               |> Seq.sortBy (fun i -> i.Store.StoreName)
               |> List.ofSeq }
 

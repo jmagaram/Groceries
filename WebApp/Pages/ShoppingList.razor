@@ -5,7 +5,6 @@
 @using WebApp.Shared;
 @using static Models.ScheduleModule.ScheduleExtensions;
 @using static Models.ShoppingListSettingsModule
-@using System.Reactive.Linq;
 
 <style>
     .categoryHeader {
@@ -147,30 +146,26 @@
                     <elix-menu-item id="@id">@s.StoreName.Item</elix-menu-item>
                 }
                 <div slot="source" style="display:flex; flex-direction:column; align-items:flex-start">
-                    <Observable Source="StateService.State.Select(i=>DataRow.current(i.ShoppingListSettings).Value)" Context="i">
-                        <Loaded>
-                            @{
-                                string superTitle = null;
-                                string title = null;
-                                if (i.HideCompletedItems) {
-                                    superTitle = "Shopping list";
-                                    title =
-                                        i.StoreFilter.IsSome()
-                                        ? StoreFilterChoices.FirstOrDefault(j => j.StoreId.Equals(i.StoreFilter.Value)).StoreName.Item
-                                        : "All Stores";
-                                }
-                                else {
-                                    superTitle = "Plan";
-                                    title =
-                                        (i.PostponedViewHorizon == 14) ? "Next 2 weeks"
-                                        : (i.PostponedViewHorizon == 7) ? "Upcoming week"
-                                        : "Future";
-                                }
-                            }
-                            <small class="text-light">@superTitle</small>
-                            <div class="text-light" style="font-weight:bold">@title</div>
-                        </Loaded>
-                    </Observable>
+                    @{
+                        string superTitle = null;
+                        string title = null;
+                        if (Settings.HideCompletedItems) {
+                            superTitle = "Shopping list";
+                            title =
+                                Settings.StoreFilter.IsSome()
+                                ? StoreFilterChoices.FirstOrDefault(j => j.StoreId.Equals(Settings.StoreFilter.Value)).StoreName.Item
+                                : "All Stores";
+                        }
+                        else {
+                            superTitle = "Plan";
+                            title =
+                                (Settings.PostponedViewHorizon == 14) ? "Next 2 weeks"
+                                : (Settings.PostponedViewHorizon == 7) ? "Upcoming week"
+                                : "Future";
+                        }
+                    }
+                    <small class="text-light">@superTitle</small>
+                    <div class="text-light" style="font-weight:bold">@title</div>
                 </div>
             </Content>
         </ElixMenuButton>
@@ -181,10 +176,10 @@
             <div id="searchTrigger" class="@searchClass">
                 <div id="decoy"><ion-icon name="search-outline"></ion-icon><span style="margin-left:-5px"><ion-icon name="add-outline"></ion-icon></span></div>
                 <input @onclick="_=>ShowFilter=true"
-                       @bind-value="@TextFilter"
-                       @bind-value:event="oninput"
-                       @onfocusout="OnTextFilterBlur"
+                       value="@ShoppingListView.TextFilter.ValueCommitted"
+                       @oninput="e=>OnTextFilterInput((string)e.Value)"
                        @onkeydown="@(e => OnTextFilterKeyDown(e))"
+                       @onblur="@(e=>OnTextFilterBlur())"
                        id="searchInput"
                        placeholder="Find or add"
                        autocomplete="off"

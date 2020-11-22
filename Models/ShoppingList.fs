@@ -21,8 +21,8 @@ type ShoppingList =
     { Items: Item list
       ItemEdited: ItemForm option
       StoreFilter: Store option
-      Stores: Store list
-      SearchTerm: SearchTerm option }
+      TextFilter : TextBox
+      Stores: Store list }
 
 let private createItem find (item: CoreTypes.Item) state =
     let find =
@@ -52,7 +52,7 @@ let private createItem find (item: CoreTypes.Item) state =
 let create now state =
     let settings = state |> State.shoppingListSettings
 
-    let find = settings.ItemTextFilter |> Option.map Highlighter.create
+    let find = settings.TextFilter.ValueTyping |> SearchTerm.tryParse |> Result.map Highlighter.create |> Result.asOption
 
     let items (now: DateTimeOffset) =
         state
@@ -108,6 +108,6 @@ let create now state =
 
     { Items = items now
       StoreFilter = storeFilter
-      SearchTerm = settings.ItemTextFilter
+      TextFilter = settings.TextFilter
       Stores = stores
       ItemEdited = None }

@@ -86,7 +86,7 @@ type ShoppingListSettings =
     { StoreFilter: StoreId option
       PostponedViewHorizon: int<days>
       HideCompletedItems: bool
-      ItemTextFilter: SearchTerm option }
+      TextFilter : TextBox }
     interface IKey<string> with
         member this.Key = "singleton"
 

@@ -1,9 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Reactive.Disposables;
-using System.Reactive.Linq;
-using System.Reactive.Subjects;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
@@ -17,91 +14,19 @@ using StateItemMessage = Models.StateTypes.ItemMessage;
 using StateMessage = Models.StateTypes.StateMessage;
 
 namespace WebApp.Pages {
-    public partial class ShoppingList : ComponentBase, IDisposable {
-        CompositeDisposable _disposables;
-        string _textFilter = "";
-        readonly Subject<string> _textFilterTyped = new Subject<string>();
-
-        public bool ShowFilter { get; set; }
-
+    public partial class ShoppingList : ComponentBase {
         [Inject]
         public Service StateService { get; set; }
 
         [Inject]
         NavigationManager Navigation { get; set; }
 
-        protected override void OnInitialized() {
-            base.OnInitialized();
-            var shoppingList =
-                StateService.State
-                .Select(i => i.ShoppingList(DateTimeOffset.Now))
-                .Publish();
-
-            _disposables = new CompositeDisposable
-            {
-                UpdateItems(shoppingList),
-                UpdateStoreFilterPickerList(shoppingList),
-                UpdateStoreFilterSelectedItem(shoppingList),
-                UpdateTextFilter(shoppingList),
-                ProcessTextFilterTyped(),
-                shoppingList.Connect()
-            };
-        }
-
         protected override async Task OnInitializedAsync() {
             await StateService.InitializeAsync();
             await ClearTextFilter(force: true);
         }
 
-        private IDisposable ProcessTextFilterTyped() =>
-            _textFilterTyped
-            .Skip(1)
-            .DistinctUntilChanged()
-            .Subscribe(async s =>
-            {
-                SettingsMessage settingsMessage = SettingsMessage.NewSetItemFilter(s);
-                StateMessage stateMessage = StateMessage.NewShoppingListSettingsMessage(settingsMessage);
-                await StateService.UpdateAsync(stateMessage);
-                await InvokeAsync(() => StateHasChanged());
-            });
-
-        private IDisposable UpdateStoreFilterSelectedItem(IObservable<ShoppingListModule.ShoppingList> shoppingList) =>
-            shoppingList
-            .Select(i => i.StoreFilter)
-            .DistinctUntilChanged()
-            .Subscribe(s => StoreFilter = s.IsNone() ? Guid.Empty : s.Value.StoreId.Item);
-
-        private IDisposable UpdateTextFilter(IObservable<ShoppingListModule.ShoppingList> shoppingList) =>
-            shoppingList
-            .Select(i => i.SearchTerm)
-            .DistinctUntilChanged()
-            .Subscribe(s =>
-            {
-                TextFilter = s.IsNone() ? "" : s.Value.Item;
-            });
-
-        private IDisposable UpdateStoreFilterPickerList(IObservable<ShoppingListModule.ShoppingList> shoppingList) =>
-            shoppingList
-            .Select(i => i.Stores)
-            .DistinctUntilChanged()
-            .Subscribe(s => StoreFilterChoices = s.OrderBy(i => i.StoreName).ToList());
-
-        private IDisposable UpdateItems(IObservable<ShoppingListModule.ShoppingList> shoppingList) =>
-            shoppingList
-            .Select(i => i.Items)
-            .DistinctUntilChanged()
-            .Subscribe(i =>
-            {
-                Items = i.ToList();
-                // This line seems to be necessary or else the list does not
-                // re-render after synchronization. There might be problems like
-                // this elsewhere. Not sure using RX is necessary and it is
-                // complicating things.
-                StateHasChanged();
-            });
-
         private void OnNavigateToCategory(CategoryId id) {
-            Dispose();
             Navigation.NavigateTo($"/categories");
         }
 
@@ -200,10 +125,7 @@ namespace WebApp.Pages {
             await StateService.UpdateAsync(stateMessage);
         }
 
-        protected void OnTextFilterChange(ChangeEventArgs e) {
-            string valueTyped = (string)e.Value;
-            _textFilterTyped.OnNext(valueTyped);
-        }
+        public bool ShowFilter { get; set; }
 
         protected async Task HideTextFilter() {
             ShowFilter = false;
@@ -228,39 +150,42 @@ namespace WebApp.Pages {
             }
         }
 
-        protected void OnTextFilterBlur(FocusEventArgs e) { }
-
-        // Can probably get rid of this since I took out the Throttle ability
-        // But might be needed since not yet using a TextBox, and this caused
-        // problems with editing on ios 
-        protected string TextFilter
-        {
-            get { return _textFilter; }
-            set
-            {
-                if (value != _textFilter) {
-                    _textFilter = value;
-                    _textFilterTyped.OnNext(value);
-                }
-            }
+        private async Task OnTextFilterBlur() {
+            var textBoxMessage = TextBoxMessage.LoseFocus;
+            var settingsMessage = SettingsMessage.NewTextFilter(textBoxMessage);
+            var stateMessage = StateMessage.NewShoppingListSettingsMessage(settingsMessage);
+            await StateService.UpdateAsync(stateMessage);
+            await InvokeAsync(() => StateHasChanged());
         }
+
+        private async Task OnTextFilterInput(string s) {
+            var textBoxMessage = TextBoxMessage.NewTypeText(s);
+            var settingsMessage = SettingsMessage.NewTextFilter(textBoxMessage);
+            var stateMessage = StateMessage.NewShoppingListSettingsMessage(settingsMessage);
+            await StateService.UpdateAsync(stateMessage);
+            await InvokeAsync(() => StateHasChanged());
+        }
+
+        protected string TextFilter => ShoppingListView.TextFilter.ValueTyping;
 
         protected void OnStartCreateNew() {
-            Dispose();
-            if (string.IsNullOrWhiteSpace(TextFilter)) {
-                Navigation.NavigateTo("itemnew");
-            }
-            else {
-                Navigation.NavigateTo($"/itemnew/{TextFilter}");
-            }
+            string uri = string.IsNullOrWhiteSpace(TextFilter) ? "itemnew" : $"/itemnew/{TextFilter}";
+            Navigation.NavigateTo(uri);
         }
 
-        protected Guid StoreFilter { get; private set; } = Guid.Empty;
+        protected Guid StoreFilter =>
+            ShoppingListView.StoreFilter.IsNone() ? Guid.Empty : ShoppingListView.StoreFilter.Value.StoreId.Item;
 
-        protected List<ShoppingListModule.Item> Items { get; private set; } = new List<ShoppingListModule.Item>();
+        protected ShoppingListSettings Settings =>
+            DataRow.current(StateService.CurrentState.ShoppingListSettings).Value;
 
-        protected List<Store> StoreFilterChoices { get; private set; } = new List<Store>();
+        protected ShoppingListModule.ShoppingList ShoppingListView =>
+            StateService.CurrentState.ShoppingList(DateTimeOffset.Now);
 
-        public void Dispose() => _disposables?.Dispose();
+        protected List<ShoppingListModule.Item> Items =>
+            ShoppingListView.Items.ToList();
+
+        protected List<Store> StoreFilterChoices =>
+            ShoppingListView.Stores.OrderBy(i => i.StoreName).ToList();
     }
 }
