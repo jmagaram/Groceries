@@ -1,0 +1,13 @@
+﻿@{
+    string edgeText = FromEdge switch
+    {
+        ElixDrawerEdge.Bottom => "bottom",
+        ElixDrawerEdge.End => "end",
+        ElixDrawerEdge.Start => "start",
+        ElixDrawerEdge.Top => "top",
+        _ => throw new ArgumentException($"Unexpected drawer edge of {FromEdge}")
+    };
+}
+<elix-drawer from-edge="@edgeText" @ref="_drawer">
+    @ChildContent
+</elix-drawer>
