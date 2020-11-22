@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Reactive.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Components;
 using Models;
@@ -9,8 +8,7 @@ using PageMessage = Models.StateTypes.ItemEditPageMessage;
 using StateMessage = Models.StateTypes.StateMessage;
 
 namespace WebApp.Pages {
-    public partial class ItemEditPageSlick : ComponentBase, IDisposable {
-        IDisposable _subscription;
+    public partial class ItemEditPageSlick : ComponentBase {
 
         protected override async Task OnInitializedAsync() {
             await StateService.InitializeAsync();
@@ -27,13 +25,6 @@ namespace WebApp.Pages {
                 var stateMessage = StateMessage.NewItemEditPageMessage(pageMessage);
                 await StateService.UpdateAsync(stateMessage);
             }
-            _subscription =
-                StateService.State
-                .Select(i => i.ItemEditPage)
-                .Where(i => i.IsSome())
-                .Select(i => i.Value)
-                .DistinctUntilChanged()
-                .Subscribe(i => Form = i);
         }
 
         [Inject]
@@ -48,7 +39,7 @@ namespace WebApp.Pages {
         [Parameter]
         public string Id { get; set; }
 
-        public CoreTypes.ItemForm Form { get; private set; }
+        public CoreTypes.ItemForm Form => StateService.CurrentState.ItemEditPage?.Value;
 
         protected async Task OnFormMessage(FormMessage message) {
             var pageMessage = PageMessage.NewItemEditFormMessage(message);
@@ -59,7 +50,6 @@ namespace WebApp.Pages {
         protected async Task OnClickOk() {
             var pageMessage = PageMessage.SubmitItemEditForm;
             var stateMessage = StateMessage.NewItemEditPageMessage(pageMessage);
-            Dispose();
             Navigation.NavigateTo("shoppinglist");
             await StateService.UpdateAsync(stateMessage);
         }
@@ -67,7 +57,6 @@ namespace WebApp.Pages {
         protected async Task OnDelete() {
             var pageMessage = PageMessage.DeleteItem;
             var stateMessage = StateMessage.NewItemEditPageMessage(pageMessage);
-            Dispose();
             Navigation.NavigateTo("shoppinglist");
             await StateService.UpdateAsync(stateMessage);
         }
@@ -75,11 +64,8 @@ namespace WebApp.Pages {
         protected async Task OnCancel() {
             var pageMessage = PageMessage.CancelItemEditForm;
             var stateMessage = StateMessage.NewItemEditPageMessage(pageMessage);
-            Dispose();
             Navigation.NavigateTo("shoppinglist");
             await StateService.UpdateAsync(stateMessage);
         }
-
-        public void Dispose() => _subscription?.Dispose();
     }
 }
