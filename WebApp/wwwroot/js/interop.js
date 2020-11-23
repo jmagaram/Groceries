@@ -12,6 +12,18 @@ HtmlElement.getProperty = function (element, k) {
     return element[k];
 }
 
+var ElixOpenCloseMixin = ElixOpenCloseMixin || {};
+
+ElixOpenCloseMixin.addOpenedChangeEventListener = function (element, assemblyName, method, helper) {
+    if (element == null) return;
+    element.addEventListener("open", (event) => {
+        helper.invokeMethodAsync(assemblyName, method, true);
+    })
+    element.addEventListener("close", (event) => {
+        helper.invokeMethodAsync(assemblyName, method, false);
+    })
+};
+
 var ElixMenuButton = ElixMenuButton || {};
 
 // Attaches an event listener to the "close" event on an elix-menu-button. When
