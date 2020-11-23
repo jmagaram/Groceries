@@ -7,7 +7,6 @@
 @using System.Linq
 @using static Common.ElementExtensions;
 @inject IJSRuntime JSRuntime
-@*@using JsInteropClasses*@
 
 <style>
     ul {
@@ -85,30 +84,6 @@
     }
 </style>
 
-<input @onclick="MoveToReal" @ref="_decoy" placeholder="decoy" />
-<hr />
-<input @ref="_real" placeholder="real" />
-
-<button @onclick="DecrementMode" @onclick:preventDefault @onclick:stopPropagation>dec</button>
-<button @onclick="IncrementMode" @onclick:preventDefault @onclick:stopPropagation>inc</button>
-<Modes ActiveIndex="@ModesIndex">
-    <ModesItem>AAAAAAAAAAAAAAAAAA</ModesItem>
-    <ModesItem><div class="activeFromLeft">BBBBBBBBBBBBBBBBBB</div></ModesItem>
-    <ModesItem><div class="activeFromRight">CCCCCCCCCCCCCCCCCC</div></ModesItem>
-</Modes>
-<hr style="margin-bottom:40px" />
-
-@*<Modes2 SelectedIndex="@BoundIndex">
-        <Container Context="i">
-            <div style="margin-left:30px;width:400px;height:200px">@i</div>
-        </Container>
-        <Mode1>Apple</Mode1>
-        <Mode2><div class="activeFromLeft"><h3>Item Details</h3><ul><li>Category <strong @onclick="Forward">Produce</strong></li><li>ItemName: <strong>Fish sauce</strong></li></ul></div></Mode2>
-        <Mode3><div class="activeFromRight"><h3>Choose Category</h3><ul @onclick="Backward"><li>Produce</li><li>Meat and Seafood</li><li>Dairy</li><li>Bakery</li></ul></div></Mode3>
-    </Modes2>
-    <button @onclick="Backward">back</button>
-    <button @onclick="Forward">forward</button>*@
-
 <div @onclick="e => OnMainDivClick()" class="@BackgroundClass" style="transition:background-color ease-in 0.2s">
     <h3>Grocery items</h3>
     <button @onclick="InsertNew">Insert</button>
@@ -153,40 +128,6 @@
 </div>
 @code {
 
-    ElementReference _decoy;
-    ElementReference _real;
-    public async Task MoveToReal() => await _real.FocusAsync(JSRuntime);
-
-    public int ModesIndex { get; set; } = 0;
-    public void IncrementMode() {
-        ModesIndex = System.Math.Min(ModesIndex + 1, 2);
-    }
-    public void DecrementMode() {
-        ModesIndex = System.Math.Max(ModesIndex - 1, 0);
-    }
-
-    public void Forward() {
-        if (BoundIndex != 3) {
-            BoundIndex++;
-        }
-    }
-    public void Backward() {
-        if (BoundIndex != 1) {
-            BoundIndex--;
-        }
-    }
-
-    public int BoundIndex { get; set; } = 1;
-
-
-    protected override void OnInitialized() {
-        base.OnInitialized();
-    }
-
-    protected override void OnAfterRender(bool firstRender) {
-        base.OnAfterRender(firstRender);
-    }
-
     protected void UpdateName(ChangeEventArgs e) => ProcessMessage(Message.NewUpdateName((string)e.Value));
 
     protected void UpdateNote(ChangeEventArgs e) => ProcessMessage(Message.NewUpdateNote((string)e.Value));
@@ -195,11 +136,9 @@
 
     protected void Insert(MouseEventArgs e) => ProcessMessage(Message.InsertNew);
 
-
-    protected void OnMainDivClick() {
-    }
-
     protected void ProcessMessage(Message m) => View = processMessage(m, View);
+
+    public void OnMainDivClick() { }
 
     public Models.Experiment.GroceryItemsViewModule.GroceryItemView View { get; private set; } =
         init();
