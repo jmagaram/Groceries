@@ -1,0 +1,63 @@
+﻿<button @ontouchstart="OnTouchStart"
+        @ontouchend="OnTouchEnd"
+        @ontouchend:preventDefault
+        @ontouchcancel="OnTouchCancel"
+        @onclick="OnClick"
+        @attributes="Attributes">
+    @ChildContent
+</button>
+
+@code {
+    private bool _touchInProgress = false;
+
+    private void OnTouchStart(TouchEventArgs t) {
+        if (!IsDisabled() && t.TargetTouches.Length == 1) {
+            _touchInProgress = true;
+            AddTouchingClass();
+        }
+    }
+
+    private async Task OnTouchEnd(TouchEventArgs t) {
+        if (_touchInProgress) {
+            await Pressed.InvokeAsync();
+            _touchInProgress = false;
+            RemoveTouchingClass();
+        }
+    }
+
+    private void OnTouchCancel(TouchEventArgs t) {
+        _touchInProgress = false;
+        RemoveTouchingClass();
+    }
+
+    private async Task OnClick(MouseEventArgs m) => await Pressed.InvokeAsync();
+
+    [Parameter]
+    public RenderFragment ChildContent { get; set; }
+
+    [Parameter]
+    public EventCallback Pressed { get; set; }
+
+    [Parameter(CaptureUnmatchedValues = true)]
+    public IDictionary<string, object> Attributes { get; set; }
+
+    [Parameter]
+    public string TouchingClass { get; set; } = "";
+
+    private bool IsDisabled() => Attributes.Any(i => i.Key == "disabled" && i.Value == null || (i.Value is bool b && b == true));
+
+    private void AddTouchingClass() {
+        if (Attributes.TryGetValue("class", out object v) && v is string s) {
+            Attributes["class"] = $"{s} {TouchingClass}";
+        }
+        else {
+            Attributes["class"] = TouchingClass;
+        }
+    }
+
+    private void RemoveTouchingClass() {
+        if (Attributes.TryGetValue("class", out object v) && v is string s) {
+            Attributes["class"] = String.Join(" ", s.Split(' ', StringSplitOptions.RemoveEmptyEntries).Where(i => i != TouchingClass));
+        }
+    }
+}
