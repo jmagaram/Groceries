@@ -1,27 +1,49 @@
-﻿<button @ontouchstart="OnTouchStart"
+﻿@using System.Diagnostics
+
+<button @ontouchstart="OnTouchStart"
         @ontouchend="OnTouchEnd"
         @ontouchend:preventDefault
         @ontouchcancel="OnTouchCancel"
         @onclick="OnClick"
+        @ontouchmove="OnTouchMove"
         @attributes="Attributes">
     @ChildContent
 </button>
 
 @code {
     private bool _touchInProgress = false;
+    private Stopwatch _pressDuration;
+    private TouchPoint _startPoint;
 
     private void OnTouchStart(TouchEventArgs t) {
         if (!IsDisabled() && t.TargetTouches.Length == 1) {
+            _startPoint = t.TargetTouches.First();
             _touchInProgress = true;
             AddTouchingClass();
+            _pressDuration = Stopwatch.StartNew();
         }
     }
 
     private async Task OnTouchEnd(TouchEventArgs t) {
         if (_touchInProgress) {
-            await Pressed.InvokeAsync();
+            if (_pressDuration.ElapsedMilliseconds >= MinimumPressDuration.TotalMilliseconds) {
+                await Pressed.InvokeAsync();
+            }
             _touchInProgress = false;
             RemoveTouchingClass();
+        }
+    }
+
+    private void OnTouchMove(TouchEventArgs t) {
+        if (_touchInProgress) {
+            var current = t.TargetTouches.First();
+            var dx = current.ClientX - _startPoint.ClientX;
+            var dy = current.ClientY - _startPoint.ClientY;
+            var distance = Math.Sqrt(dx * dx + dy * dy);
+            if (distance > MaximumMoveBeforeCancel) {
+                _touchInProgress = false;
+                RemoveTouchingClass();
+            }
         }
     }
 
@@ -34,6 +56,12 @@
 
     [Parameter]
     public RenderFragment ChildContent { get; set; }
+
+    [Parameter]
+    public int MaximumMoveBeforeCancel { get; set; } = 5;
+
+    [Parameter]
+    public TimeSpan MinimumPressDuration { get; set; } = TimeSpan.FromMilliseconds(25);
 
     [Parameter]
     public EventCallback Pressed { get; set; }
