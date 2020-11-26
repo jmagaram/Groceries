@@ -487,6 +487,17 @@ let reorganizeStores (msg: ReorganizeStoresMessage) (s: State) =
     |> deleteStores msg.Delete
     |> fixForeignKeys
 
+let updateItemAvailability itemId (ia:ItemAvailability) s =
+    let ns = { NotSoldItem.ItemId = itemId 
+               NotSoldItem.StoreId = ia.Store.StoreId }
+    match ia.IsSold, s |> notSoldTable |> DataTable.tryFindCurrent ns with
+    | true, Some _ -> s |> deleteNotSoldItem ns
+    | false, None -> s |> insertNotSoldItem ns
+    | _, _ -> s
+
+let handleItemAvailabilityMessage itemId (msg:ItemAvailability seq) s =
+    msg
+    |> Seq.fold (fun s i -> s |> updateItemAvailability itemId i) s
 
 let update: Update =
     fun clock msg s ->
@@ -507,6 +518,7 @@ let update: Update =
             | ShoppingListSettingsMessage msg -> s |> handleShoppingListSettingsMessage msg
             | GlobalSettingsMessage msg -> s |> handleGlobalSettingsMessage msg
             | ItemEditPageMessage msg -> s |> handleItemEditPageMessage now msg
+            | ItemAvailabilityMessage (itemId, availability) -> s |> handleItemAvailabilityMessage itemId availability
             | Transaction msg -> msg |> Seq.fold (fun res i -> go i res) s
 
         go msg s

@@ -24,7 +24,7 @@ type ShoppingList =
       TextFilter : TextBox
       Stores: Store list }
 
-let private createItem find (item: CoreTypes.Item) state =
+let createItem find (item: CoreTypes.Item) state =
     let find =
         match find with
         | Some find -> find
@@ -48,6 +48,10 @@ let private createItem find (item: CoreTypes.Item) state =
                     |> State.notSoldTable
                     |> DataTable.tryFindCurrent { StoreId = st.StoreId; ItemId = item.ItemId }
                     |> Option.isNone }) }
+
+let createItemFromItemId (id:CoreTypes.ItemId) state =
+    let item = state |> State.itemsTable |> DataTable.findCurrent id
+    createItem None item state
 
 let create now state =
     let settings = state |> State.shoppingListSettings

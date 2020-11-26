@@ -27,10 +27,13 @@ module FormattedText =
     let hasHighlight ft =
         ft
         |> spans
-        |> Seq.exists (fun i ->
-            match i.Format with
-            | TextFormat.Highlight -> true
-            | _ -> false)
+        |> Seq.exists
+            (fun i ->
+                match i.Format with
+                | TextFormat.Highlight -> true
+                | _ -> false)
+
+    let asString s = String.Join("", s |> spans |> Seq.map (fun i -> i.Text))
 
 module Highlighter =
     let create: Highlighter =
@@ -78,8 +81,6 @@ module SetString =
         s.Split(separator = splitOn, options = StringSplitOptions.RemoveEmptyEntries)
         |> fromItems normalize delimeter
 
-    let toItems normalize (splitOn: string []) (s:String) = 
+    let toItems normalize (splitOn: string []) (s: String) =
         s.Split(splitOn, StringSplitOptions.RemoveEmptyEntries)
         |> normalizeItems normalize
-      
-

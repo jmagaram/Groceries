@@ -246,6 +246,13 @@ module Schedule =
             |> Ok
         | _ -> Error "Only repeating items can be postponed."
 
+    let tryAsRepeat s =
+        match s with
+        | Schedule.Repeat r -> Some r
+        | _ -> None
+
+    let asRepeat s = s |> tryAsRepeat |> Option.get
+
     [<Extension>]
     type ScheduleExtensions =
         [<Extension>]
@@ -280,6 +287,10 @@ module Item =
         | BuyAgainWithRepeat of int<days>
         | RemovePostpone
         | Postpone of int<days>
+        | UpdateCategory of CategoryId
+        | ClearCategory
+        | Repeat of Frequency
+        | ScheduleOnce
 
     let update now msg i =
         match msg with
@@ -288,6 +299,12 @@ module Item =
         | BuyAgainWithRepeat d -> i |> buyAgainWithRepeat d
         | RemovePostpone -> i |> removePostpone
         | Postpone d -> i |> postpone now d
+        | UpdateCategory id -> { i with CategoryId = Some id }
+        | ClearCategory -> { i with CategoryId = None }
+        | Repeat f ->
+            { i with
+                  Schedule = i.Schedule |> Schedule.repeat (f |> Frequency.days) }
+        | ScheduleOnce -> { i with Schedule = Schedule.Once }
 
 [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
 module CategoryId =

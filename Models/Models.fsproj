@@ -21,10 +21,17 @@
     <Compile Include="View.fs" />
     <Compile Include="ShoppingList.fs" />
     <Compile Include="SetManager.fs" />
+    <Compile Include="SelectZeroOrOne.fs" />
+    <Compile Include="SelectZeroOrOneCategory.fs" />
+    <Compile Include="SelectZeroOrOneFrequency.fs" />
+    <Compile Include="SelectZeroOrOnePostpone.fs" />
+    <Compile Include="SelectMany.fs" />
+    <Compile Include="StoresPicker.fs" />
     <Compile Include="CategoryManager.fs" />
     <Compile Include="StoreManager.fs" />
     <Compile Include="ServiceTypes.fs" />
     <Compile Include="Service.fs" />
+    <Compile Include="Extensions.fs" />
     <Compile Include="Experiment.fs" />
   </ItemGroup>
 

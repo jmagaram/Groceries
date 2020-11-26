@@ -29,6 +29,7 @@ type StateMessage =
     | ReorganizeCategoriesMessage of ReorganizeCategoriesMessage
     | ReorganizeStoresMessage of ReorganizeStoresMessage
     | ItemMessage of ItemMessage
+    | ItemAvailabilityMessage of ItemId * ItemAvailability seq
     | ShoppingListSettingsMessage of ShoppingListSettings.Message
     | GlobalSettingsMessage of GlobalSettings.Message
     | Import of ImportChanges
