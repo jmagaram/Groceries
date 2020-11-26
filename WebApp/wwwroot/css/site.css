@@ -154,7 +154,7 @@
     }
 
 .selectedDrawerButton {
-    background-color: #d1e9fd;
+    background-color:ButtonFace;
 }
 
 .buttonDrawer {
@@ -190,11 +190,15 @@
 }
 
 .itemButton {
+    display: flex;
+    flex-direction: column;
     background-color: white;
     border: none;
     width: 100%;
     padding: 0px;
     margin: 0px;
-    display: flex;
-    flex-direction: column;
+}
+
+.itemButtonPressed {
+    background-color: ButtonFace;
 }

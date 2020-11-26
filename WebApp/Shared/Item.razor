@@ -98,11 +98,17 @@
             }
         </div>
     }
-    <div style="display:flex; flex-direction:column; cursor:pointer">
+    @{
+        var attr = new Dictionary<string, object>
+        {
+            ["class"] = "itemButton"
+        };
+    }
+    <TouchButton Attributes="@attr" TouchingClass="itemButtonPressed" OnPressed="async _=>await OnClick.InvokeAsync(ItemQry.ItemId)">
         <div style="display:flex; flex-direction:row">
-            <TouchButton OnPressed="async _=>await OnClick.InvokeAsync(ItemQry.ItemId)">
+            <div>
                 <FormattedText Text="ItemQry.ItemName" Strikethrough="ItemQry.Schedule.IsCompleted" />
-            </TouchButton>            @if (!HideQuantity && ItemQry.Quantity.IsSome()) {
+            </div>            @if (!HideQuantity && ItemQry.Quantity.IsSome()) {
                 var quantity = ItemQry.Quantity.Value;
                 <div class="quantity">
                     <FormattedText Text="@ItemQry.Quantity.Value" />
@@ -127,7 +133,7 @@
                     </div> }
             }
         }
-    </div>
+    </TouchButton>
 </div>
 
 @code {
