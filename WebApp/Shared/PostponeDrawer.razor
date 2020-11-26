@@ -1,0 +1,69 @@
+﻿@implements IDisposable
+@using Models
+@using static Models.CoreTypes
+@using static Models.SelectZeroOrOneModule
+@using static Models.Extensions.CoreTypeExtensions
+@using static WebApp.Common.OptionExtensions
+
+@{
+    var buttonAttributes = new Dictionary<string, object>
+    {
+        ["class"] = "drawerButton"
+    };
+}
+
+<ElixDrawer @ref="_drawer">
+    @if (_model != null) {
+    <div class="buttonDrawer">
+        <h1>Postpone</h1>
+        @foreach (var i in _model.Choices.OrderByDescending(j => j)) {
+            bool isSelected = _model.CurrentChoice.IsSomeValue(i);
+            string description = $"+{Models.ItemFormModule.postponeDurationAsText(i)}";
+            <TouchButton Attributes="buttonAttributes" TouchingClass="selectedDrawerButton" Pressed="async _=>await Select(i)">
+                <div style="display:flex; flex-direction:row; justify-content:space-between">
+                    <div>@description</div>
+                    @if (isSelected) {
+                        <ion-icon name="checkmark-outline"></ion-icon>
+                    }
+                    else {
+                        <div>&nbsp;</div>
+                    }
+                </div>
+            </TouchButton>
+        }
+        <TouchButton Attributes="buttonAttributes" TouchingClass="selectedDrawerButton" Pressed="async _ => await Select(null)">
+            <div style="display:flex; flex-direction:row; justify-content:space-between">
+                <div>Add to shopping list now</div>
+                @if (_model.CurrentChoice.IsNone()) {
+                    <ion-icon name="checkmark-outline"></ion-icon>
+                }
+                else {
+                    <div>&nbsp;</div>
+                }
+            </div>
+        </TouchButton>
+    </div>    }
+</ElixDrawer>
+
+@code {
+    private ElixDrawer _drawer;
+    private SelectZeroOrOne<int> _model;
+
+    public void Dispose() => _drawer?.Dispose();
+
+    public async ValueTask Open(SelectZeroOrOne<int> model) {
+        _model = model;
+        await _drawer.Open();
+    }
+
+    public async ValueTask Close() => await _drawer.Close();
+
+    [Parameter]
+    public EventCallback<SelectZeroOrOne<int>> OnSelected { get; set; }
+
+    private async Task Select(int? c) {
+        _model = (c == null) ? _model.SelectNone() : _model.Select(c.Value);
+        await _drawer.Close();
+        await OnSelected.InvokeAsync(_model);
+    }
+}

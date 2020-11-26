@@ -1,0 +1,68 @@
+﻿@implements IDisposable
+@using Models
+@using static Models.CoreTypes
+@using static Models.SelectZeroOrOneModule
+@using static Models.Extensions.CoreTypeExtensions
+@using static WebApp.Common.OptionExtensions
+
+@{
+    var buttonAttributes = new Dictionary<string, object>
+    {
+        ["class"] = "drawerButton"
+    };
+}
+
+<ElixDrawer @ref="_drawer">
+    @if (_model != null) {
+    <div class="buttonDrawer">
+        <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" aria-hidden="true" focusable="false" width="1em" height="1em" style="-ms-transform: rotate(360deg); -webkit-transform: rotate(360deg); transform: rotate(360deg);" preserveAspectRatio="xMidYMid meet" viewBox="0 0 24 24"><path d="M20 9H4v2h16V9zM4 15h16v-2H4v2z" fill="#626262" /></svg>        <h1>Category</h1>
+        @foreach (var i in _model.Choices.OrderBy(j => j.CategoryName)) {
+            bool isSelected = _model.CurrentChoice.IsSomeValue(i);
+            <TouchButton Attributes="buttonAttributes" TouchingClass="selectedDrawerButton" Pressed="async _=>await Select(i)">
+                <div style="display:flex; flex-direction:row; justify-content:space-between">
+                    <div>@i.CategoryName.AsText()</div>
+                    @if (isSelected) {
+                        <ion-icon name="checkmark-outline"></ion-icon>
+                    }
+                    else {
+                        <div>&nbsp;</div>
+                    }
+                </div>
+            </TouchButton>
+        }
+        <TouchButton Attributes="buttonAttributes" TouchingClass="selectedDrawerButton" Pressed="async _ => await Select(null)">
+            <div style="display:flex; flex-direction:row; justify-content:space-between">
+                <div>None (Uncategorized)</div>
+                @if (_model.CurrentChoice.IsNone()) {
+                    <ion-icon name="checkmark-outline"></ion-icon>
+                }
+                else {
+                    <div>&nbsp;</div>
+                }
+            </div>
+        </TouchButton>
+    </div>    }
+</ElixDrawer>
+
+@code {
+    private ElixDrawer _drawer;
+    private SelectZeroOrOne<Category> _model;
+
+    public void Dispose() => _drawer?.Dispose();
+
+    public async ValueTask Open(SelectZeroOrOne<Category> model) {
+        _model = model;
+        await _drawer.Open();
+    }
+
+    public async ValueTask Close() => await _drawer.Close();
+
+    [Parameter]
+    public EventCallback<SelectZeroOrOne<Category>> OnSelected { get; set; }
+
+    private async Task Select(Category c) {
+        _model = (c == null) ? _model.SelectNone() : _model.Select(c);
+        await _drawer.Close();
+        await OnSelected.InvokeAsync(_model);
+    }
+}
