@@ -28,6 +28,7 @@
     <Compile Include="SelectMany.fs" />
     <Compile Include="StoresPicker.fs" />
     <Compile Include="CategoryManager.fs" />
+    <Compile Include="ItemQuickActions.fs" />
     <Compile Include="StoreManager.fs" />
     <Compile Include="ServiceTypes.fs" />
     <Compile Include="Service.fs" />

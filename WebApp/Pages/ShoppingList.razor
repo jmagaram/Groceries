@@ -191,10 +191,11 @@
 </div>
 <div class="col">
     @foreach (var cat in Items.Select(j => j.Category).Distinct().OrderBy(i => i.IsSome() ? i.Value.CategoryName.Item : "")) {
+        var catCaptured = cat;
         var now = DateTimeOffset.Now;
-        var categoryName = cat.IsNone() ? "(Uncategorized)" : cat.Value.CategoryName.Item;
-        @if (cat.IsSome()) {
-            <p @onclick="e=>OnNavigateToCategory(cat.Value.CategoryId)" class="categoryHeader">
+        var categoryName = catCaptured.IsNone() ? "(Uncategorized)" : catCaptured.Value.CategoryName.Item;
+        @if (catCaptured.IsSome()) {
+            <p @onclick="e=>OnNavigateToCategory(catCaptured.Value.CategoryId)" class="categoryHeader">
                 @categoryName
             </p>
         }
@@ -204,8 +205,9 @@
             </p>
         }
 
-        foreach (var item in Items.Where(i => object.Equals(i.Category, cat)).OrderBy(j => j.Schedule.DueDate(now).GetOr(DateTimeOffset.MaxValue)).ThenBy(j => j.ItemName)) {
-            <WebApp.Shared.Item HideCategory="true" OnClickBuyAgainRepeat="OnClickBuyAgainRepeat" OnClickPostpone="@(async i => await OnClickPostpone(i))" OnClickRemovePostpone="@(async i => await OnClickRemovePostpone(i))" OnClickBuyAgain="@(async i => await OnClickBuyAgain(i))" OnClickDelete="OnClickDelete" OnClickComplete="OnClickComplete" ItemQry="@item" />
+        foreach (var item in Items.Where(i => object.Equals(i.Category, catCaptured)).OrderBy(j => j.Schedule.DueDate(now).GetOr(DateTimeOffset.MaxValue)).ThenBy(j => j.ItemName)) {
+            var itemCaptured = item;
+            <WebApp.Shared.Item HideCategory="true" OnClick="async i=>await OnClickItem(i)" ItemQry="@itemCaptured" />
         }
     }
     @if (TextFilter.Length >= 1) {
@@ -222,3 +224,12 @@
         <p style="margin-top:1rem">No items on your shopping list.</p>
     }
 </div>
+<ItemQuickActionDrawer OnDelete="async i => await OnClickDelete(i)"
+                       OnAddToShoppingListNow="async i=> await OnClickRemovePostpone(i)"
+                       OnBuyAgain="async i=>await OnClickChooseFrequency(i)"
+                       OnComplete="async i=> await OnClickComplete(i)"
+                       OnEdit="async i => await OnEditItem(i)"
+                       OnPostpone="async i=> await OnClickChoosePostpone(i)"
+                       @ref="_itemQuickActionDrawer"></ItemQuickActionDrawer>
+<PostponeDrawer OnSelected="async d => await OnPostponeDurationChosen(d)" @ref="_postponeDrawer"></PostponeDrawer>
+<FrequencyDrawer OnSelected="async r => await OnFrequencyChosen(r)" @ref="_frequencyDrawer"></FrequencyDrawer>

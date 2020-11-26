@@ -23,6 +23,12 @@ type StateExtensions =
 [<Extension>]
 type CoreTypeExtensions =
     [<Extension>]
+    static member AsText(me: ItemName) = me |> ItemName.asText
+
+    [<Extension>]
+    static member Serialize(me: ItemId) = me |> ItemId.serialize
+
+    [<Extension>]
     static member AsText(me: StoreName) = me |> StoreName.asText
 
     [<Extension>]

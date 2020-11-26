@@ -27,7 +27,7 @@
     private async Task OnTouchEnd(TouchEventArgs t) {
         if (_touchInProgress) {
             if (_pressDuration.ElapsedMilliseconds >= MinimumPressDuration.TotalMilliseconds) {
-                await Pressed.InvokeAsync();
+                await OnPressed.InvokeAsync();
             }
             _touchInProgress = false;
             RemoveTouchingClass();
@@ -52,7 +52,7 @@
         RemoveTouchingClass();
     }
 
-    private async Task OnClick(MouseEventArgs m) => await Pressed.InvokeAsync();
+    private async Task OnClick(MouseEventArgs m) => await OnPressed.InvokeAsync();
 
     [Parameter]
     public RenderFragment ChildContent { get; set; }
@@ -64,7 +64,7 @@
     public TimeSpan MinimumPressDuration { get; set; } = TimeSpan.FromMilliseconds(25);
 
     [Parameter]
-    public EventCallback Pressed { get; set; }
+    public EventCallback OnPressed { get; set; }
 
     [Parameter(CaptureUnmatchedValues = true)]
     public IDictionary<string, object> Attributes { get; set; } = new Dictionary<string, object>();

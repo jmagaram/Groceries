@@ -251,6 +251,8 @@ module Schedule =
         | Schedule.Repeat r -> Some r
         | _ -> None
 
+    let isRepeat (s:Schedule) = s |> tryAsRepeat |> Option.isSome
+
     let asRepeat s = s |> tryAsRepeat |> Option.get
 
     [<Extension>]

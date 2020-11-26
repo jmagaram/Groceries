@@ -7,7 +7,9 @@ using Microsoft.AspNetCore.Components.Web;
 using Microsoft.JSInterop;
 using Models;
 using WebApp.Common;
+using WebApp.Shared;
 using static Models.CoreTypes;
+using static Models.Extensions.CoreTypeExtensions;
 using static Models.ServiceTypes;
 using ItemMessage = Models.ItemModule.Message;
 using SettingsMessage = Models.ShoppingListSettingsModule.Message;
@@ -15,7 +17,18 @@ using StateItemMessage = Models.StateTypes.ItemMessage;
 using StateMessage = Models.StateTypes.StateMessage;
 
 namespace WebApp.Pages {
-    public partial class ShoppingList : ComponentBase {
+    public partial class ShoppingList : ComponentBase, IDisposable {
+        ItemQuickActionDrawer _itemQuickActionDrawer;
+        PostponeDrawer _postponeDrawer;
+        FrequencyDrawer _frequencyDrawer;
+        ItemId? _quickEditContext;
+
+        public void Dispose() {
+            _itemQuickActionDrawer?.Dispose();
+            _postponeDrawer?.Dispose();
+            _frequencyDrawer?.Dispose();
+        }
+
         [Inject]
         public Service StateService { get; set; }
 
@@ -87,6 +100,7 @@ namespace WebApp.Pages {
             var settingsMessage = StateMessage.NewShoppingListSettingsMessage(SettingsMessage.ClearItemFilter);
             var transaction = StateMessage.NewTransaction(new List<StateMessage> { settingsMessage, itemMessage });
             ShowFilter = false;
+            await _itemQuickActionDrawer.Close();
             await StateService.UpdateAsync(transaction);
         }
 
@@ -95,35 +109,52 @@ namespace WebApp.Pages {
             var settingsStateMessage = StateMessage.NewShoppingListSettingsMessage(SettingsMessage.ClearItemFilter);
             var transaction = StateMessage.NewTransaction(new List<StateMessage> { itemMessage, settingsStateMessage });
             ShowFilter = false;
+            await _itemQuickActionDrawer.Close();
             await StateService.UpdateAsync(transaction);
         }
 
-        private async Task OnClickBuyAgain(ItemId itemId) {
-            var itemMessage = ItemMessage.BuyAgain;
-            var stateItemMessage = StateItemMessage.NewModifyItem(itemId, itemMessage);
-            var stateMessage = StateMessage.NewItemMessage(stateItemMessage);
-            await StateService.UpdateAsync(stateMessage);
-        }
-
-        private async Task OnClickBuyAgainRepeat((ItemId itemId, int days) i) {
-            var itemMessage = ItemMessage.BuyAgainWithRepeat.NewBuyAgainWithRepeat(i.days);
-            var stateItemMessage = StateItemMessage.NewModifyItem(i.itemId, itemMessage);
-            var stateMessage = StateMessage.NewItemMessage(stateItemMessage);
-            await StateService.UpdateAsync(stateMessage);
+        private async Task OnClickItem(ItemId itemId) {
+            var configuration = ItemQuickActionsModule.create(itemId, StateService.CurrentState);
+            await _itemQuickActionDrawer.Open(configuration);
         }
 
         private async Task OnClickRemovePostpone(ItemId itemId) {
             var itemMessage = ItemMessage.RemovePostpone;
             var stateItemMessage = StateItemMessage.NewModifyItem(itemId, itemMessage);
             var stateMessage = StateMessage.NewItemMessage(stateItemMessage);
+            await _itemQuickActionDrawer.Close();
             await StateService.UpdateAsync(stateMessage);
         }
 
-        private async Task OnClickPostpone((ItemId itemId, int days) i) {
-            var itemMessage = ItemMessage.NewPostpone(i.days);
-            var stateItemMessage = StateItemMessage.NewModifyItem(i.itemId, itemMessage);
-            var stateMessage = StateMessage.NewItemMessage(stateItemMessage);
+        private async Task OnClickChoosePostpone(ItemId itemId) {
+            _quickEditContext = itemId;
+            var viewModel = SelectZeroOrOnePostpone.createFromItemId(itemId, DateTimeOffset.Now, StateService.CurrentState);
+            await _itemQuickActionDrawer.Close();
+            await _postponeDrawer.Open(viewModel);
+        }
+
+        private async Task OnClickChooseFrequency(ItemId itemId) {
+            _quickEditContext = itemId;
+            var viewModel = SelectZeroOrOneFrequency.createFromItemId(itemId, StateService.CurrentState);
+            await _itemQuickActionDrawer.Close();
+            await _frequencyDrawer.Open(viewModel);
+        }
+
+        private async Task OnFrequencyChosen(SelectZeroOrOneModule.SelectZeroOrOne<Frequency> i) {
+            var stateMessage = SelectZeroOrOneFrequency.asStateMessage(_quickEditContext.Value, i);
             await StateService.UpdateAsync(stateMessage);
+            await _frequencyDrawer.Close();
+        }
+
+        private async Task OnPostponeDurationChosen(SelectZeroOrOneModule.SelectZeroOrOne<int> i) {
+            var stateMessage = SelectZeroOrOnePostpone.asStateMessage(_quickEditContext.Value, i);
+            await StateService.UpdateAsync(stateMessage);
+            await _postponeDrawer.Close();
+        }
+
+        private async Task OnEditItem(ItemId itemId) {
+            await _itemQuickActionDrawer.Close();
+            Navigation.NavigateTo($"./ItemEdit/{itemId.Serialize()}");
         }
 
         public bool ShowFilter { get; set; }
