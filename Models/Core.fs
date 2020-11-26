@@ -173,7 +173,7 @@ module Frequency =
 module Schedule =
 
     let commonPostponeChoices =
-        [ 1; 3; 7; 14; 30; 60; 90 ]
+        [ 3; 7; 14; 21; 30; 60; 90 ]
         |> List.map (fun i -> i * 1<days>)
 
     let dueDate (now: DateTimeOffset) s =

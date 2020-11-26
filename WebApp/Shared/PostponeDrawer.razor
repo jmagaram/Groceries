@@ -16,7 +16,18 @@
     @if (_model != null) {
     <div class="buttonDrawer">
         <h1>Postpone</h1>
-        @foreach (var i in _model.Choices.OrderByDescending(j => j)) {
+        <TouchButton Attributes="buttonAttributes" TouchingClass="selectedDrawerButton" OnPressed="async _ => await Select(null)">
+            <div style="display:flex; flex-direction:row; justify-content:space-between">
+                <div>Add to shopping list now</div>
+                @if (_model.CurrentChoice.IsNone()) {
+                    <ion-icon name="checkmark-outline"></ion-icon>
+                }
+                else {
+                    <div>&nbsp;</div>
+                }
+            </div>
+        </TouchButton>
+        @foreach (var i in _model.Choices.OrderBy(j => j)) {
             bool isSelected = _model.CurrentChoice.IsSomeValue(i);
             string description = $"+{Models.ItemFormModule.postponeDurationAsText(i)}";
             <TouchButton Attributes="buttonAttributes" TouchingClass="selectedDrawerButton" OnPressed="async _=>await Select(i)">
@@ -31,17 +42,6 @@
                 </div>
             </TouchButton>
         }
-        <TouchButton Attributes="buttonAttributes" TouchingClass="selectedDrawerButton" OnPressed="async _ => await Select(null)">
-            <div style="display:flex; flex-direction:row; justify-content:space-between">
-                <div>Add to shopping list now</div>
-                @if (_model.CurrentChoice.IsNone()) {
-                    <ion-icon name="checkmark-outline"></ion-icon>
-                }
-                else {
-                    <div>&nbsp;</div>
-                }
-            </div>
-        </TouchButton>
     </div>    }
 </ElixDrawer>
 

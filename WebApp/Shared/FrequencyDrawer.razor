@@ -15,7 +15,18 @@
 <ElixDrawer @ref="_drawer">
     @if (_model != null) {
     <div class="buttonDrawer">
-        <h1>Frequency</h1>
+        <h1>Repeat</h1>
+        <TouchButton Attributes="buttonAttributes" TouchingClass="selectedDrawerButton" OnPressed="async _ => await Select(null)">
+            <div style="display:flex; flex-direction:row; justify-content:space-between">
+                <div>No (just once)</div>
+                @if (_model.CurrentChoice.IsNone()) {
+                    <ion-icon name="checkmark-outline"></ion-icon>
+                }
+                else {
+                    <div>&nbsp;</div>
+                }
+            </div>
+        </TouchButton>
         @foreach (var i in _model.Choices.OrderBy(j => j.Item)) {
             bool isSelected = _model.CurrentChoice.IsSomeValue(i);
             <TouchButton Attributes="buttonAttributes" TouchingClass="selectedDrawerButton" OnPressed="async _=>await Select(i)">
@@ -30,17 +41,6 @@
                 </div>
             </TouchButton>
         }
-        <TouchButton Attributes="buttonAttributes" TouchingClass="selectedDrawerButton" OnPressed="async _ => await Select(null)">
-            <div style="display:flex; flex-direction:row; justify-content:space-between">
-                <div>None (just a one-time purchase)</div>
-                @if (_model.CurrentChoice.IsNone()) {
-                    <ion-icon name="checkmark-outline"></ion-icon>
-                }
-                else {
-                    <div>&nbsp;</div>
-                }
-            </div>
-        </TouchButton>
     </div>
     }
 </ElixDrawer>
