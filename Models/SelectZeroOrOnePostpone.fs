@@ -4,7 +4,7 @@ let create schedule now =
     let current =
         schedule
         |> Schedule.postponedUntilDays now
-        |> Option.map (fun i -> max i 0<days>)
+        |> Option.map (fun i -> max i 1<days>)
 
     let choices =
         Schedule.commonPostponeChoices
