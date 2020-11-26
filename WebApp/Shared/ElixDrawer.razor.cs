@@ -37,7 +37,7 @@ namespace WebApp.Shared {
         public IJSRuntime JSRuntime { get; set; }
 
         [Parameter]
-        public ElixDrawerEdge FromEdge { get; set; } = ElixDrawerEdge.Start;
+        public ElixDrawerEdge FromEdge { get; set; } = ElixDrawerEdge.Bottom;
 
         /// <summary>
         /// Raised when the Drawer is closed by (1) clicking on the overlay, (2)
