@@ -208,9 +208,8 @@
 .drawer {
     display: flex;
     flex-direction: column;
-    margin: 20px;
     background-color: white;
-    padding: 10px;
+    padding: 15px;
 }
 
     .drawer button > ion-icon {
