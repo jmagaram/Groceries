@@ -3,31 +3,33 @@
 @using static Models.ItemQuickActionsModule
 @using static Models.Extensions.CoreTypeExtensions
 
-@{
-    var buttonAttributes = new Dictionary<string, object>
-    {
-        ["class"] = "drawerButton"
-    };
-}
 <ElixDrawer @ref="_drawer">
     @if (_viewModel == null)
         return;
-    <div class="buttonDrawer">
+    <div class="drawer">
+        <header>
+            <div></div>
         <h1>@_viewModel.ItemName.AsText()</h1>
-        @if (_viewModel.CanComplete) {
-            <TouchButton Attributes="buttonAttributes" TouchingClass="selectedDrawerButton" OnPressed="async _ => await OnComplete.InvokeAsync(_viewModel.ItemId)"><ion-icon name="checkmark-outline"></ion-icon>Complete</TouchButton>
-        }
-        @if (_viewModel.CanPostpone) {
-            <TouchButton Attributes="buttonAttributes" TouchingClass="selectedDrawerButton" OnPressed="async _ => await OnPostpone.InvokeAsync(_viewModel.ItemId)"><ion-icon name="calendar-outline"></ion-icon>Postpone</TouchButton>
-        }
-        @if (_viewModel.CanAddToShoppingListNow) {
-            <TouchButton Attributes="buttonAttributes" TouchingClass="selectedDrawerButton" OnPressed="async _ => await OnAddToShoppingListNow.InvokeAsync(_viewModel.ItemId)"><ion-icon name="add-outline"></ion-icon>Add to shopping list now</TouchButton>
-        }
+            <button></button>
+        </header>
+        <div class="buttonGroup">
+            @if (_viewModel.CanComplete) {
+                <TouchButton TouchingClass="pressed" OnPressed="async _ => await OnComplete.InvokeAsync(_viewModel.ItemId)"><ion-icon name="checkmark-outline"></ion-icon>Complete</TouchButton>
+            }
+            @if (_viewModel.CanAddToShoppingListNow) {
+                <TouchButton TouchingClass="pressed" OnPressed="async _ => await OnAddToShoppingListNow.InvokeAsync(_viewModel.ItemId)"><ion-icon name="add-outline"></ion-icon>Add to shopping list now</TouchButton>
+            }
+            @if (_viewModel.CanPostpone) {
+                <TouchButton TouchingClass="pressed" OnPressed="async _ => await OnPostpone.InvokeAsync(_viewModel.ItemId)"><ion-icon name="calendar-outline"></ion-icon>Postpone</TouchButton>
+            }
+        </div>
+        <div class="buttonGroup">
         @if (_viewModel.CanBuyAgain) {
-            <TouchButton Attributes="buttonAttributes" TouchingClass="selectedDrawerButton" OnPressed="async _ => await OnBuyAgain.InvokeAsync(_viewModel.ItemId)"><ion-icon name="add-outline"></ion-icon>Buy Again</TouchButton>
+            <TouchButton TouchingClass="pressed" OnPressed="async _ => await OnBuyAgain.InvokeAsync(_viewModel.ItemId)"><ion-icon name="add-outline"></ion-icon>Buy Again</TouchButton>
         }
-        <TouchButton Attributes="buttonAttributes" TouchingClass="selectedDrawerButton" OnPressed="async _ => await OnDelete.InvokeAsync(_viewModel.ItemId)"><ion-icon name="trash-outline"></ion-icon>Delete</TouchButton>
-        <TouchButton Attributes="buttonAttributes" TouchingClass="selectedDrawerButton" OnPressed="async _ => await OnEdit.InvokeAsync(_viewModel.ItemId)"><ion-icon name="pencil-outline"></ion-icon>Edit...</TouchButton>
+        <TouchButton TouchingClass="pressed" OnPressed="async _ => await OnDelete.InvokeAsync(_viewModel.ItemId)"><ion-icon name="trash-outline"></ion-icon>Delete</TouchButton>
+        <TouchButton TouchingClass="pressed" OnPressed="async _ => await OnEdit.InvokeAsync(_viewModel.ItemId)"><ion-icon name="pencil-outline"></ion-icon>Edit...</TouchButton>
+        </div>
     </div>
 </ElixDrawer>
 

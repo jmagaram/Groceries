@@ -154,7 +154,7 @@
     }
 
 .selectedDrawerButton {
-    background-color:ButtonFace;
+    background-color: ButtonFace;
 }
 
 .buttonDrawer {
@@ -163,9 +163,9 @@
     flex-direction: column;
 }
 
-.buttonDrawer button:focus {
-    outline:none;
-}
+    .buttonDrawer button:focus {
+        outline: none;
+    }
 
     .buttonDrawer > h1 {
         font-size: 1rem;
@@ -175,19 +175,19 @@
     }
 
     .buttonDrawer ion-icon {
-        vertical-align:bottom;
+        vertical-align: bottom;
     }
 
 .primaryDrawerButton {
     background-color: white;
     padding: 8px;
     margin: 4px;
-    border-radius:3px;
+    border-radius: 3px;
 }
 
-.primaryDrawerButton ion-icon {
-    vertical-align:bottom;
-}
+    .primaryDrawerButton ion-icon {
+        vertical-align: bottom;
+    }
 
 .itemButton {
     display: flex;
@@ -202,3 +202,118 @@
 .itemButtonPressed {
     background-color: ButtonFace;
 }
+
+
+
+.drawer {
+    display: flex;
+    flex-direction: column;
+    margin: 20px;
+    background-color: white;
+    padding: 10px;
+}
+
+    .drawer button > ion-icon {
+        vertical-align: bottom;
+        margin-right: 1rem;
+    }
+
+        .drawer button > ion-icon:last-child {
+            margin-right: 0;
+            padding-right: 0.5rem;
+            padding-left: 0.5rem;
+        }
+
+    .drawer header {
+        display: grid;
+        grid-template-columns: 1fr auto 1fr;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom:0.5rem;
+    }
+
+        .drawer header * {
+            text-align: center;
+        }
+
+        .drawer header :nth-child(3) {
+            justify-self:flex-end;
+        } 
+
+        .drawer header :first-child {
+            justify-self:flex-start;
+        }
+
+        .drawer header h1 {
+            font-size: 1rem;
+            font-weight: bold;
+            padding-top: 0px;
+            margin-top: 0px;
+            margin-bottom:0px;
+        }
+
+        .drawer header p {
+            margin-top: 0px;
+        }
+
+        .drawer header p {
+        }
+
+        .drawer header button {
+            background-color: transparent;
+            border: none;
+        }
+
+    .drawer button {
+        padding-top: 0.5rem;
+        padding-bottom: 0.5rem;
+        background-color: transparent;
+        border: 1px solid #d4d4d4;
+    }
+
+        .drawer button.pressed {
+            background-color: ButtonFace;
+        }
+
+        .drawer button:focus {
+            border: inherit;
+            outline-color: #d4d4d4;
+            outline: none !important;
+            box-shadow: none !important;
+        }
+
+        .drawer button:active {
+            border: inherit;
+            outline-color: #d4d4d4;
+            outline: none !important;
+            box-shadow: none !important;
+        }
+
+    .drawer .buttonGroup {
+        margin-top: 20px;
+        display: flex;
+        flex-direction: column;
+    }
+
+        .drawer .buttonGroup > * {
+            margin-top: 0.5rem;
+            margin-bottom: 0.5rem;
+        }
+
+    .drawer header + .buttonGroup {
+        margin-top: 0px;
+    }
+
+    .drawer .buttonRow {
+        display: flex;
+        flex-direction: row;
+        align-items: stretch;
+    }
+
+        .drawer .buttonRow button {
+            flex-grow: 1;
+        }
+
+    .drawer .justIconButton {
+        max-width: fit-content;
+    }
