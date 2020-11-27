@@ -220,8 +220,8 @@
 
         .drawer button > ion-icon:last-child {
             margin-right: 0;
-            padding-right: 0.5rem;
-            padding-left: 0.5rem;
+            padding-right: 0.4rem;
+            padding-left: 0.4rem;
         }
 
     .drawer header {
@@ -316,4 +316,9 @@
 
     .drawer .justIconButton {
         max-width: fit-content;
+    }
+
+    .drawer .dropdownButton {
+        max-width: fit-content;
+        border-left:none;
     }

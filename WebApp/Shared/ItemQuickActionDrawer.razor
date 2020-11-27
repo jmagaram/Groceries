@@ -9,7 +9,7 @@
     <div class="drawer">
         <header>
             <div></div>
-        <h1>@_viewModel.ItemName.AsText()</h1>
+            <h1>@_viewModel.ItemName.AsText()</h1>
             <button></button>
         </header>
         <div class="buttonGroup">
@@ -20,15 +20,22 @@
                 <TouchButton TouchingClass="pressed" OnPressed="async _ => await OnAddToShoppingListNow.InvokeAsync(_viewModel.ItemId)"><ion-icon name="add-outline"></ion-icon>Add to shopping list now</TouchButton>
             }
             @if (_viewModel.CanPostpone) {
-                <TouchButton TouchingClass="pressed" OnPressed="async _ => await OnPostpone.InvokeAsync(_viewModel.ItemId)"><ion-icon name="calendar-outline"></ion-icon>Postpone</TouchButton>
+                var attributes = new Dictionary<string, object> { ["class"] = "dropdownButton" };
+                <div class="buttonRow">
+                    <TouchButton TouchingClass="pressed" OnPressed="async _ => await OnPostponeDays.InvokeAsync((_viewModel.ItemId,7))"><ion-icon name="calendar-outline"></ion-icon>Postpone +1 week</TouchButton>
+                    <TouchButton TouchingClass="pressed" Attributes="attributes" OnPressed="async _ => await OnPostpone.InvokeAsync(_viewModel.ItemId)">
+                        <ion-icon name="caret-down-outline"></ion-icon>
+                    </TouchButton>
+                </div>
+
             }
         </div>
         <div class="buttonGroup">
-        @if (_viewModel.CanBuyAgain) {
-            <TouchButton TouchingClass="pressed" OnPressed="async _ => await OnBuyAgain.InvokeAsync(_viewModel.ItemId)"><ion-icon name="add-outline"></ion-icon>Buy Again</TouchButton>
-        }
-        <TouchButton TouchingClass="pressed" OnPressed="async _ => await OnDelete.InvokeAsync(_viewModel.ItemId)"><ion-icon name="trash-outline"></ion-icon>Delete</TouchButton>
-        <TouchButton TouchingClass="pressed" OnPressed="async _ => await OnEdit.InvokeAsync(_viewModel.ItemId)"><ion-icon name="pencil-outline"></ion-icon>Edit...</TouchButton>
+            @if (_viewModel.CanBuyAgain) {
+                <TouchButton TouchingClass="pressed" OnPressed="async _ => await OnBuyAgain.InvokeAsync(_viewModel.ItemId)"><ion-icon name="add-outline"></ion-icon>Buy Again</TouchButton>
+            }
+            <TouchButton TouchingClass="pressed" OnPressed="async _ => await OnDelete.InvokeAsync(_viewModel.ItemId)"><ion-icon name="trash-outline"></ion-icon>Delete</TouchButton>
+            <TouchButton TouchingClass="pressed" OnPressed="async _ => await OnEdit.InvokeAsync(_viewModel.ItemId)"><ion-icon name="pencil-outline"></ion-icon>Edit...</TouchButton>
         </div>
     </div>
 </ElixDrawer>
@@ -59,6 +66,9 @@
 
     [Parameter]
     public EventCallback<ItemId> OnPostpone { get; set; }
+
+    [Parameter]
+    public EventCallback<(ItemId,int)> OnPostponeDays { get; set; }
 
     [Parameter]
     public EventCallback<ItemId> OnAddToShoppingListNow { get; set; }

@@ -230,6 +230,7 @@
                        OnComplete="async i=> await OnClickComplete(i)"
                        OnEdit="async i => await OnEditItem(i)"
                        OnPostpone="async i=> await OnClickChoosePostpone(i)"
+                       OnPostponeDays="async i=>await OnClickPostponeDays(i)"
                        @ref="_itemQuickActionDrawer"></ItemQuickActionDrawer>
 <PostponeDrawer OnSelected="async d => await OnPostponeDurationChosen(d)" @ref="_postponeDrawer"></PostponeDrawer>
 <FrequencyDrawer OnSelected="async r => await OnFrequencyChosen(r)" @ref="_frequencyDrawer"></FrequencyDrawer>

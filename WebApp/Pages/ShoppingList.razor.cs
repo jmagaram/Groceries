@@ -133,6 +133,12 @@ namespace WebApp.Pages {
             await _postponeDrawer.Open(viewModel);
         }
 
+        private async Task OnClickPostponeDays((ItemId itemId, int days) i) {
+            var stateMessage = StateMessage.NewItemMessage(StateItemMessage.NewModifyItem(i.itemId, ItemMessage.NewPostpone(i.days)));
+            await StateService.UpdateAsync(stateMessage);
+            await _itemQuickActionDrawer.Close();
+        }
+
         private async Task OnClickChooseFrequency(ItemId itemId) {
             _quickEditContext = itemId;
             var viewModel = SelectZeroOrOneFrequency.createFromItemId(itemId, StateService.CurrentState);
