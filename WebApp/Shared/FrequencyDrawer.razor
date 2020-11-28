@@ -5,18 +5,11 @@
 @using static Models.Extensions.CoreTypeExtensions
 @using static WebApp.Common.OptionExtensions
 
-@{
-    var buttonAttributes = new Dictionary<string, object>
-    {
-        ["class"] = "drawerButton"
-    };
-}
-
 <ElixDrawer @ref="_drawer">
     @if (_model != null) {
     <div class="buttonDrawer">
         <h1>Repeat</h1>
-        <TouchButton Attributes="buttonAttributes" TouchingClass="selectedDrawerButton" OnPressed="async _ => await Select(null)">
+        <button class="drawerButton" ontouchstart="" @onclick="async _ => await Select(null)">
             <div style="display:flex; flex-direction:row; justify-content:space-between">
                 <div>No (just once)</div>
                 @if (_model.CurrentChoice.IsNone()) {
@@ -26,10 +19,10 @@
                     <div>&nbsp;</div>
                 }
             </div>
-        </TouchButton>
+        </button>
         @foreach (var i in _model.Choices.OrderBy(j => j.Item)) {
             bool isSelected = _model.CurrentChoice.IsSomeValue(i);
-            <TouchButton Attributes="buttonAttributes" TouchingClass="selectedDrawerButton" OnPressed="async _=>await Select(i)">
+            <button class="drawerButton" ontouchstart="" @onclick="async _=>await Select(i)">
                 <div style="display:flex; flex-direction:row; justify-content:space-between">
                     <div>@i.AsText()</div>
                     @if (isSelected) {
@@ -39,7 +32,7 @@
                         <div>&nbsp;</div>
                     }
                 </div>
-            </TouchButton>
+            </button>
         }
     </div>
     }

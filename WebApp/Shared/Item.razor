@@ -98,13 +98,7 @@
             }
         </div>
     }
-    @{
-        var attr = new Dictionary<string, object>
-        {
-            ["class"] = "itemButton"
-        };
-    }
-    <TouchButton Attributes="@attr" TouchingClass="itemButtonPressed" OnPressed="async _=>await OnClick.InvokeAsync(ItemQry.ItemId)">
+    <button class="itemButton" ontouchstart="" @onclick="async _=>await OnClick.InvokeAsync(ItemQry.ItemId)">
         <div style="display:flex; flex-direction:row">
             <div>
                 <FormattedText Text="ItemQry.ItemName" Strikethrough="ItemQry.Schedule.IsCompleted" />
@@ -133,7 +127,7 @@
                     </div> }
             }
         }
-    </TouchButton>
+    </button>
 </div>
 
 @code {

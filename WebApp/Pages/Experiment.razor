@@ -82,7 +82,25 @@
             opacity: 1.0;
         }
     }
+
+    .touchFriendlyButton {
+        background-color: white;
+        color: black;
+        border: 1px solid black;
+        border-radius: 3px;
+        padding: 8px;
+        -webkit-user-select: none !important;
+    }
+
+        .touchFriendlyButton:active {
+            background-color: blue;
+        }
 </style>
+
+<button @onclick="_ => UpdateMessage()" class="touchFriendlyButton" ontouchstart="">touch friendly button</button>
+<button ontouchstart="">regular button</button>
+<div>Message: @MessageAt</div>
+<div>Click count: @ClickCount</div>
 
 <div @onclick="e => OnMainDivClick()" class="@BackgroundClass" style="transition:background-color ease-in 0.2s">
     <h3>Grocery items</h3>
@@ -127,6 +145,14 @@
     </ul>
 </div>
 @code {
+
+    public void UpdateMessage() {
+        MessageAt = DateTime.Now.Second.ToString();
+        ClickCount++;
+    }
+
+    public string MessageAt { get; set; }
+    public int ClickCount { get; set; }
 
     protected void UpdateName(ChangeEventArgs e) => ProcessMessage(Message.NewUpdateName((string)e.Value));
 

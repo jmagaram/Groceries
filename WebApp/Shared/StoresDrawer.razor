@@ -3,17 +3,6 @@
 @using static Models.Extensions.CoreTypeExtensions
 @implements IDisposable
 
-@{
-    var buttonAttributes = new Dictionary<string, object>
-    {
-        ["class"] = "drawerButton"
-    };
-    var regularButtonAttributes = new Dictionary<string, object>
-    {
-        ["style"] = "background-color:white; border: none"
-    };
-}
-
 <ElixDrawer Closed="OnClose" @ref="_drawer">
     @if (_model == null) {
         return;
@@ -21,10 +10,10 @@
     <div class="buttonDrawer">
         <div style="display:flex; flex-direction:row; justify-content:space-between; margin:10px;">
             <div style="font-weight:bold">Stores</div>
-            <TouchButton Attributes="regularButtonAttributes" TouchingClass="selectedDrawerButton" Pressed="async _ => await Close()">Done</TouchButton>
+            <button class="drawerButton" style="background-color:white;border:none" ontouchstart="" @onclick="async _ => await Close()">Done</button>
         </div>
         @foreach (var i in _model.SelectionSummary.OrderBy(i => i.Item.StoreName)) {
-            <TouchButton TouchingClass="selectedDrawerButton" Attributes="buttonAttributes" Pressed="_=>_model = _model.Toggle(i.Item)">
+            <button class="drawerButton" ontouchstart="" @onclick="_=>_model = _model.Toggle(i.Item)">
                 <div style="display:flex; flex-direction:row; justify-content:space-between">
                     <div>@i.Item.StoreName.AsText()</div>
                     @if (i.IsSelected) {
@@ -34,9 +23,9 @@
                         <div>&nbsp;</div>
                     }
                 </div>
-            </TouchButton>
+            </button>
         }
-        <TouchButton Attributes="buttonAttributes" TouchingClass="selectedDrawerButton" Pressed="_=>_model = _model.SelectAll()">
+        <button class="drawerButton" ontouchstart="" @onclick="_=>_model = _model.SelectAll()">
             <div style="display:flex; flex-direction:row; justify-content:space-between">
                 <span>All Stores</span>
                 @if (_model.AllSelected) {
@@ -46,13 +35,13 @@
                     <div>&nbsp;</div>
                 }
             </div>
-        </TouchButton>
-        <TouchButton Attributes="buttonAttributes" TouchingClass="selectedDrawerButton" Pressed="async _ => await Cancel()">
+        </button>
+        <button class="drawerButton" ontouchstart="" @onclick="async _ => await Cancel()">
             <div style="display:flex; flex-direction:row; justify-content:space-between">
                 <span>Cancel</span>
                 <div>&nbsp;</div>
             </div>
-        </TouchButton>
+        </button>
     </div>
 </ElixDrawer>
 

@@ -10,31 +10,31 @@
         <header>
             <div></div>
             <h1>@_viewModel.ItemName.AsText()</h1>
-            <button></button>
+            <div></div>
         </header>
         <div class="buttonGroup">
             @if (_viewModel.CanComplete) {
-                <TouchButton TouchingClass="pressed" OnPressed="async _ => await OnComplete.InvokeAsync(_viewModel.ItemId)"><ion-icon name="checkmark-outline"></ion-icon>Complete</TouchButton>
+                <button ontouchstart="" @onclick="async _ => await OnComplete.InvokeAsync(_viewModel.ItemId)"><ion-icon name="checkmark-outline"></ion-icon>Complete</button>
             }
             @if (_viewModel.CanAddToShoppingListNow) {
-                <TouchButton TouchingClass="pressed" OnPressed="async _ => await OnAddToShoppingListNow.InvokeAsync(_viewModel.ItemId)"><ion-icon name="add-outline"></ion-icon>Add to shopping list now</TouchButton>
+                <button ontouchstart="" @onclick="async _ => await OnAddToShoppingListNow.InvokeAsync(_viewModel.ItemId)"><ion-icon name="add-outline"></ion-icon>Add to shopping list now</button>
             }
             @if (_viewModel.CanPostpone) {
                 <div class="buttonRow">
-                    <TouchButton TouchingClass="pressed" class="splitButtonDefault" OnPressed="async _ => await OnPostponeDays.InvokeAsync((_viewModel.ItemId,7))"><ion-icon name="calendar-outline"></ion-icon>Postpone +1 week</TouchButton>
-                    <TouchButton TouchingClass="pressed" class="splitButtonIcon" OnPressed="async _ => await OnPostpone.InvokeAsync(_viewModel.ItemId)">
+                    <button ontouchstart="" class="splitButtonDefault" @onclick="async _ => await OnPostponeDays.InvokeAsync((_viewModel.ItemId,7))"><ion-icon name="calendar-outline"></ion-icon>Postpone +1 week</button>
+                    <button ontouchstart="" class="splitButtonIcon" @onclick="async _ => await OnPostpone.InvokeAsync(_viewModel.ItemId)">
                         <ion-icon name="caret-down-outline"></ion-icon>
-                    </TouchButton>
+                    </button>
                 </div>
             }
         </div>
         <div class="buttonGroup">
             @if (_viewModel.CanBuyAgain) {
-                <TouchButton TouchingClass="pressed" OnPressed="async _ => await OnBuyAgain.InvokeAsync(_viewModel.ItemId)"><ion-icon name="add-outline"></ion-icon>Buy Again</TouchButton>
+                <button ontouchstart="" @onclick="async _ => await OnBuyAgain.InvokeAsync(_viewModel.ItemId)"><ion-icon name="add-outline"></ion-icon>Buy Again</button>
             }
             <div class="buttonRow">
-            <TouchButton TouchingClass="pressed" OnPressed="async _ => await OnDelete.InvokeAsync(_viewModel.ItemId)" class="justIconButton"><ion-icon name="trash-outline"></ion-icon></TouchButton>
-            <TouchButton TouchingClass="pressed" OnPressed="async _ => await OnEdit.InvokeAsync(_viewModel.ItemId)"><ion-icon name="pencil-outline"></ion-icon>Edit...</TouchButton>
+                <button ontouchstart="" @onclick="async _ => await OnDelete.InvokeAsync(_viewModel.ItemId)" class="justIconButton"><ion-icon name="trash-outline"></ion-icon></button>
+                <button ontouchstart="" @onclick="async _ => await OnEdit.InvokeAsync(_viewModel.ItemId)"><ion-icon name="pencil-outline"></ion-icon>Edit...</button>
             </div>
         </div>
     </div>
@@ -68,7 +68,7 @@
     public EventCallback<ItemId> OnPostpone { get; set; }
 
     [Parameter]
-    public EventCallback<(ItemId,int)> OnPostponeDays { get; set; }
+    public EventCallback<(ItemId, int)> OnPostponeDays { get; set; }
 
     [Parameter]
     public EventCallback<ItemId> OnAddToShoppingListNow { get; set; }

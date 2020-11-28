@@ -149,6 +149,10 @@
     padding-bottom: 0.75rem;
 }
 
+    .drawerButton:active {
+        background-color: ButtonFace;
+    }
+
     .drawerButton:last-of-type {
         border-bottom: 1px solid #d6d6d6;
     }
@@ -199,11 +203,9 @@
     margin: 0px;
 }
 
-.itemButtonPressed {
+.itemButton:active {
     background-color: ButtonFace;
 }
-
-
 
 .drawer {
     display: flex;
@@ -217,18 +219,22 @@
         margin-right: 1em;
     }
 
-        .drawer button > ion-icon:last-child {
-            margin-right: 0;
-            padding-right: 0.4em;
-            padding-left: 0.4em;
-        }
+    .drawer button:active {
+        background-color: ButtonFace;
+    }
+
+    .drawer button > ion-icon:last-child {
+        margin-right: 0;
+        padding-right: 0.4em;
+        padding-left: 0.4em;
+    }
 
     .drawer header {
         display: grid;
         grid-template-columns: 1fr auto 1fr;
         justify-content: space-between;
         align-items: center;
-        margin-bottom:0.5em;
+        margin-bottom: 0.5em;
     }
 
         .drawer header * {
@@ -236,11 +242,11 @@
         }
 
         .drawer header :nth-child(3) {
-            justify-self:flex-end;
-        } 
+            justify-self: flex-end;
+        }
 
         .drawer header :first-child {
-            justify-self:flex-start;
+            justify-self: flex-start;
         }
 
         .drawer header h1 {
@@ -248,7 +254,7 @@
             font-weight: bold;
             padding-top: 0px;
             margin-top: 0px;
-            margin-bottom:0px;
+            margin-bottom: 0px;
         }
 
         .drawer header p {
@@ -311,15 +317,15 @@
 
         .drawer .buttonRow button {
             flex-grow: 1;
-            margin-right:0.5em;
+            margin-right: 0.5em;
         }
 
-        .drawer .buttonRow button:last-child {
-            margin-right:0;
-        }
+            .drawer .buttonRow button:last-child {
+                margin-right: 0;
+            }
 
         .drawer .buttonRow .splitButtonDefault {
-            margin-right:0;
+            margin-right: 0;
         }
 
         .drawer .buttonRow .splitButtonIcon {
