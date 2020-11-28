@@ -210,7 +210,7 @@
 .drawer {
     display: flex;
     flex-direction: column;
-    background-color: white;
+    background-color: #eaeaea;
     padding: 15px;
 }
 
@@ -272,7 +272,7 @@
     .drawer button {
         padding-top: 0.75em;
         padding-bottom: 0.75em;
-        background-color: transparent;
+        background-color: white;
         border: 1px solid #d4d4d4;
     }
 
