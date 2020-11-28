@@ -318,13 +318,17 @@
             margin-right:0;
         }
 
+        .drawer .buttonRow .splitButtonDefault {
+            margin-right:0;
+        }
+
+        .drawer .buttonRow .splitButtonIcon {
+            margin-right: 0;
+            border-left: 0;
+            max-width: fit-content;
+        }
+
+
     .drawer .justIconButton {
         max-width: fit-content;
-    }
-
-
-
-    .drawer .dropdownButton {
-        max-width: fit-content;
-        border-left:none;
     }
