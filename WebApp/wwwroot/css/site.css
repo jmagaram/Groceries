@@ -311,11 +311,18 @@
 
         .drawer .buttonRow button {
             flex-grow: 1;
+            margin-right:0.5em;
+        }
+
+        .drawer .buttonRow button:last-child {
+            margin-right:0;
         }
 
     .drawer .justIconButton {
         max-width: fit-content;
     }
+
+
 
     .drawer .dropdownButton {
         max-width: fit-content;
