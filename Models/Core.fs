@@ -192,6 +192,13 @@ module Schedule =
         | Schedule.Completed -> true
         | _ -> false
 
+    let isActive s =
+        match s with
+        | Schedule.Completed -> false
+        | Schedule.Once -> true
+        | Schedule.Repeat { PostponedUntil = Some _ } -> false
+        | Schedule.Repeat { PostponedUntil = None } -> true
+
     let postponedUntil s =
         match s with
         | Schedule.Repeat r -> r.PostponedUntil
@@ -251,7 +258,7 @@ module Schedule =
         | Schedule.Repeat r -> Some r
         | _ -> None
 
-    let isRepeat (s:Schedule) = s |> tryAsRepeat |> Option.isSome
+    let isRepeat (s: Schedule) = s |> tryAsRepeat |> Option.isSome
 
     let asRepeat s = s |> tryAsRepeat |> Option.get
 
