@@ -199,6 +199,11 @@ module Schedule =
         | Schedule.Repeat { PostponedUntil = Some _ } -> false
         | Schedule.Repeat { PostponedUntil = None } -> true
 
+    let (|IsActive|IsComplete|IsPostponed|) s =
+        if s |> isActive then IsActive
+        elif s |> isPostponed then IsPostponed
+        else IsComplete
+
     let postponedUntil s =
         match s with
         | Schedule.Repeat r -> r.PostponedUntil
