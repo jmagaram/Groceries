@@ -13,6 +13,10 @@ HtmlElement.getProperty = function (element, k) {
     return element[k];
 }
 
+HtmlElement.scrollIntoView = function (element) {
+    element.scrollIntoView();
+}
+
 var ElixOpenCloseMixin = ElixOpenCloseMixin || {};
 
 ElixOpenCloseMixin.addOpenedChangeEventListener = function (element, assemblyName, method, helper) {
