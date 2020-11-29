@@ -13,11 +13,20 @@ HtmlElement.getProperty = function (element, k) {
     return element[k];
 }
 
-HtmlElement.scrollIntoView = function (element) {
+HtmlElement.scrollIntoView = function (element, offset) {
     // Seeing if the delay stops intermittent crashing when navigating to a
     // specific category
-    setTimeout(function () { element.scrollIntoView(); }, 250);    
+    setTimeout(function () {
+        element.scrollIntoView();
+        if (offset != null) {
+            var scrolledY = window.scrollY;
+            if (scrolledY) {
+                window.scroll(0, scrolledY - offset);
+            }
+        }
+    }, 250);
 }
+
 
 var ElixOpenCloseMixin = ElixOpenCloseMixin || {};
 

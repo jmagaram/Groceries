@@ -54,7 +54,7 @@ namespace WebApp.Pages {
         private async Task OnNavigateToCategory(CategoryId? id) {
             ElementReference categoryHeader = _categoryReferences[id.GetValueOrDefault()];
             // Occasionally fails; put a delay into scrollIntoView to see if it would fix the issue
-            await JS.InvokeVoidAsync("HtmlElement.scrollIntoView", categoryHeader);
+            await JS.InvokeVoidAsync("HtmlElement.scrollIntoView", categoryHeader, 70);
         }
 
         private void OnManageCategories() => Navigation.NavigateTo($"/categories");
