@@ -3,6 +3,7 @@
 @using Common
 @using Microsoft.FSharp.Core;
 @using WebApp.Shared;
+@using static Models.CoreTypes;
 @using static Models.ScheduleModule.ScheduleExtensions;
 @using static Models.ShoppingListSettingsModule
 
@@ -10,9 +11,33 @@
     .categoryHeader {
         margin-top: 1.0rem;
         margin-bottom: 0.4rem;
-        cursor: pointer;
         max-width: 250px;
+        background-color: white;
+        padding: 0;
+        padding-top: 0.2rem;
+        padding-bottom: 0.2rem;
+        padding-right: 3rem;
+        border: 0;
+        font-weight: bold;
     }
+
+        .categoryHeader:active {
+            background-color: ButtonFace;
+        }
+
+        .categoryHeader:focus {
+            border: inherit;
+            outline-color: #d4d4d4;
+            outline: none !important;
+            box-shadow: none !important;
+        }
+
+        .categoryHeader:active {
+            border: inherit;
+            outline-color: #d4d4d4;
+            outline: none !important;
+            box-shadow: none !important;
+        }
 
     .filterRow {
         animation-duration: 0.2s;
@@ -175,43 +200,43 @@
         <div id="searchElements">
             <div id="searchTrigger" class="@searchClass">
                 <div id="decoy"><ion-icon name="search-outline"></ion-icon><span style="margin-left:-5px"><ion-icon name="add-outline"></ion-icon></span></div>
-                <input @onclick="_=>ShowFilter=true"
+                <input @onclick="_ => ShowFilter = true"
                        value="@ShoppingListView.TextFilter.ValueCommitted"
-                       @oninput="e=>OnTextFilterInput((string)e.Value)"
+                       @oninput="e => OnTextFilterInput((string)e.Value)"
                        @onkeydown="@(e => OnTextFilterKeyDown(e))"
-                       @onblur="@(e=>OnTextFilterBlur())"
+                       @onblur="@(e => OnTextFilterBlur())"
                        id="searchInput"
                        placeholder="Find or add"
                        autocomplete="off"
                        type="text" />
             </div>
-            <button class="btn text-light" @onclick="_=>HideTextFilter()" id="cancelSearch">Done</button>
+            <button class="btn text-light" @onclick="_ => HideTextFilter()" id="cancelSearch">Done</button>
         </div>
     </div>
 </div>
 <div class="col">
-    @foreach (var cat in Items.Select(j => j.Category).Distinct().OrderBy(i => i.IsSome() ? i.Value.CategoryName.Item : "")) {
-        var catCaptured = cat;
+    @{
         var now = DateTimeOffset.Now;
-        var categoryName = catCaptured.IsNone() ? "(Uncategorized)" : catCaptured.Value.CategoryName.Item;
-        @if (catCaptured.IsSome()) {
-            <p @onclick="e=>OnNavigateToCategory(catCaptured.Value.CategoryId)" class="categoryHeader">
-                @categoryName
-            </p>
-        }
-        else {
-            <p class="categoryHeader" style="cursor:inherit">
-                @categoryName
-            </p>
-        }
-
-        foreach (var item in Items.Where(i => object.Equals(i.Category, catCaptured)).OrderBy(j => j.Schedule.DueDate(now).GetOr(DateTimeOffset.MaxValue)).ThenBy(j => j.ItemName)) {
-            var itemCaptured = item;
-            <WebApp.Shared.Item HideCategory="true" OnClick="async i=>await OnClickItem(i)" ItemQry="@itemCaptured" />
+        foreach (var categorySummary in ShoppingListView.Categories.Where(j => j.Total > 0)) {
+            var c = categorySummary;
+            var catName = c.Category.IsNone() ? "(Uncategorized)" : c.Category.Value.CategoryName.Item;
+            var catId = c.Category.AsEnumerable().Select(i => i.CategoryId).FirstOrDefault();
+            <button ontouchstart="" @ref="_categoryReferences[catId]" @onclick="async e => await OnClickCategoryHeader()" class="categoryHeader">
+                @catName
+            </button>
+            if (c.Total > 0) {
+                foreach (var itemUncaptured in c.Items) {
+                    var item = itemUncaptured;
+                    <WebApp.Shared.Item HideCategory="true" HideRepeatIcon="true" OnClick="async i => await OnClickItem(item.ItemId)" ItemQry="@item" />
+                }
+            }
+            else {
+                <p style="margin-left:20px; font-size:smaller" class="text-muted">None</p>
+            }
         }
     }
     @if (TextFilter.Length >= 1) {
-        if (Items.Count == 0) {
+        if (ShoppingListView.TotalItems == 0) {
             <p style="margin-top:1rem">Nothing found like that.</p>
             <button style="margin-top:0rem" class="btn btn-primary" @onclick="OnStartCreateNew">Create new item...</button>
         }
@@ -220,7 +245,7 @@
             <button class="btn btn-primary" @onclick="OnStartCreateNew">Create new item...</button>
         }
     }
-    else if (Items.Count == 0) {
+    else if (ShoppingListView.TotalItems == 0) {
         <p style="margin-top:1rem">No items on your shopping list.</p>
     }
 </div>
@@ -234,3 +259,4 @@
                        @ref="_itemQuickActionDrawer"></ItemQuickActionDrawer>
 <PostponeDrawer OnSelected="async d => await OnPostponeDurationChosen(d)" @ref="_postponeDrawer"></PostponeDrawer>
 <FrequencyDrawer OnSelected="async r => await OnFrequencyChosen(r)" @ref="_frequencyDrawer"></FrequencyDrawer>
+<CategoryNavigatorDrawer OnSelect="async id => await OnNavigateToCategory(id)" OnManageCategories="OnManageCategories" @ref="_categoryNavigationDrawer"></CategoryNavigatorDrawer>

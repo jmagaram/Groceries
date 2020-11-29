@@ -10,6 +10,7 @@ using WebApp.Common;
 using WebApp.Shared;
 using static Models.CoreTypes;
 using static Models.Extensions.CoreTypeExtensions;
+using static Models.Extensions.StateExtensions;
 using static Models.ServiceTypes;
 using ItemMessage = Models.ItemModule.Message;
 using SettingsMessage = Models.ShoppingListSettingsModule.Message;
@@ -21,16 +22,22 @@ namespace WebApp.Pages {
         ItemQuickActionDrawer _itemQuickActionDrawer;
         PostponeDrawer _postponeDrawer;
         FrequencyDrawer _frequencyDrawer;
+        CategoryNavigatorDrawer _categoryNavigationDrawer;
         ItemId? _quickEditContext;
+        Dictionary<CategoryId, ElementReference> _categoryReferences = new Dictionary<CategoryId, ElementReference>();
 
         public void Dispose() {
             _itemQuickActionDrawer?.Dispose();
             _postponeDrawer?.Dispose();
             _frequencyDrawer?.Dispose();
+            _categoryNavigationDrawer?.Dispose();
         }
 
         [Inject]
         public Service StateService { get; set; }
+
+        [Inject]
+        public IJSRuntime JS { get; set; }
 
         [Inject]
         NavigationManager Navigation { get; set; }
@@ -40,9 +47,17 @@ namespace WebApp.Pages {
             await ClearTextFilter(force: true);
         }
 
-        private void OnNavigateToCategory(CategoryId id) {
-            Navigation.NavigateTo($"/categories");
+        private async Task OnClickCategoryHeader() {
+            await _categoryNavigationDrawer.Open(ShoppingListView.Categories);
         }
+
+        private async Task OnNavigateToCategory(CategoryId? id) {
+            ElementReference categoryHeader = _categoryReferences[id.GetValueOrDefault()];
+            // Occasionally fails; put a delay into scrollIntoView to see if it would fix the issue
+            await JS.InvokeVoidAsync("HtmlElement.scrollIntoView", categoryHeader);
+        }
+
+        private void OnManageCategories() => Navigation.NavigateTo($"/categories");
 
         private async Task OnMenuItemSelected(string id) {
             await Task.CompletedTask;
@@ -223,9 +238,6 @@ namespace WebApp.Pages {
 
         protected ShoppingListModule.ShoppingList ShoppingListView =>
             StateService.CurrentState.ShoppingList(DateTimeOffset.Now);
-
-        protected List<ShoppingListModule.Item> Items =>
-            ShoppingListView.Items.ToList();
 
         protected List<Store> StoreFilterChoices =>
             ShoppingListView.Stores.OrderBy(i => i.StoreName).ToList();

@@ -140,6 +140,36 @@
         top: 0.5rem;
     }
 
+.plainMenu {
+    margin: 10px;
+    display: flex;
+    flex-direction: column;
+}
+
+    .plainMenu button {
+        border: none;
+        padding: 0.5rem;
+        background-color: white;
+        padding-top: 0.75rem;
+        padding-bottom: 0.75rem;
+        outline: none;
+    }
+
+    .plainMenu button:focus {
+        border: inherit;
+        outline-color: #d4d4d4;
+        outline: none !important;
+        box-shadow: none !important;
+    }
+
+        .plainMenu button:active {
+            border: inherit;
+            outline-color: #d4d4d4;
+            outline: none !important;
+            box-shadow: none !important;
+            background-color: ButtonFace;
+        }
+
 .drawerButton {
     border: none;
     padding: 0.5rem;

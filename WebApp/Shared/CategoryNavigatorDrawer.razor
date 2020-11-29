@@ -1,0 +1,56 @@
+﻿@implements IDisposable
+@using Models
+@using static Models.CoreTypes
+@using static Models.Extensions.CoreTypeExtensions
+@using static WebApp.Common.OptionExtensions
+
+<ElixDrawer @ref="_drawer" FromEdge="ElixDrawerEdge.Start">
+    @if (_viewModel == null) { return; }
+    <div class="plainMenu">
+        @foreach (var i in _viewModel) {
+            var c = i;
+            string description = c.Category.IsSome() ? c.Category.Value.CategoryName.AsText() : "(Uncategorized)";
+            <button style="display: inline-grid; align-items: center; justify-content: flex-start; grid-template-columns:1.5em 1.5em auto" disabled="@(c.Total==0)" ontouchstart="" @onclick="async _=> await OnSelectCore(c.Category.GetOr(null)?.CategoryId)">
+                @if (c.Active > 0) {
+                    <span style="grid-column:1/2" class="badge badge-dark">@c.Active</span>
+                }
+                @if (c.Inactive > 0) {
+                    <span style="grid-column:2/3" class="badge badge-light">@c.Inactive</span>
+                }
+                <span style="grid-column:3/4">@description</span>
+            </button>
+        }
+        <div style="border-top: 1px solid #d2d2d2; margin-top: 0.3rem;"></div>
+        <button style="display:inline-flex; justify-content:flex-start" ontouchstart="" @onclick="async _=> await OnManageCategoriesCore()">
+            <ion-icon name="settings-outline"></ion-icon><span style="margin-left:1em">Manage categories</span>
+        </button>
+    </div>
+</ElixDrawer>
+@code {
+    private ShoppingListModule.CategorySummary[] _viewModel;
+    private ElixDrawer _drawer;
+
+    public async Task Open(IEnumerable<ShoppingListModule.CategorySummary> categories) {
+        _viewModel = categories.ToArray();
+        await InvokeAsync(() => StateHasChanged());
+        await _drawer.Open();
+    }
+
+    public void Dispose() => _drawer?.Dispose();
+
+    private async Task OnSelectCore(CategoryId? c) {
+        await _drawer.Close();
+        await OnSelect.InvokeAsync(c);
+    }
+
+    private async Task OnManageCategoriesCore() {
+        await _drawer.Close();
+        await OnManageCategories.InvokeAsync();
+    }
+
+    [Parameter]
+    public EventCallback<CategoryId?> OnSelect { get; set; }
+
+    [Parameter]
+    public EventCallback OnManageCategories { get; set; }
+}

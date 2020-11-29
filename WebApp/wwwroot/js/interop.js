@@ -14,7 +14,9 @@ HtmlElement.getProperty = function (element, k) {
 }
 
 HtmlElement.scrollIntoView = function (element) {
-    element.scrollIntoView();
+    // Seeing if the delay stops intermittent crashing when navigating to a
+    // specific category
+    setTimeout(function () { element.scrollIntoView(); }, 250);    
 }
 
 var ElixOpenCloseMixin = ElixOpenCloseMixin || {};

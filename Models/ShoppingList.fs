@@ -18,11 +18,29 @@ type Item =
 and ItemAvailability = { Store: Store; IsSold: bool }
 
 type ShoppingList =
-    { Items: Item list
-      ItemEdited: ItemForm option
-      StoreFilter: Store option
-      TextFilter : TextBox
+    { StoreFilter: Store option
+      TextFilter: TextBox
+      Categories: CategorySummary list
       Stores: Store list }
+      with member me.TotalItems = 
+                            me.Categories 
+                            |> Seq.sumBy (fun c -> c.Items |> List.length)
+
+and CategorySummary = { Category: Category option; Items: Item list }
+
+type CategorySummary with
+    member me.Active =
+        me.Items
+        |> Seq.filter (fun i -> i.Schedule |> Schedule.isActive)
+        |> Seq.length
+
+    member me.Postponed =
+        me.Items
+        |> Seq.filter (fun i -> i.Schedule |> Schedule.isPostponed)
+        |> Seq.length
+
+    member me.Total = me.Items |> Seq.length
+    member me.Inactive = me.Total - me.Active
 
 let createItem find (item: CoreTypes.Item) state =
     let find =
@@ -41,67 +59,75 @@ let createItem find (item: CoreTypes.Item) state =
       Availability =
           state
           |> State.stores
-          |> Seq.map (fun st ->
-              { Store = st
-                IsSold =
-                    state
-                    |> State.notSoldTable
-                    |> DataTable.tryFindCurrent { StoreId = st.StoreId; ItemId = item.ItemId }
-                    |> Option.isNone }) }
+          |> Seq.map
+              (fun st ->
+                  { Store = st
+                    IsSold =
+                        state
+                        |> State.notSoldTable
+                        |> DataTable.tryFindCurrent { StoreId = st.StoreId; ItemId = item.ItemId }
+                        |> Option.isNone }) }
 
-let createItemFromItemId (id:CoreTypes.ItemId) state =
+let createItemFromItemId (id: CoreTypes.ItemId) state =
     let item = state |> State.itemsTable |> DataTable.findCurrent id
     createItem None item state
 
 let create now state =
     let settings = state |> State.shoppingListSettings
 
-    let find = settings.TextFilter.ValueTyping |> SearchTerm.tryParse |> Result.map Highlighter.create |> Result.asOption
+    let find =
+        settings.TextFilter.ValueTyping
+        |> SearchTerm.tryParse
+        |> Result.map Highlighter.create
+        |> Result.asOption
 
     let items (now: DateTimeOffset) =
         state
         |> State.items
         |> Seq.map (fun item -> createItem find item state)
-        |> Seq.filter (fun i ->
-            let isCompletedMatch =
-                (settings.HideCompletedItems = false)
-                || (i.Schedule |> Schedule.isCompleted |> not)
+        |> Seq.filter
+            (fun i ->
+                let isCompletedMatch =
+                    (settings.HideCompletedItems = false)
+                    || (i.Schedule |> Schedule.isCompleted |> not)
 
-            let isStoreMatch =
-                settings.StoreFilter
-                |> Option.map (fun s ->
-                    i.Availability
-                    |> Seq.find (fun x -> x.Store.StoreId = s)
-                    |> fun a -> a.IsSold)
-                |> Option.defaultValue true
+                let isStoreMatch =
+                    settings.StoreFilter
+                    |> Option.map
+                        (fun s ->
+                            i.Availability
+                            |> Seq.find (fun x -> x.Store.StoreId = s)
+                            |> fun a -> a.IsSold)
+                    |> Option.defaultValue true
 
-            let isPostponedMatch =
-                i.Schedule
-                |> Schedule.postponedUntil
-                |> Option.map (fun postponedUntil ->
-                    let horizon = now.AddDays(settings.PostponedViewHorizon |> float)
-                    postponedUntil <= horizon)
-                |> Option.defaultValue true
+                let isPostponedMatch =
+                    i.Schedule
+                    |> Schedule.postponedUntil
+                    |> Option.map
+                        (fun postponedUntil ->
+                            let horizon = now.AddDays(settings.PostponedViewHorizon |> float)
+                            postponedUntil <= horizon)
+                    |> Option.defaultValue true
 
-            let isTextMatch =
-                match find with
-                | None -> true
-                | Some _ ->
-                    let name = i.ItemName |> FormattedText.hasHighlight
+                let isTextMatch =
+                    match find with
+                    | None -> true
+                    | Some _ ->
+                        let name = i.ItemName |> FormattedText.hasHighlight
 
-                    let note =
-                        i.Note
-                        |> Option.map (FormattedText.hasHighlight)
-                        |> Option.defaultValue false
+                        let note =
+                            i.Note
+                            |> Option.map (FormattedText.hasHighlight)
+                            |> Option.defaultValue false
 
-                    let qty =
-                        i.Quantity
-                        |> Option.map (FormattedText.hasHighlight)
-                        |> Option.defaultValue false
+                        let qty =
+                            i.Quantity
+                            |> Option.map (FormattedText.hasHighlight)
+                            |> Option.defaultValue false
 
-                    name || note || qty
+                        name || note || qty
 
-            if find.IsSome then isTextMatch else isCompletedMatch && isStoreMatch && isPostponedMatch)
+                if find.IsSome then isTextMatch else isCompletedMatch && isStoreMatch && isPostponedMatch)
         |> Seq.toList
 
     let storeFilter =
@@ -110,8 +136,30 @@ let create now state =
 
     let stores = state |> State.stores |> List.ofSeq
 
-    { Items = items now
-      StoreFilter = storeFilter
+    let items = items now
+
+    let sortKey item =
+        let date =
+            item.Schedule
+            |> Schedule.dueDate now
+            |> Option.defaultValue DateTimeOffset.MaxValue
+        (item.ItemName, date)
+
+    { StoreFilter = storeFilter
       TextFilter = settings.TextFilter
       Stores = stores
-      ItemEdited = None }
+      Categories =
+          state
+          |> State.categories
+          |> Seq.map Some
+          |> Seq.append (Seq.singleton None)
+          |> Seq.sortBy
+              (fun i ->
+                  i
+                  |> Option.map (fun s -> s.CategoryName |> CategoryName.asText)
+                  |> Option.defaultValue "")
+          |> Seq.map
+              (fun c ->
+                  { CategorySummary.Category = c
+                    Items = items |> Seq.filter (fun j -> j.Category = c) |> Seq.sortBy sortKey |> Seq.toList })
+          |> Seq.toList }
