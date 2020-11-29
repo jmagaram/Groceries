@@ -139,11 +139,14 @@ let create now state =
     let items = items now
 
     let sortKey item =
+        let group =
+            match item.Schedule with
+            | Schedule.IsActive -> 0
+            | Schedule.IsPostponed -> 1
+            | Schedule.IsComplete -> 2
         let date =
-            item.Schedule
-            |> Schedule.dueDate now
-            |> Option.defaultValue DateTimeOffset.MaxValue
-        (item.ItemName, date)
+            item.Schedule |> Schedule.postponedUntil
+        (group, date, item.ItemName)
 
     { StoreFilter = storeFilter
       TextFilter = settings.TextFilter
