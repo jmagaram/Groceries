@@ -153,20 +153,15 @@
         padding-top: 0.75rem;
         padding-bottom: 0.75rem;
         outline: none;
-    }
-
-    .plainMenu button:focus {
-        border: inherit;
-        outline-color: #d4d4d4;
-        outline: none !important;
         box-shadow: none !important;
     }
 
-        .plainMenu button:active {
-            border: inherit;
-            outline-color: #d4d4d4;
+        .plainMenu button:focus {
             outline: none !important;
-            box-shadow: none !important;
+        }
+
+        .plainMenu button:active {
+            outline: none !important;
             background-color: ButtonFace;
         }
 
@@ -233,9 +228,9 @@
     margin: 0px;
 }
 
-.itemButton:active {
-    background-color: ButtonFace;
-}
+    .itemButton:active {
+        background-color: ButtonFace;
+    }
 
 .drawer {
     display: flex;
@@ -258,6 +253,24 @@
         padding-right: 0.4em;
         padding-left: 0.4em;
     }
+
+    .drawer button {
+        padding-top: 0.75em;
+        padding-bottom: 0.75em;
+        background-color: white;
+        border: 1px solid #d4d4d4;
+        border-radius: 5px;
+        box-shadow: none !important;
+    }
+
+        .drawer button:focus {
+            outline: none !important;
+        }
+
+        .drawer button:active {
+            outline: none !important;
+            background-color: ButtonFace;
+        }
 
     .drawer header {
         display: grid;
@@ -297,32 +310,6 @@
         .drawer header button {
             background-color: transparent;
             border: none;
-        }
-
-    .drawer button {
-        padding-top: 0.75em;
-        padding-bottom: 0.75em;
-        background-color: white;
-        border: 1px solid #d4d4d4;
-        border-radius:5px;
-    }
-
-        .drawer button.pressed {
-            background-color: ButtonFace;
-        }
-
-        .drawer button:focus {
-            border: inherit;
-            outline-color: #d4d4d4;
-            outline: none !important;
-            box-shadow: none !important;
-        }
-
-        .drawer button:active {
-            border: inherit;
-            outline-color: #d4d4d4;
-            outline: none !important;
-            box-shadow: none !important;
         }
 
     .drawer .buttonGroup {
