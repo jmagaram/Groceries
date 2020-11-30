@@ -23,6 +23,7 @@ namespace WebApp.Pages {
         PostponeDrawer _postponeDrawer;
         FrequencyDrawer _frequencyDrawer;
         CategoryNavigatorDrawer _categoryNavigationDrawer;
+        StoreNavigatorDrawer _storesNavigatorDrawer;
         ItemId? _quickEditContext;
         Dictionary<CategoryId, ElementReference> _categoryReferences = new Dictionary<CategoryId, ElementReference>();
 
@@ -31,6 +32,7 @@ namespace WebApp.Pages {
             _postponeDrawer?.Dispose();
             _frequencyDrawer?.Dispose();
             _categoryNavigationDrawer?.Dispose();
+            _storesNavigatorDrawer?.Dispose();
         }
 
         [Inject]
@@ -58,6 +60,29 @@ namespace WebApp.Pages {
         }
 
         private void OnManageCategories() => Navigation.NavigateTo($"/categories");
+
+        private async Task OpenStoreNavigator() =>
+            await _storesNavigatorDrawer.Open(ShoppingListView.Stores, ShoppingListView.StoreFilter.AsEnumerable().FirstOrDefault());
+
+        private async Task OnChooseStore(StoreId? storeId) {
+            var messages = new List<SettingsMessage>
+            {
+                SettingsMessage.ClearItemFilter,
+                SettingsMessage.NewHideCompletedItems(true),
+                SettingsMessage.NewSetPostponedViewHorizon(-365),
+            };
+            if (storeId.HasValue) {
+                messages.Add(SettingsMessage.NewSetStoreFilterTo(storeId.Value));
+            }
+            else {
+                messages.Add(SettingsMessage.ClearStoreFilter);
+            }
+            var settingsMessage = SettingsMessage.NewTransaction(messages);
+            var stateMessage = StateTypes.StateMessage.NewShoppingListSettingsMessage(settingsMessage);
+            await StateService.UpdateAsync(stateMessage);
+        }
+
+        private void OnManageStores() => Navigation.NavigateTo("/stores");
 
         private async Task OnMenuItemSelected(string id) {
             await Task.CompletedTask;

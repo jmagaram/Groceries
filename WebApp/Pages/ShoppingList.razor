@@ -5,8 +5,9 @@
 @using WebApp.Shared;
 @using static Models.CoreTypes;
 @using static Models.ScheduleModule.ScheduleExtensions;
-@using static Models.ShoppingListSettingsModule
-
+@using static Models.ShoppingListSettingsModule;
+@using static Models.Extensions.CoreTypeExtensions;
+ 
 <style>
     .categoryHeader {
         margin-top: 1.0rem;
@@ -88,6 +89,27 @@
             display: none;
         }
 
+        .jm-navbar button.titleButton {
+            border: none;
+            padding: 0.5rem;
+            background-color: transparent;
+            color: white;
+            padding-top: 0.75rem;
+            padding-bottom: 0.75rem;
+            outline: none;
+            font-size: larger;
+            box-shadow: none !important;
+        }
+
+        .jm-navbar button.titleButton:focus {
+            outline: none !important;
+        }
+
+        .jm-navbar button.titleButton:active {
+            outline: none !important;
+            background-color: dodgerblue;
+        }
+
     #searchColumn.search > :not(#searchElements) {
         display: none;
     }
@@ -154,47 +176,13 @@
 </style>
 @{
     string searchClass = ShowFilter ? "search" : "";
+    Store currentStoreFilter = ShoppingListView.StoreFilter.AsEnumerable().SingleOrDefault();
+    string currentStoreName = currentStoreFilter?.StoreName.AsText() ?? "All Stores";
 }
 <div class="jm-navbar bg-dark @searchClass">
     <div>
-        <a style="margin-right:0.5rem; color:white" href="\"><ion-icon name="chevron-back-outline"></ion-icon></a>
-        <ElixMenuButton SourcePartType="div" OnMenuItemSelected="@OnMenuItemSelected">
-            <Content>
-                <elix-menu-item disabled><strong>Plan</strong></elix-menu-item>
-                <elix-menu-item id="plan7">Upcoming week</elix-menu-item>
-                <elix-menu-item id="plan14">Next 2 weeks</elix-menu-item>
-                <elix-menu-item id="planfuture">Future</elix-menu-item>
-                <elix-menu-separator></elix-menu-separator>
-                <elix-menu-item disabled><strong>Shop</strong></elix-menu-item>
-                <elix-menu-item id="shopall">All Stores</elix-menu-item>
-                @foreach (var s in StoreFilterChoices) {
-                    string id = $"s{Models.StoreIdModule.serialize(s.StoreId)}";
-                    <elix-menu-item id="@id">@s.StoreName.Item</elix-menu-item>
-                }
-                <div slot="source" style="display:flex; flex-direction:column; align-items:flex-start">
-                    @{
-                        string superTitle = null;
-                        string title = null;
-                        if (Settings.HideCompletedItems) {
-                            superTitle = "Shopping list";
-                            title =
-                                Settings.StoreFilter.IsSome()
-                                ? StoreFilterChoices.FirstOrDefault(j => j.StoreId.Equals(Settings.StoreFilter.Value)).StoreName.Item
-                                : "All Stores";
-                        }
-                        else {
-                            superTitle = "Plan";
-                            title =
-                                (Settings.PostponedViewHorizon == 14) ? "Next 2 weeks"
-                                : (Settings.PostponedViewHorizon == 7) ? "Upcoming week"
-                                : "Future";
-                        }
-                    }
-                    <small class="text-light">@superTitle</small>
-                    <div class="text-light" style="font-weight:bold">@title</div>
-                </div>
-            </Content>
-        </ElixMenuButton>
+        <a ontouchstart="" style="margin-right:0.5rem; color:white" href="\"><ion-icon name="chevron-back-outline"></ion-icon></a>
+        <button class="titleButton" ontouchstart="" @onclick="async _=>await OpenStoreNavigator()">@currentStoreName</button>
     </div>
     <div id="searchColumn" class="@searchClass">
         <SyncButton Style="padding:0px;margin-right:2em" />
@@ -261,3 +249,4 @@
 <PostponeDrawer OnSelected="async d => await OnPostponeDurationChosen(d)" @ref="_postponeDrawer"></PostponeDrawer>
 <FrequencyDrawer OnSelected="async r => await OnFrequencyChosen(r)" @ref="_frequencyDrawer"></FrequencyDrawer>
 <CategoryNavigatorDrawer OnSelect="async id => await OnNavigateToCategory(id)" OnManageCategories="OnManageCategories" @ref="_categoryNavigationDrawer"></CategoryNavigatorDrawer>
+<StoreNavigatorDrawer OnSelect="async id => await OnChooseStore(id)" OnManageStores="_ => OnManageStores()" @ref="_storesNavigatorDrawer"></StoreNavigatorDrawer>
