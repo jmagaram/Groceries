@@ -4,24 +4,33 @@
 @using static Models.Extensions.CoreTypeExtensions
 @using static WebApp.Common.OptionExtensions
 
+<style>
+    .categoryDrawerButton {
+        display: inline-grid;
+        grid-column-gap: 2px;
+        align-items: center;
+        justify-content: flex-start;
+        grid-template-columns: 1.5em 1.5em auto;
+    }
+
+</style>
 <ElixDrawer @ref="_drawer" FromEdge="ElixDrawerEdge.Start">
     @if (_viewModel == null) { return; }
     <div class="plainMenu">
         @foreach (var i in _viewModel) {
             var c = i;
             string description = c.Category.IsSome() ? c.Category.Value.CategoryName.AsText() : "(Uncategorized)";
-            <button style="display: inline-grid; align-items: center; justify-content: flex-start; grid-template-columns:1.5em 1.5em auto" disabled="@(c.Total==0)" ontouchstart="" @onclick="async _=> await OnSelectCore(c.Category.GetOr(null)?.CategoryId)">
-                @if (c.Active > 0) {
-                    <span style="grid-column:1/2" class="badge badge-dark">@c.Active</span>
+            <button class="categoryDrawerButton" disabled="@(c.Total==0)" ontouchstart="" @onclick="async _=> await OnSelectCore(c.Category.GetOr(null)?.CategoryId)">
+                @if (c.Active > 0 || c.Inactive > 0) {
+                    <span style="grid-column:1/2" class="badge badge-primary">@c.Active</span>
                 }
-                @if (c.Inactive > 0) {
-                    <span style="grid-column:2/3" class="badge badge-light">@c.Inactive</span>
+                @if (c.Active > 0 || c.Inactive > 0 ) {
+                    <span style="grid-column:2/3" class="badge badge-secondary">@c.Inactive</span>
                 }
-                <span style="grid-column:3/4">@description</span>
+                <span style="grid-column:3/4; margin-left:0.5rem">@description</span>
             </button>
         }
-        <div style="border-top: 1px solid #d2d2d2; margin-top: 0.3rem;"></div>
-        <button style="display:inline-flex; justify-content:flex-start" ontouchstart="" @onclick="async _=> await OnManageCategoriesCore()">
+        <button class="separatorAbove" style="display:inline-flex; justify-content:flex-start;border-top:1px solid #cecece" ontouchstart="" @onclick="async _=> await OnManageCategoriesCore()">
             <ion-icon name="settings-outline"></ion-icon><span style="margin-left:1em">Manage categories</span>
         </button>
     </div>
