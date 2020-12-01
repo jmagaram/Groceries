@@ -69,7 +69,7 @@ namespace WebApp.Pages {
             {
                 SettingsMessage.ClearItemFilter,
                 SettingsMessage.NewHideCompletedItems(true),
-                SettingsMessage.NewSetPostponedViewHorizon(-365),
+                SettingsMessage.NewSetPostponedViewHorizon(14), // hack for now
             };
             if (storeId.HasValue) {
                 messages.Add(SettingsMessage.NewSetStoreFilterTo(storeId.Value));

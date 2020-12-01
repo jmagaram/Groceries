@@ -146,14 +146,14 @@
         Form = Form.Update(message);
     }
 
-    public void OnCancel() => Navigation.NavigateTo("/");
+    public void OnCancel() => Navigation.NavigateTo("/shoppinglist");
 
     public async Task SaveChanges() {
         if (Form.HasChanges) {
             var message = Models.StateTypes.StateMessage.NewReorganizeCategoriesMessage(Form.ReorganizeResult);
             await StateService.UpdateAsync(message);
         }
-        Navigation.NavigateTo("/");// should go back!
+        Navigation.NavigateTo("/shoppinglist");
     }
 
     public CategoryManagerForm Form { get; set; }

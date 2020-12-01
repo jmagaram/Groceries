@@ -7,7 +7,7 @@
 @using static Models.ScheduleModule.ScheduleExtensions;
 @using static Models.ShoppingListSettingsModule;
 @using static Models.Extensions.CoreTypeExtensions;
- 
+
 <style>
     .categoryHeader {
         margin-top: 1.0rem;
@@ -180,10 +180,7 @@
     string currentStoreName = currentStoreFilter?.StoreName.AsText() ?? "All Stores";
 }
 <div class="jm-navbar bg-dark @searchClass">
-    <div>
-        <a ontouchstart="" style="margin-right:0.5rem; color:white" href="\"><ion-icon name="chevron-back-outline"></ion-icon></a>
-        <button class="titleButton" ontouchstart="" @onclick="async _=>await OpenStoreNavigator()">@currentStoreName</button>
-    </div>
+    <button class="titleButton" ontouchstart="" @onclick="async _=>await OpenStoreNavigator()">@currentStoreName</button>
     <div id="searchColumn" class="@searchClass">
         <SyncButton Style="padding:0px;margin-right:2em" />
         <div id="searchElements">
