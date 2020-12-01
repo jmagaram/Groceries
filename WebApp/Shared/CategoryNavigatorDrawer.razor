@@ -10,7 +10,7 @@
         grid-column-gap: 2px;
         align-items: center;
         justify-content: flex-start;
-        grid-template-columns: 1.5em 1.5em auto;
+        grid-template-columns: auto 1.5em 1.5em;
     }
 
 </style>
@@ -22,12 +22,12 @@
             string description = c.Category.IsSome() ? c.Category.Value.CategoryName.AsText() : "(Uncategorized)";
             <button class="categoryDrawerButton" disabled="@(c.Total==0)" ontouchstart="" @onclick="async _=> await OnSelectCore(c.Category.GetOr(null)?.CategoryId)">
                 @if (c.Active > 0 || c.Inactive > 0) {
-                    <span style="grid-column:1/2" class="badge badge-primary">@c.Active</span>
+                    <span style="grid-column:2/3" class="badge badge-primary">@c.Active</span>
                 }
                 @if (c.Active > 0 || c.Inactive > 0 ) {
-                    <span style="grid-column:2/3" class="badge badge-secondary">@c.Inactive</span>
+                    <span style="grid-column:3/4" class="badge badge-secondary">@c.Inactive</span>
                 }
-                <span style="grid-column:3/4; margin-left:0.5rem">@description</span>
+                <span style="grid-row:1/2; grid-column:1/2; margin-right:0.25rem">@description</span>
             </button>
         }
         <button class="separatorAbove" style="display:inline-flex; justify-content:flex-start;border-top:1px solid #cecece" ontouchstart="" @onclick="async _=> await OnManageCategoriesCore()">
