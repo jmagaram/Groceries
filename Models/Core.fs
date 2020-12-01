@@ -273,6 +273,9 @@ module Schedule =
         static member IsPostponed(me: Schedule) = me |> isPostponed
 
         [<Extension>]
+        static member IsActive(me: Schedule) = me |> isActive
+
+        [<Extension>]
         static member DueDate(me: Schedule, now: DateTimeOffset) = me |> dueDate now
 
         [<Extension>]
