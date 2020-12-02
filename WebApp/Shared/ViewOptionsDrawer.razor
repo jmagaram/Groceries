@@ -1,0 +1,43 @@
+﻿@implements IDisposable
+@using Models
+@using static Models.CoreTypes
+@using static Models.SelectZeroOrOneModule
+@using static Models.Extensions.CoreTypeExtensions
+@using static WebApp.Common.OptionExtensions
+
+<ElixDrawer @ref="_drawer">
+    <div class="buttonDrawer">
+        <button ontouchstart="" class="drawerButton" @onclick="async _ => await HideUpcoming()"><strong>Hide</strong> completed and upcoming</button>
+        <button ontouchstart="" class="drawerButton" @onclick="async _ => await SelectUpcomingDays(5)">Show <strong>next 5 days</strong></button>
+        <button ontouchstart="" class="drawerButton" @onclick="async _ => await SelectUpcomingDays(14)">Show <strong>next 2 weeks</strong></button>
+        <button ontouchstart="" class="drawerButton" @onclick="async _ => await SelectUpcomingDays(365)">Show <strong>all upcoming and completed</strong></button>
+    </div>
+</ElixDrawer>
+
+@code {
+    private ElixDrawer _drawer;
+
+    public void Dispose() => _drawer?.Dispose();
+
+    public async ValueTask Open() {
+        await _drawer.Open();
+    }
+
+    public async ValueTask Close() => await _drawer.Close();
+
+    [Parameter]
+    public EventCallback<int> OnSelectUpcomingDays { get; set; }
+
+    [Parameter]
+    public EventCallback<int> OnHideUpcoming { get; set; }
+
+    private async Task SelectUpcomingDays(int c) {
+        await _drawer.Close();
+        await OnSelectUpcomingDays.InvokeAsync(c);
+    }
+
+    private async Task HideUpcoming() {
+        await _drawer.Close();
+        await OnHideUpcoming.InvokeAsync();
+    }
+}
