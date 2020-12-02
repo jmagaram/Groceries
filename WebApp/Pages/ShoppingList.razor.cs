@@ -24,6 +24,7 @@ namespace WebApp.Pages {
         FrequencyDrawer _frequencyDrawer;
         CategoryNavigatorDrawer _categoryNavigationDrawer;
         StoreNavigatorDrawer _storesNavigatorDrawer;
+        ViewOptionsDrawer _viewOptionsDrawer;
         ItemId? _quickEditContext;
         Dictionary<CategoryId, ElementReference> _categoryReferences = new Dictionary<CategoryId, ElementReference>();
 
@@ -33,7 +34,34 @@ namespace WebApp.Pages {
             _frequencyDrawer?.Dispose();
             _categoryNavigationDrawer?.Dispose();
             _storesNavigatorDrawer?.Dispose();
+            _viewOptionsDrawer?.Dispose();
         }
+
+        public async Task SwitchToShoppingMode() {
+            var messages = new List<SettingsMessage>
+            {
+                SettingsMessage.ClearItemFilter,
+                SettingsMessage.NewHideCompletedItems(true),
+                SettingsMessage.NewSetPostponedViewHorizon(-365),
+            };
+            var settingsMessage = SettingsMessage.NewTransaction(messages);
+            var stateMessage = StateTypes.StateMessage.NewShoppingListSettingsMessage(settingsMessage);
+            await StateService.UpdateAsync(stateMessage);
+        }
+
+        public async Task SwitchToPlanningMode(int? days) {
+            var messages = new List<SettingsMessage>
+            {
+                SettingsMessage.ClearItemFilter,
+                SettingsMessage.NewHideCompletedItems(false),
+                SettingsMessage.NewSetPostponedViewHorizon(days ?? 5),
+                SettingsMessage.ClearStoreFilter
+            };
+            var settingsMessage = SettingsMessage.NewTransaction(messages);
+            var stateMessage = StateMessage.NewShoppingListSettingsMessage(settingsMessage);
+            await StateService.UpdateAsync(stateMessage);
+        }
+
 
         [Inject]
         public Service StateService { get; set; }
@@ -68,8 +96,8 @@ namespace WebApp.Pages {
             var messages = new List<SettingsMessage>
             {
                 SettingsMessage.ClearItemFilter,
-                SettingsMessage.NewHideCompletedItems(true),
-                SettingsMessage.NewSetPostponedViewHorizon(14), // hack for now
+                //SettingsMessage.NewHideCompletedItems(true),
+                //SettingsMessage.NewSetPostponedViewHorizon(14), 
             };
             if (storeId.HasValue) {
                 messages.Add(SettingsMessage.NewSetStoreFilterTo(storeId.Value));
@@ -78,7 +106,7 @@ namespace WebApp.Pages {
                 messages.Add(SettingsMessage.ClearStoreFilter);
             }
             var settingsMessage = SettingsMessage.NewTransaction(messages);
-            var stateMessage = StateTypes.StateMessage.NewShoppingListSettingsMessage(settingsMessage);
+            var stateMessage = StateMessage.NewShoppingListSettingsMessage(settingsMessage);
             await StateService.UpdateAsync(stateMessage);
         }
 

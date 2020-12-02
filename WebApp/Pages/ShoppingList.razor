@@ -182,6 +182,9 @@
 <div class="jm-navbar bg-dark @searchClass">
     <button class="titleButton" ontouchstart="" @onclick="async _=>await OpenStoreNavigator()">@currentStoreName</button>
     <div id="searchColumn" class="@searchClass">
+        <button ontouchstart="" @onclick="async _ => await _viewOptionsDrawer.Open()" class="btn text-light">
+            <ion-icon name="@(Settings.HideCompletedItems ? "eye-off-outline" : "eye-outline")"></ion-icon>
+        </button>
         <SyncButton Style="padding:0px;margin-right:2em" />
         <div id="searchElements">
             <div id="searchTrigger" class="@searchClass">
@@ -247,3 +250,4 @@
 <FrequencyDrawer OnSelected="async r => await OnFrequencyChosen(r)" @ref="_frequencyDrawer"></FrequencyDrawer>
 <CategoryNavigatorDrawer OnSelect="async id => await OnNavigateToCategory(id)" OnManageCategories="OnManageCategories" @ref="_categoryNavigationDrawer"></CategoryNavigatorDrawer>
 <StoreNavigatorDrawer OnSelect="async id => await OnChooseStore(id)" OnManageStores="_ => OnManageStores()" @ref="_storesNavigatorDrawer"></StoreNavigatorDrawer>
+<ViewOptionsDrawer OnHideUpcoming="async _ => await SwitchToShoppingMode()" OnSelectUpcomingDays="async d=>await SwitchToPlanningMode(d)" @ref="_viewOptionsDrawer"></ViewOptionsDrawer>
