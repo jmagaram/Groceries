@@ -533,7 +533,7 @@ module ShoppingListSettings =
 
     let create =
         { ShoppingListSettings.StoreFilter = None
-          PostponedViewHorizon = 7<days>
+          PostponedViewHorizon = 5<days>
           HideCompletedItems = false
           TextFilter = TextBox.create "" }
 
