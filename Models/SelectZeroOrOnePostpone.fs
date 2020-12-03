@@ -9,7 +9,7 @@ let create schedule now =
     let choices =
         Schedule.commonPostponeChoices
         |> Seq.map Some
-        |> Seq.append (current |> Seq.singleton)
+        //|> Seq.append (current |> Seq.singleton)
         |> Seq.choose id
         |> Seq.distinctBy ItemForm.postponeDurationAsText
 
