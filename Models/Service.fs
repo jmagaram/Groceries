@@ -121,11 +121,4 @@ type Service(state: StateTypes.State, clock, cosmos: ICosmosConnector) =
     member me.State = stateObs
     member me.CurrentState = stateSub.Value
     member me.SyncronizationStatus = statusObs
-
-[<Extension>]
-type StateExtensions =
-    [<Extension>]
-    static member ShoppingList(me: StateTypes.State, now: DateTimeOffset) = me |> ShoppingList.create (now)
-
-    [<Extension>]
-    static member GetGlobalSettings(me: StateTypes.State) = me.GlobalSettings |> DataRow.current |> Option.get
+    

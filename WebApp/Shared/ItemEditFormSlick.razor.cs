@@ -6,7 +6,6 @@ using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
 using Models;
 using WebApp.Common;
-using static Models.ItemFormModule.ItemFormExtensions;
 using FormMessage = Models.ItemFormModule.Message;
 using TextBoxMessage = Models.CoreTypes.TextBoxMessage;
 

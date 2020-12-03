@@ -9,8 +9,6 @@ using Models;
 using WebApp.Common;
 using WebApp.Shared;
 using static Models.CoreTypes;
-using static Models.Extensions.CoreTypeExtensions;
-using static Models.Extensions.StateExtensions;
 using static Models.ServiceTypes;
 using ItemMessage = Models.ItemModule.Message;
 using SettingsMessage = Models.ShoppingListSettingsModule.Message;

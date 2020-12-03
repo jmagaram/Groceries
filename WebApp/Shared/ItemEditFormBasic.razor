@@ -1,7 +1,7 @@
 ﻿@using Microsoft.FSharp.Core;
 @using static Models.ItemFormModule;
-@using static Common.OptionExtensions;
-@using static Models.ItemFormModule.ItemFormExtensions;
+@using Common;
+@using Models; 
 
 @if (Form != null) {
     string pageTitle = Form.ItemId.IsNone() ? "New item" : "Edit item";

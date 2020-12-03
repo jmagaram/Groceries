@@ -267,20 +267,6 @@ module Schedule =
 
     let asRepeat s = s |> tryAsRepeat |> Option.get
 
-    [<Extension>]
-    type ScheduleExtensions =
-        [<Extension>]
-        static member IsPostponed(me: Schedule) = me |> isPostponed
-
-        [<Extension>]
-        static member IsActive(me: Schedule) = me |> isActive
-
-        [<Extension>]
-        static member DueDate(me: Schedule, now: DateTimeOffset) = me |> dueDate now
-
-        [<Extension>]
-        static member PostponedUntilDays(me: Schedule, now: DateTimeOffset) = me |> postponedUntilDays now
-
 [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
 module Item =
 
@@ -929,32 +915,3 @@ module ItemForm =
         | Purchased -> f |> purchased
         | ToggleComplete -> f |> toggleComplete
         | Message.Transaction msgs -> msgs |> Seq.fold (fun f m -> update m f) f
-
-    [<Extension>]
-    type ItemFormExtensions =
-        [<Extension>]
-        static member ItemNameValidation(me: ItemForm) = me |> itemNameValidation
-
-        [<Extension>]
-        static member NoteValidation(me: ItemForm) = me |> noteValidation
-
-        [<Extension>]
-        static member QuantityValidation(me: ItemForm) = me |> quantityValidation
-
-        [<Extension>]
-        static member FrequencyChoices(me: ItemForm) = me |> frequencyChoices
-
-        [<Extension>]
-        static member PostponeChoices(me: ItemForm) = me |> postponeChoices
-
-        [<Extension>]
-        static member CategoryNameValidation(me: ItemForm) = me |> categoryNameValidation
-
-        [<Extension>]
-        static member HasErrors(me: ItemForm) = me |> hasErrors
-
-        [<Extension>]
-        static member CanDelete(me: ItemForm) = me |> canDelete
-
-        [<Extension>]
-        static member CategoryCommittedName(me: ItemForm) = me |> categoryCommittedName
