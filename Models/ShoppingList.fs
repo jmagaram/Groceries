@@ -142,7 +142,7 @@ let create now state =
         let group =
             match item.Schedule with
             | Schedule.IsActive -> 0
-            | Schedule.IsPostponed -> 1
+            | Schedule.IsPostponedUntil _ -> 1
             | Schedule.IsComplete -> 2
         let date =
             item.Schedule |> Schedule.postponedUntil

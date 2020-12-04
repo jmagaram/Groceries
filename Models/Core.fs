@@ -201,10 +201,12 @@ module Schedule =
         | Schedule.Repeat { PostponedUntil = Some _ } -> false
         | Schedule.Repeat { PostponedUntil = None } -> true
 
-    let (|IsActive|IsComplete|IsPostponed|) s =
-        if s |> isActive then IsActive
-        elif s |> isPostponed then IsPostponed
-        else IsComplete
+    let (|IsActive|IsComplete|IsPostponedUntil|) s =
+        match s with
+        | Schedule.Completed -> IsComplete
+        | Schedule.Once -> IsActive
+        | Schedule.Repeat { PostponedUntil = None } -> IsActive
+        | Schedule.Repeat { PostponedUntil = Some dt } -> IsPostponedUntil dt
 
     let postponedUntil s =
         match s with
