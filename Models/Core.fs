@@ -182,10 +182,12 @@ module Schedule =
         | Schedule.Once -> Some now
         | Schedule.Repeat r -> r.PostponedUntil |> Option.orElse (Some now)
 
-    let isPostponed s =
+    let isPostponedUntil s =
         match s with
-        | Schedule.Repeat { PostponedUntil = Some _ } -> true
-        | _ -> false
+        | Schedule.Repeat { PostponedUntil = Some dt } -> Some dt
+        | _ -> None
+
+    let isPostponed s = s |> isPostponedUntil |> Option.isSome
 
     let isCompleted (s: Schedule) =
         match s with
