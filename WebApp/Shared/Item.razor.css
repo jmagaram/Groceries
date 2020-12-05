@@ -1,0 +1,56 @@
+﻿.postponeBadge {
+    width: 30px;
+    margin-right: 5px;
+}
+
+.repeater {
+    width: 15px;
+    margin-right: 10px;
+}
+
+.category {
+}
+
+.note {
+    line-height: 1.0;
+    text-align: left;
+}
+
+.stores {
+    line-height: 1.0;
+    text-align: left;
+}
+
+.quantity {
+    margin-left: 5px;
+    padding-left: 5px;
+    border-left: 1px solid #d3d3d3;
+}
+
+.wholething {
+    margin-bottom: 12px;
+}
+
+elix-menu-button {
+    margin-right: 5px;
+}
+
+    elix-menu-button::part(source) {
+        height: inherit;
+        width: inherit;
+    }
+
+.menu {
+    transition: all ease-out 0.05s; /*when returning to this*/
+    border: 1px solid rgba(229, 229, 229, 0.00);
+    padding: 0px;
+    background-color: inherit;
+}
+
+    .menu.opened {
+        border: 1px solid rgba(229, 229, 229, 1.00);
+        padding: 4px;
+        margin-left: -4px;
+        margin-top: -4px;
+        background-color: #ededed;
+    }
