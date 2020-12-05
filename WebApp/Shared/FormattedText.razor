@@ -1,22 +1,4 @@
 ﻿@using Models
-<style>
-    span.highlighted {
-        background-color: yellow;
-        border-width: 0px;
-        padding: 0px;
-        white-space:pre;
-    }
-
-    span.normal {
-        border-width: 0px;
-        padding: 0px;
-        white-space: pre;
-    }
-
-    .completed {
-        text-decoration: line-through
-    }
-</style>
 @foreach (var i in Models.FormattedText.spans(Text)) {
     var className = i.Format.IsHighlight ? "highlighted" : "normal";
     if (Strikethrough) {

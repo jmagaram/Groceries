@@ -1,9 +1,4 @@
-﻿<style>
-    .hideModesItem {
-        display: none;
-    }
-</style>
-<div class="@(Parent.ActiveItem==this ? "" : "hideModesItem")">@ChildContent</div>
+﻿<div class="@(Parent.ActiveItem==this ? "" : "hideModesItem")">@ChildContent</div>
 @code {
     [CascadingParameter]
     private Modes Parent { get; set; }
