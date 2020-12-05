@@ -6,6 +6,8 @@ open ChangeTrackerTypes
 open CoreTypes
 open StateTypes
 
+// Basic Queries
+
 let categoriesTable (s: State) = s.Categories
 let storesTable (s: State) = s.Stores
 let itemsTable (s: State) = s.Items
@@ -22,6 +24,53 @@ let categories = categoriesTable >> DataTable.current
 let stores = storesTable >> DataTable.current
 let items = itemsTable >> DataTable.current
 let notSold = notSoldTable >> DataTable.current
+
+let tryFindItem id s = s |> itemsTable |> DataTable.tryFindCurrent id
+let tryFindCategory id s = s |> categoriesTable |> DataTable.tryFindCurrent id
+
+let itemHasInvalidCategory (i: Item) s =
+    i.CategoryId
+    |> Option.map (fun c -> s |> tryFindCategory c |> Option.isNone)
+    |> Option.defaultValue false
+
+let notSoldHasInvalidItem (ns: NotSoldItem) s =
+    s
+    |> itemsTable
+    |> DataTable.tryFindCurrent ns.ItemId
+    |> Option.isNone
+
+let notSoldHasInvalidStore (ns: NotSoldItem) s =
+    s
+    |> storesTable
+    |> DataTable.tryFindCurrent ns.StoreId
+    |> Option.isNone
+
+let shoppingListSettingsHasInvalidStoreFilter s =
+    s
+    |> shoppingListSettings
+    |> fun i ->
+        i.StoreFilter
+        |> Option.map
+            (fun sf ->
+                s
+                |> storesTable
+                |> DataTable.tryFindCurrent sf
+                |> Option.isNone)
+        |> Option.defaultValue false
+
+let storeSellsItem (i: Item) (s: Store) state =
+    state
+    |> notSoldTable
+    |> DataTable.tryFindCurrent { StoreId = s.StoreId; ItemId = i.ItemId }
+    |> Option.isNone
+
+let hasChanges s =
+    (s |> itemsTable |> DataTable.hasChanges)
+    || (s |> categoriesTable |> DataTable.hasChanges)
+    || (s |> storesTable |> DataTable.hasChanges)
+    || (s |> notSoldTable |> DataTable.hasChanges)
+
+// Update
 
 let mapCategories f s = { s with Categories = f s.Categories }
 let mapStores f s = { s with State.Stores = f s.Stores }
@@ -42,39 +91,6 @@ let mapShoppingListSettings f s =
                   |> DataRow.tryUpdate s2
                   |> Result.okOrThrow }
 
-let itemHasInvalidCategory (i: Item) s =
-    i.CategoryId
-    |> Option.map (fun c ->
-        s
-        |> categoriesTable
-        |> DataTable.tryFindCurrent c
-        |> Option.isNone)
-    |> Option.defaultValue false
-
-let notSoldHasInvalidItem (ns: NotSoldItem) s =
-    s
-    |> itemsTable
-    |> DataTable.tryFindCurrent ns.ItemId
-    |> Option.isNone
-
-let notSoldHasInvalidStore (ns: NotSoldItem) s =
-    s
-    |> storesTable
-    |> DataTable.tryFindCurrent ns.StoreId
-    |> Option.isNone
-
-let shoppingListSettingsHasInvalidStoreFilter s =
-    s
-    |> shoppingListSettings
-    |> fun i ->
-        i.StoreFilter
-        |> Option.map (fun sf ->
-            s
-            |> storesTable
-            |> DataTable.tryFindCurrent sf
-            |> Option.isNone)
-        |> Option.defaultValue false
-
 let fixItemForeignKeys s =
     s
     |> items
@@ -85,10 +101,11 @@ let fixItemForeignKeys s =
 let fixNotSoldForeignKeys s =
     s
     |> notSold
-    |> Seq.filter (fun n ->
-        let isItemInvalid = s |> notSoldHasInvalidItem n
-        let isStoreInvalid = s |> notSoldHasInvalidStore n
-        isItemInvalid || isStoreInvalid)
+    |> Seq.filter
+        (fun n ->
+            let isItemInvalid = s |> notSoldHasInvalidItem n
+            let isStoreInvalid = s |> notSoldHasInvalidStore n
+            isItemInvalid || isStoreInvalid)
     |> Seq.fold (fun s i -> s |> mapNotSoldItems (DataTable.delete i)) s
 
 let fixShoppingListSettingsForeignKeys s =
@@ -132,12 +149,6 @@ let deleteItem k s = s |> mapItems (DataTable.delete k) |> fixForeignKeys
 let deleteNotSoldItem k s = s |> mapNotSoldItems (DataTable.delete k)
 
 let deleteCategory k s = s |> mapCategories (DataTable.delete k) |> fixForeignKeys
-
-let hasChanges s =
-    (s |> itemsTable |> DataTable.hasChanges)
-    || (s |> categoriesTable |> DataTable.hasChanges)
-    || (s |> storesTable |> DataTable.hasChanges)
-    || (s |> notSoldTable |> DataTable.hasChanges)
 
 let importChanges (i: ImportChanges) (s: StateTypes.State) =
     { s with
@@ -274,27 +285,6 @@ let createSampleData () =
     |> doesNotSellItem "QFC" "Dried flax seeds"
     |> doesNotSellItem "Costco" "Chocolate bars"
 
-let itemDenormalized (i: Item) state =
-    { ItemDenormalized.ItemId = i.ItemId
-      ItemName = i.ItemName
-      Etag = i.Etag
-      Note = i.Note
-      Quantity = i.Quantity
-      Schedule = i.Schedule
-      Category =
-          i.CategoryId
-          |> Option.map (fun c -> state |> categoriesTable |> DataTable.findCurrent c)
-      Availability =
-          state
-          |> stores
-          |> Seq.map (fun s ->
-              { ItemAvailability.Store = s
-                IsSold =
-                    state
-                    |> notSoldTable
-                    |> DataTable.tryFindCurrent { ItemId = i.ItemId; StoreId = s.StoreId }
-                    |> Option.isNone }) }
-
 let handleItemMessage now msg (s: State) =
     match msg with
     | ModifyItem (k, msg) ->
@@ -328,6 +318,24 @@ let handleItemEditPageMessage (now: DateTimeOffset) (msg: ItemEditPageMessage) (
         let form = ItemForm.createNewItem name stores categories
 
         { state with ItemEditPage = Some form }
+
+    let itemDenormalized (i: Item) state =
+        { ItemDenormalized.ItemId = i.ItemId
+          ItemName = i.ItemName
+          Etag = i.Etag
+          Note = i.Note
+          Quantity = i.Quantity
+          Schedule = i.Schedule
+          Category =
+              i.CategoryId
+              |> Option.bind (fun id -> state |> tryFindCategory id)
+          Availability =
+              state
+              |> stores
+              |> Seq.map
+                  (fun s ->
+                      { ItemAvailability.Store = s
+                        IsSold = state |> storeSellsItem i s }) }
 
     let processResult (r: ItemForm.ItemFormResult) (s: State) =
         let s =
@@ -410,19 +418,23 @@ let reorganizeCategories (msg: ReorganizeCategoriesMessage) (s: State) =
 
     let createCats ns s =
         ns
-        |> Seq.fold (fun total n ->
-            let cat =
-                { Category.CategoryName = n |> categoryName
-                  CategoryId = CategoryId.create ()
-                  Etag = None }
+        |> Seq.fold
+            (fun total n ->
+                let cat =
+                    { Category.CategoryName = n |> categoryName
+                      CategoryId = CategoryId.create ()
+                      Etag = None }
 
-            total |> insertCategory cat) s
+                total |> insertCategory cat)
+            s
 
     let deleteCats ns s =
         ns
-        |> Seq.fold (fun total n ->
-            let cat = total |> findCat n
-            total |> deleteCategory cat.CategoryId) s
+        |> Seq.fold
+            (fun total n ->
+                let cat = total |> findCat n
+                total |> deleteCategory cat.CategoryId)
+            s
 
     let setItemCat x y s =
         let xCat = s |> findCat x
@@ -431,11 +443,14 @@ let reorganizeCategories (msg: ReorganizeCategoriesMessage) (s: State) =
         s
         |> items
         |> Seq.filter (fun i -> i.CategoryId = Some xCat.CategoryId)
-        |> Seq.fold (fun total i ->
-            let i = { i with CategoryId = Some yCat.CategoryId }
-            total |> updateItem i) s
+        |> Seq.fold
+            (fun total i ->
+                let i = { i with CategoryId = Some yCat.CategoryId }
+                total |> updateItem i)
+            s
 
-    let setItemCats xys s = xys |> Seq.fold (fun total (x, y) -> setItemCat x y total) s
+    let setItemCats xys s =
+        xys |> Seq.fold (fun total (x, y) -> setItemCat x y total) s
 
     s
     |> createCats msg.Create
@@ -451,19 +466,23 @@ let reorganizeStores (msg: ReorganizeStoresMessage) (s: State) =
 
     let createStores ns s =
         ns
-        |> Seq.fold (fun total n ->
-            let cat =
-                { Store.StoreName = n |> StoreName
-                  StoreId = StoreId.create ()
-                  Etag = None }
+        |> Seq.fold
+            (fun total n ->
+                let cat =
+                    { Store.StoreName = n |> StoreName
+                      StoreId = StoreId.create ()
+                      Etag = None }
 
-            total |> insertStore cat) s
+                total |> insertStore cat)
+            s
 
     let deleteStores ns s =
         ns
-        |> Seq.fold (fun total n ->
-            let cat = total |> findStore n
-            total |> deleteStore cat.StoreId) s
+        |> Seq.fold
+            (fun total n ->
+                let cat = total |> findStore n
+                total |> deleteStore cat.StoreId)
+            s
 
     let setInventory x y s =
         let x = s |> findStore x
@@ -472,10 +491,12 @@ let reorganizeStores (msg: ReorganizeStoresMessage) (s: State) =
         s
         |> notSold
         |> Seq.filter (fun i -> i.StoreId = x.StoreId)
-        |> Seq.fold (fun total i ->
-            total
-            |> deleteNotSoldItem i
-            |> insertNotSoldItem { i with StoreId = y.StoreId }) s
+        |> Seq.fold
+            (fun total i ->
+                total
+                |> deleteNotSoldItem i
+                |> insertNotSoldItem { i with StoreId = y.StoreId })
+            s
 
     let setInventories xys s =
         xys
@@ -487,15 +508,17 @@ let reorganizeStores (msg: ReorganizeStoresMessage) (s: State) =
     |> deleteStores msg.Delete
     |> fixForeignKeys
 
-let updateItemAvailability itemId (ia:ItemAvailability) s =
-    let ns = { NotSoldItem.ItemId = itemId 
-               NotSoldItem.StoreId = ia.Store.StoreId }
+let updateItemAvailability itemId (ia: ItemAvailability) s =
+    let ns =
+        { NotSoldItem.ItemId = itemId
+          NotSoldItem.StoreId = ia.Store.StoreId }
+
     match ia.IsSold, s |> notSoldTable |> DataTable.tryFindCurrent ns with
     | true, Some _ -> s |> deleteNotSoldItem ns
     | false, None -> s |> insertNotSoldItem ns
     | _, _ -> s
 
-let handleItemAvailabilityMessage itemId (msg:ItemAvailability seq) s =
+let handleItemAvailabilityMessage itemId (msg: ItemAvailability seq) s =
     msg
     |> Seq.fold (fun s i -> s |> updateItemAvailability itemId i) s
 
