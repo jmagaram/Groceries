@@ -1,7 +1,10 @@
 ﻿module Models.SelectZeroOrOneCategory
 
+let createFromPickList current choices =
+    SelectZeroOrOne.create current choices
+
 let create current state =
-    SelectZeroOrOne.create current (state |> State.categories)
+    createFromPickList current (state |> State.categories)
 
 let asStateMessage item (s:SelectZeroOrOne.SelectZeroOrOne<CoreTypes.Category>) =
     match s.CurrentChoice with

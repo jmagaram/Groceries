@@ -5,12 +5,19 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
 using Models;
+using static Models.CoreTypes;
 using WebApp.Common;
 using FormMessage = Models.ItemFormModule.Message;
 using TextBoxMessage = Models.CoreTypes.TextBoxMessage;
 
-namespace WebApp.Shared {
-    public partial class ItemEditFormSlick : ComponentBase {
+namespace WebApp.Shared
+{
+    public partial class ItemEditFormSlick : ComponentBase
+    {
+        private FrequencyDrawer _frequencyDrawer;
+        private CategoryDrawer _categoryDrawer;
+        private PostponeDrawer _postponeDrawer;
+        private StoresDrawer _storesDrawer;
 
         [Parameter]
         public CoreTypes.ItemForm Form { get; set; }
@@ -27,27 +34,106 @@ namespace WebApp.Shared {
         [Parameter]
         public EventCallback<FormMessage> OnItemFormMessage { get; set; }
 
+        private async ValueTask OnClickFrequency() =>
+            await _frequencyDrawer.Open(SelectZeroOrOneFrequency.create(ItemFormModule.scheduleCurrent(DateTimeOffset.Now, Form)));
+
+        private void OnFrequencySelected(SelectZeroOrOneModule.SelectZeroOrOne<Frequency> f)
+        {
+            if (f.HasChanges)
+            {
+                if (f.CurrentChoice.IsNone())
+                {
+                    var removePostpone = FormMessage.PostponeClear;
+                    var scheduleOnce = FormMessage.ScheduleOnce;
+                    var trans = FormMessage.NewTransaction(new List<FormMessage> { removePostpone, scheduleOnce });
+                    Process(trans);
+                }
+                else
+                {
+                    var scheduleIsRepeat = FormMessage.ScheduleRepeat;
+                    var setFrequency = FormMessage.NewFrequencySet(FrequencyModule.days(f.CurrentChoice.Value));
+                    var trans = FormMessage.NewTransaction(new List<FormMessage> { scheduleIsRepeat, setFrequency });
+                    Process(trans);
+                }
+            }
+        }
+
+        private async ValueTask OnClickCategory() =>
+            await _categoryDrawer.Open(SelectZeroOrOneCategory.createFromPickList(Form.CategoryChoice, Form.CategoryChoiceList));
+
+        private void OnCategorySelected(SelectZeroOrOneModule.SelectZeroOrOne<Category> f)
+        {
+            if (f.HasChanges)
+            {
+                if (f.CurrentChoice.IsNone())
+                {
+                    var chooseUncategorized = FormMessage.ChooseCategoryUncategorized;
+                    var modeIsChoose = FormMessage.CategoryModeChooseExisting;
+                    var clearNew = FormMessage.NewNewCategoryName(TextBoxMessage.NewTypeText(""));
+                    var newLoseFocus = FormMessage.NewNewCategoryName(TextBoxMessage.LoseFocus);
+                    var trans = FormMessage.NewTransaction(new List<FormMessage> { modeIsChoose, chooseUncategorized, clearNew, newLoseFocus });
+                    Process(trans);
+                }
+                else
+                {
+                    // should not serialize guid?
+                    var categoryGuid = f.CurrentChoice.Value.CategoryId.Item;
+                    var chooseSomeCat = FormMessage.NewChooseCategory(categoryGuid);
+                    var modeIsChoose = FormMessage.CategoryModeChooseExisting;
+                    var trans = FormMessage.NewTransaction(new List<FormMessage> { modeIsChoose, chooseSomeCat });
+                    Process(trans);
+                }
+            }
+        }
+
+        private async ValueTask OnClickPostpone()
+        {
+            var now = DateTimeOffset.Now;
+            var schedule = ItemFormModule.scheduleCurrent(now, Form);
+            await _postponeDrawer.Open(SelectZeroOrOnePostpone.create(schedule, now));
+        }
+
+        private void OnPostponeSelected(SelectZeroOrOneModule.SelectZeroOrOne<int> f)
+        {
+            if (f.HasChanges)
+            {
+                if (f.CurrentChoice.IsNone())
+                {
+                    Process(FormMessage.PostponeClear);
+                }
+                else
+                {
+                    Process(FormMessage.NewPostponeSet(f.CurrentChoice.Value));
+                }
+            }
+        }
+
+        private async ValueTask OnClickStores()
+        {
+            var model = StoresPickerModule.createFromAvailability(Form.Stores);
+            await _storesDrawer.Open(model);
+        }
+
+        private void OnStoresSelected(SelectMany<Store> f)
+        {
+            if (f.HasChanges)
+            {
+                var msg = FormMessage.NewStoresSetAllAvailability(f.Selected);
+                Process(msg);
+            }
+        }
+
         protected void OnCancel() => OnCancelCallback.InvokeAsync(null);
 
         protected void OnDelete() => OnDeleteCallback.InvokeAsync(null);
 
         protected void OnSaveChanges() => OnSaveChangesCallback.InvokeAsync(null);
 
-
-        protected void AddToShoppingListAgain() {
-            Process(FormMessage.ScheduleOnce);
-            OnSaveChangesCallback.InvokeAsync(null);
-        }
-
-        protected void OnSubmitPurchased() {
-            Process(FormMessage.Purchased);
-            OnSaveChangesCallback.InvokeAsync(null);
-        }
-
         private void Process(FormMessage msg) =>
             OnItemFormMessage.InvokeAsync(msg);
 
-        protected void OnToggleComplete() {
+        protected void OnToggleComplete()
+        {
             HighlightPostpone = !Form.IsComplete && Form.ScheduleKind.IsRepeat;
             Process(FormMessage.ToggleComplete);
         }
@@ -72,111 +158,10 @@ namespace WebApp.Shared {
         protected void OnQuantityFocusOut() =>
             Process(FormMessage.NewQuantity(TextBoxMessage.LoseFocus));
 
-        protected void OnCategoryChooseExisting(string id) {
-            if (Guid.TryParse(id, out Guid categoryGuid)) {
-                var chooseSomeCat = FormMessage.NewChooseCategory(categoryGuid); // should be serialized string not Guid
-                var modeIsChoose = FormMessage.CategoryModeChooseExisting;
-                var trans = FormMessage.NewTransaction(new List<FormMessage> { modeIsChoose, chooseSomeCat });
-                Process(trans);
-                GoBackHome();
-            }
-        }
-
-        protected void OnCategoryChooseUncategorized() {
-            var chooseUncategorized = FormMessage.ChooseCategoryUncategorized;
-            var modeIsChoose = FormMessage.CategoryModeChooseExisting;
-            var clearNew = FormMessage.NewNewCategoryName(TextBoxMessage.NewTypeText(""));
-            var newLoseFocus = FormMessage.NewNewCategoryName(TextBoxMessage.LoseFocus);
-            var trans = FormMessage.NewTransaction(new List<FormMessage> { modeIsChoose, chooseUncategorized, clearNew, newLoseFocus });
-            Process(trans);
-            GoBackHome();
-        }
-
-        // varargs instead!
-        protected void OnNewCategoryNameChange(string s) {
-            if (string.IsNullOrWhiteSpace(s)) {
-                var chooseUncategorized = FormMessage.ChooseCategoryUncategorized;
-                var modeIsChoose = FormMessage.CategoryModeChooseExisting;
-                var trans = FormMessage.NewTransaction(new List<FormMessage> { modeIsChoose, chooseUncategorized });
-                Process(trans);
-            }
-            else {
-                var chooseNew = FormMessage.CategoryModeCreateNew;
-                var e = FormMessage.NewNewCategoryName(TextBoxMessage.NewTypeText(s));
-                var trans = FormMessage.NewTransaction(new List<FormMessage> { chooseNew, e });
-                Process(trans);
-            }
-        }
-
-        protected void OnNewCategoryNameFocusOut() =>
-            Process(FormMessage.NewNewCategoryName(TextBoxMessage.LoseFocus));
-
-        protected void OnNewCategoryNameCommit() {
-            Process(FormMessage.CategoryModeCreateNew);
-            GoBackHome();
-        }
-
-        protected void OnCategoryCancel() {
-            if (Form.CategoryMode.IsCreateNew && Form.CategoryNameValidation().IsError) {
-                OnCategoryChooseUncategorized();
-            }
-            else {
-                GoBackHome();
-            }
-        }
-
-        protected void OnNewCategoryNameCancel() {
-            if (Form.CategoryNameValidation().IsError) {
-                OnCategoryChooseUncategorized();
-            }
-            else {
-                Process(FormMessage.CategoryModeChooseExisting);
-                GoCategories();
-            }
-        }
-
         public int ActiveIndex { get; set; } = 0;
 
         public void GoBackHome() => ActiveIndex = 0;
 
-        public void GoCategories() => ActiveIndex = 1;
-
-        public void GoFrequency() => ActiveIndex = 2;
-
-        public void GoStores() => ActiveIndex = 3;
-
-        public void GoNote() => ActiveIndex = 4;
-
-        public void GoPostpone() => ActiveIndex = 5;
-
-        protected void OnRepeatChange(int d) {
-            if (d <= 0) {
-                var removePostpone = FormMessage.PostponeClear;
-                var scheduleOnce = FormMessage.ScheduleOnce;
-                var trans = FormMessage.NewTransaction(new List<FormMessage> { removePostpone, scheduleOnce });
-                Process(trans); // why isn't this a Task?
-                GoBackHome();
-            }
-            else {
-                var scheduleIsRepeat = FormMessage.ScheduleRepeat;
-                var setFrequency = FormMessage.NewFrequencySet(d);
-                var trans = FormMessage.NewTransaction(new List<FormMessage> { scheduleIsRepeat, setFrequency });
-                Process(trans);
-                GoBackHome();
-            }
-        }
-
-        protected void OnPostponeDays(int days) {
-            Process(FormMessage.NewPostponeSet(days));
-            GoBackHome();
-        }
-
-        protected void OnPostponeRemove() {
-            Process(FormMessage.PostponeClear);
-            GoBackHome();
-        }
-
-        protected void OnStoreChange(bool isSold, CoreTypes.StoreId store) =>
-            Process(FormMessage.NewStoresSetAvailability(store, isSold));
+        public void GoNote() => ActiveIndex = 1;
     }
 }

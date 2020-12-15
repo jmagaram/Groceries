@@ -21,7 +21,8 @@ module ItemId =
         match i with
         | ItemId g -> g |> Guid.serialize
 
-    let deserialize s = s |> Guid.tryDeserialize |> Option.map ItemId
+    let deserialize s =
+        s |> Guid.tryDeserialize |> Option.map ItemId
 
 [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
 module UserId =
@@ -32,7 +33,8 @@ module UserId =
         match i with
         | UserId g -> g |> Guid.serialize
 
-    let deserialize s = s |> Guid.tryDeserialize |> Option.map UserId
+    let deserialize s =
+        s |> Guid.tryDeserialize |> Option.map UserId
 
     let anonymous = Guid.Empty |> UserId
 
@@ -42,7 +44,8 @@ module ItemName =
     let rules = singleLine 3<chars> 50<chars>
     let normalizer = String.trim
 
-    let validator = rules |> StringValidation.createValidator
+    let validator =
+        rules |> StringValidation.createValidator
 
     let tryParse =
         StringValidation.createParser normalizer validator ItemName List.head
@@ -55,7 +58,8 @@ module Note =
     let rules = multipleLine 1<chars> 600<chars>
     let normalizer = String.trim
 
-    let validator = rules |> StringValidation.createValidator
+    let validator =
+        rules |> StringValidation.createValidator
 
     let tryParse =
         StringValidation.createParser normalizer validator Note List.head
@@ -68,7 +72,8 @@ module Quantity =
     let rules = singleLine 1<chars> 30<chars>
     let normalizer = String.trim
 
-    let validator = rules |> StringValidation.createValidator
+    let validator =
+        rules |> StringValidation.createValidator
 
     let tryParse =
         StringValidation.createParser normalizer validator Quantity List.head
@@ -87,11 +92,13 @@ module Quantity =
           { OneOf = "bunch"; ManyOf = "bunches" }
           { OneOf = "pack"; ManyOf = "packs" }
           { OneOf = "bag"; ManyOf = "bags" }
-          { OneOf = "package"; ManyOf = "packages" }
+          { OneOf = "package"
+            ManyOf = "packages" }
           { OneOf = "box"; ManyOf = "boxes" }
           { OneOf = "pint"; ManyOf = "pints" }
           { OneOf = "gallon"; ManyOf = "gallons" }
-          { OneOf = "container"; ManyOf = "containers" } ]
+          { OneOf = "container"
+            ManyOf = "containers" } ]
 
     let private manyOf u =
         knownUnits
@@ -107,7 +114,8 @@ module Quantity =
         |> Seq.tryHead
         |> Option.defaultValue u
 
-    let private grammar = new Regex("^\s*(\d+)\s*(.*)", RegexOptions.Compiled)
+    let private grammar =
+        new Regex("^\s*(\d+)\s*(.*)", RegexOptions.Compiled)
 
     type private ParsedQuantity = { Quantity: int; Units: string }
 
@@ -135,7 +143,10 @@ module Quantity =
             | Some i ->
                 let qty = i.Quantity + 1
 
-                let result = { Quantity = qty; Units = i.Units |> manyOf } |> format
+                let result =
+                    { Quantity = qty
+                      Units = i.Units |> manyOf }
+                    |> format
 
                 Some result
 
@@ -158,9 +169,11 @@ module Quantity =
 
                 Some result
 
-    let increaseQty qty = qty |> asText |> increase |> Option.map Quantity // not good logic; Quantity.create makes a Result
+    let increaseQty qty =
+        qty |> asText |> increase |> Option.map Quantity // not good logic; Quantity.create makes a Result
 
-    let decreaseQty qty = qty |> asText |> decrease |> Option.map Quantity
+    let decreaseQty qty =
+        qty |> asText |> decrease |> Option.map Quantity
 
 [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
 module Frequency =
@@ -242,7 +255,9 @@ module Schedule =
         | Schedule.Once -> Schedule.Completed
         | Schedule.Repeat r ->
             { r with
-                  PostponedUntil = now.AddDays(r.Frequency |> Frequency.days |> float) |> Some }
+                  PostponedUntil =
+                      now.AddDays(r.Frequency |> Frequency.days |> float)
+                      |> Some }
             |> Schedule.Repeat
 
     let activate s =
@@ -258,19 +273,28 @@ module Schedule =
             |> Result.okOrDefaultValue Frequency.frequencyDefault
 
         match s with
-        | Schedule.Completed -> Schedule.Repeat { Repeat.Frequency = f; Repeat.PostponedUntil = None }
-        | Schedule.Once -> Schedule.Repeat { Repeat.Frequency = f; Repeat.PostponedUntil = None }
+        | Schedule.Completed ->
+            Schedule.Repeat
+                { Repeat.Frequency = f
+                  Repeat.PostponedUntil = None }
+        | Schedule.Once ->
+            Schedule.Repeat
+                { Repeat.Frequency = f
+                  Repeat.PostponedUntil = None }
         | Schedule.Repeat r -> if (r.Frequency = f) then s else Schedule.Repeat { r with Frequency = f }
 
     let withoutPostpone s =
         match s with
-        | Schedule.Repeat ({ PostponedUntil = Some _ } as r) -> { r with PostponedUntil = None } |> Schedule.Repeat
+        | Schedule.Repeat ({ PostponedUntil = Some _ } as r) ->
+            { r with PostponedUntil = None }
+            |> Schedule.Repeat
         | _ -> s
 
     let tryPostpone (now: DateTimeOffset) (d: int<days>) s =
         match s with
         | Schedule.Repeat r ->
-            { r with PostponedUntil = now.AddDays(d |> float) |> Some }
+            { r with
+                  PostponedUntil = now.AddDays(d |> float) |> Some }
             |> Schedule.Repeat
             |> Ok
         | _ -> Error "Only repeating items can be postponed."
@@ -287,15 +311,19 @@ module Schedule =
 [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
 module Item =
 
-    let mapSchedule f i = { i with Item.Schedule = i.Schedule |> f }
+    let mapSchedule f i =
+        { i with
+              Item.Schedule = i.Schedule |> f }
 
-    let markComplete (now: DateTimeOffset) i = i |> mapSchedule (Schedule.completeNext now)
+    let markComplete (now: DateTimeOffset) i =
+        i |> mapSchedule (Schedule.completeNext now)
 
     let buyAgain i = i |> mapSchedule Schedule.activate
 
     let buyAgainWithRepeat d i = i |> mapSchedule (Schedule.repeat d)
 
-    let removePostpone i = i |> mapSchedule Schedule.withoutPostpone
+    let removePostpone i =
+        i |> mapSchedule Schedule.withoutPostpone
 
     let postpone now days i =
         i
@@ -323,7 +351,9 @@ module Item =
         | ClearCategory -> { i with CategoryId = None }
         | Repeat f ->
             { i with
-                  Schedule = i.Schedule |> Schedule.repeat (f |> Frequency.days) }
+                  Schedule =
+                      i.Schedule
+                      |> Schedule.repeat (f |> Frequency.days) }
         | ScheduleOnce -> { i with Schedule = Schedule.Once }
 
 [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
@@ -335,7 +365,8 @@ module CategoryId =
         match i with
         | CategoryId g -> g |> Guid.serialize
 
-    let deserialize s = s |> Guid.tryDeserialize |> Option.map CategoryId
+    let deserialize s =
+        s |> Guid.tryDeserialize |> Option.map CategoryId
 
 [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
 module CategoryName =
@@ -343,7 +374,8 @@ module CategoryName =
     let rules = singleLine 3<chars> 30<chars>
     let normalizer = String.trim
 
-    let validator = rules |> StringValidation.createValidator
+    let validator =
+        rules |> StringValidation.createValidator
 
     let tryParse =
         StringValidation.createParser normalizer validator CategoryName List.head
@@ -359,7 +391,8 @@ module StoreId =
         match i with
         | StoreId g -> g |> Guid.serialize
 
-    let deserialize s = s |> Guid.tryDeserialize |> Option.map StoreId
+    let deserialize s =
+        s |> Guid.tryDeserialize |> Option.map StoreId
 
 [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
 module StoreName =
@@ -367,7 +400,8 @@ module StoreName =
     let rules = singleLine 3<chars> 30<chars>
     let normalizer = String.trim
 
-    let validator = rules |> StringValidation.createValidator
+    let validator =
+        rules |> StringValidation.createValidator
 
     let tryParse =
         StringValidation.createParser normalizer validator StoreName List.head
@@ -401,17 +435,19 @@ module NotSoldItem =
                         parts.[0]
                         |> StoreId.deserialize
                         |> Option.map Ok
-                        |> Option.defaultValue
-                            (sprintf "Could not deserialize the store ID in a NotSoldItem: %s" s
-                             |> Error)
+                        |> Option.defaultValue (
+                            sprintf "Could not deserialize the store ID in a NotSoldItem: %s" s
+                            |> Error
+                        )
 
                     let! itemId =
                         parts.[1]
                         |> ItemId.deserialize
                         |> Option.map Ok
-                        |> Option.defaultValue
-                            (sprintf "Could not deserialize the item ID in a NotSoldItem: %s" s
-                             |> Error)
+                        |> Option.defaultValue (
+                            sprintf "Could not deserialize the item ID in a NotSoldItem: %s" s
+                            |> Error
+                        )
 
                     return
                         { NotSoldItem.StoreId = storeId
@@ -430,7 +466,9 @@ module TextBox =
 
     let typeText s t = { t with ValueTyping = s }
 
-    let loseFocus normalize t = { t with ValueCommitted = normalize t.ValueTyping }
+    let loseFocus normalize t =
+        { t with
+              ValueCommitted = normalize t.ValueTyping }
 
     let update normalize msg t =
         match msg with
@@ -443,11 +481,18 @@ module SearchTerm =
     let rules =
         { MinLength = 1<chars>
           MaxLength = 20<chars>
-          StringRules.OnlyContains = [ Letter; Mark; Number; Punctuation; Space; Symbol ] }
+          StringRules.OnlyContains =
+              [ Letter
+                Mark
+                Number
+                Punctuation
+                Space
+                Symbol ] }
 
     let normalizer = String.trim
 
-    let validator = rules |> StringValidation.createValidator
+    let validator =
+        rules |> StringValidation.createValidator
 
     let tryParse s =
         s
@@ -516,7 +561,9 @@ module SearchTerm =
                 | Some i -> sprintf "((%s)+(%s)*)+" (escape s) (escape (i.Middle + i.Edge))
                 | None -> sprintf "(%s)+" (escape s)
 
-        let options = RegexOptions.IgnoreCase ||| RegexOptions.CultureInvariant
+        let options =
+            RegexOptions.IgnoreCase
+            ||| RegexOptions.CultureInvariant
 
         new Regex(pattern, options)
 
@@ -529,7 +576,7 @@ module ShoppingListSettings =
           HideCompletedItems = false
           TextFilter = TextBox.create "" }
 
-    let storeFilterIsValid stores (s:ShoppingListSettings) =
+    let storeFilterIsValid stores (s: ShoppingListSettings) =
         s.StoreFilter
         |> Option.map (fun f -> stores |> Seq.contains f)
         |> Option.defaultValue true
@@ -538,7 +585,8 @@ module ShoppingListSettings =
 
     let setStoreFilter k s = { s with StoreFilter = Some k }
 
-    let clearStoreFilterIf k s = if s.StoreFilter = Some k then s |> clearStoreFilter else s
+    let clearStoreFilterIf k s =
+        if s.StoreFilter = Some k then s |> clearStoreFilter else s
 
     let private coerceSearchText s =
         s
@@ -548,7 +596,9 @@ module ShoppingListSettings =
 
     let updateTextFilter msg s =
         { s with
-              TextFilter = s.TextFilter |> TextBox.update coerceSearchText msg }
+              TextFilter =
+                  s.TextFilter
+                  |> TextBox.update coerceSearchText msg }
 
     let clearItemFilter s =
         s
@@ -583,11 +633,11 @@ module ShoppingListSettings =
 [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
 module UserSettings =
 
-    type Message = 
+    type Message =
         | SetFontSize of FontSize
         | ShoppingListSettingsMessage of ShoppingListSettings.Message
 
-    let create userId = 
+    let create userId =
         { UserSettings.UserId = userId
           ShoppingListSettings = ShoppingListSettings.create
           FontSize = FontSize.NormalFontSize }
@@ -595,15 +645,18 @@ module UserSettings =
     let update (msg: Message) (s: UserSettings) =
         match msg with
         | SetFontSize f -> { s with FontSize = f }
-        | ShoppingListSettingsMessage m -> 
+        | ShoppingListSettingsMessage m ->
             s.ShoppingListSettings
             |> ShoppingListSettings.update m
-            |> fun settings -> { s with ShoppingListSettings = settings }
+            |> fun settings ->
+                { s with
+                      ShoppingListSettings = settings }
 
 [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
 module ItemForm =
 
-    let itemNameValidation (f: ItemForm) = f.ItemName.ValueTyping |> ItemName.tryParse
+    let itemNameValidation (f: ItemForm) =
+        f.ItemName.ValueTyping |> ItemName.tryParse
 
     let updateItemName msg (f: ItemForm) =
         f.ItemName
@@ -624,9 +677,13 @@ module ItemForm =
         |> TextBox.update Note.normalizer msg
         |> fun n -> { f with Note = n }
 
-    let noteValidation (f: ItemForm) = f.Note.ValueTyping |> String.tryParseOptional Note.tryParse
+    let noteValidation (f: ItemForm) =
+        f.Note.ValueTyping
+        |> String.tryParseOptional Note.tryParse
 
-    let categoryModeChooseExisting f = { f with CategoryMode = ChooseExisting }
+    let categoryModeChooseExisting f =
+        { f with CategoryMode = ChooseExisting }
+
     let categoryModeCreateNew f = { f with CategoryMode = CreateNew }
     let chooseCategoryUncategorized f = { f with CategoryChoice = None }
 
@@ -642,7 +699,9 @@ module ItemForm =
                   |> List.find (fun j -> j.CategoryId = CategoryId i)
                   |> Some }
 
-    let categoryNameValidation (f: ItemForm) = f.NewCategoryName.ValueTyping |> CategoryName.tryParse
+    let categoryNameValidation (f: ItemForm) =
+        f.NewCategoryName.ValueTyping
+        |> CategoryName.tryParse
 
     let categoryNameChange s (f: ItemForm) =
         { f with
@@ -657,10 +716,11 @@ module ItemForm =
             f.CategoryChoiceList
             |> Seq.tryFind
                 (fun i ->
-                    String.Equals
-                        (i.CategoryName |> CategoryName.asText,
-                         normalized.ValueCommitted,
-                         StringComparison.InvariantCultureIgnoreCase))
+                    String.Equals(
+                        i.CategoryName |> CategoryName.asText,
+                        normalized.ValueCommitted,
+                        StringComparison.InvariantCultureIgnoreCase
+                    ))
 
         match exists with
         | None -> { f with NewCategoryName = normalized }
@@ -678,12 +738,35 @@ module ItemForm =
             |> Option.defaultValue ""
         | CategoryMode.CreateNew -> f.NewCategoryName.ValueCommitted
 
-    let scheduleOnce f = { f with ScheduleKind = Once; IsComplete = false }
+    let scheduleOnce f =
+        { f with
+              ScheduleKind = Once
+              IsComplete = false }
 
-    let scheduleCompleted f = { f with ScheduleKind = Completed; IsComplete = true }
-    let scheduleRepeat f = { f with ScheduleKind = Repeat; IsComplete = false }
+    let scheduleCompleted f =
+        { f with
+              ScheduleKind = Completed
+              IsComplete = true }
 
-    let frequencyCoerceIntoBounds d = Frequency.rules |> RangeValidation.forceIntoBounds d
+    let scheduleRepeat f =
+        { f with
+              ScheduleKind = Repeat
+              IsComplete = false }
+
+    let scheduleCurrent (now:DateTimeOffset) (f: ItemForm) =
+        match f.ScheduleKind with
+        | Completed -> Schedule.Completed
+        | Once -> Schedule.Once
+        | Repeat ->
+            { Repeat.Frequency = f.Frequency
+              Repeat.PostponedUntil =
+                  f.Postpone
+                  |> Option.map (fun d -> now.AddDays(d |> float)) }
+            |> Schedule.Repeat
+
+    let frequencyCoerceIntoBounds d =
+        Frequency.rules
+        |> RangeValidation.forceIntoBounds d
 
     let frequencySet v f =
         { f with
@@ -735,7 +818,10 @@ module ItemForm =
               Postpone = f.Frequency |> Frequency.days |> Some
               IsComplete = false }
 
-    let postponeClear f = { f with Postpone = None; IsComplete = false }
+    let postponeClear f =
+        { f with
+              Postpone = None
+              IsComplete = false }
 
     let purchased f =
         match f.ScheduleKind with
@@ -745,22 +831,33 @@ module ItemForm =
 
     let toggleComplete f =
         match f.ScheduleKind with
-        | Once -> { f with ScheduleKind = Completed; IsComplete = true }
-        | Completed -> { f with ScheduleKind = Once; IsComplete = false }
+        | Once ->
+            { f with
+                  ScheduleKind = Completed
+                  IsComplete = true }
+        | Completed ->
+            { f with
+                  ScheduleKind = Once
+                  IsComplete = false }
         | Repeat ->
             match f.IsComplete with
             | false ->
                 { f with
                       Postpone = f.Frequency |> Frequency.days |> Some
                       IsComplete = true }
-            | true -> { f with Postpone = None; IsComplete = false }
+            | true ->
+                { f with
+                      Postpone = None
+                      IsComplete = false }
 
     let postponeDurationAsText (d: int<days>) =
         let d = d |> int
 
-        let monthsExactly = if d / 30 > 0 && d % 30 = 0 then Some(d / 30) else None
+        let monthsExactly =
+            if d / 30 > 0 && d % 30 = 0 then Some(d / 30) else None
 
-        let weeksExactly = if d / 7 > 0 && d % 7 = 0 then Some(d / 7) else None
+        let weeksExactly =
+            if d / 7 > 0 && d % 7 = 0 then Some(d / 7) else None
 
         match monthsExactly with
         | Some m -> if m = 1 then "1 month" else sprintf "%i months" m
@@ -783,6 +880,13 @@ module ItemForm =
               ItemForm.Stores =
                   f.Stores
                   |> List.map (fun a -> if a.Store.StoreId = id then { a with IsSold = isSold } else a) }
+
+    let storesSetAllAvailability isSoldAt (f:ItemForm) =
+        f.Stores
+        |> Seq.map (fun v -> 
+            { v with IsSold = isSoldAt |> Set.contains (v.Store)})
+        |> List.ofSeq
+        |> fun availability -> { f with Stores = availability }
 
     let canDelete (f: ItemForm) = f.ItemId.IsSome
 
@@ -877,7 +981,9 @@ module ItemForm =
                           Category.Etag = None }
 
         let item =
-            { Item.ItemId = f.ItemId |> Option.defaultWith (fun () -> ItemId.create ())
+            { Item.ItemId =
+                  f.ItemId
+                  |> Option.defaultWith (fun () -> ItemId.create ())
               Item.ItemName = f |> itemNameValidation |> Result.okOrThrow
               Item.Etag = f.Etag
               Item.CategoryId =
@@ -887,14 +993,7 @@ module ItemForm =
                   |> Option.map (fun i -> i.CategoryId)
               Item.Quantity = f |> quantityValidation |> Result.okOrThrow
               Item.Note = f |> noteValidation |> Result.okOrThrow
-              Item.Schedule =
-                  match f.ScheduleKind with
-                  | Completed -> Schedule.Completed
-                  | Once -> Schedule.Once
-                  | Repeat ->
-                      { Repeat.Frequency = f.Frequency
-                        Repeat.PostponedUntil = f.Postpone |> Option.map (fun d -> now.AddDays(d |> float)) }
-                      |> Schedule.Repeat }
+              Item.Schedule = f |> scheduleCurrent now }
 
         let notSold =
             f.Stores
@@ -921,6 +1020,7 @@ module ItemForm =
         | ChooseCategory of Guid
         | NewCategoryName of TextBoxMessage
         | StoresSetAvailability of store: StoreId * isSold: bool
+        | StoresSetAllAvailability of Set<Store>
         | Purchased
         | ToggleComplete
         | Transaction of Message seq
@@ -943,6 +1043,7 @@ module ItemForm =
         | NewCategoryName (TextBoxMessage.TypeText s) -> f |> categoryNameChange s
         | NewCategoryName (TextBoxMessage.LoseFocus) -> f |> categoryNameBlur
         | StoresSetAvailability (id: StoreId, isSold: bool) -> f |> storesSetAvailability id isSold
+        | StoresSetAllAvailability isSoldAt -> f |> storesSetAllAvailability isSoldAt
         | Purchased -> f |> purchased
         | ToggleComplete -> f |> toggleComplete
         | Message.Transaction msgs -> msgs |> Seq.fold (fun f m -> update m f) f
