@@ -72,21 +72,32 @@
     text-align: left;
     align-items: center;
     padding-right: 3rem;
+    user-select: none;
 }
 
-    .propertyGrid input {
-        width: 90%;
-        max-width: 40ch;
+button.propertyGrid {
+    outline: none;
+    box-shadow: none !important;
+}
+
+    button.propertyGrid:active {
+        outline: none !important;
+        background-color: ButtonFace;
     }
+
+    button.propertyGrid:focus {
+        outline: none !important;
+    }
+
+.propertyGrid input {
+    width: 90%;
+    max-width: 40ch;
+}
 
 input.hardComplete {
     text-decoration: line-through;
     text-decoration-color: #808080;
     border-color: transparent;
-}
-
-.divButton:hover {
-    cursor: pointer;
 }
 
 /* Could not get this to work on ios */
