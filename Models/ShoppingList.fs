@@ -73,7 +73,7 @@ let createItemFromItemId (id: CoreTypes.ItemId) state =
     createItem None item state
 
 let create now state =
-    let settings = state |> State.shoppingListSettings
+    let settings = (state |> State.userSettingsForLoggedInUser).ShoppingListSettings
 
     let find =
         settings.TextFilter.ValueTyping

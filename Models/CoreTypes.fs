@@ -85,6 +85,12 @@ type TextBoxMessage =
 
 type SearchTerm = SearchTerm of string
 
+type ShoppingListSettings =
+    { StoreFilter: StoreId option
+      PostponedViewHorizon: int<days>
+      HideCompletedItems: bool
+      TextFilter : TextBox }
+
 type FontSize = 
     | NormalFontSize
     | LargeFontSize
@@ -92,17 +98,10 @@ type FontSize =
 type UserSettings =
     { UserId : UserId
       FontSize : FontSize
+      ShoppingListSettings : ShoppingListSettings
     }
     interface IKey<UserId> with
         member this.Key = this.UserId
-
-type ShoppingListSettings =
-    { StoreFilter: StoreId option
-      PostponedViewHorizon: int<days>
-      HideCompletedItems: bool
-      TextFilter : TextBox }
-    interface IKey<string> with
-        member this.Key = "singleton"
 
 // If this was a generic add-on to State, maybe could define this and it's
 // extension methods in one file (using implicit extensions) later in the

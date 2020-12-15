@@ -10,7 +10,6 @@ type State =
       Stores: DataTable<StoreId, Store>
       NotSoldItems: DataTable<NotSoldItem, NotSoldItem>
       UserSettings : DataTable<UserId,UserSettings>
-      ShoppingListSettings: DataRow<ShoppingListSettings>
       LoggedInUser : UserId
       LastCosmosTimestamp: int option
       ItemEditPage: ItemForm option }
@@ -31,7 +30,6 @@ type StateMessage =
     | ReorganizeStoresMessage of ReorganizeStoresMessage
     | ItemMessage of ItemMessage
     | ItemAvailabilityMessage of ItemId * ItemAvailability seq
-    | ShoppingListSettingsMessage of ShoppingListSettings.Message
     | UserSettingsMessage of UserSettings.Message
     | Import of ImportChanges
     | AcceptAllChanges

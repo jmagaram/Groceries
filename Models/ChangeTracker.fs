@@ -97,6 +97,8 @@ module DataTable =
         match dt with
         | DataTable dt -> dt
 
+    let keys dt = dt |> asMap |> Map.keys
+
     let empty<'Key, 'T when 'Key: comparison> = Map.empty<'Key, DataRow<'T>> |> DataTable
 
     let tryFindRow k dt = dt |> asMap |> Map.tryFind k

@@ -521,20 +521,6 @@ module SearchTerm =
         new Regex(pattern, options)
 
 [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
-module UserSettings =
-
-    type Message = 
-        | SetFontSize of FontSize
-
-    let create userId = 
-        { UserSettings.UserId = userId
-          FontSize = FontSize.NormalFontSize }
-
-    let update (msg: Message) (s: UserSettings) =
-        match msg with
-        | SetFontSize f -> { s with FontSize = f }
-
-[<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
 module ShoppingListSettings =
 
     let create =
@@ -543,9 +529,14 @@ module ShoppingListSettings =
           HideCompletedItems = false
           TextFilter = TextBox.create "" }
 
-    let setStoreFilter k s = { s with StoreFilter = Some k }
+    let storeFilterIsValid stores (s:ShoppingListSettings) =
+        s.StoreFilter
+        |> Option.map (fun f -> stores |> Seq.contains f)
+        |> Option.defaultValue true
 
     let clearStoreFilter s = { s with StoreFilter = None }
+
+    let setStoreFilter k s = { s with StoreFilter = Some k }
 
     let clearStoreFilterIf k s = if s.StoreFilter = Some k then s |> clearStoreFilter else s
 
@@ -588,6 +579,26 @@ module ShoppingListSettings =
         | ClearItemFilter -> s |> clearItemFilter
         | TextFilter msg -> s |> updateTextFilter msg
         | Transaction msgs -> msgs |> Seq.fold (fun res i -> res |> update i) s
+
+[<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
+module UserSettings =
+
+    type Message = 
+        | SetFontSize of FontSize
+        | ShoppingListSettingsMessage of ShoppingListSettings.Message
+
+    let create userId = 
+        { UserSettings.UserId = userId
+          ShoppingListSettings = ShoppingListSettings.create
+          FontSize = FontSize.NormalFontSize }
+
+    let update (msg: Message) (s: UserSettings) =
+        match msg with
+        | SetFontSize f -> { s with FontSize = f }
+        | ShoppingListSettingsMessage m -> 
+            s.ShoppingListSettings
+            |> ShoppingListSettings.update m
+            |> fun settings -> { s with ShoppingListSettings = settings }
 
 [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
 module ItemForm =
