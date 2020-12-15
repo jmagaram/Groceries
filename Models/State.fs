@@ -13,6 +13,7 @@ let storesTable (s: State) = s.Stores
 let itemsTable (s: State) = s.Items
 let notSoldTable (s: State) = s.NotSoldItems
 let shoppingListSettingsRow (s: State) = s.ShoppingListSettings
+let userSettingsTable (s:State) = s.UserSettings
 
 let shoppingListSettings s =
     s
@@ -20,10 +21,17 @@ let shoppingListSettings s =
     |> DataRow.current
     |> Option.get
 
+let userSettingsForLoggedInUser (s:State) =
+    s 
+    |> userSettingsTable 
+    |> DataTable.tryFindCurrent (s.LoggedInUser)
+    |> Option.defaultValue (UserSettings.create (s.LoggedInUser))
+
 let categories = categoriesTable >> DataTable.current
 let stores = storesTable >> DataTable.current
 let items = itemsTable >> DataTable.current
 let notSold = notSoldTable >> DataTable.current
+let userSettings = userSettingsTable >> DataTable.current
 
 let tryFindItem id s = s |> itemsTable |> DataTable.tryFindCurrent id
 let tryFindCategory id s = s |> categoriesTable |> DataTable.tryFindCurrent id
@@ -75,7 +83,7 @@ let hasChanges s =
 let mapCategories f s = { s with Categories = f s.Categories }
 let mapStores f s = { s with State.Stores = f s.Stores }
 let mapItems f s = { s with Items = f s.Items }
-
+let mapUserSettings f s = { s with UserSettings = f s.UserSettings }
 let mapNotSoldItems f s = { s with NotSoldItems = f s.NotSoldItems }
 
 let mapShoppingListSettings f s =
@@ -175,17 +183,18 @@ let acceptAllChanges s =
     |> mapNotSoldItems DataTable.acceptChanges
     |> fixForeignKeys
 
-let createDefault =
+let createDefault loggedInUser =
     { Categories = DataTable.empty
       Items = DataTable.empty
       Stores = DataTable.empty
       NotSoldItems = DataTable.empty
+      UserSettings = DataTable.empty
+      LoggedInUser = loggedInUser
       ShoppingListSettings = DataRow.unchanged ShoppingListSettings.create
-      GlobalSettings = DataRow.unchanged GlobalSettings.create
       LastCosmosTimestamp = None
       ItemEditPage = None }
 
-let createSampleData () =
+let createSampleData loggedInUser =
 
     let newCategory n =
         insertCategory
@@ -259,7 +268,7 @@ let createSampleData () =
 
         s |> mapNotSoldItems (DataTable.insert ns)
 
-    createDefault
+    createDefault loggedInUser
     |> newCategory "Meat and Seafood"
     |> newCategory "Dairy"
     |> newCategory "Frozen"
@@ -295,13 +304,6 @@ let handleItemMessage now msg (s: State) =
 let handleShoppingListSettingsMessage (msg: ShoppingListSettings.Message) (s: State) =
     s
     |> mapShoppingListSettings (ShoppingListSettings.update msg)
-
-let handleGlobalSettingsMessage (msg: GlobalSettings.Message) (s: State) =
-    { s with
-          GlobalSettings =
-              s.GlobalSettings
-              |> DataRow.tryMap (GlobalSettings.update msg)
-              |> Result.okOrThrow }
 
 let handleItemEditPageMessage (now: DateTimeOffset) (msg: ItemEditPageMessage) (s: State) =
     let form state =
@@ -522,6 +524,13 @@ let handleItemAvailabilityMessage itemId (msg: ItemAvailability seq) s =
     msg
     |> Seq.fold (fun s i -> s |> updateItemAvailability itemId i) s
 
+let handleUserSettingsMessage (msg:UserSettings.Message) (s:State) = 
+    let settings = 
+        s 
+        |> userSettingsForLoggedInUser
+        |> UserSettings.update msg
+    s |> mapUserSettings (DataTable.upsert settings)
+
 let update: Update =
     fun clock msg s ->
         let now = clock ()
@@ -533,13 +542,13 @@ let update: Update =
 
             match msg with
             | ItemMessage msg -> s |> handleItemMessage now msg
+            | UserSettingsMessage msg -> s |> handleUserSettingsMessage msg
             | ReorganizeCategoriesMessage msg -> s |> reorganizeCategories msg
             | ReorganizeStoresMessage msg -> s |> reorganizeStores msg
             | AcceptAllChanges -> s |> acceptAllChanges
             | Import c -> s |> importChanges c
-            | ResetToSampleData -> createSampleData ()
+            | ResetToSampleData -> createSampleData s.LoggedInUser
             | ShoppingListSettingsMessage msg -> s |> handleShoppingListSettingsMessage msg
-            | GlobalSettingsMessage msg -> s |> handleGlobalSettingsMessage msg
             | ItemEditPageMessage msg -> s |> handleItemEditPageMessage now msg
             | ItemAvailabilityMessage (itemId, availability) -> s |> handleItemAvailabilityMessage itemId availability
             | Transaction msg -> msg |> Seq.fold (fun res i -> go i res) s

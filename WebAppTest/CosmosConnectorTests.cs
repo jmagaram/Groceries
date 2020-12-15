@@ -22,9 +22,9 @@ namespace WebAppTest {
             using var c = TestConnector();
             await c.DeleteDatabaseAsync();
             await c.CreateDatabaseAsync();
-            var x = StateModule.createSampleData();
+            var x = StateModule.createSampleData (UserIdModule.anonymous);
             await Dto.pushRequest(x).DoAsync(changes => c.PushAsync(changes, CancellationToken.None));
-            var y = StateModule.createDefault;
+            var y = StateModule.createDefault (UserIdModule.anonymous);
             var changes = await c.PullEverythingAsync(CancellationToken.None);
             var import = Dto.changesAsImport(changes);
             var z = StateModule.importChanges(import.Value, y);

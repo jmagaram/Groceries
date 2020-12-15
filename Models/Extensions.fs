@@ -24,7 +24,7 @@ type StateExtensions =
     static member ShoppingList(me: StateTypes.State, now: DateTimeOffset) = me |> ShoppingList.create (now)
 
     [<Extension>]
-    static member GetGlobalSettings(me: StateTypes.State) = me.GlobalSettings |> DataRow.current |> Option.get
+    static member LoggedInUserSettings(me:StateTypes.State) = me |> State.userSettingsForLoggedInUser
 
 [<Extension>]
 type ScheduleExtensions =

@@ -111,7 +111,7 @@ type Service(state: StateTypes.State, clock, cosmos: ICosmosConnector) =
                 do! syncIncremental
         }
 
-    new(cosmos) = Service(State.createDefault, clock, cosmos)
+    new(cosmos) = Service(State.createDefault UserId.anonymous, clock, cosmos)
 
     member me.InitializeAsync() = initialize |> startAsyncUnit
     member me.UpdateAsync(msg) = updateAsync msg |> startAsyncUnit

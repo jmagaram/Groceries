@@ -12,6 +12,9 @@ type CategoryId = CategoryId of Guid
 type StoreId = StoreId of Guid
 
 [<Struct>]
+type UserId = UserId of Guid
+
+[<Struct>]
 type ItemName = ItemName of string
 
 type SerializedId = string
@@ -82,17 +85,22 @@ type TextBoxMessage =
 
 type SearchTerm = SearchTerm of string
 
+type FontSize = 
+    | NormalFontSize
+    | LargeFontSize
+
+type UserSettings =
+    { UserId : UserId
+      FontSize : FontSize
+    }
+    interface IKey<UserId> with
+        member this.Key = this.UserId
+
 type ShoppingListSettings =
     { StoreFilter: StoreId option
       PostponedViewHorizon: int<days>
       HideCompletedItems: bool
       TextFilter : TextBox }
-    interface IKey<string> with
-        member this.Key = "singleton"
-
-type GlobalSettings = 
-    { LargerFontSize : bool
-    }
     interface IKey<string> with
         member this.Key = "singleton"
 

@@ -19,23 +19,23 @@
         margin-bottom:1rem;
     }
 </style>
-<div @key="StateService.CurrentState.GetGlobalSettings().LargerFontSize" class="col">
+<div @key="StateService.CurrentState.LoggedInUserSettings().FontSize" class="col">
     <ul style="margin-top:1rem">
         <li><a href="/shoppinglist">Shopping list</a></li>
         <li><a href="/categories">Manage categories</a></li>
         <li><a href="/stores">Manage stores</a></li>
     </ul>
     <div style="margin-top:2rem;margin-bottom:1rem">Settings</div>
-    <Checkbox IsChecked="StateService.CurrentState.GetGlobalSettings().LargerFontSize" Title="Larger text" IsCheckedChanged="SetLargerFontSize"/>
+    <Checkbox IsChecked="StateService.CurrentState.LoggedInUserSettings().FontSize.IsLargeFontSize" Title="Larger text" IsCheckedChanged="SetLargerFontSize"/>
     
 </div>
 @code {
     [Inject]
     public Service StateService { get; set; }
 
-    public async Task SetLargerFontSize(bool b) {
-        var settingsMessage = GlobalSettingsModule.Message.NewUseLargerFontSize(b);
-        var stateMessage = StateTypes.StateMessage.NewGlobalSettingsMessage(settingsMessage);
+    public async Task SetLargerFontSize(bool isLargeFont) {
+        var settingsMessage = UserSettingsModule.Message.NewSetFontSize(isLargeFont ? CoreTypes.FontSize.LargeFontSize : CoreTypes.FontSize.NormalFontSize);
+        var stateMessage = StateTypes.StateMessage.NewUserSettingsMessage(settingsMessage);
         await StateService.UpdateAsync(stateMessage);
     }
 }

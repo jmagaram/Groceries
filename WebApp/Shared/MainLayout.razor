@@ -2,7 +2,7 @@
 @using Models
 @using static Models.StateExtensions
 
-@if (StateService.CurrentState.GetGlobalSettings().LargerFontSize) {
+@if (StateService.CurrentState.LoggedInUserSettings().FontSize.IsLargeFontSize) {
     <style>
         body {
             font-size:larger;

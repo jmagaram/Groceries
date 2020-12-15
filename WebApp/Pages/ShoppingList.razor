@@ -136,7 +136,7 @@
             display: none;
         }
 
-        @{ var inputWidth = (StateService.CurrentState.GetGlobalSettings().LargerFontSize) ? "15em" : "17em"; }
+        @{ var inputWidth = (StateService.CurrentState.LoggedInUserSettings().FontSize.IsLargeFontSize) ? "15em" : "17em"; }
 
 #searchTrigger.search > #searchInput {
             opacity: 1;

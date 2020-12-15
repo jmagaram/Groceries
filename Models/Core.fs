@@ -24,6 +24,19 @@ module ItemId =
     let deserialize s = s |> Guid.tryDeserialize |> Option.map ItemId
 
 [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
+module UserId =
+
+    let create () = newGuid () |> UserId
+
+    let serialize i =
+        match i with
+        | UserId g -> g |> Guid.serialize
+
+    let deserialize s = s |> Guid.tryDeserialize |> Option.map UserId
+
+    let anonymous = Guid.Empty |> UserId
+
+[<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
 module ItemName =
 
     let rules = singleLine 3<chars> 50<chars>
@@ -508,15 +521,18 @@ module SearchTerm =
         new Regex(pattern, options)
 
 [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
-module GlobalSettings =
+module UserSettings =
 
-    type Message = UseLargerFontSize of bool
+    type Message = 
+        | SetFontSize of FontSize
 
-    let create = { GlobalSettings.LargerFontSize = false }
+    let create userId = 
+        { UserSettings.UserId = userId
+          FontSize = FontSize.NormalFontSize }
 
-    let update (msg: Message) (s: GlobalSettings) =
+    let update (msg: Message) (s: UserSettings) =
         match msg with
-        | UseLargerFontSize b -> { s with LargerFontSize = b }
+        | SetFontSize f -> { s with FontSize = f }
 
 [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
 module ShoppingListSettings =

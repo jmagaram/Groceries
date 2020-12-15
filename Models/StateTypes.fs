@@ -9,8 +9,9 @@ type State =
       Categories: DataTable<CategoryId, Category>
       Stores: DataTable<StoreId, Store>
       NotSoldItems: DataTable<NotSoldItem, NotSoldItem>
+      UserSettings : DataTable<UserId,UserSettings>
       ShoppingListSettings: DataRow<ShoppingListSettings>
-      GlobalSettings : DataRow<GlobalSettings>
+      LoggedInUser : UserId
       LastCosmosTimestamp: int option
       ItemEditPage: ItemForm option }
 
@@ -31,7 +32,7 @@ type StateMessage =
     | ItemMessage of ItemMessage
     | ItemAvailabilityMessage of ItemId * ItemAvailability seq
     | ShoppingListSettingsMessage of ShoppingListSettings.Message
-    | GlobalSettingsMessage of GlobalSettings.Message
+    | UserSettingsMessage of UserSettings.Message
     | Import of ImportChanges
     | AcceptAllChanges
     | ResetToSampleData
