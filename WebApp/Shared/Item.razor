@@ -105,22 +105,4 @@
 
     [Parameter]
     public EventCallback<CoreTypes.ItemId> OnClick { get; set; }
-
-    [Parameter]
-    public EventCallback<CoreTypes.ItemId> OnClickDelete { get; set; }
-
-    [Parameter]
-    public EventCallback<CoreTypes.ItemId> OnClickComplete { get; set; }
-
-    [Parameter]
-    public EventCallback<CoreTypes.ItemId> OnClickBuyAgain { get; set; }
-
-    [Parameter]
-    public EventCallback<(CoreTypes.ItemId item, int days)> OnClickBuyAgainRepeat { get; set; }
-
-    [Parameter]
-    public EventCallback<CoreTypes.ItemId> OnClickRemovePostpone { get; set; }
-
-    [Parameter]
-    public EventCallback<(CoreTypes.ItemId, int)> OnClickPostpone { get; set; }
 }
