@@ -199,7 +199,7 @@ module Frequency =
 module Schedule =
 
     let commonPostponeChoices =
-        [ 3; 7; 14; 21; 30; 60; 90 ]
+        [ 7; 14; 21; 30; 60; 90; 180 ]
         |> List.map (fun i -> i * 1<days>)
 
     let dueDate (now: DateTimeOffset) s =
@@ -264,7 +264,7 @@ module Schedule =
         match s with
         | Schedule.Completed -> Schedule.Once
         | Schedule.Once -> s
-        | Schedule.Repeat _ -> s
+        | Schedule.Repeat r -> { r with PostponedUntil = None } |> Schedule.Repeat
 
     let repeat d s =
         let f =
