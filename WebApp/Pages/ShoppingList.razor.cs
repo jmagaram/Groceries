@@ -67,6 +67,14 @@ namespace WebApp.Pages
             await StateService.UpdateAsync(stateMessage);
         }
 
+        public async Task UseFontSize(FontSize f)
+        {
+            var settingsMessage = UserSettingsModule.Message.NewSetFontSize(f);
+            var stateMessage = StateMessage.NewUserSettingsMessage(settingsMessage);
+            await StateService.UpdateAsync(stateMessage);
+            Navigation.NavigateTo("/shoppinglist");
+        }
+
         [Inject]
         public Service StateService { get; set; }
 
