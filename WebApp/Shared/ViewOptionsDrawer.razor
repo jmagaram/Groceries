@@ -6,10 +6,9 @@
 
 <ElixDrawer @ref="_drawer">
     <div class="buttonDrawer">
-        <button ontouchstart="" class="drawerButton" @onclick="async _ => await HideUpcoming()"><strong>Hide</strong> completed and upcoming</button>
-        <button ontouchstart="" class="drawerButton" @onclick="async _ => await SelectUpcomingDays(5)">Show <strong>next 5 days</strong></button>
-        <button ontouchstart="" class="drawerButton" @onclick="async _ => await SelectUpcomingDays(14)">Show <strong>next 2 weeks</strong></button>
-        <button ontouchstart="" class="drawerButton" @onclick="async _ => await SelectUpcomingDays(365)">Show <strong>all upcoming and completed</strong></button>
+        <button ontouchstart="" class="drawerButton" @onclick="async _ => await HideUpcoming()">Only items on shopping list <strong>now</strong></button>
+        <button ontouchstart="" class="drawerButton" @onclick="async _ => await SelectUpcomingDays(5)">Show <strong>soon</strong></button>
+        <button ontouchstart="" class="drawerButton" @onclick="async _ => await SelectUpcomingDays(365)">Show <strong>soon and later</strong></button>
     </div>
 </ElixDrawer>
 
