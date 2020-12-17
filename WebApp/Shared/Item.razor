@@ -47,7 +47,10 @@
     }
     <button ontouchstart="" @onclick="async _=>await OnClick.InvokeAsync(ItemQry.ItemId)">
         <div class="properties">
-            <ul class="title">
+            @{
+                string completedClass = ItemQry.Schedule.IsCompleted ? "completed" : "";
+            }
+            <ul class="title @completedClass">
                 @foreach (var i in FormattedTextModule.spans(ItemQry.ItemName))
                 {
                     string highlightClass = i.Format.IsHighlight ? "highlight" : "";
@@ -56,7 +59,7 @@
             </ul>
             @if (ItemQry.Quantity.IsSome())
             {
-                <ul class="quantity">
+                <ul class="quantity @completedClass">
                     @foreach (var i in FormattedTextModule.spans(ItemQry.Quantity.Value))
                     {
                         string highlightClass = i.Format.IsHighlight ? "highlight" : "";
