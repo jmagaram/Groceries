@@ -1,56 +1,133 @@
-﻿.postponeBadge {
-    width: 30px;
-    margin-right: 5px;
+﻿.itemContainer {
+    display: flex;
+    flex-direction: row;
+    align-items: flex-start;
 }
 
-.repeater {
-    width: 15px;
-    margin-right: 10px;
-}
-
-.category {
-}
-
-.note {
-    line-height: 1.0;
-    text-align: left;
-}
-
-.stores {
-    line-height: 1.0;
-    text-align: left;
-}
-
-.quantity {
-    margin-left: 5px;
-    padding-left: 5px;
-    border-left: 1px solid #d3d3d3;
-}
-
-.wholething {
-    margin-bottom: 12px;
-}
-
-elix-menu-button {
-    margin-right: 5px;
-}
-
-    elix-menu-button::part(source) {
-        height: inherit;
-        width: inherit;
+    .itemContainer .iconColumn {
+        width: 3rem;
+        text-align: center;
     }
 
-.menu {
-    transition: all ease-out 0.05s; /*when returning to this*/
-    border: 1px solid rgba(229, 229, 229, 0.00);
-    padding: 0px;
-    background-color: inherit;
+    .itemContainer ul {
+        padding-left: 0;
+        list-style-type: none;
+        margin: 0;
+    }
+
+        .itemContainer ul li {
+            display: inline-block;
+            white-space: pre-wrap;
+        }
+
+        .itemContainer ul.formattedText {
+            padding-left: 0;
+            list-style-type: none;
+            margin: 0;
+        }
+
+        .itemContainer ul li.highlight {
+            background-color: yellow;
+        }
+
+    .itemContainer button {
+        text-align: left;
+        border: none;
+        padding: 0.5rem;
+        background-color: transparent;
+        padding-top: 0.75rem;
+        padding-bottom: 0.75rem;
+        outline: none;
+        box-shadow: none !important;
+    }
+
+        .itemContainer button:focus {
+            outline: none !important;
+        }
+
+        .itemContainer button:active {
+            outline: none !important;
+            background-color: ButtonFace;
+        }
+
+    .itemContainer ul.title {
+        font-weight: bold;
+    }
+
+    .itemContainer .badgeColumn {
+        width: 6rem;
+    }
+
+        .itemContainer .badgeColumn > :first-child {
+            border-radius: 5px;
+            display: inline-flex;
+            flex-direction: row;
+            align-items: center;
+            padding-top: 3px;
+            padding-bottom: 3px;
+            padding-left: 6px;
+            padding-right: 6px;
+        }
+
+.badgeColumn span {
+    margin-left: 5px;
 }
 
-    .menu.opened {
-        border: 1px solid rgba(229, 229, 229, 1.00);
-        padding: 4px;
-        margin-left: -4px;
-        margin-top: -4px;
-        background-color: #ededed;
+.itemContainer .activeBadge {
+    background-color: green;
+    color: white;
+}
+
+.itemContainer .soonBadge {
+    background-color: #d77600;
+    color: white;
+}
+
+.itemContainer .laterBadge {
+    background-color: darkgray;
+}
+
+.itemContainer .stores {
+    display: flex;
+    align-items: center;
+    font-size: smaller;
+}
+
+    .itemContainer .stores ion-icon {
+        font-size: 18px;
+    }
+
+    .itemContainer .stores ul {
+        list-style-type: none;
+    }
+
+        .itemContainer .stores ul > li {
+            text-decoration: line-through;
+            margin-left: 0.3rem;
+        }
+
+.itemContainer .note {
+    line-height: 1.0;
+    text-align: left;
+    font-size: smaller;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+}
+
+    .itemContainer .note ion-icon {
+        font-size: 18px;
+        margin-right: 0.3rem;
+    }
+
+.itemContainer .frequency {
+    font-size: smaller;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+}
+
+    .itemContainer .frequency ion-icon {
+        font-size: 18px;
+        margin-right: 0.3rem;
     }

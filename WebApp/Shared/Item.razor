@@ -1,108 +1,112 @@
-﻿@inject IJSRuntime JSRuntime
-@inject NavigationManager Navigation
-@using Common
+﻿@using Common
 @using Models
 @using static Models.CoreTypes
 
-<div class="wholething" style="display:flex; flex-direction:row">
+<div class="itemContainer">
     @{
         var itemNameClass = ItemQry.Schedule.IsCompleted ? "completed" : "";
+        var daysAway = ItemQry.Schedule.PostponedUntilDays(DateTimeOffset.Now);
+        bool isSoon = daysAway.IsSome() && daysAway.Value <= 5;
+        bool isLater = daysAway.IsSome() && daysAway.Value > 5;
+        bool isActive = ItemQry.Schedule.IsActive();
+        int? laterWeeks = daysAway.AsEnumerable().Select(i => new int?((i / 7) + 1)).FirstOrDefault();
+        int? laterMonths = laterWeeks / 4;
     }
-    @if (!HidePostponeDate) {
-        <div class="postponeBadge">
-            @if (ItemQry.Schedule is Schedule.Repeat r) {
-                var postponedUntilDays = ItemQry.Schedule.PostponedUntilDays(DateTimeOffset.Now);
-                @if (postponedUntilDays.IsSome()) {
-                    var daysAway = postponedUntilDays.Value;
-                    if (daysAway >= 30) {
-                        <span class="badge badge-secondary">@($"{daysAway / 30}m")</span>
-                    }
-                    else if (daysAway >= 7) {
-                        <span class="badge badge-dark">@($"{daysAway / 7}w")</span>
-                    }
-                    else if (daysAway > 0) {
-                        <span class="badge badge-success">@($"{daysAway}d")</span>
-                    }
-                    else {
-                        <span class="badge badge-danger"><Icon Kind="IconKind.Bell" /></span>
-                    }
+    @*@if (!isActive)
+        {
+            <button class="iconColumn" ontouchstart="" @onclick="async _ => await OnClickAddToShoppingList.InvokeAsync(ItemQry.ItemId)"><ion-icon name="add-outline"></ion-icon></button>
+        }*@
+    @if (isSoon || isLater)
+    {
+        <button class="badgeColumn" ontouchstart="" @onclick="_=>OnClickDue.InvokeAsync(ItemQry.ItemId)">
+            @if (isSoon)
+            {
+                <div class="soonBadge">
+                    <ion-icon name="calendar-outline"></ion-icon><span>Soon</span>
+                </div>
+            }
+            else if (laterMonths >= 1)
+            {
+                var description = $"{laterMonths} mo";
+                <div class="laterBadge" style="opacity:0.7">
+                    <ion-icon name="calendar-outline"></ion-icon><span>@description</span>
+                </div>
+            }
+            else
+            {
+                var description = $"{laterWeeks} wk";
+                <div class="laterBadge">
+                    <ion-icon name="calendar-outline"></ion-icon><span>@description</span>
+                </div>
+            }
+        </button>
+    }
+    @if (ItemQry.Schedule.IsCompleted)
+    {
+        <div class="badgeColumn"></div>
+    }
+    <button class="properties" ontouchstart="" @onclick="async _=>await OnClick.InvokeAsync(ItemQry.ItemId)">
+        <ul class="title formattedText">
+            @foreach (var i in FormattedTextModule.spans(ItemQry.ItemName))
+            {
+                string highlightClass = i.Format.IsHighlight ? "highlight" : "";
+                <li class="@highlightClass">@i.Text</li>
+            }
+        </ul>
+        @if (ItemQry.Quantity.IsSome())
+        {
+            <ul class="quantity ">
+                @foreach (var i in FormattedTextModule.spans(ItemQry.Quantity.Value))
+                {
+                    string highlightClass = i.Format.IsHighlight ? "highlight" : "";
+                    <li class="@highlightClass">@i.Text</li>
                 }
-            }
-        </div>
-    }
-    @if (!HideRepeatIcon) {
-        <div class="repeater">
-            @if (ItemQry.Schedule.IsRepeat) {
-                <span style="display:inline-flex" aria-hidden="true"><Icon Kind="IconKind.Repeat" /></span>
-            }
-            else {
-                <text>&nbsp;</text>
-            }
-        </div>
-    }
-    <button class="itemButton" ontouchstart="" @onclick="async _=>await OnClick.InvokeAsync(ItemQry.ItemId)">
-        <div style="display:flex; flex-direction:row">
-            <div>
-                <FormattedText Text="ItemQry.ItemName" Strikethrough="ItemQry.Schedule.IsCompleted" />
-            </div>            @if (!HideQuantity && ItemQry.Quantity.IsSome()) {
-                var quantity = ItemQry.Quantity.Value;
-                <div class="quantity">
-                    <FormattedText Text="@ItemQry.Quantity.Value" />
-                </div>}
-        </div>
-        @if (!HideCategory) {
-            var catName = ItemQry.Category.AsEnumerable().Select(i => i.CategoryName.Item).SingleOrDefault() ?? "(Uncategorized)";
-            <div class="category">
-                @catName
-            </div>}
-        @if (!HideNote && ItemQry.Note.IsSome()) {
-            var note = ItemQry.Note.Value;
-            <div class="note">
-                <FormattedText IsSmall="true" Text="@ItemQry.Note.Value" />
-            </div>}
-        @{
-            if (!HideStores) {
-                var ns = string.Join(", ", ItemQry.Availability.Where(i => !i.IsSold).Select(i => i.Store.StoreName.Item));
-                if (ns != "") {
-                    <div class="stores">
-                        <small style="text-decoration:line-through; color:darkgray">@ns</small>
-                    </div> }
-            }
+            </ul>
         }
+        @if (ItemQry.Note.IsSome())
+        {
+            <div class="note">
+                <ion-icon name="newspaper-outline"></ion-icon>
+                <ul>
+                    @foreach (var i in FormattedTextModule.spans(ItemQry.Note.Value))
+                    {
+                        string highlightClass = i.Format.IsHighlight ? "highlight" : "";
+                        <li class="@highlightClass">@i.Text</li>
+                    }
+                </ul>
+            </div>  }
+        @if (ItemQry.Schedule.IsRepeat)
+        {
+            string frequency = Models.ItemFormModule.frequencyAsText(ItemQry.Schedule.Frequency().Value);
+            <div class="frequency"><ion-icon name="repeat-outline"></ion-icon><span>@frequency</span></div>
+        }
+        @if (!HideStores && ItemQry.Availability.Any(i => i.IsSold == false))
+        {
+            <div class="stores">
+                <ion-icon name="storefront-outline"></ion-icon>
+                <ul>
+                    @foreach (var i in ItemQry.Availability.Where(j => j.IsSold == false).Select(j => j.Store.StoreName.AsText()))
+                    {
+                        <li>@i</li>
+                    }
+                </ul>
+            </div>}
     </button>
 </div>
 
 @code {
-
-    public string MenuClass { get; set; } = "menu";
-
-    public async Task OnOpenedOrClosed(bool result) {
-        MenuClass = result ? "menu opened" : "menu";
-        StateHasChanged();
-        await Task.CompletedTask;
-    }
-
-    [Parameter]
-    public bool HidePostponeDate { get; set; } = false;
-
-    [Parameter]
-    public bool HideRepeatIcon { get; set; } = false;
-
     [Parameter]
     public Models.ShoppingListModule.Item ItemQry { get; set; }
-
-    [Parameter]
-    public bool HideCategory { get; set; } = false;
-
-    [Parameter]
-    public bool HideQuantity { get; set; } = false;
 
     [Parameter]
     public bool HideStores { get; set; } = false;
 
     [Parameter]
-    public bool HideNote { get; set; } = false;
+    public EventCallback<CoreTypes.ItemId> OnClick { get; set; }
 
     [Parameter]
-    public EventCallback<CoreTypes.ItemId> OnClick { get; set; }
+    public EventCallback<CoreTypes.ItemId> OnClickAddToShoppingList { get; set; }
+
+    [Parameter]
+    public EventCallback<CoreTypes.ItemId> OnClickDue { get; set; }
 }

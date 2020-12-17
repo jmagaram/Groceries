@@ -218,12 +218,19 @@ namespace WebApp.Pages
             await _itemQuickActionDrawer.Close();
             await StateService.UpdateAsync(stateMessage);
         }
+
         private async Task OnClickChoosePostpone(ItemId itemId)
         {
             _quickEditContext = itemId;
             var viewModel = SelectZeroOrOnePostpone.createFromItemId(itemId, DateTimeOffset.Now, StateService.CurrentState);
             await _itemQuickActionDrawer.Close();
             await _postponeDrawer.Open(viewModel);
+        }
+
+        private async Task OnClickAddToShoppingList(ItemId itemId)
+        {
+            var msg = StateMessage.NewItemMessage(StateItemMessage.NewModifyItem(itemId, ItemMessage.BuyAgain));
+            await StateService.UpdateAsync(msg);
         }
 
         private async Task OnClickPostponeDays((ItemId itemId, int days) i)

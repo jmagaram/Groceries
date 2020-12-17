@@ -10,7 +10,6 @@
     .categoryHeader {
         margin-top: 1.0rem;
         margin-bottom: 0.4rem;
-        max-width: 250px;
         background-color: white;
         padding: 0;
         padding-top: 0.2rem;
@@ -19,6 +18,8 @@
         border: 0;
         font-weight: bold;
         scroll-margin-top: 4rem;
+        font-size:larger;
+        color:darkgreen;
     }
 
         .categoryHeader:active {
@@ -171,6 +172,17 @@
         font-size: 24px;
     }
 
+    .buyAgainGroup {
+        background-color: #efefef;
+    }
+
+        .buyAgainGroup .buyAgainHeader {
+            font-size: smaller;
+            color: darkgray;
+            padding-left: 1rem;
+            padding-top:0.3rem;
+        }
+
 </style>
 @{
     string searchClass = ShowFilter ? "search" : "";
@@ -204,35 +216,58 @@
 <div class="col">
     @{
         var now = DateTimeOffset.Now;
-        foreach (var categorySummary in ShoppingListView.Categories.Where(j => j.Total > 0)) {
+        var hideStores = !ShowFilter && ShoppingListView.StoreFilter.IsSome();
+        foreach (var categorySummary in ShoppingListView.Categories.Where(j => j.Total > 0))
+        {
             var c = categorySummary;
-            var catName = c.Category.IsNone() ? "(Uncategorized)" : c.Category.Value.CategoryName.Item;
+            var catName = c.Category.IsNone() ? "Uncategorized" : c.Category.Value.CategoryName.Item;
             var catId = c.Category.AsEnumerable().Select(i => i.CategoryId).FirstOrDefault();
             <button ontouchstart="" @ref="_categoryReferences[catId]" @onclick="async e => await OnClickCategoryHeader()" class="categoryHeader">
                 @catName
             </button>
-            if (c.Total > 0) {
-                foreach (var itemUncaptured in c.Items) {
+            if (c.Total > 0)
+            {
+                var activeItems = c.Items.Where(j => j.Schedule.IsActive());
+                var inactiveItems = c.Items.Where(j => !j.Schedule.IsActive()).ToArray();
+                foreach (var itemUncaptured in activeItems)
+                {
                     var item = itemUncaptured;
-                    <WebApp.Shared.Item HideCategory="true" HideRepeatIcon="true" OnClick="async i => await OnClickItem(item.ItemId)" ItemQry="@item" />
+<div style="margin-left:-0.3rem">
+    <WebApp.Shared.Item HideStores="@hideStores" OnClickAddToShoppingList="async i => await OnClickAddToShoppingList(i)" OnClickDue="async i => await OnClickChoosePostpone(i)" OnClick="async i => await OnClickItem(item.ItemId)" ItemQry="@item" />
+</div>                }
+                @if (inactiveItems.Length > 0)
+                {
+                    <div class="buyAgainGroup">
+                        <div class="buyAgainHeader">Buy again?</div>
+                        @foreach (var itemUncaptured in inactiveItems)
+                        {
+                        var item = itemUncaptured;
+                        <WebApp.Shared.Item HideStores="@hideStores" OnClickAddToShoppingList="async i => await OnClickAddToShoppingList(i)" OnClickDue="async i => await OnClickChoosePostpone(i)" OnClick="async i => await OnClickItem(item.ItemId)" ItemQry="@item" />
+                        }
+                    </div>
                 }
             }
-            else {
+            else
+            {
                 <p style="margin-left:20px; font-size:smaller" class="text-muted">None</p>
             }
         }
     }
-    @if (TextFilter.Length >= 1) {
-        if (ShoppingListView.TotalItems == 0) {
+    @if (TextFilter.Length >= 1)
+    {
+        if (ShoppingListView.TotalItems == 0)
+        {
             <p style="margin-top:1rem">Nothing found like that.</p>
             <button style="margin-top:0rem" class="btn btn-primary" @onclick="OnStartCreateNew">Create new item...</button>
         }
-        else {
+        else
+        {
             <p style="margin-top:1rem; margin-bottom:0px; border-top:1px solid #acacac">&nbsp;</p>
             <button class="btn btn-primary" @onclick="OnStartCreateNew">Create new item...</button>
         }
     }
-    else if (ShoppingListView.TotalItems == 0) {
+    else if (ShoppingListView.TotalItems == 0)
+    {
         <p style="margin-top:1rem">No items on your shopping list.</p>
     }
 </div>
