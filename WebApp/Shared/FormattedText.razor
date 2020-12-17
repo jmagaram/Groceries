@@ -1,5 +1,5 @@
 ﻿@using Models
-@foreach (var i in Models.FormattedText.spans(Text)) {
+@foreach (var i in Models.FormattedTextModule.spans(Text)) {
     var className = i.Format.IsHighlight ? "highlighted" : "normal";
     if (Strikethrough) {
         className = $"{className} completed";

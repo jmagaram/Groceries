@@ -16,6 +16,7 @@ module TextSpan =
 
     let highlight = create Highlight
 
+[<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
 module FormattedText =
 
     let spans (FormattedText ft) = ft
