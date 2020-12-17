@@ -13,6 +13,9 @@
         padding-left: 0;
         list-style-type: none;
         margin: 0;
+        flex-wrap: wrap;
+        flex-direction: row;
+        flex-wrap:wrap;
     }
 
         .itemContainer ul li {
@@ -20,15 +23,9 @@
             white-space: pre-wrap;
         }
 
-        .itemContainer ul.formattedText {
-            padding-left: 0;
-            list-style-type: none;
-            margin: 0;
-        }
-
-        .itemContainer ul li.highlight {
-            background-color: yellow;
-        }
+    .itemContainer .highlight {
+        background-color: yellow;
+    }
 
     .itemContainer button {
         text-align: left;
@@ -49,10 +46,6 @@
             outline: none !important;
             background-color: ButtonFace;
         }
-
-    .itemContainer ul.title {
-        font-weight: bold;
-    }
 
     .itemContainer .badgeColumn {
         width: 6rem;
@@ -87,47 +80,56 @@
     background-color: darkgray;
 }
 
-.itemContainer .stores {
-    display: flex;
-    align-items: center;
-    font-size: smaller;
+.properties {
+    display: grid;
+    grid-template-columns: 1rem auto;
+    grid-column-gap: 0.4rem;
+    grid-row-gap: 0.2rem;
 }
 
-    .itemContainer .stores ion-icon {
+    .properties ul.title {
+        font-weight: bold;
+        grid-column: 1/3;
+    }
+
+    .properties .quantity {
+        grid-column: 1/3;
+    }
+
+    .properties .storesIcon {
         font-size: 18px;
+        grid-column: 1/2;
     }
 
-    .itemContainer .stores ul {
-        list-style-type: none;
+    .properties ul.storesContent {
+        grid-column: 2/3;
+        font-size: smaller;
     }
 
-        .itemContainer .stores ul > li {
+        .properties ul.storesContent > li {
             text-decoration: line-through;
-            margin-left: 0.3rem;
+            margin-right: 0.3rem;
         }
 
-.itemContainer .note {
-    line-height: 1.0;
-    text-align: left;
-    font-size: smaller;
-    display: flex;
-    flex-direction: row;
-    align-items: center;
-}
-
-    .itemContainer .note ion-icon {
+    .properties .noteIcon {
         font-size: 18px;
-        margin-right: 0.3rem;
+        grid-column: 1/2;
     }
 
-.itemContainer .frequency {
-    font-size: smaller;
-    display: flex;
-    flex-direction: row;
-    align-items: center;
-}
+    .properties .noteContent {
+        grid-column: 2/3;
+        line-height: 1.0;
+        text-align: left;
+        font-size: smaller;
+    }
 
-    .itemContainer .frequency ion-icon {
+    .properties .frequencyIcon {
+        grid-column: 1/2;
         font-size: 18px;
-        margin-right: 0.3rem;
+    }
+
+    .properties .frequencyContent {
+        grid-column: 2/3;
+        font-size: smaller;
+        align-items: center;
     }

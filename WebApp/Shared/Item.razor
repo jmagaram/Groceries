@@ -45,52 +45,52 @@
     {
         <div class="badgeColumn"></div>
     }
-    <button class="properties" ontouchstart="" @onclick="async _=>await OnClick.InvokeAsync(ItemQry.ItemId)">
-        <ul class="title formattedText">
-            @foreach (var i in FormattedTextModule.spans(ItemQry.ItemName))
-            {
-                string highlightClass = i.Format.IsHighlight ? "highlight" : "";
-                <li class="@highlightClass">@i.Text</li>
-            }
-        </ul>
-        @if (ItemQry.Quantity.IsSome())
-        {
-            <ul class="quantity ">
-                @foreach (var i in FormattedTextModule.spans(ItemQry.Quantity.Value))
+    <button ontouchstart="" @onclick="async _=>await OnClick.InvokeAsync(ItemQry.ItemId)">
+        <div class="properties">
+            <ul class="title">
+                @foreach (var i in FormattedTextModule.spans(ItemQry.ItemName))
                 {
                     string highlightClass = i.Format.IsHighlight ? "highlight" : "";
                     <li class="@highlightClass">@i.Text</li>
                 }
             </ul>
-        }
-        @if (ItemQry.Note.IsSome())
-        {
-            <div class="note">
-                <ion-icon name="newspaper-outline"></ion-icon>
-                <ul>
-                    @foreach (var i in FormattedTextModule.spans(ItemQry.Note.Value))
+            @if (ItemQry.Quantity.IsSome())
+            {
+                <ul class="quantity">
+                    @foreach (var i in FormattedTextModule.spans(ItemQry.Quantity.Value))
                     {
                         string highlightClass = i.Format.IsHighlight ? "highlight" : "";
                         <li class="@highlightClass">@i.Text</li>
                     }
                 </ul>
-            </div>  }
-        @if (ItemQry.Schedule.IsRepeat)
-        {
-            string frequency = Models.ItemFormModule.frequencyAsText(ItemQry.Schedule.Frequency().Value);
-            <div class="frequency"><ion-icon name="repeat-outline"></ion-icon><span>@frequency</span></div>
-        }
-        @if (!HideStores && ItemQry.Availability.Any(i => i.IsSold == false))
-        {
-            <div class="stores">
-                <ion-icon name="storefront-outline"></ion-icon>
-                <ul>
+            }
+            @if (ItemQry.Note.IsSome())
+            {
+                <ion-icon class="noteIcon" name="newspaper-outline"></ion-icon>
+                <ul class="noteContent">
+                    @foreach (var i in FormattedTextModule.spans(ItemQry.Note.Value))
+                    {
+                        string highlightClass = i.Format.IsHighlight ? "highlight" : "";
+                        <li class="@highlightClass">@i.Text</li>
+                    }
+                </ul>}
+            @if (ItemQry.Schedule.IsRepeat)
+            {
+                string frequency = Models.ItemFormModule.frequencyAsText(ItemQry.Schedule.Frequency().Value);
+                <ion-icon class="frequencyIcon" name="repeat-outline"></ion-icon>
+                <div class="frequencyContent"><span>@frequency</span></div>
+            }
+            @if (!HideStores && ItemQry.Availability.Any(i => i.IsSold == false))
+            {
+                <ion-icon class="storesIcon" name="storefront-outline"></ion-icon>
+                <ul class="storesContent">
                     @foreach (var i in ItemQry.Availability.Where(j => j.IsSold == false).Select(j => j.Store.StoreName.AsText()))
                     {
                         <li>@i</li>
                     }
                 </ul>
-            </div>}
+            }
+        </div>
     </button>
 </div>
 
