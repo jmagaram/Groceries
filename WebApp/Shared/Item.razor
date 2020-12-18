@@ -7,7 +7,7 @@
     {
         <button class="iconColumn" ontouchstart="" @onclick="async _ => await OnClickAddToShoppingList.InvokeAsync(ItemQry.ItemId)"><ion-icon name="add-circle"></ion-icon></button>
     }
-    <button ontouchstart="" @onclick="async _=>await OnClick.InvokeAsync(ItemQry.ItemId)">
+    <button ontouchstart="" @onclick="async _=>await OnClick.InvokeAsync(ItemQry.ItemId)" style="padding-right:0px;">
             @{
                 string completedClass = ItemQry.Schedule.IsCompleted ? "completed" : "";
                 var daysAway = ItemQry.Schedule.PostponedUntilDays(DateTimeOffset.Now).AsNullable();
@@ -34,10 +34,10 @@
                     else if (isLater)
                     {
                         string description =
-                            (weeksAway <= 1) ? "+1 wk" :
-                            (monthsAway == 0) ? $"+{weeksAway.Value} wks" :
-                            (monthsAway == 1) ? "+1 mo" :
-                            $"+{monthsAway.Value} mos";
+                            (weeksAway <= 1) ? "+1w" :
+                            (monthsAway == 0) ? $"+{weeksAway.Value}w" :
+                            (monthsAway == 1) ? "+1m" :
+                            $"+{monthsAway.Value}m";
 
                         <li class="laterBadge myBadge">
                             <ion-icon name="calendar-outline"></ion-icon><span>@description</span>
