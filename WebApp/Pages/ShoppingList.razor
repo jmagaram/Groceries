@@ -6,214 +6,38 @@
 @using static Models.CoreTypes;
 @using static Models.ShoppingListSettingsModule;
 
-<style>
-    .categoryHeader {
-        margin-top: 1.0rem;
-        margin-bottom: 0.4rem;
-        background-color: white;
-        padding: 0;
-        padding-top: 0.2rem;
-        padding-bottom: 0.2rem;
-        padding-right: 3rem;
-        border: 0;
-        font-weight: bold;
-        scroll-margin-top: 4rem;
-        font-size:larger;
-        color:darkgreen;
-    }
-
-        .categoryHeader:active {
-            background-color: ButtonFace;
-        }
-
-        .categoryHeader:focus {
-            border: inherit;
-            outline-color: #d4d4d4;
-            outline: none !important;
-            box-shadow: none !important;
-        }
-
-        .categoryHeader:active {
-            border: inherit;
-            outline-color: #d4d4d4;
-            outline: none !important;
-            box-shadow: none !important;
-        }
-
-    .filterRow {
-        animation-duration: 0.2s;
-        animation-name: slidein;
-        animation-timing-function: ease-out;
-        width: 30ch;
-    }
-
-    .filterInput {
-        width: 20ch;
-        font-size: larger;
-    }
-
-    @@keyframes slidein {
-        from {
-            margin-left: 60%;
-            width: 1ch;
-        }
-
-        to {
-            margin-left: 0%;
-            width: 30ch;
-        }
-    }
-
-    .jm-navbar {
-        display: flex;
-        flex-direction: row;
-        justify-content: space-between;
-        padding: 5px 10px 5px 10px;
-        position: sticky;
-        top: 0;
-        z-index: 1;
-    }
-
-        .jm-navbar * {
-            display: flex;
-            flex-direction: row;
-            align-items: center;
-        }
-
-        .jm-navbar:not(.search) #cancelSearch {
-            display: none;
-        }
-
-        .jm-navbar.search > :first-child {
-            display: none;
-        }
-
-        .jm-navbar button.titleButton {
-            border: none;
-            padding: 0.5rem;
-            background-color: transparent;
-            color: white;
-            padding-top: 0.75rem;
-            padding-bottom: 0.75rem;
-            outline: none;
-            font-size: larger;
-            box-shadow: none !important;
-        }
-
-        .jm-navbar button.titleButton:focus {
-            outline: none !important;
-        }
-
-        .jm-navbar button.titleButton:active {
-            outline: none !important;
-            background-color: dodgerblue;
-        }
-
-    #searchColumn.search > :not(#searchElements) {
-        display: none;
-    }
-
-    #searchTrigger {
-        display: inline-grid;
-    }
-
-        #searchTrigger > #decoy {
-            z-index: 99;
-            justify-content: center;
-            color: white;
-        }
-
-        #searchTrigger > #searchInput {
-            z-index: 100;
-            opacity: 0;
-            width: 4em;
-            border: none;
-            border-radius: 3px;
-            padding: 4px;
-            cursor: pointer;
-        }
-
-        #searchTrigger.search > #decoy {
-            display: none;
-        }
-
-        @{ var inputWidth = (StateService.CurrentState.LoggedInUserSettings().FontSize.IsLargeFontSize) ? "15em" : "17em"; }
-
-#searchTrigger.search > #searchInput {
-            opacity: 1;
-                    width: @inputWidth;
-            cursor: text;
-        }
-
-#searchTrigger > * {
-                grid-column: 1;
-            grid-row: 1;
-        }
-
-#searchColumn.search > #searchElements {
-        animation: startSearch;
-            animation-duration: 0.25s;
-            animation-timing-function: ease;
-    }
-
-    @@keyframes startSearch {
-        from {
-            opacity: 0;
-            margin-left: 12em;
-        }
-
-        to {
-            opacity: 1;
-            margin-left: 0px;
-        }
-    }
-
-    ion-icon {
-        font-size: 24px;
-    }
-
-    .buyAgainGroup {
-        margin-left: 0.2rem;
-    }
-
-    .activeGroup {
-        margin-left:0.5rem;
-    }
-
-</style>
 @{
-    string searchClass = ShowFilter ? "search" : "";
+    string searchClass = IsSearchBarVisible ? "search" : "";
     Store currentStoreFilter = ShoppingListView.StoreFilter.AsEnumerable().SingleOrDefault();
     string currentStoreName = currentStoreFilter?.StoreName.AsText() ?? "All Stores";
 }
-<div class="jm-navbar bg-dark @searchClass">
-    <button class="titleButton" ontouchstart="" @onclick="async _=>await OpenStoreNavigator()">@currentStoreName</button>
-    <div id="searchColumn" class="@searchClass">
-        <button ontouchstart="" @onclick="async _ => await _viewOptionsDrawer.Open(StateService.CurrentState.LoggedInUserSettings().FontSize)" class="btn text-light">
-            <ion-icon name="@(Settings.HideCompletedItems ? "eye-off-outline" : "eye-outline")"></ion-icon>
-        </button>
-        <SyncButton Style="padding:0px;margin-right:2em" />
-        <div id="searchElements">
-            <div id="searchTrigger" class="@searchClass">
-                <div id="decoy"><ion-icon name="search-outline"></ion-icon><span style="margin-left:-5px"><ion-icon name="add-outline"></ion-icon></span></div>
-                <input @onclick="_ => ShowFilter = true"
-                       value="@ShoppingListView.TextFilter.ValueCommitted"
-                       @oninput="e => OnTextFilterInput((string)e.Value)"
-                       @onkeydown="@(e => OnTextFilterKeyDown(e))"
-                       @onblur="@(e => OnTextFilterBlur())"
-                       id="searchInput"
-                       placeholder="Find or add"
-                       autocomplete="off"
-                       type="text" />
-            </div>
-            <button class="btn text-light" @onclick="_ => HideTextFilter()" id="cancelSearch">Done</button>
+<div class="@SearchBarClass bg-dark">
+    <input @oninput="e => OnTextFilterInput((string)e.Value)"
+           @onfocusin="async _=>await StartSearch()"
+           @onkeydown="@(e => OnTextFilterKeyDown(e))"
+           @onblur="@(e => OnTextFilterBlur())"
+           value="@ShoppingListView.TextFilter.ValueCommitted"
+           id="searchInput"
+           type="text"
+           placeholder="Search or add item"
+           autocomplete="off"
+           spellcheck="false" />
+    <button class="btn text-light" @onclick="async _=>await EndSearch()" ontouchstart="">Cancel</button>
+</div>
+@if (!IsSearchBarVisible)
+{
+    <div class="regular-bar bg-dark @searchClass">
+        <button class="titleButton" ontouchstart="" @onclick="async _=>await OpenStoreNavigator()">@currentStoreName</button>
+        <div>
+            <SyncButton Style=""/>
+            <button type="button" ontouchstart="" @onclick="async _ => await _viewOptionsDrawer.Open(StateService.CurrentState.LoggedInUserSettings().FontSize)" class="btn text-light"><ion-icon name="eye-outline"></ion-icon></button>
         </div>
     </div>
-</div>
+}
 <div class="col">
     @{
         var now = DateTimeOffset.Now;
-        var hideStores = !ShowFilter && ShoppingListView.StoreFilter.IsSome();
+        var hideStores = !IsSearchBarVisible && ShoppingListView.StoreFilter.IsSome();
         foreach (var categorySummary in ShoppingListView.Categories.Where(j => j.Total > 0))
         {
             var c = categorySummary;
@@ -267,6 +91,12 @@
         <p style="margin-top:1rem">No items on your shopping list.</p>
     }
 </div>
+@if (!IsSearchBarVisible)
+{
+    <label ontouchstart="" class="fab" for="searchInput">
+        <ion-icon name="add-outline"></ion-icon>
+    </label>
+}
 <ItemQuickActionDrawer OnDelete="async i => await OnClickDelete(i)"
                        OnAddToShoppingListNow="async i=> await OnClickRemovePostpone(i)"
                        OnBuyAgain="async i=>await OnClickChooseFrequency(i)"

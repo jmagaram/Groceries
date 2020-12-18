@@ -5,7 +5,7 @@
 <div class="itemContainer">
     @if (!ItemQry.Schedule.IsActive())
     {
-        <button class="iconButton" ontouchstart="" @onclick="async _ => await OnClickAddToShoppingList.InvokeAsync(ItemQry.ItemId)"><ion-icon name="add-circle"></ion-icon></button>
+        <button class="iconButton" ontouchstart="" @onclick="async _ => await OnClickAddToShoppingList.InvokeAsync(ItemQry.ItemId)"><ion-icon name="add-outline"></ion-icon></button>
     }
     <button ontouchstart="" @onclick="async _=>await OnClick.InvokeAsync(ItemQry.ItemId)" style="padding-right:0px;">
             @{

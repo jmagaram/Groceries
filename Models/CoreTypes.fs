@@ -89,7 +89,9 @@ type ShoppingListSettings =
     { StoreFilter: StoreId option
       PostponedViewHorizon: int<days>
       HideCompletedItems: bool
-      TextFilter : TextBox }
+      IsTextFilterVisible : bool
+      TextFilter : TextBox 
+    }
 
 type FontSize = 
     | NormalFontSize

@@ -1,6 +1,11 @@
 ﻿@using static Models.ServiceTypes;
 @using System.Reactive.Linq;
 
+<style>
+    ion-icon {
+        font-size:24px;
+    }
+</style>
 <Observable Context="i" Source="StateService.SyncronizationStatus">
     <Loading>
         <button class="btn text-light" type="button" disabled><Icon Kind="IconKind.CloudUpload" /></button>
@@ -14,7 +19,7 @@
                 i.IsHasChanges ? "btn-danger" :
                 i.IsNoChanges ? "" :
                 throw new NotImplementedException("Unexpected synchronization status; can't choose color for it.");
-            <button class="btn text-light @color" style="@Style" type="button" disabled="@i.IsSynchronizing" @onclick:preventDefault @onclick="StateService.SyncIncrementalAsync"><div style="font-size:24px"><ion-icon name="cloud-upload-outline"></ion-icon></div></button>
+            <button class="btn text-light @color" style="@Style" type="button" disabled="@i.IsSynchronizing" @onclick:preventDefault @onclick="StateService.SyncIncrementalAsync"><ion-icon name="cloud-upload-outline"></ion-icon></button>
         }
     </Loaded>
 </Observable>

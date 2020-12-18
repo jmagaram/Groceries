@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Components;
+using Microsoft.AspNetCore.Components.Forms;
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.JSInterop;
 using Models;
@@ -38,11 +39,33 @@ namespace WebApp.Pages
             _viewOptionsDrawer?.Dispose();
         }
 
+        public bool IsSearchBarVisible => StateService.CurrentState.LoggedInUserSettings().ShoppingListSettings.IsTextFilterVisible;
+
+        public string SearchBarClass => IsSearchBarVisible ? "search-bar active" : "search-bar";
+
+        public async Task EndSearch()
+        {
+            if (IsSearchBarVisible)
+            {
+                var msg = StateMessage.NewUserSettingsMessage(UserSettingsModule.Message.NewShoppingListSettingsMessage(ShoppingListSettingsMessage.EndSearch));
+                await StateService.UpdateAsync(msg);
+            }
+        }
+
+        public async Task StartSearch()
+        {
+            if (!IsSearchBarVisible)
+            {
+                var msg = StateMessage.NewUserSettingsMessage(UserSettingsModule.Message.NewShoppingListSettingsMessage(ShoppingListSettingsMessage.StartSearch));
+                await StateService.UpdateAsync(msg);
+            }
+        }
+
         public async Task SwitchToShoppingMode()
         {
             var messages = new List<ShoppingListSettingsMessage>
             {
-                ShoppingListSettingsMessage.ClearItemFilter,
+                ShoppingListSettingsMessage.EndSearch,
                 ShoppingListSettingsMessage.NewHideCompletedItems(true),
                 ShoppingListSettingsMessage.NewSetPostponedViewHorizon(-365),
             };
@@ -87,7 +110,7 @@ namespace WebApp.Pages
         protected override async Task OnInitializedAsync()
         {
             await StateService.InitializeAsync();
-            await ClearTextFilter(force: true);
+            await EndSearch();
         }
 
         private async Task OnClickCategoryHeader()
@@ -131,73 +154,11 @@ namespace WebApp.Pages
 
         private void OnManageStores() => Navigation.NavigateTo("/stores");
 
-        private async Task OnMenuItemSelected(string id)
-        {
-            await Task.CompletedTask;
-            if (id == "shopall")
-            {
-                await ShopAt(null);
-            }
-            else if (id.StartsWith("s"))
-            {
-                await ShopAt(id.Substring(1));
-            }
-            else if (id == "planfuture")
-            {
-                await PlanDaysAhead(365);
-            }
-            else if (id == "plan7")
-            {
-                await PlanDaysAhead(7);
-            }
-            else if (id == "plan14")
-            {
-                await PlanDaysAhead(14);
-            }
-            else throw new NotImplementedException();
-        }
-
-        private async Task ShopAt(string storeId)
-        {
-            var messages = new List<ShoppingListSettingsMessage>
-            {
-                ShoppingListSettingsMessage.ClearItemFilter,
-                ShoppingListSettingsMessage.NewHideCompletedItems(true),
-                ShoppingListSettingsMessage.NewSetPostponedViewHorizon(-365),
-            };
-            if (!string.IsNullOrWhiteSpace(storeId))
-            {
-                messages.Add(ShoppingListSettingsMessage.NewSetStoreFilterTo(StoreIdModule.deserialize(storeId).Value));
-            }
-            else
-            {
-                messages.Add(ShoppingListSettingsMessage.ClearStoreFilter);
-            }
-            var shoppingListMsg = ShoppingListSettingsMessage.NewTransaction(messages);
-            var userSettingsMsg = StateMessage.NewUserSettingsMessage(UserSettingsModule.Message.NewShoppingListSettingsMessage(shoppingListMsg));
-            await StateService.UpdateAsync(userSettingsMsg);
-        }
-
-        private async Task PlanDaysAhead(int days)
-        {
-            var messages = new List<ShoppingListSettingsMessage>
-            {
-                ShoppingListSettingsMessage.ClearItemFilter,
-                ShoppingListSettingsMessage.NewHideCompletedItems(false),
-                ShoppingListSettingsMessage.NewSetPostponedViewHorizon(days),
-                ShoppingListSettingsMessage.ClearStoreFilter
-            };
-            var settingsMsg = ShoppingListSettingsMessage.NewTransaction(messages);
-            var stateMsg = StateTypes.StateMessage.NewUserSettingsMessage(UserSettingsModule.Message.NewShoppingListSettingsMessage(settingsMsg));
-            await StateService.UpdateAsync(stateMsg);
-        }
-
         private async Task OnClickDelete(ItemId itemId)
         {
             var itemMsg = StateMessage.NewItemMessage(StateItemMessage.NewDeleteItem(itemId));
-            var userSettingsMsg = StateMessage.NewUserSettingsMessage(UserSettingsModule.Message.NewShoppingListSettingsMessage(ShoppingListSettingsMessage.ClearItemFilter));
+            var userSettingsMsg = StateMessage.NewUserSettingsMessage(UserSettingsModule.Message.NewShoppingListSettingsMessage(ShoppingListSettingsMessage.EndSearch));
             var transaction = StateMessage.NewTransaction(new List<StateMessage> { userSettingsMsg, itemMsg });
-            ShowFilter = false;
             await _itemQuickActionDrawer.Close();
             await StateService.UpdateAsync(transaction);
         }
@@ -205,9 +166,8 @@ namespace WebApp.Pages
         private async Task OnClickComplete(ItemId itemId)
         {
             var itemMsg = StateMessage.NewItemMessage(StateItemMessage.NewModifyItem(itemId, ItemMessage.MarkComplete));
-            var userSettingsMsg = StateMessage.NewUserSettingsMessage(UserSettingsModule.Message.NewShoppingListSettingsMessage(ShoppingListSettingsMessage.ClearItemFilter));
+            var userSettingsMsg = StateMessage.NewUserSettingsMessage(UserSettingsModule.Message.NewShoppingListSettingsMessage(ShoppingListSettingsMessage.EndSearch));
             var transaction = StateMessage.NewTransaction(new List<StateMessage> { itemMsg, userSettingsMsg });
-            ShowFilter = false;
             await _itemQuickActionDrawer.Close();
             await StateService.UpdateAsync(transaction);
         }
@@ -276,37 +236,22 @@ namespace WebApp.Pages
             Navigation.NavigateTo($"./ItemEdit/{itemId.Serialize()}");
         }
 
-        public bool ShowFilter { get; set; }
-
-        protected async Task HideTextFilter()
-        {
-            ShowFilter = false;
-            await ClearTextFilter();
-        }
-
         [Inject]
         public IJSRuntime JSRuntime { get; set; }
-
-        protected async Task ClearTextFilter(bool force = false)
-        {
-            if (force || !string.IsNullOrWhiteSpace(TextFilter))
-            {
-                ShoppingListSettingsMessage settingsMessage = ShoppingListSettingsMessage.ClearItemFilter;
-                StateMessage stateMessage = StateMessage.NewUserSettingsMessage(UserSettingsModule.Message.NewShoppingListSettingsMessage(settingsMessage));
-                await StateService.UpdateAsync(stateMessage);
-            }
-        }
 
         protected async Task OnTextFilterKeyDown(KeyboardEventArgs e)
         {
             if (e.Key == "Escape")
             {
-                bool shouldCancelFilter = TextFilter.Length == 0;
-                await ClearTextFilter();
-                await JSRuntime.InvokeVoidAsync("HtmlElement.setPropertyById", "searchInput", "value", "");
-                if (shouldCancelFilter)
+                if (!string.IsNullOrWhiteSpace(TextFilter))
                 {
-                    ShowFilter = false;
+                    await JSRuntime.InvokeVoidAsync("HtmlElement.setPropertyById", "searchInput", "value", "");
+                    var msg = StateMessage.NewUserSettingsMessage(UserSettingsModule.Message.NewShoppingListSettingsMessage(ShoppingListSettingsMessage.ClearItemFilter));
+                    await StateService.UpdateAsync(msg);
+                }
+                else
+                {
+                    await EndSearch();
                 }
             }
         }

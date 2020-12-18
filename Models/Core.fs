@@ -264,7 +264,9 @@ module Schedule =
         match s with
         | Schedule.Completed -> Schedule.Once
         | Schedule.Once -> s
-        | Schedule.Repeat r -> { r with PostponedUntil = None } |> Schedule.Repeat
+        | Schedule.Repeat r ->
+            { r with PostponedUntil = None }
+            |> Schedule.Repeat
 
     let repeat d s =
         let f =
@@ -574,7 +576,8 @@ module ShoppingListSettings =
         { ShoppingListSettings.StoreFilter = None
           PostponedViewHorizon = 5<days>
           HideCompletedItems = false
-          TextFilter = TextBox.create "" }
+          TextFilter = TextBox.create ""
+          IsTextFilterVisible = false }
 
     let storeFilterIsValid stores (s: ShoppingListSettings) =
         s.StoreFilter
@@ -611,7 +614,19 @@ module ShoppingListSettings =
         let d = d |> min 365<days> |> max -365<days>
         { s with PostponedViewHorizon = d }
 
+    let startSearch (s: ShoppingListSettings) =
+        { s with
+              IsTextFilterVisible = true
+              TextFilter = TextBox.create "" }
+
+    let endSearch (s: ShoppingListSettings) =
+        { s with
+              IsTextFilterVisible = false
+              TextFilter = TextBox.create "" }
+
     type Message =
+        | StartSearch
+        | EndSearch
         | ClearStoreFilter
         | SetStoreFilterTo of StoreId
         | SetPostponedViewHorizon of int<days>
@@ -622,6 +637,8 @@ module ShoppingListSettings =
 
     let rec update (msg: Message) s =
         match msg with
+        | StartSearch -> s |> startSearch
+        | EndSearch -> s |> endSearch
         | ClearStoreFilter -> s |> clearStoreFilter
         | SetStoreFilterTo k -> s |> setStoreFilter k
         | SetPostponedViewHorizon d -> s |> setPostponedViewHorizon d
@@ -753,7 +770,7 @@ module ItemForm =
               ScheduleKind = Repeat
               IsComplete = false }
 
-    let scheduleCurrent (now:DateTimeOffset) (f: ItemForm) =
+    let scheduleCurrent (now: DateTimeOffset) (f: ItemForm) =
         match f.ScheduleKind with
         | Completed -> Schedule.Completed
         | Once -> Schedule.Once
@@ -881,10 +898,12 @@ module ItemForm =
                   f.Stores
                   |> List.map (fun a -> if a.Store.StoreId = id then { a with IsSold = isSold } else a) }
 
-    let storesSetAllAvailability isSoldAt (f:ItemForm) =
+    let storesSetAllAvailability isSoldAt (f: ItemForm) =
         f.Stores
-        |> Seq.map (fun v -> 
-            { v with IsSold = isSoldAt |> Set.contains (v.Store)})
+        |> Seq.map
+            (fun v ->
+                { v with
+                      IsSold = isSoldAt |> Set.contains (v.Store) })
         |> List.ofSeq
         |> fun availability -> { f with Stores = availability }
 
