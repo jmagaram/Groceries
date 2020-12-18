@@ -190,7 +190,7 @@
     <button class="titleButton" ontouchstart="" @onclick="async _=>await OpenStoreNavigator()">@currentStoreName</button>
     <div id="searchColumn" class="@searchClass">
         <button ontouchstart="" @onclick="async _ => await _viewOptionsDrawer.Open(StateService.CurrentState.LoggedInUserSettings().FontSize)" class="btn text-light">
-            <ion-icon name="@(Settings.HideCompletedItems ? "cart-outline" : "eye-outline")"></ion-icon>
+            <ion-icon name="@(Settings.HideCompletedItems ? "eye-off-outline" : "eye-outline")"></ion-icon>
         </button>
         <SyncButton Style="padding:0px;margin-right:2em" />
         <div id="searchElements">
