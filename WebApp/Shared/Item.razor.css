@@ -66,10 +66,23 @@
     margin-left: 5px;
 }
 
-.itemContainer .activeBadge {
-    background-color: green;
-    color: white;
+.myBadge {
+    border-radius: 5px;
+    display: inline-flex;
+    flex-direction: row;
+    align-items: center;
+    padding-top: 3px;
+    padding-bottom: 3px;
+    padding-left: 6px;
+    padding-right: 6px;
+    margin-left: 0.3rem;
+    font-size: smaller;
 }
+
+    .myBadge ion-icon {
+        font-size: 18px;
+        margin-right: 3px;
+    }
 
 .itemContainer .soonBadge {
     background-color: #d77600;
@@ -87,10 +100,20 @@
     grid-row-gap: 0.2rem;
 }
 
-    .properties ul.title {
-        font-weight: bold;
-        grid-column: 1/3;
+    .properties.inactive {
+        opacity: 0.6;
     }
+
+    .properties .title {
+        grid-column: 1/3;
+        display: flex;
+        flex-direction: row;
+        align-content: center;
+    }
+
+        .properties .title ul {
+            font-weight: bold;
+        }
 
 .completed li {
     text-decoration: line-through;
@@ -114,7 +137,7 @@
     .properties ul.storesContent > li {
         text-decoration: line-through;
         margin-right: 0.3rem;
-        text-decoration-color: #bd213087;
+        text-decoration-color: rgba(0, 0, 0, 0.75);
     }
 
 .properties .noteIcon {

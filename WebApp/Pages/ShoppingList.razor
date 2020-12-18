@@ -173,15 +173,8 @@
     }
 
     .buyAgainGroup {
-        background-color: #efefef;
+        margin-left: -0.75rem;
     }
-
-        .buyAgainGroup .buyAgainHeader {
-            font-size: smaller;
-            color: darkgray;
-            padding-left: 1rem;
-            padding-top:0.3rem;
-        }
 
 </style>
 @{
@@ -232,17 +225,16 @@
                 foreach (var itemUncaptured in activeItems)
                 {
                     var item = itemUncaptured;
-<div style="margin-left:-0.3rem">
-    <WebApp.Shared.Item HideStores="@hideStores" OnClickAddToShoppingList="async i => await OnClickAddToShoppingList(i)" OnClickDue="async i => await OnClickChoosePostpone(i)" OnClick="async i => await OnClickItem(item.ItemId)" ItemQry="@item" />
-</div>                }
+                    <div style="margin-left:-0.3rem">
+                        <WebApp.Shared.Item HideStores="@hideStores" OnClickAddToShoppingList="async i => await OnClickAddToShoppingList(i)" OnClickDue="async i => await OnClickChoosePostpone(i)" OnClick="async i => await OnClickItem(item.ItemId)" ItemQry="@item" />
+                    </div> }
                 @if (inactiveItems.Length > 0)
                 {
                     <div class="buyAgainGroup">
-                        <div class="buyAgainHeader">Buy again?</div>
                         @foreach (var itemUncaptured in inactiveItems)
                         {
-                        var item = itemUncaptured;
-                        <WebApp.Shared.Item HideStores="@hideStores" OnClickAddToShoppingList="async i => await OnClickAddToShoppingList(i)" OnClickDue="async i => await OnClickChoosePostpone(i)" OnClick="async i => await OnClickItem(item.ItemId)" ItemQry="@item" />
+                            var item = itemUncaptured;
+                            <WebApp.Shared.Item HideStores="@hideStores" OnClickAddToShoppingList="async i => await OnClickAddToShoppingList(i)" OnClickDue="async i => await OnClickChoosePostpone(i)" OnClick="async i => await OnClickItem(item.ItemId)" ItemQry="@item" />
                         }
                     </div>
                 }

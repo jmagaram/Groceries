@@ -3,60 +3,48 @@
 @using static Models.CoreTypes
 
 <div class="itemContainer">
-    @{
-        var itemNameClass = ItemQry.Schedule.IsCompleted ? "completed" : "";
-        var daysAway = ItemQry.Schedule.PostponedUntilDays(DateTimeOffset.Now);
-        bool isSoon = daysAway.IsSome() && daysAway.Value <= 5;
-        bool isLater = daysAway.IsSome() && daysAway.Value > 5;
-        bool isActive = ItemQry.Schedule.IsActive();
-        int? laterWeeks = daysAway.AsEnumerable().Select(i => new int?((i / 7) + 1)).FirstOrDefault();
-        int? laterMonths = laterWeeks / 4;
-    }
-    @*@if (!isActive)
-        {
-            <button class="iconColumn" ontouchstart="" @onclick="async _ => await OnClickAddToShoppingList.InvokeAsync(ItemQry.ItemId)"><ion-icon name="add-outline"></ion-icon></button>
-        }*@
-    @if (isSoon || isLater)
+    @if (!ItemQry.Schedule.IsActive())
     {
-        <button class="badgeColumn" ontouchstart="" @onclick="_=>OnClickDue.InvokeAsync(ItemQry.ItemId)">
-            @if (isSoon)
-            {
-                <div class="soonBadge">
-                    <ion-icon name="calendar-outline"></ion-icon><span>Soon</span>
-                </div>
-            }
-            else if (laterMonths >= 1)
-            {
-                var description = $"{laterMonths} mo";
-                <div class="laterBadge" style="opacity:0.7">
-                    <ion-icon name="calendar-outline"></ion-icon><span>@description</span>
-                </div>
-            }
-            else
-            {
-                var description = $"{laterWeeks} wk";
-                <div class="laterBadge">
-                    <ion-icon name="calendar-outline"></ion-icon><span>@description</span>
-                </div>
-            }
-        </button>
-    }
-    @if (ItemQry.Schedule.IsCompleted)
-    {
-        <div class="badgeColumn"></div>
+        <button class="iconColumn" ontouchstart="" @onclick="async _ => await OnClickAddToShoppingList.InvokeAsync(ItemQry.ItemId)"><ion-icon name="add-circle"></ion-icon></button>
     }
     <button ontouchstart="" @onclick="async _=>await OnClick.InvokeAsync(ItemQry.ItemId)">
-        <div class="properties">
             @{
                 string completedClass = ItemQry.Schedule.IsCompleted ? "completed" : "";
+                var daysAway = ItemQry.Schedule.PostponedUntilDays(DateTimeOffset.Now).AsNullable();
+                bool isSoon = daysAway.HasValue && daysAway.Value <= 5;
+                bool isLater = daysAway.HasValue && daysAway.Value > 5;
+                var weeksAway = daysAway / 7;
+                var monthsAway = daysAway / 30;
+                var propertiesClass = ItemQry.Schedule.IsActive() ? "" : "inactive";
             }
-            <ul class="title @completedClass">
-                @foreach (var i in FormattedTextModule.spans(ItemQry.ItemName))
+        <div class="properties @propertiesClass">
+            <div class="title">
+                <ul class="@completedClass">
+                    @foreach (var i in FormattedTextModule.spans(ItemQry.ItemName))
+                    {
+                        string highlightClass = i.Format.IsHighlight ? "highlight" : "";
+                        <li class="@highlightClass">@i.Text</li>
+                    }
+                </ul>
+                @if (isSoon)
                 {
-                    string highlightClass = i.Format.IsHighlight ? "highlight" : "";
-                    <li class="@highlightClass">@i.Text</li>
+                    <div class="soonBadge myBadge">
+                        <ion-icon name="calendar-outline"></ion-icon><span>soon</span>
+                    </div>
                 }
-            </ul>
+                else if (isLater)
+                {
+                    string description =
+                        (weeksAway <= 1) ? "+1 wk" :
+                        (monthsAway == 0) ? $"+{weeksAway.Value} wks" :
+                        (monthsAway == 1) ? "+1 mo" :
+                        $"+{monthsAway.Value} mos";
+
+                    <div class="laterBadge myBadge">
+                        <ion-icon name="calendar-outline"></ion-icon><span>@description</span>
+                    </div>
+                }
+            </div>
             @if (ItemQry.Quantity.IsSome())
             {
                 <ul class="quantity @completedClass">
