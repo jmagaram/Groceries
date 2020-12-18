@@ -5,18 +5,27 @@
 @using Common
 
 <ElixDrawer @ref="_drawer">
-    <div class="buttonDrawer">
-        <button ontouchstart="" class="drawerButton" @onclick="async _ => await HideUpcoming()">Only items on shopping list <strong>now</strong></button>
-        <button ontouchstart="" class="drawerButton" @onclick="async _ => await SelectUpcomingDays(5)">Show <strong>soon</strong></button>
-        <button ontouchstart="" class="drawerButton" @onclick="async _ => await SelectUpcomingDays(365)">Show <strong>soon and later</strong></button>
-        @if (_currentFontSize?.IsLargeFontSize == true)
-        {
-            <button style="border-top-color:black" ontouchstart="" class="drawerButton" @onclick="async _ => await OnToggleFontSize()"><strong>Smaller</strong> text</button>
-        }
-        else
-        {
-            <button style="border-top-color:black" ontouchstart="" class="drawerButton" @onclick="async _ => await OnToggleFontSize()"><strong>Bigger</strong> text</button>
-        }
+    <div class="drawer">
+        <header>
+            <div></div>
+            <h1>View</h1>
+            <div></div>
+        </header>
+        <div class="buttonGroup">
+            <button ontouchstart="" @onclick="async _ => await HideUpcoming()"><ion-icon name="cart-outline"></ion-icon>I'm shopping now!<br /><small class="text-muted">Only show items I still need to buy</small></button>
+            <button ontouchstart="" @onclick="async _ => await SelectUpcomingDays(5)"><ion-icon name="calendar-outline"></ion-icon>Quickly edit my shopping list<br /><small class="text-muted">Choose from items you've bought before and items due soon</small></button>
+            <button ontouchstart="" @onclick="async _ => await SelectUpcomingDays(365)"><ion-icon name="calendar-outline"></ion-icon>Review all home inventory<br /><small class="text-muted">See all future scheduled purchases and completed items</small></button>
+        </div>
+        <div class="buttonGroup">
+            @if (_currentFontSize?.IsLargeFontSize == true)
+            {
+                <button style="border-top-color:black" ontouchstart="" class="drawerButton" @onclick="async _ => await OnToggleFontSize()"><ion-icon name="text-outline"></ion-icon>Smaller text</button>
+            }
+            else
+            {
+                <button ontouchstart="" class="drawerButton" @onclick="async _ => await OnToggleFontSize()"><ion-icon name="text-outline"></ion-icon>Bigger text</button>
+            }
+        </div>
     </div>
 </ElixDrawer>
 

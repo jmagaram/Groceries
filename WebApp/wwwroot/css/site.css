@@ -248,7 +248,7 @@
         background-color: ButtonFace;
     }
 
-    .drawer button > ion-icon:last-child {
+    .drawer button > ion-icon {
         margin-right: 0;
         padding-right: 0.4em;
         padding-left: 0.4em;
