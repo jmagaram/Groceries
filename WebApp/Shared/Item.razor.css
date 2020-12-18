@@ -47,32 +47,14 @@
             background-color: ButtonFace;
         }
 
-.myBadge {
-    border-radius: 5px;
-    display: inline-flex;
-    flex-direction: row;
-    align-items: center;
-    padding-top: 3px;
-    padding-bottom: 3px;
-    padding-left: 6px;
-    padding-right: 6px;
-    margin-left: 0.3rem;
-    font-size: smaller;
-}
-
-    .myBadge ion-icon {
-        font-size: 18px;
-        margin-right: 3px;
+    .itemContainer .soonBadge {
+        background-color: #d77600;
+        color: white;
     }
 
-.itemContainer .soonBadge {
-    background-color: #d77600;
-    color: white;
-}
-
-.itemContainer .laterBadge {
-    background-color: darkgray;
-}
+    .itemContainer .laterBadge {
+        background-color: darkgray;
+    }
 
 .properties {
     display: grid;
@@ -97,7 +79,7 @@
         }
 
 .completed li {
-        text-decoration: line-through;
+    text-decoration: line-through;
 }
 
 .properties .quantity {
@@ -142,3 +124,24 @@
     font-size: smaller;
     align-items: center;
 }
+
+.myBadge {
+    border-radius: 5px;
+    display: inline-flex !important;
+    flex-direction: row;
+    align-items: center;
+    padding-top: 3px;
+    padding-bottom: 3px;
+    padding-left: 6px;
+    padding-right: 6px;
+    margin-left: 0.3rem;
+    font-size: smaller;
+    font-weight: normal;
+    position: relative;
+    top: 0.2rem;
+}
+
+    .myBadge ion-icon {
+        font-size: 18px;
+        margin-right: 3px;
+    }

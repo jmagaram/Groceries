@@ -25,25 +25,25 @@
                         string highlightClass = i.Format.IsHighlight ? "highlight" : "";
                         <li class="@highlightClass">@i.Text</li>
                     }
-                </ul>
-                @if (isSoon)
-                {
-                    <div class="soonBadge myBadge">
-                        <ion-icon name="calendar-outline"></ion-icon><span>soon</span>
-                    </div>
-                }
-                else if (isLater)
-                {
-                    string description =
-                        (weeksAway <= 1) ? "+1 wk" :
-                        (monthsAway == 0) ? $"+{weeksAway.Value} wks" :
-                        (monthsAway == 1) ? "+1 mo" :
-                        $"+{monthsAway.Value} mos";
+                    @if (isSoon)
+                    {
+                        <li class="soonBadge myBadge">
+                            <ion-icon name="calendar-outline"></ion-icon><span>soon</span>
+                        </li>
+                    }
+                    else if (isLater)
+                    {
+                        string description =
+                            (weeksAway <= 1) ? "+1 wk" :
+                            (monthsAway == 0) ? $"+{weeksAway.Value} wks" :
+                            (monthsAway == 1) ? "+1 mo" :
+                            $"+{monthsAway.Value} mos";
 
-                    <div class="laterBadge myBadge">
-                        <ion-icon name="calendar-outline"></ion-icon><span>@description</span>
-                    </div>
-                }
+                        <li class="laterBadge myBadge">
+                            <ion-icon name="calendar-outline"></ion-icon><span>@description</span>
+                        </li>
+                    }
+                </ul>
             </div>
             @if (ItemQry.Quantity.IsSome())
             {
