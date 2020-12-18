@@ -47,25 +47,6 @@
             background-color: ButtonFace;
         }
 
-    .itemContainer .badgeColumn {
-        width: 6rem;
-    }
-
-        .itemContainer .badgeColumn > :first-child {
-            border-radius: 5px;
-            display: inline-flex;
-            flex-direction: row;
-            align-items: center;
-            padding-top: 3px;
-            padding-bottom: 3px;
-            padding-left: 6px;
-            padding-right: 6px;
-        }
-
-.badgeColumn span {
-    margin-left: 5px;
-}
-
 .myBadge {
     border-radius: 5px;
     display: inline-flex;
@@ -116,8 +97,7 @@
         }
 
 .completed li {
-    text-decoration: line-through;
-    text-decoration-color: rgba(0, 0, 0, 0.75);
+        text-decoration: line-through;
 }
 
 .properties .quantity {

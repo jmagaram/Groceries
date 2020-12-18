@@ -173,7 +173,11 @@
     }
 
     .buyAgainGroup {
-        margin-left: -0.75rem;
+        margin-left: 0.2rem;
+    }
+
+    .activeGroup {
+        margin-left:0.5rem;
     }
 
 </style>
@@ -225,7 +229,7 @@
                 foreach (var itemUncaptured in activeItems)
                 {
                     var item = itemUncaptured;
-                    <div style="margin-left:-0.3rem">
+                    <div class="activeGroup">
                         <WebApp.Shared.Item HideStores="@hideStores" OnClickAddToShoppingList="async i => await OnClickAddToShoppingList(i)" OnClickDue="async i => await OnClickChoosePostpone(i)" OnClick="async i => await OnClickItem(item.ItemId)" ItemQry="@item" />
                     </div> }
                 @if (inactiveItems.Length > 0)
