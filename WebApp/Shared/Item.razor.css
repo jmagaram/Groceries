@@ -4,9 +4,11 @@
     align-items: center;
 }
 
-    .itemContainer .iconColumn {
+    .itemContainer .iconButton {
         width: 3rem;
         text-align: center;
+        display: inline-flex;
+        align-items: center;
     }
 
     .itemContainer ul {
