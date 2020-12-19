@@ -88,8 +88,7 @@ ion-icon {
 }
 
     .search-bar input {
-/*        font-size: larger;
-*/        outline:none;
+        outline:none;
     }
 
     .search-bar.active {
