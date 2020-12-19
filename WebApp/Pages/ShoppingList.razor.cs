@@ -56,6 +56,7 @@ namespace WebApp.Pages
         {
             if (!IsSearchBarVisible)
             {
+                await JSRuntime.InvokeVoidAsync("HtmlElement.setPropertyById", "searchInput", "value", "");
                 var msg = StateMessage.NewUserSettingsMessage(UserSettingsModule.Message.NewShoppingListSettingsMessage(ShoppingListSettingsMessage.StartSearch));
                 await StateService.UpdateAsync(msg);
             }
@@ -241,37 +242,46 @@ namespace WebApp.Pages
 
         protected async Task OnTextFilterKeyDown(KeyboardEventArgs e)
         {
-            if (e.Key == "Escape")
+            if (IsSearchBarVisible)
             {
-                if (!string.IsNullOrWhiteSpace(TextFilter))
+                if (e.Key == "Escape")
                 {
-                    await JSRuntime.InvokeVoidAsync("HtmlElement.setPropertyById", "searchInput", "value", "");
-                    var msg = StateMessage.NewUserSettingsMessage(UserSettingsModule.Message.NewShoppingListSettingsMessage(ShoppingListSettingsMessage.ClearItemFilter));
-                    await StateService.UpdateAsync(msg);
-                }
-                else
-                {
-                    await EndSearch();
+                    if (!string.IsNullOrWhiteSpace(TextFilter))
+                    {
+                        await JSRuntime.InvokeVoidAsync("HtmlElement.setPropertyById", "searchInput", "value", "");
+                        var msg = StateMessage.NewUserSettingsMessage(UserSettingsModule.Message.NewShoppingListSettingsMessage(ShoppingListSettingsMessage.ClearItemFilter));
+                        await StateService.UpdateAsync(msg);
+                    }
+                    else
+                    {
+                        await EndSearch();
+                    }
                 }
             }
         }
 
         private async Task OnTextFilterBlur()
         {
-            var textBoxMsg = TextBoxMessage.LoseFocus;
-            var settingsMsg = ShoppingListSettingsMessage.NewTextFilter(textBoxMsg);
-            var stateMsg = StateMessage.NewUserSettingsMessage(UserSettingsModule.Message.NewShoppingListSettingsMessage(settingsMsg));
-            await StateService.UpdateAsync(stateMsg);
-            await InvokeAsync(() => StateHasChanged());
+            if (IsSearchBarVisible)
+            {
+                var textBoxMsg = TextBoxMessage.LoseFocus;
+                var settingsMsg = ShoppingListSettingsMessage.NewTextFilter(textBoxMsg);
+                var stateMsg = StateMessage.NewUserSettingsMessage(UserSettingsModule.Message.NewShoppingListSettingsMessage(settingsMsg));
+                await StateService.UpdateAsync(stateMsg);
+                await InvokeAsync(() => StateHasChanged());
+            }
         }
 
         private async Task OnTextFilterInput(string s)
         {
-            var textBoxMsg = TextBoxMessage.NewTypeText(s);
-            var settingsMsg = ShoppingListSettingsMessage.NewTextFilter(textBoxMsg);
-            var stateMsg = StateMessage.NewUserSettingsMessage(UserSettingsModule.Message.NewShoppingListSettingsMessage(settingsMsg));
-            await StateService.UpdateAsync(stateMsg);
-            await InvokeAsync(() => StateHasChanged());
+            if (IsSearchBarVisible)
+            {
+                var textBoxMsg = TextBoxMessage.NewTypeText(s);
+                var settingsMsg = ShoppingListSettingsMessage.NewTextFilter(textBoxMsg);
+                var stateMsg = StateMessage.NewUserSettingsMessage(UserSettingsModule.Message.NewShoppingListSettingsMessage(settingsMsg));
+                await StateService.UpdateAsync(stateMsg);
+                await InvokeAsync(() => StateHasChanged());
+            }
         }
 
         protected string TextFilter => ShoppingListView.TextFilter.ValueTyping;

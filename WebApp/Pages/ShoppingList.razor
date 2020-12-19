@@ -13,7 +13,6 @@
 }
 <div class="@SearchBarClass bg-dark">
     <input @oninput="e => OnTextFilterInput((string)e.Value)"
-           @onfocusin="async _=>await StartSearch()"
            @onkeydown="@(e => OnTextFilterKeyDown(e))"
            @onblur="@(e => OnTextFilterBlur())"
            value="@ShoppingListView.TextFilter.ValueCommitted"
@@ -93,7 +92,7 @@
 </div>
 @if (!IsSearchBarVisible)
 {
-    <label ontouchstart="" class="fab" for="searchInput">
+    <label ontouchstart="" @onclick="async _=>await StartSearch()" class="fab" for="searchInput">
         <ion-icon name="add-outline"></ion-icon>
     </label>
 }
