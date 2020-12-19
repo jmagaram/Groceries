@@ -493,6 +493,8 @@ module SearchTerm =
 
     let normalizer = String.trim
 
+    let length (SearchTerm t) = t.Length
+
     let validator =
         rules |> StringValidation.createValidator
 
@@ -519,7 +521,7 @@ module SearchTerm =
 
     let value (SearchTerm s) = s
 
-    let toRegex (SearchTerm s) =
+    let toRegexComponents (SearchTerm s) =
         let isRepeating s =
             let len = s |> String.length
 
@@ -567,6 +569,10 @@ module SearchTerm =
             RegexOptions.IgnoreCase
             ||| RegexOptions.CultureInvariant
 
+        (pattern, options)
+
+    let toRegex s = 
+        let (pattern, options) = s |> toRegexComponents
         new Regex(pattern, options)
 
 [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]

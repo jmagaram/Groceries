@@ -16,9 +16,9 @@ module HighlighterTests =
     open Generators
 
     [<Fact>]
-    let ``highlighter - when search an empty string find nothing`` () =
+    let ``find - when search an empty string find nothing`` () =
         let searchTerm = "abc" |> SearchTerm.tryParse |> Result.okOrThrow
-        let highlighter = searchTerm |> Highlighter.create
+        let highlighter = searchTerm |> Highlighter.find
         let source = ""
 
         source
@@ -28,13 +28,31 @@ module HighlighterTests =
         |> should equal 0
 
     [<Fact>]
-    let ``highlighter - when search a whitespace string find exactly that`` () =
+    let ``find - when search a whitespace string find exactly that`` () =
         let searchTerm = "abc" |> SearchTerm.tryParse |> Result.okOrThrow
-        let highlighter = searchTerm |> Highlighter.create
+        let highlighter = searchTerm |> Highlighter.find
         let source = "     "
         let actual = source |> highlighter |> FormattedText.spans
         let expected = [ TextSpan.normal source ]
         actual |> should equal expected
+
+    let parseSpan (s: String) =
+        if s.[0] = '!' then (s.Substring(1) |> TextSpan.highlight) else s |> TextSpan.normal
+
+    let parseFormattedText (s: String) =
+        s.Split(',', System.StringSplitOptions.RemoveEmptyEntries)
+        |> Seq.map parseSpan
+
+    let formatSpan (s: TextSpan) =
+        match s.Format with
+        | Highlight -> sprintf "!%s" s.Text
+        | Normal -> s.Text
+
+    let expectedSpans expected =
+        expected
+        |> parseFormattedText
+        |> Seq.map formatSpan
+        |> List.ofSeq
 
     [<Theory>]
     [<InlineData("Once at beginning", "123xyz", "123", "!123,xyz")>]
@@ -59,38 +77,48 @@ module HighlighterTests =
     [<InlineData("Not found at all", "abc", "x", "abc")>]
     [<InlineData("Query is same as entire source", "abc", "abc", "!abc")>]
     [<InlineData("Search for regex characters", "abc^$()[]\/?.+*abc", "^$()[]\/?.+*", "abc,!^$()[]\/?.+*,abc")>]
-    let ``highlighter - specific examples`` (comment: string) source searchTerm expected =
-        let parseSpan (s: String) =
-            if s.[0] = '!' then (s.Substring(1) |> TextSpan.highlight) else s |> TextSpan.normal
-
-        let parseFormattedText (s: String) =
-            s.Split(',', System.StringSplitOptions.RemoveEmptyEntries)
-            |> Seq.map parseSpan
-
-        let formatSpan (s: TextSpan) =
-            match s.Format with
-            | Highlight -> sprintf "!%s" s.Text
-            | Normal -> s.Text
-
-        let expected =
-            expected
-            |> parseFormattedText
-            |> Seq.map formatSpan
-            |> List.ofSeq
-
+    let ``find - specific examples`` (comment: string) source searchTerm expected =
         let highlighter =
             searchTerm
             |> SearchTerm.tryParse
-            |> Result.map Highlighter.create
+            |> Result.map Highlighter.find
             |> Result.okOrThrow
 
-        let actual =
+        let actualSpans =
             source
             |> highlighter
             |> FormattedText.spans
             |> List.map formatSpan
 
-        actual |> should equal expected
+        let expectedSpans = expected |> expectedSpans
+
+        actualSpans |> should equal expectedSpans
+
+    [<Theory>]
+    [<InlineData("One terms", "abcabcabc", "b", "a,!b,ca,!b,ca,!b,c")>]
+    [<InlineData("Two terms", "ab cd ef ab cd ef ab cd ef", "ab|ef", "!ab, cd ,!ef, ,!ab, cd ,!ef, ,!ab, cd ,!ef")>]
+    [<InlineData("Three terms", "abcdeabcde", "a|c|e", "!a,b,!c,d,!ea,b,!c,d,!e")>]
+    [<InlineData("One term prefixes another, prefix first", "abcabcabc", "a|ab", "!ab,c,!ab,c,!ab,c")>]
+    [<InlineData("One term prefixes another, prefix last", "abcabcabc", "ab|a", "!ab,c,!ab,c,!ab,c")>]
+    [<InlineData("One term contained in another, container first", "abcabcabc", "abc|b", "!abcabcabc")>]
+    [<InlineData("One term contained in another, contained first", "abcabcabc", "b|abc", "!abcabcabc")>]
+    let ``findAny - specific examples`` (comment: string) source (searchTerm:string) expected =
+        let highlighter =
+            searchTerm.Split('|',StringSplitOptions.RemoveEmptyEntries)
+            |> Seq.map SearchTerm.tryParse
+            |> Result.fromResults
+            |> Result.map Highlighter.findAny
+            |> Result.okOrThrow
+
+        let actualSpans =
+            source
+            |> highlighter
+            |> FormattedText.spans
+            |> List.map formatSpan
+
+        let expectedSpans = expected |> expectedSpans
+
+        actualSpans |> should equal expectedSpans
 
     type HighlighterTest = { SearchTerm: SearchTerm; Source: string }
 
@@ -181,17 +209,17 @@ module HighlighterTests =
             |> Arb.fromGen
 
     [<Property(MaxTest = 1000, Arbitrary = [| typeof<Generators> |])>]
-    let ``concatenated spans equal source`` (Comprehensive p) =
+    let ``find - concatenated spans equal source`` (Comprehensive p) =
         p.Source
-        |> Highlighter.create p.SearchTerm
+        |> Highlighter.find p.SearchTerm
         |> FormattedText.spans
         |> Seq.fold (fun total i -> total + i.Text) ""
         |> fun x -> x = p.Source
 
     [<Property(MaxTest = 10000, Arbitrary = [| typeof<Generators> |])>]
-    let ``when search in regular spans will find nothing`` (Comprehensive p) =
+    let ``find - when search in regular spans will find nothing`` (Comprehensive p) =
         p.Source
-        |> Highlighter.create p.SearchTerm
+        |> Highlighter.find p.SearchTerm
         |> FormattedText.spans
         |> Seq.choose (fun i ->
             match i.Format with
@@ -199,15 +227,15 @@ module HighlighterTests =
             | _ -> None)
         |> Seq.forall (fun t ->
             match t
-                  |> Highlighter.create p.SearchTerm
+                  |> Highlighter.find p.SearchTerm
                   |> FormattedText.spans
                   |> Seq.tryExactlyOne with
             | Some r -> r.Format = TextFormat.Normal
             | None -> false)
 
     [<Property(MaxTest = 10000, Arbitrary = [| typeof<Generators> |])>]
-    let ``if highlight is longer than search term, then overlapping or back to back terms in source`` (VeryLimited p) =
-        let highlighter = p.SearchTerm |> Highlighter.create
+    let ``find - if highlight is longer than search term, then overlapping or back to back terms in source`` (VeryLimited p) =
+        let highlighter = p.SearchTerm |> Highlighter.find
 
         let chooseLongHighlight searchTerm span =
             match span.Format with
@@ -241,7 +269,7 @@ module HighlighterTests =
         |> Seq.forall endsWithHighlight
 
     [<Property(MaxTest = 10000, Arbitrary = [| typeof<Generators> |])>]
-    let ``results do not depend on case of search term`` (Comprehensive p) =
+    let ``find - results do not depend on case of search term`` (Comprehensive p) =
         let mapSearchTerm mapping st =
             st
             |> SearchTerm.value
@@ -255,21 +283,21 @@ module HighlighterTests =
 
         let withUpperFilter =
             p.Source
-            |> Highlighter.create upper
+            |> Highlighter.find upper
             |> FormattedText.spans
             |> List.ofSeq
 
         let withLowerFilter =
             p.Source
-            |> Highlighter.create lower
+            |> Highlighter.find lower
             |> FormattedText.spans
             |> List.ofSeq
 
         withUpperFilter = withLowerFilter
 
     [<Property(MaxTest = 10000, Arbitrary = [| typeof<Generators> |])>]
-    let ``results do not depend on case of source text`` (CommonEnglish p) =
-        let highlighter = p.SearchTerm |> Highlighter.create
+    let ``find - results do not depend on case of source text`` (CommonEnglish p) =
+        let highlighter = p.SearchTerm |> Highlighter.find
 
         let spanToLower span = { span with TextSpan.Text = span.Text.ToLowerInvariant() }
 

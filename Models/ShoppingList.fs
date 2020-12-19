@@ -78,7 +78,7 @@ let create now state =
     let find =
         settings.TextFilter.ValueTyping
         |> SearchTerm.tryCoerce
-        |> Option.map Highlighter.create
+        |> Option.map Highlighter.find
 
     let items (now: DateTimeOffset) =
         state
