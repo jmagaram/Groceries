@@ -519,6 +519,36 @@ module SearchTerm =
             | Error TooLong -> tryCoerce (s.Substring(0, rules.MaxLength |> int))
             | Error InvalidCharacters -> None // better to strip invalid chars
 
+    let englishWordsToIgnore =
+        [ "of"
+          "to"
+          "in"
+          "as"
+          "at"
+          "by"
+          "or"
+          "on"
+          "an"
+          "the" ]
+        |> Set.ofSeq
+
+    let splitOnSpace minWordLength wordsToIgnore (termsAsTyped: string) =
+        let space = ' '
+
+        if (termsAsTyped.Contains(space)) then
+            termsAsTyped.Split(space, StringSplitOptions.RemoveEmptyEntries)
+            |> Seq.map normalizer
+            |> Seq.filter
+                (fun s ->
+                    s.Length >= minWordLength
+                    && wordsToIgnore |> Set.contains s |> not)
+            |> Seq.map tryCoerce
+            |> Seq.choose id
+        else
+            match termsAsTyped |> tryCoerce with
+            | None -> Seq.empty
+            | Some t -> Seq.singleton t
+
     let value (SearchTerm s) = s
 
     let toRegexComponents (SearchTerm s) =
@@ -571,7 +601,7 @@ module SearchTerm =
 
         (pattern, options)
 
-    let toRegex s = 
+    let toRegex s =
         let (pattern, options) = s |> toRegexComponents
         new Regex(pattern, options)
 

@@ -22,11 +22,13 @@ type ShoppingList =
       TextFilter: TextBox
       Categories: CategorySummary list
       Stores: Store list }
-      with member me.TotalItems = 
-                            me.Categories 
-                            |> Seq.sumBy (fun c -> c.Items |> List.length)
+    member me.TotalItems =
+        me.Categories
+        |> Seq.sumBy (fun c -> c.Items |> List.length)
 
-and CategorySummary = { Category: Category option; Items: Item list }
+and CategorySummary =
+    { Category: Category option
+      Items: Item list }
 
 type CategorySummary with
     member me.Active =
@@ -51,10 +53,16 @@ let createItem find (item: CoreTypes.Item) state =
     { ItemId = item.ItemId
       ItemName = item.ItemName |> ItemName.asText |> find
       Note = item.Note |> Option.map (Note.asText >> find)
-      Quantity = item.Quantity |> Option.map (Quantity.asText >> find)
+      Quantity =
+          item.Quantity
+          |> Option.map (Quantity.asText >> find)
       Category =
           item.CategoryId
-          |> Option.map (fun c -> state |> State.categoriesTable |> DataTable.findCurrent c)
+          |> Option.map
+              (fun c ->
+                  state
+                  |> State.categoriesTable
+                  |> DataTable.findCurrent c)
       Schedule = item.Schedule
       Availability =
           state
@@ -65,20 +73,32 @@ let createItem find (item: CoreTypes.Item) state =
                     IsSold =
                         state
                         |> State.notSoldTable
-                        |> DataTable.tryFindCurrent { StoreId = st.StoreId; ItemId = item.ItemId }
+                        |> DataTable.tryFindCurrent
+                            { StoreId = st.StoreId
+                              ItemId = item.ItemId }
                         |> Option.isNone }) }
 
 let createItemFromItemId (id: CoreTypes.ItemId) state =
-    let item = state |> State.itemsTable |> DataTable.findCurrent id
+    let item =
+        state
+        |> State.itemsTable
+        |> DataTable.findCurrent id
+
     createItem None item state
 
 let create now state =
-    let settings = (state |> State.userSettingsForLoggedInUser).ShoppingListSettings
+    let settings =
+        (state |> State.userSettingsForLoggedInUser)
+            .ShoppingListSettings
 
     let find =
-        settings.TextFilter.ValueTyping
-        |> SearchTerm.tryCoerce
-        |> Option.map Highlighter.find
+        let terms =
+            settings.TextFilter.ValueTyping
+            |> SearchTerm.splitOnSpace 3 SearchTerm.englishWordsToIgnore
+            |> List.ofSeq
+        match terms with
+        | [] -> None
+        | xs -> Highlighter.findAny xs |> Some
 
     let items (now: DateTimeOffset) =
         state
@@ -104,7 +124,9 @@ let create now state =
                     |> Schedule.postponedUntil
                     |> Option.map
                         (fun postponedUntil ->
-                            let horizon = now.AddDays(settings.PostponedViewHorizon |> float)
+                            let horizon =
+                                now.AddDays(settings.PostponedViewHorizon |> float)
+
                             postponedUntil <= horizon)
                     |> Option.defaultValue true
 
@@ -126,12 +148,21 @@ let create now state =
 
                         name || note || qty
 
-                if find.IsSome then isTextMatch else isCompletedMatch && isStoreMatch && isPostponedMatch)
+                if find.IsSome then
+                    isTextMatch
+                else
+                    isCompletedMatch
+                    && isStoreMatch
+                    && isPostponedMatch)
         |> Seq.toList
 
     let storeFilter =
         settings.StoreFilter
-        |> Option.map (fun sid -> state |> State.storesTable |> DataTable.findCurrent sid)
+        |> Option.map
+            (fun sid ->
+                state
+                |> State.storesTable
+                |> DataTable.findCurrent sid)
 
     let stores = state |> State.stores |> List.ofSeq
 
@@ -143,8 +174,8 @@ let create now state =
             | Schedule.IsActive -> 0
             | Schedule.IsPostponedUntil _ -> 1
             | Schedule.IsComplete -> 2
-        let date =
-            item.Schedule |> Schedule.postponedUntil
+
+        let date = item.Schedule |> Schedule.postponedUntil
         (group, date, item.ItemName)
 
     { StoreFilter = storeFilter
@@ -163,5 +194,9 @@ let create now state =
           |> Seq.map
               (fun c ->
                   { CategorySummary.Category = c
-                    Items = items |> Seq.filter (fun j -> j.Category = c) |> Seq.sortBy sortKey |> Seq.toList })
+                    Items =
+                        items
+                        |> Seq.filter (fun j -> j.Category = c)
+                        |> Seq.sortBy sortKey
+                        |> Seq.toList })
           |> Seq.toList }
