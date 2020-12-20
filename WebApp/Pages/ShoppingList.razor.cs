@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.ApplicationInsights.WindowsServer;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Forms;
 using Microsoft.AspNetCore.Components.Web;
@@ -256,6 +257,10 @@ namespace WebApp.Pages
                     {
                         await EndSearch();
                     }
+                }
+                else if (e.Key == "Return" || e.Key=="Enter")
+                {
+                    OnStartCreateNew();
                 }
             }
         }
