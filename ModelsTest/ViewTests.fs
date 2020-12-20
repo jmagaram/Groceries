@@ -17,7 +17,9 @@ module HighlighterTests =
 
     [<Fact>]
     let ``find - when search an empty string find nothing`` () =
-        let searchTerm = "abc" |> SearchTerm.tryParse |> Result.okOrThrow
+        let searchTerm =
+            "abc" |> SearchTerm.tryParse |> Result.okOrThrow
+
         let highlighter = searchTerm |> Highlighter.find
         let source = ""
 
@@ -29,10 +31,15 @@ module HighlighterTests =
 
     [<Fact>]
     let ``find - when search a whitespace string find exactly that`` () =
-        let searchTerm = "abc" |> SearchTerm.tryParse |> Result.okOrThrow
+        let searchTerm =
+            "abc" |> SearchTerm.tryParse |> Result.okOrThrow
+
         let highlighter = searchTerm |> Highlighter.find
         let source = "     "
-        let actual = source |> highlighter |> FormattedText.spans
+
+        let actual =
+            source |> highlighter |> FormattedText.spans
+
         let expected = [ TextSpan.normal source ]
         actual |> should equal expected
 
@@ -102,9 +109,10 @@ module HighlighterTests =
     [<InlineData("One term prefixes another, prefix last", "abcabcabc", "ab|a", "!ab,c,!ab,c,!ab,c")>]
     [<InlineData("One term contained in another, container first", "abcabcabc", "abc|b", "!abcabcabc")>]
     [<InlineData("One term contained in another, contained first", "abcabcabc", "b|abc", "!abcabcabc")>]
-    let ``findAny - specific examples`` (comment: string) source (searchTerm:string) expected =
+    [<InlineData("Found by fscheck","daeddaaebaba","ae|ed","d,!aed,da,!ae,baba")>]
+    let ``findAny - specific examples`` (comment: string) source (searchTerm: string) expected =
         let highlighter =
-            searchTerm.Split('|',StringSplitOptions.RemoveEmptyEntries)
+            searchTerm.Split('|', StringSplitOptions.RemoveEmptyEntries)
             |> Seq.map SearchTerm.tryParse
             |> Result.fromResults
             |> Result.map Highlighter.findAny
@@ -120,7 +128,17 @@ module HighlighterTests =
 
         actualSpans |> should equal expectedSpans
 
-    type HighlighterTest = { SearchTerm: SearchTerm; Source: string }
+    type SingleTermHighlighterTest =
+        { SearchTerm: SearchTerm
+          Source: string }
+
+    type HighlighterTest =
+        { SearchTerms: SearchTerm list
+          Source: string }
+
+    let toSingleTermHighlighterTest (ht: HighlighterTest) =
+        { SingleTermHighlighterTest.SearchTerm = ht.SearchTerms.Head
+          Source = ht.Source }
 
     let veryLimitedCharGens = [| Gen.elements "abcde" |]
 
@@ -135,9 +153,16 @@ module HighlighterTests =
 
     let comprehensiveCharGens =
         let abcd = Gen.elements [ 'a'; 'b'; 'c'; 'd' ]
-        let std = letterOrDigit.Select(fun (LetterOrDigit c) -> c)
-        let rgx = regexEscape.Select(fun (RegexEscape c) -> c)
-        let punc = punctuation.Select(fun (Punctuation c) -> c)
+
+        let std =
+            letterOrDigit.Select(fun (LetterOrDigit c) -> c)
+
+        let rgx =
+            regexEscape.Select(fun (RegexEscape c) -> c)
+
+        let punc =
+            punctuation.Select(fun (Punctuation c) -> c)
+
         let sym = symbol.Select(fun (Symbol c) -> c)
         let space = Gen.constant ' '
 
@@ -150,7 +175,7 @@ module HighlighterTests =
         |> Seq.concat
         |> Array.ofSeq
 
-    let highlighterTestGen (charGens: Gen<char> []) =
+    let highlighterTestGen termCount (charGens: Gen<char> []) =
         gen {
             let cr = Gen.constant '\r'
             let lf = Gen.constant '\n'
@@ -167,49 +192,66 @@ module HighlighterTests =
                 Gen.frequency [ (1, Gen.choose (1, 10))
                                 (1, Gen.choose (11, 200)) ]
 
-            let! searchTerm =
+            let! searchTerms =
                 termChars
                 |> Gen.listOfLength searchTermLen
                 |> Gen.map (fun cs -> cs |> Array.ofList |> String)
                 |> Gen.map SearchTerm.tryParse
                 |> Gen.filter (fun r -> r |> Result.isOk)
                 |> Gen.map (fun r -> r |> Result.okOrThrow)
+                |> Gen.listOfLength termCount
 
-            let sourceChars = Gen.frequency [ (20, termChars); (1, cr); (1, lf) ]
+
+            let sourceChars =
+                Gen.frequency [ (20, termChars)
+                                (1, cr)
+                                (1, lf) ]
 
             let! source =
                 sourceChars
                 |> Gen.listOfLength sourceLen
                 |> Gen.map (fun cs -> cs |> Array.ofList |> String)
 
-            return { SearchTerm = searchTerm; Source = source }
+            return
+                { SearchTerms = searchTerms
+                  Source = source }
         }
 
-    type Comprehensive = Comprehensive of HighlighterTest
-    type CommonEnglish = CommonEnglish of HighlighterTest
-    type VeryLimited = VeryLimited of HighlighterTest
+    type ComprehensiveOneTerm = ComprehensiveOneTerm of SingleTermHighlighterTest
+    type CommonEnglishOneTerm = CommonEnglishOneTerm of SingleTermHighlighterTest
+    type VeryLimitedOneTerm = VeryLimitedOneTerm of SingleTermHighlighterTest
+    type VeryLimitedThreeTerm = VeryLimitedThreeTerm of HighlighterTest
 
     type Generators =
-        static member Comprehensive() =
+        static member ComprehensiveOneTerm =
             comprehensiveCharGens
-            |> highlighterTestGen
-            |> Gen.map Comprehensive
+            |> highlighterTestGen 1
+            |> Gen.map toSingleTermHighlighterTest
+            |> Gen.map ComprehensiveOneTerm
             |> Arb.fromGen
 
-        static member CommonEnglish() =
+        static member CommonEnglishOneTerm =
             regularEnglishCharGens
-            |> highlighterTestGen
-            |> Gen.map CommonEnglish
+            |> highlighterTestGen 1
+            |> Gen.map toSingleTermHighlighterTest
+            |> Gen.map CommonEnglishOneTerm
             |> Arb.fromGen
 
-        static member VeryLimited() =
+        static member VeryLimitedOneTerm =
             veryLimitedCharGens
-            |> highlighterTestGen
-            |> Gen.map VeryLimited
+            |> highlighterTestGen 1
+            |> Gen.map toSingleTermHighlighterTest
+            |> Gen.map VeryLimitedOneTerm
+            |> Arb.fromGen
+
+        static member VeryLimitedThreeTerm =
+            veryLimitedCharGens
+            |> highlighterTestGen 3
+            |> Gen.map VeryLimitedThreeTerm
             |> Arb.fromGen
 
     [<Property(MaxTest = 1000, Arbitrary = [| typeof<Generators> |])>]
-    let ``find - concatenated spans equal source`` (Comprehensive p) =
+    let ``find - concatenated spans equal source`` (ComprehensiveOneTerm p) =
         p.Source
         |> Highlighter.find p.SearchTerm
         |> FormattedText.spans
@@ -217,31 +259,36 @@ module HighlighterTests =
         |> fun x -> x = p.Source
 
     [<Property(MaxTest = 10000, Arbitrary = [| typeof<Generators> |])>]
-    let ``find - when search in regular spans will find nothing`` (Comprehensive p) =
+    let ``find - when search in regular spans will find nothing`` (ComprehensiveOneTerm p) =
         p.Source
         |> Highlighter.find p.SearchTerm
         |> FormattedText.spans
-        |> Seq.choose (fun i ->
-            match i.Format with
-            | TextFormat.Normal -> Some i.Text
-            | _ -> None)
-        |> Seq.forall (fun t ->
-            match t
-                  |> Highlighter.find p.SearchTerm
-                  |> FormattedText.spans
-                  |> Seq.tryExactlyOne with
-            | Some r -> r.Format = TextFormat.Normal
-            | None -> false)
+        |> Seq.choose
+            (fun i ->
+                match i.Format with
+                | TextFormat.Normal -> Some i.Text
+                | _ -> None)
+        |> Seq.forall
+            (fun t ->
+                match t
+                      |> Highlighter.find p.SearchTerm
+                      |> FormattedText.spans
+                      |> Seq.tryExactlyOne with
+                | Some r -> r.Format = TextFormat.Normal
+                | None -> false)
 
     [<Property(MaxTest = 10000, Arbitrary = [| typeof<Generators> |])>]
-    let ``find - if highlight is longer than search term, then overlapping or back to back terms in source`` (VeryLimited p) =
+    let ``find - if highlight is longer than search term, then overlapping or back to back terms in source`` (VeryLimitedOneTerm p)
+                                                                                                             =
         let highlighter = p.SearchTerm |> Highlighter.find
 
         let chooseLongHighlight searchTerm span =
             match span.Format with
             | Normal -> None
             | Highlight ->
-                let termLen = searchTerm |> SearchTerm.value |> String.length
+                let termLen =
+                    searchTerm |> SearchTerm.value |> String.length
+
                 let spanLen = span.Text.Length
                 if spanLen > termLen then Some span.Text else None
 
@@ -258,7 +305,8 @@ module HighlighterTests =
             |> Seq.map (fun i -> s.Substring(i))
             |> List.ofSeq
 
-        let searchLen = p.SearchTerm |> SearchTerm.value |> String.length
+        let searchLen =
+            p.SearchTerm |> SearchTerm.value |> String.length
 
         p.Source
         |> highlighter
@@ -269,7 +317,7 @@ module HighlighterTests =
         |> Seq.forall endsWithHighlight
 
     [<Property(MaxTest = 10000, Arbitrary = [| typeof<Generators> |])>]
-    let ``find - results do not depend on case of search term`` (Comprehensive p) =
+    let ``find - results do not depend on case of search term`` (ComprehensiveOneTerm p) =
         let mapSearchTerm mapping st =
             st
             |> SearchTerm.value
@@ -277,9 +325,13 @@ module HighlighterTests =
             |> SearchTerm.tryParse
             |> Result.okOrThrow
 
-        let upper = p.SearchTerm |> mapSearchTerm (fun t -> t.ToUpper())
+        let upper =
+            p.SearchTerm
+            |> mapSearchTerm (fun t -> t.ToUpper())
 
-        let lower = p.SearchTerm |> mapSearchTerm (fun t -> t.ToLower())
+        let lower =
+            p.SearchTerm
+            |> mapSearchTerm (fun t -> t.ToLower())
 
         let withUpperFilter =
             p.Source
@@ -296,10 +348,12 @@ module HighlighterTests =
         withUpperFilter = withLowerFilter
 
     [<Property(MaxTest = 10000, Arbitrary = [| typeof<Generators> |])>]
-    let ``find - results do not depend on case of source text`` (CommonEnglish p) =
+    let ``find - results do not depend on case of source text`` (CommonEnglishOneTerm p) =
         let highlighter = p.SearchTerm |> Highlighter.find
 
-        let spanToLower span = { span with TextSpan.Text = span.Text.ToLowerInvariant() }
+        let spanToLower span =
+            { span with
+                  TextSpan.Text = span.Text.ToLowerInvariant() }
 
         let withUpperSource =
             p.Source.ToUpper()
@@ -316,6 +370,32 @@ module HighlighterTests =
             |> List.ofSeq
 
         withUpperSource = withLowerSource
+
+    [<Property(MaxTest = 10000, Arbitrary = [| typeof<Generators> |])>]
+    let ``findAny - highlighted chars with all terms is set union of each term`` (VeryLimitedThreeTerm p) =
+        let highlightedCharIndexes (f: FormattedText) =
+            f
+            |> FormattedText.spans
+            |> Seq.collect (fun s -> Seq.replicate s.Text.Length s.Format)
+            |> Seq.indexed
+            |> Seq.choose (fun (i, j) -> if j = TextFormat.Highlight then Some i else None)
+            |> Set.ofSeq
+
+        let findAny = p.SearchTerms |> Highlighter.findAny
+
+        let highlightedAllTerms =
+            p.Source |> findAny |> highlightedCharIndexes
+
+        let highlightedUnion =
+            p.SearchTerms
+            |> Seq.map
+                (fun t ->
+                    let findOne = Highlighter.find t
+                    let result = findOne p.Source
+                    result |> highlightedCharIndexes)
+            |> Seq.fold (fun t i -> Set.union t i) Set.empty
+
+        highlightedAllTerms = highlightedUnion
 
 module SetStringTests =
 
@@ -340,7 +420,8 @@ module SetStringTests =
                                                                                               =
         let items = source.Split('|', ';', ',')
 
-        let result = SetString.fromItems String.trim "|" items
+        let result =
+            SetString.fromItems String.trim "|" items
 
         result |> should equal expected
 
@@ -352,15 +433,21 @@ module SetStringTests =
         let splitOn = [| "|"; ","; ";" |]
         let delimeter = "|"
 
-        let result = SetString.fromString String.trim splitOn delimeter source
+        let result =
+            SetString.fromString String.trim splitOn delimeter source
 
         result |> should equal expected
 
     [<Theory>]
     [<MemberData(nameof (testData))>]
-    let ``toItems - split on delimeters, normalize each, remove duplicates by case`` (source: string) (expected: string) =
+    let ``toItems - split on delimeters, normalize each, remove duplicates by case`` (source: string)
+                                                                                     (expected: string)
+                                                                                     =
         let splitOn = [| "|"; ","; ";" |]
-        let result = SetString.toItems String.trim splitOn source |> List.ofSeq
+
+        let result =
+            SetString.toItems String.trim splitOn source
+            |> List.ofSeq
 
         let expected =
             expected.Split('|', StringSplitOptions.RemoveEmptyEntries)
@@ -397,7 +484,10 @@ module SetManagerTests =
         let parseMove (s: string) =
             let parts = s.Split(':')
             let source = parts.[0]
-            let target = if parts.[1] = "_" then None else Some parts.[1]
+
+            let target =
+                if parts.[1] = "_" then None else Some parts.[1]
+
             (source, target)
 
         let result =
@@ -408,7 +498,9 @@ module SetManagerTests =
             |> Option.get
 
         result.Create |> should equal (created |> asSet)
-        result.Unchanged |> should equal (unchanged |> asSet)
+
+        result.Unchanged
+        |> should equal (unchanged |> asSet)
 
         result.MoveOrDelete
         |> should equal (moved |> asSet |> Seq.map parseMove |> Map.ofSeq)

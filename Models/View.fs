@@ -29,7 +29,7 @@ module FormattedText =
 
     let spans (FormattedText ft) = ft
 
-    let consolidate (source: TextSpan seq) =
+    let private consolidate (source: TextSpan seq) =
         seq {
             use en = source.GetEnumerator()
             let mutable total = None
@@ -105,26 +105,33 @@ module Highlighter =
         |> SearchTerm.toRegex 
         |> fromRegex
 
+
     let findAny searchTerms =
-        let regexComponents =
+        let highlighters =
             searchTerms
-            |> Seq.sortByDescending SearchTerm.length
             |> Seq.map SearchTerm.toRegexComponents
+            |> Seq.map (fun (r,o) -> new Regex(r,o) |> fromRegex)
             |> List.ofSeq
-
-        let options =
-            regexComponents
-            |> Seq.map (fun (i, j) -> j)
-            |> Seq.fold (fun t i -> t ||| i) RegexOptions.None
-
-        let pattern =
-            String.Join(
-                '|',
-                regexComponents
-                |> Seq.map (fun (i, j) -> $"({i})")
-            )
-
-        new Regex(pattern, options) |> fromRegex
+        let highlightedIndexes (f:FormattedText) =
+            f
+            |> FormattedText.spans
+            |> Seq.collect (fun s -> Seq.replicate s.Text.Length s.Format)
+            |> Seq.indexed
+            |> Seq.choose (fun (i,j) -> if j = TextFormat.Highlight then Some i else None)
+            |> Set.ofSeq
+        fun (s:String) ->
+            let highlightedCharIndexes =
+                highlighters
+                |> Seq.map (fun findOneTerm -> findOneTerm s)
+                |> Seq.map highlightedIndexes
+                |> Seq.fold Set.union Set.empty
+            s
+            |> Seq.indexed
+            |> Seq.map (fun (i,j)->
+                match highlightedCharIndexes |> Set.contains i with
+                | true -> TextSpan.highlight (j.ToString())
+                | false -> TextSpan.normal (j.ToString()))
+            |> FormattedText.fromSpans
 
 [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
 module SetString =
