@@ -1,7 +1,7 @@
 {
   "name": "Groceries",
   "short_name": "Groceries",
-  "start_url": "./",
+  "start_url": "./shoppinglist",
   "display": "standalone",
   "background_color": "#ffffff",
   "theme_color": "#03173d",
