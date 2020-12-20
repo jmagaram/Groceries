@@ -529,7 +529,19 @@ module SearchTerm =
           "or"
           "on"
           "an"
-          "the" ]
+          "the"
+          "jar"
+          "box"
+          "can"
+          "bag"
+          "bunch"
+          "pound"
+          "ounce"
+          "gram"
+          "lots"
+          "many"
+          "whole"
+        ]
         |> Set.ofSeq
 
     let splitOnSpace minWordLength wordsToIgnore (termsAsTyped: string) =
