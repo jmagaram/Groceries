@@ -1,0 +1,86 @@
+﻿@inject IJSRuntime JSRuntime
+@implements IAsyncDisposable
+@using Microsoft.JSInterop
+
+<elix-filter-combo-box 
+    disabled="@Disabled" 
+    placeholder="@Placeholder" 
+    @ref="_webComponent" 
+    @onblur="OnBlurCallback">@ChildContent</elix-filter-combo-box>
+
+@code {
+    private ElementReference _webComponent;
+    private IJSObjectReference _generalModule;
+    private bool _valueIsDirty = false;
+    private string _value = "";
+
+    [Parameter]
+    public RenderFragment ChildContent { get; set; }
+
+    [Parameter]
+    public string Placeholder { get; set; }
+
+    [Parameter]
+    public bool Disabled { get; set; }
+
+    [Parameter]
+    public string Value
+    {
+        set
+        {
+            if (_value != value)
+            {
+                _value = value;
+                _valueIsDirty = true;
+            }
+        }
+        get => _value;
+    }
+
+    /// <summary>
+    /// Invoked when the element loses focus and the selected value (typed or chosen from the list)
+    /// has changed.
+    /// </summary>
+    [Parameter]
+    public EventCallback<string> ValueChanged { get; set; }
+
+    private async Task OnBlurCallback(FocusEventArgs f)
+    {
+        string value = await _generalModule.InvokeAsync<string>("getProperty", _webComponent, "value");
+        if (value != _value)
+        {
+            _value = value;
+            await ValueChanged.InvokeAsync(_value);
+        }
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        await base.OnAfterRenderAsync(firstRender);
+        if (firstRender)
+        {
+            _generalModule = await JSRuntime.InvokeAsync<IJSObjectReference>("import", "./js/general.js").AsTask();
+        }
+        if (_valueIsDirty)
+        {
+            if (firstRender)
+            {
+                // Occasionally the web component doesn't show the inital Value. Adding this
+                // delay seems to fix it. I assume it takes some time for the web component
+                // to "hydrate".
+                await Task.Delay(500);
+            }
+            await _generalModule.InvokeVoidAsync("setProperty", _webComponent, "value", _value);
+            _valueIsDirty = false;
+        }
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        if (_generalModule != null)
+        {
+            await _generalModule.DisposeAsync();
+            _generalModule = null;
+        }
+    }
+}
