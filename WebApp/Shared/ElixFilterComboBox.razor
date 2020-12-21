@@ -2,10 +2,11 @@
 @implements IAsyncDisposable
 @using Microsoft.JSInterop
 
-<elix-filter-combo-box 
-    disabled="@Disabled" 
-    placeholder="@Placeholder" 
+<elix-filter-combo-box
     @ref="_webComponent" 
+    @attributes="@Attributes"
+    disabled="@Disabled"
+    placeholder="@Placeholder" 
     @onblur="OnBlurCallback">@ChildContent</elix-filter-combo-box>
 
 @code {
@@ -14,6 +15,9 @@
     private bool _valueIsDirty = false;
     private string _value = "";
 
+    /// <summary>
+    /// The choices for the combo box. Works with a series of &lt;div&gt;abc&lt;div&gt;
+    /// </summary>
     [Parameter]
     public RenderFragment ChildContent { get; set; }
 
@@ -23,6 +27,12 @@
     [Parameter]
     public bool Disabled { get; set; }
 
+    [Parameter(CaptureUnmatchedValues = true)]
+    public Dictionary<string, object> Attributes { get; set; }
+
+    /// <summary>
+    /// The current text value in the combo box.
+    /// </summary>
     [Parameter]
     public string Value
     {
@@ -56,23 +66,24 @@
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        await base.OnAfterRenderAsync(firstRender);
         if (firstRender)
         {
             _generalModule = await JSRuntime.InvokeAsync<IJSObjectReference>("import", "./js/general.js").AsTask();
         }
+        // If I don't track this dirty flag the component writes _value to the underlying
+        // web component much more often than it needs to. I'm not sure why.
         if (_valueIsDirty)
         {
             if (firstRender)
             {
-                // Occasionally the web component doesn't show the inital Value. Adding this
-                // delay seems to fix it. I assume it takes some time for the web component
-                // to "hydrate".
+                // Occasionally the web component doesn't show the inital value. Adding this
+                // delay seems to fix it.
                 await Task.Delay(500);
             }
             await _generalModule.InvokeVoidAsync("setProperty", _webComponent, "value", _value);
             _valueIsDirty = false;
         }
+        await base.OnAfterRenderAsync(firstRender);
     }
 
     public async ValueTask DisposeAsync()
