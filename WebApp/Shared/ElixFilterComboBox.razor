@@ -88,7 +88,7 @@
 
     public async ValueTask DisposeAsync()
     {
-        if (_generalModule != null)
+        if (_generalModule is not null)
         {
             await _generalModule.DisposeAsync();
             _generalModule = null;
