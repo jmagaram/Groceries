@@ -5,7 +5,7 @@
   "devDependencies": {
     "webpack": "^5.0.0",
     "webpack-cli": "4.0.0",
-    "elix": "14.1.0",
+    "elix": "14.1.1",
     "bootstrap-icons": "1.1.0"
   },
   "scripts": {
