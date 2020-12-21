@@ -8,7 +8,7 @@
 </style>
 <Observable Context="i" Source="StateService.SyncronizationStatus">
     <Loading>
-        <button class="btn text-light" type="button" disabled><Icon Kind="IconKind.CloudUpload" /></button>
+        <button class="btn text-light" type="button" disabled><ion-icon name="cloud-upload-outline"></ion-icon></button>
     </Loading>
     <Loaded>
         @if (i.IsSynchronizing) {
