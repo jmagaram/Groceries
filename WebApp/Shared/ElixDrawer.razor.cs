@@ -4,31 +4,34 @@ using Microsoft.AspNetCore.Components;
 using Microsoft.JSInterop;
 using WebApp.Common;
 
-namespace WebApp.Shared {
-    public partial class ElixDrawer : IDisposable {
+namespace WebApp.Shared
+{
+    public partial class ElixDrawer : IDisposable, IAsyncDisposable
+    {
         ElementReference _drawer;
+        IJSObjectReference _elixModule;
+        IJSObjectReference _generalModule;
         DotNetObjectReference<CallbackHelper<bool>> _openedChangeCallbackReference;
 
-        protected override async Task OnAfterRenderAsync(bool firstRender) {
-            if (firstRender) {
+        protected override async Task OnAfterRenderAsync(bool firstRender)
+        {
+            if (firstRender)
+            {
+                _elixModule = await JSRuntime.InvokeAsync<IJSObjectReference>("import", "./js/elix.js").AsTask();
+                _generalModule = await JSRuntime.InvokeAsync<IJSObjectReference>("import", "./js/general.js").AsTask();
                 var _openedChangeCallback = new CallbackHelper<bool>(OnOpenedChange);
                 _openedChangeCallbackReference = DotNetObjectReference.Create(_openedChangeCallback);
-                await JSRuntime.InvokeVoidAsync("ElixOpenCloseMixin.addOpenedChangeEventListener",
+                await _elixModule.InvokeVoidAsync(
+                    "OpenCloseMixinAddOpenedChangeEventListener",
                     _drawer,
                     "WebApp",
-                    "Invoke",
+                    nameof(_openedChangeCallback.Invoke),
                     _openedChangeCallbackReference);
             }
         }
 
-        protected Task OnOpenedChange(bool isOpen) {
-            if (!isOpen) {
-                return Closed.InvokeAsync();
-            }
-            else {
-                return Task.CompletedTask;
-            }
-        }
+        protected Task OnOpenedChange(bool isOpen) => 
+            !isOpen ? Closed.InvokeAsync() : Task.CompletedTask;
 
         [Parameter]
         public RenderFragment ChildContent { get; set; }
@@ -44,22 +47,53 @@ namespace WebApp.Shared {
         /// pressing ESC, or (3) dragging the drawer closed. Not raised as a
         /// result of code that calls the Close() method.
         /// </summary>
-        /// <remarks>
-        /// Can't get reliably notified of Open and Close events. The only
-        /// notification that works is getting a Close notification if the user
-        /// clicks outside the Drawer on the overlay or presses ESC or drags it
-        /// closed. No other events are raised properly.
-        /// </remarks>
         [Parameter]
         public EventCallback Closed { get; set; }
 
         public async ValueTask Open() =>
-            await JSRuntime.InvokeVoidAsync("HtmlElement.setProperty", _drawer, "opened", true);
+            await _generalModule.InvokeVoidAsync("setProperty", _drawer, "opened", true);
 
         public async ValueTask Close() =>
-            await JSRuntime.InvokeVoidAsync("HtmlElement.setProperty", _drawer, "opened", false);
+            await _generalModule.InvokeVoidAsync("setProperty", _drawer, "opened", false);
 
-        public void Dispose() {
+        public void Dispose()
+        {
+            Dispose(disposing: true);
+            GC.SuppressFinalize(this);
+        }
+
+        public async ValueTask DisposeAsync()
+        {
+            await DisposeAsyncCore();
+            Dispose(disposing: false);
+            GC.SuppressFinalize(this);
+        }
+
+        protected virtual void Dispose(bool disposing)
+        {
+            if (disposing)
+            {
+                _openedChangeCallbackReference?.Dispose();
+                (_elixModule as IDisposable)?.Dispose();
+                (_generalModule as IDisposable)?.Dispose();
+            }
+            _openedChangeCallbackReference = null;
+            _elixModule = null;
+            _generalModule = null;
+        }
+
+        protected virtual async ValueTask DisposeAsyncCore()
+        {
+            if (_elixModule is not null)
+            {
+                await _elixModule.DisposeAsync().ConfigureAwait(false);
+                _elixModule = null;
+            }
+            if (_generalModule is not null)
+            {
+                await _generalModule.DisposeAsync().ConfigureAwait(false);
+                _generalModule = null;
+            }
             _openedChangeCallbackReference?.Dispose();
             _openedChangeCallbackReference = null;
         }
