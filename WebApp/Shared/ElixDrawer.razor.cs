@@ -6,7 +6,7 @@ using WebApp.Common;
 
 namespace WebApp.Shared
 {
-    public partial class ElixDrawer : IDisposable, IAsyncDisposable
+    public partial class ElixDrawer : ComponentBase, IDisposable, IAsyncDisposable
     {
         ElementReference _drawer;
         IJSObjectReference _elixModule;
