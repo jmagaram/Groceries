@@ -27,19 +27,6 @@ HtmlElement.scrollIntoView = function (element, offset) {
     }, 250);
 }
 
-
-var ElixOpenCloseMixin = ElixOpenCloseMixin || {};
-
-ElixOpenCloseMixin.addOpenedChangeEventListener = function (element, assemblyName, method, helper) {
-    if (element == null) return;
-    element.addEventListener("open", (event) => {
-        helper.invokeMethodAsync(assemblyName, method, true);
-    })
-    element.addEventListener("close", (event) => {
-        helper.invokeMethodAsync(assemblyName, method, false);
-    })
-};
-
 window.interopFunctions =
 {
     focusElement: function (element) {
