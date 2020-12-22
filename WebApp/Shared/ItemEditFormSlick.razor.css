@@ -1,22 +1,4 @@
-﻿.enterRight {
-    animation: enterRightAnimation;
-    animation-duration: 0.25s;
-    animation-fill-mode: forwards;
-    animation-timing-function: ease;
-    position: relative;
-}
-
-@keyframes enterRightAnimation {
-    from {
-        left: 125px;
-    }
-
-    to {
-        left: 0px;
-    }
-}
-
-.enterLeft {
+﻿.enterLeft {
     animation: enterLeftAnimation;
     animation-duration: 0.25s;
     animation-fill-mode: forwards;
@@ -65,7 +47,7 @@
 .propertyGrid {
     display: grid;
     grid-column-gap: 0.5em;
-    grid-template-columns: 1em auto;
+    grid-template-columns: 1.5em auto;
     width: 100%;
     margin-bottom: 1.25rem;
     margin-left: 1.25em;
@@ -89,9 +71,34 @@ button.propertyGrid {
         outline: none !important;
     }
 
-.propertyGrid input {
-    width: 90%;
+.propertyGrid input[type=text] {
+    width: 85%;
     max-width: 40ch;
+    border: none;
+    outline: none;
+    padding-left: 0px;
+}
+
+.propertyGrid input:focus {
+    border: none;
+    outline: none !important;
+}
+
+.propertyGrid elix-auto-size-textarea {
+    width: 85%;
+    max-width: 40ch;
+    outline:none;
+}
+
+elix-auto-size-textarea::part(textarea) {
+    border: none;
+    outline: none;
+    padding-left:0px;
+}
+
+elix-auto-size-textarea::part(textarea):focus {
+    border: none;
+    outline: none;
 }
 
 input.hardComplete {

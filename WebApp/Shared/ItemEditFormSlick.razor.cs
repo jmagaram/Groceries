@@ -157,11 +157,5 @@ namespace WebApp.Shared
 
         protected void OnQuantityFocusOut() =>
             Process(FormMessage.NewQuantity(TextBoxMessage.LoseFocus));
-
-        public int ActiveIndex { get; set; } = 0;
-
-        public void GoBackHome() => ActiveIndex = 0;
-
-        public void GoNote() => ActiveIndex = 1;
     }
 }
