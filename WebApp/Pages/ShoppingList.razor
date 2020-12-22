@@ -93,7 +93,7 @@
 @if (!IsSearchBarVisible)
 {
     <label ontouchstart="" @onclick="async _=>await StartSearch()" class="fab" for="searchInput">
-        <ion-icon name="add-outline"></ion-icon>
+        <ion-icon name="add-outline"></ion-icon><ion-icon style="margin-left:-3px" name="search-outline"></ion-icon>
     </label>
 }
 <ItemQuickActionDrawer OnDelete="async i => await OnClickDelete(i)"
