@@ -12,7 +12,7 @@ type Item =
       Note: FormattedText option
       Quantity: FormattedText option
       Category: Category option
-      Schedule: Schedule
+      PostponeUntil: DateTimeOffset option
       Availability: ItemAvailability seq }
 
 and ItemAvailability = { Store: Store; IsSold: bool }
@@ -33,12 +33,12 @@ and CategorySummary =
 type CategorySummary with
     member me.Active =
         me.Items
-        |> Seq.filter (fun i -> i.Schedule |> Schedule.isActive)
+        |> Seq.filter (fun i -> i.PostponeUntil.IsNone)
         |> Seq.length
 
     member me.Postponed =
         me.Items
-        |> Seq.filter (fun i -> i.Schedule |> Schedule.isPostponed)
+        |> Seq.filter (fun i -> i.PostponeUntil.IsSome)
         |> Seq.length
 
     member me.Total = me.Items |> Seq.length
@@ -63,7 +63,7 @@ let createItem find (item: CoreTypes.Item) state =
                   state
                   |> State.categoriesTable
                   |> DataTable.findCurrent c)
-      Schedule = item.Schedule
+      PostponeUntil = item.PostponeUntil
       Availability =
           state
           |> State.stores
@@ -96,6 +96,7 @@ let create now state =
             settings.TextFilter.ValueTyping
             |> SearchTerm.splitOnSpace 3 SearchTerm.englishWordsToIgnore
             |> List.ofSeq
+
         match terms with
         | [] -> None
         | xs -> Highlighter.findAny xs |> Some
@@ -106,10 +107,6 @@ let create now state =
         |> Seq.map (fun item -> createItem find item state)
         |> Seq.filter
             (fun i ->
-                let isCompletedMatch =
-                    (settings.HideCompletedItems = false)
-                    || (i.Schedule |> Schedule.isCompleted |> not)
-
                 let isStoreMatch =
                     settings.StoreFilter
                     |> Option.map
@@ -120,15 +117,14 @@ let create now state =
                     |> Option.defaultValue true
 
                 let isPostponedMatch =
-                    i.Schedule
-                    |> Schedule.postponedUntil
-                    |> Option.map
-                        (fun postponedUntil ->
-                            let horizon =
-                                now.AddDays(settings.PostponedViewHorizon |> float)
-
-                            postponedUntil <= horizon)
-                    |> Option.defaultValue true
+                    match i.PostponeUntil with
+                    | None -> true
+                    | Some postponeUntil ->
+                        match settings.PostponedViewHorizon with
+                        | None -> false
+                        | Some horizon ->
+                            let horizon = now.AddDays(horizon |> float)
+                            postponeUntil <= horizon
 
                 let isTextMatch =
                     match find with
@@ -148,12 +144,7 @@ let create now state =
 
                         name || note || qty
 
-                if find.IsSome then
-                    isTextMatch
-                else
-                    isCompletedMatch
-                    && isStoreMatch
-                    && isPostponedMatch)
+                if find.IsSome then isTextMatch else isStoreMatch && isPostponedMatch)
         |> Seq.toList
 
     let storeFilter =
@@ -169,14 +160,7 @@ let create now state =
     let items = items now
 
     let sortKey item =
-        let group =
-            match item.Schedule with
-            | Schedule.IsActive -> 0
-            | Schedule.IsPostponedUntil _ -> 1
-            | Schedule.IsComplete -> 2
-
-        let date = item.Schedule |> Schedule.postponedUntil
-        (group, date, item.ItemName)
+        ((if item.PostponeUntil.IsNone then 0 else 1), item.PostponeUntil, item.ItemName)
 
     { StoreFilter = storeFilter
       TextFilter = settings.TextFilter

@@ -176,187 +176,42 @@ module Quantity =
         qty |> asText |> decrease |> Option.map Quantity
 
 [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
-module Frequency =
+module Item =
 
-    let rules = { Min = 1<days>; Max = 365<days> }
+    let markComplete (now: DateTimeOffset) (i:Item) =
+        { i with PostponeUntil = now.AddDays(7.0) |> Some }
 
-    let days (Frequency v) = v
+    let removePostpone (i:Item) =
+        { i with PostponeUntil = None }
 
-    let create =
-        let normalizer = id
-        let validator = RangeValidation.createValidator rules
-        let onSuccess = Frequency
-        let onFailure = id
-        RangeValidation.toResult normalizer validator onSuccess onFailure
+    let postpone (now:DateTimeOffset) days (i:Item)  =
+        { i with PostponeUntil = now.AddDays(days |> float) |> Some }
 
-    let frequencyDefault = 7<days> |> create |> Result.okOrThrow
+    let postponeDaysAway (now:DateTimeOffset) (dt:DateTimeOffset) = 
+        1<days> * ((dt - now).TotalDays |> int)
 
-    let commonFrequencyChoices =
-        [ 7; 14; 21; 30; 60; 90 ]
-        |> List.map (fun i -> i * 1<days> |> create |> Result.okOrThrow)
-
-[<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
-module Schedule =
+    let postponeDaysAwayOptional (now:DateTimeOffset) (postponedUntil:DateTimeOffset option) = 
+        postponedUntil
+        |> Option.map (fun postponedUntil -> postponeDaysAway now postponedUntil)
 
     let commonPostponeChoices =
         [ 7; 14; 21; 30; 60; 90; 180 ]
-        |> List.map (fun i -> i * 1<days>)
-
-    let dueDate (now: DateTimeOffset) s =
-        match s with
-        | Schedule.Completed -> None
-        | Schedule.Once -> Some now
-        | Schedule.Repeat r -> r.PostponedUntil |> Option.orElse (Some now)
-
-    let isPostponedUntil s =
-        match s with
-        | Schedule.Repeat { PostponedUntil = Some dt } -> Some dt
-        | _ -> None
-
-    let isPostponed s = s |> isPostponedUntil |> Option.isSome
-
-    let isCompleted (s: Schedule) =
-        match s with
-        | Schedule.Completed -> true
-        | _ -> false
-
-    let isActive s =
-        match s with
-        | Schedule.Completed -> false
-        | Schedule.Once -> true
-        | Schedule.Repeat { PostponedUntil = Some _ } -> false
-        | Schedule.Repeat { PostponedUntil = None } -> true
-
-    let (|IsActive|IsComplete|IsPostponedUntil|) s =
-        match s with
-        | Schedule.Completed -> IsComplete
-        | Schedule.Once -> IsActive
-        | Schedule.Repeat { PostponedUntil = None } -> IsActive
-        | Schedule.Repeat { PostponedUntil = Some dt } -> IsPostponedUntil dt
-
-    let postponedUntil s =
-        match s with
-        | Schedule.Repeat r -> r.PostponedUntil
-        | _ -> None
-
-    let postponedUntilDays (now: DateTimeOffset) s =
-        match s with
-        | Schedule.Repeat r ->
-            r.PostponedUntil
-            |> Option.map
-                (fun future ->
-                    let duration = future - now
-                    round (duration.TotalDays) |> int |> (*) 1<days>)
-        | _ -> None
-
-    let completeNext (now: DateTimeOffset) s =
-        match s with
-        | Schedule.Completed -> s
-        | Schedule.Once -> Schedule.Completed
-        | Schedule.Repeat r ->
-            { r with
-                  PostponedUntil =
-                      now.AddDays(r.Frequency |> Frequency.days |> float)
-                      |> Some }
-            |> Schedule.Repeat
-
-    let activate s =
-        match s with
-        | Schedule.Completed -> Schedule.Once
-        | Schedule.Once -> s
-        | Schedule.Repeat r ->
-            { r with PostponedUntil = None }
-            |> Schedule.Repeat
-
-    let repeat d s =
-        let f =
-            d
-            |> Frequency.create
-            |> Result.okOrDefaultValue Frequency.frequencyDefault
-
-        match s with
-        | Schedule.Completed ->
-            Schedule.Repeat
-                { Repeat.Frequency = f
-                  Repeat.PostponedUntil = None }
-        | Schedule.Once ->
-            Schedule.Repeat
-                { Repeat.Frequency = f
-                  Repeat.PostponedUntil = None }
-        | Schedule.Repeat r -> if (r.Frequency = f) then s else Schedule.Repeat { r with Frequency = f }
-
-    let withoutPostpone s =
-        match s with
-        | Schedule.Repeat ({ PostponedUntil = Some _ } as r) ->
-            { r with PostponedUntil = None }
-            |> Schedule.Repeat
-        | _ -> s
-
-    let tryPostpone (now: DateTimeOffset) (d: int<days>) s =
-        match s with
-        | Schedule.Repeat r ->
-            { r with
-                  PostponedUntil = now.AddDays(d |> float) |> Some }
-            |> Schedule.Repeat
-            |> Ok
-        | _ -> Error "Only repeating items can be postponed."
-
-    let tryAsRepeat s =
-        match s with
-        | Schedule.Repeat r -> Some r
-        | _ -> None
-
-    let isRepeat (s: Schedule) = s |> tryAsRepeat |> Option.isSome
-
-    let asRepeat s = s |> tryAsRepeat |> Option.get
-
-[<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
-module Item =
-
-    let mapSchedule f i =
-        { i with
-              Item.Schedule = i.Schedule |> f }
-
-    let markComplete (now: DateTimeOffset) i =
-        i |> mapSchedule (Schedule.completeNext now)
-
-    let buyAgain i = i |> mapSchedule Schedule.activate
-
-    let buyAgainWithRepeat d i = i |> mapSchedule (Schedule.repeat d)
-
-    let removePostpone i =
-        i |> mapSchedule Schedule.withoutPostpone
-
-    let postpone now days i =
-        i
-        |> mapSchedule (Schedule.tryPostpone now days >> Result.okOrThrow)
+        |> List.map (fun i -> i * 1<days>)  
 
     type Message =
         | MarkComplete
-        | BuyAgain
-        | BuyAgainWithRepeat of int<days>
         | RemovePostpone
         | Postpone of int<days>
         | UpdateCategory of CategoryId
         | ClearCategory
-        | Repeat of Frequency
-        | ScheduleOnce
 
     let update now msg i =
         match msg with
         | MarkComplete -> i |> markComplete now
-        | BuyAgain -> i |> buyAgain
-        | BuyAgainWithRepeat d -> i |> buyAgainWithRepeat d
         | RemovePostpone -> i |> removePostpone
         | Postpone d -> i |> postpone now d
         | UpdateCategory id -> { i with CategoryId = Some id }
         | ClearCategory -> { i with CategoryId = None }
-        | Repeat f ->
-            { i with
-                  Schedule =
-                      i.Schedule
-                      |> Schedule.repeat (f |> Frequency.days) }
-        | ScheduleOnce -> { i with Schedule = Schedule.Once }
 
 [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
 module CategoryId =
@@ -622,8 +477,7 @@ module ShoppingListSettings =
 
     let create =
         { ShoppingListSettings.StoreFilter = None
-          PostponedViewHorizon = 5<days>
-          HideCompletedItems = false
+          PostponedViewHorizon = Some 5<days>
           TextFilter = TextBox.create ""
           IsTextFilterVisible = false }
 
@@ -656,11 +510,11 @@ module ShoppingListSettings =
         |> updateTextFilter (TextBoxMessage.TypeText "")
         |> updateTextFilter TextBoxMessage.LoseFocus
 
-    let hideCompletedItems b s = { s with HideCompletedItems = b }
+    let hidePostponedItems s = { s with PostponedViewHorizon = None }
 
     let setPostponedViewHorizon d s =
         let d = d |> min 365<days> |> max -365<days>
-        { s with PostponedViewHorizon = d }
+        { s with PostponedViewHorizon = Some d }
 
     let startSearch (s: ShoppingListSettings) =
         { s with
@@ -678,7 +532,7 @@ module ShoppingListSettings =
         | ClearStoreFilter
         | SetStoreFilterTo of StoreId
         | SetPostponedViewHorizon of int<days>
-        | HideCompletedItems of bool
+        | HidePostponedItems
         | TextFilter of TextBoxMessage
         | ClearItemFilter
         | Transaction of Message seq
@@ -690,7 +544,7 @@ module ShoppingListSettings =
         | ClearStoreFilter -> s |> clearStoreFilter
         | SetStoreFilterTo k -> s |> setStoreFilter k
         | SetPostponedViewHorizon d -> s |> setPostponedViewHorizon d
-        | HideCompletedItems b -> s |> hideCompletedItems b
+        | HidePostponedItems -> s |> hidePostponedItems
         | ClearItemFilter -> s |> clearItemFilter
         | TextFilter msg -> s |> updateTextFilter msg
         | Transaction msgs -> msgs |> Seq.fold (fun res i -> res |> update i) s
@@ -803,117 +657,16 @@ module ItemForm =
             |> Option.defaultValue ""
         | CategoryMode.CreateNew -> f.NewCategoryName.ValueCommitted
 
-    let scheduleOnce f =
-        { f with
-              ScheduleKind = Once
-              IsComplete = false }
-
-    let scheduleCompleted f =
-        { f with
-              ScheduleKind = Completed
-              IsComplete = true }
-
-    let scheduleRepeat f =
-        { f with
-              ScheduleKind = Repeat
-              IsComplete = false }
-
-    let scheduleCurrent (now: DateTimeOffset) (f: ItemForm) =
-        match f.ScheduleKind with
-        | Completed -> Schedule.Completed
-        | Once -> Schedule.Once
-        | Repeat ->
-            { Repeat.Frequency = f.Frequency
-              Repeat.PostponedUntil =
-                  f.Postpone
-                  |> Option.map (fun d -> now.AddDays(d |> float)) }
-            |> Schedule.Repeat
-
-    let frequencyCoerceIntoBounds d =
-        Frequency.rules
-        |> RangeValidation.forceIntoBounds d
-
-    let frequencySet v f =
-        { f with
-              ItemForm.Frequency =
-                  v
-                  |> frequencyCoerceIntoBounds
-                  |> Frequency.create
-                  |> Result.okOrThrow }
-
-    let frequencyChoices (f: ItemForm) =
-        f.Frequency :: Frequency.commonFrequencyChoices
-        |> Seq.distinct
-        |> Seq.sort
-        |> List.ofSeq
-
-    let frequencyAsText (d: Frequency) =
-        let d = d |> Frequency.days |> int
-
-        let monthsExactly =
-            d
-            |> divRem 30
-            |> Option.filter (fun i -> i.Quotient >= 1 && i.Remainder = 0)
-            |> Option.map (fun i -> if i.Quotient = 1 then "Monthly" else sprintf "Every %i months" i.Quotient)
-
-        let weeksExactly =
-            d
-            |> divRem 7
-            |> Option.filter (fun i -> i.Quotient >= 1 && i.Remainder = 0)
-            |> Option.map (fun i -> if i.Quotient = 1 then "Weekly" else sprintf "Every %i weeks" i.Quotient)
-
-        monthsExactly
-        |> Option.orElse weeksExactly
-        |> Option.defaultWith (fun () -> if d = 1 then "Daily" else sprintf "Every %i days" d)
-
     let postponeSet v f =
-        { f with
-              Postpone = Some v
-              IsComplete =
-                  match f.ScheduleKind with
-                  | Completed -> false
-                  | Once -> false
-                  | Repeat ->
-                      match f.Postpone with
-                      | None -> false
-                      | Some _ -> f.IsComplete }
-
-    let postponeUntilFrequency f =
-        { f with
-              Postpone = f.Frequency |> Frequency.days |> Some
-              IsComplete = false }
+        { f with Postpone = Some v }
 
     let postponeClear f =
-        { f with
-              Postpone = None
-              IsComplete = false }
+        { f with Postpone = None }
 
-    let purchased f =
-        match f.ScheduleKind with
-        | Once -> f |> scheduleCompleted
-        | Repeat -> f |> postponeUntilFrequency
-        | Completed -> f
-
-    let toggleComplete f =
-        match f.ScheduleKind with
-        | Once ->
-            { f with
-                  ScheduleKind = Completed
-                  IsComplete = true }
-        | Completed ->
-            { f with
-                  ScheduleKind = Once
-                  IsComplete = false }
-        | Repeat ->
-            match f.IsComplete with
-            | false ->
-                { f with
-                      Postpone = f.Frequency |> Frequency.days |> Some
-                      IsComplete = true }
-            | true ->
-                { f with
-                      Postpone = None
-                      IsComplete = false }
+    let toggleComplete (f:ItemForm) =
+        match f.IsComplete with
+        | false -> { f with Postpone = Some 7<days>; IsComplete = true }
+        | true -> { f with Postpone = None; IsComplete = false}
 
     let postponeDurationAsText (d: int<days>) =
         let d = d |> int
@@ -933,10 +686,9 @@ module ItemForm =
 
     let postponeChoices (f: ItemForm) =
         f.Postpone
-        :: (Schedule.commonPostponeChoices |> List.map Some)
+        :: (Item.commonPostponeChoices |> List.map Some)
         |> Seq.choose id
-        |> Seq.map frequencyCoerceIntoBounds
-        |> Seq.distinct
+        |> Seq.distinct // coerce into bounds?
         |> Seq.sort
         |> List.ofSeq
 
@@ -963,9 +715,7 @@ module ItemForm =
           Etag = None
           Quantity = TextBox.create ""
           Note = TextBox.create ""
-          ScheduleKind = ScheduleKind.Once
           IsComplete = false
-          Frequency = Frequency.frequencyDefault
           Postpone = None
           CategoryMode = CategoryMode.ChooseExisting
           NewCategoryName = TextBox.create ""
@@ -997,18 +747,8 @@ module ItemForm =
               |> Option.map Note.asText
               |> Option.defaultValue ""
               |> TextBox.create
-          ScheduleKind =
-              match i.Schedule with
-              | Schedule.Completed -> Completed
-              | Schedule.Once -> Once
-              | Schedule.Repeat _ -> Repeat
-          IsComplete = i.Schedule |> Schedule.isCompleted
-          Frequency =
-              match i.Schedule with
-              | Schedule.Completed -> Frequency.frequencyDefault
-              | Schedule.Once -> Frequency.frequencyDefault
-              | Schedule.Repeat r -> r.Frequency
-          Postpone = i.Schedule |> Schedule.postponedUntilDays now
+          IsComplete = false
+          Postpone = i.PostponeUntil |> Option.map (fun p -> Item.postponeDaysAway now p)
           CategoryMode = CategoryMode.ChooseExisting
           NewCategoryName = "" |> TextBox.create
           CategoryChoice = i.Category
@@ -1060,7 +800,8 @@ module ItemForm =
                   |> Option.map (fun i -> i.CategoryId)
               Item.Quantity = f |> quantityValidation |> Result.okOrThrow
               Item.Note = f |> noteValidation |> Result.okOrThrow
-              Item.Schedule = f |> scheduleCurrent now }
+              Item.PostponeUntil = f.Postpone |> Option.map (fun d -> now.AddDays(d |> float))
+            }
 
         let notSold =
             f.Stores
@@ -1075,10 +816,6 @@ module ItemForm =
         | ItemName of TextBoxMessage
         | Quantity of TextBoxMessage
         | Note of TextBoxMessage
-        | ScheduleOnce
-        | ScheduleCompleted
-        | ScheduleRepeat
-        | FrequencySet of int<days>
         | PostponeSet of int<days>
         | PostponeClear
         | CategoryModeChooseExisting
@@ -1088,7 +825,6 @@ module ItemForm =
         | NewCategoryName of TextBoxMessage
         | StoresSetAvailability of store: StoreId * isSold: bool
         | StoresSetAllAvailability of Set<Store>
-        | Purchased
         | ToggleComplete
         | Transaction of Message seq
 
@@ -1097,10 +833,6 @@ module ItemForm =
         | ItemName m -> f |> updateItemName m
         | Quantity m -> f |> updateQuantity m
         | Note m -> f |> updateNote m
-        | ScheduleOnce -> f |> scheduleOnce
-        | ScheduleCompleted -> f |> scheduleCompleted
-        | ScheduleRepeat -> f |> scheduleRepeat
-        | FrequencySet v -> f |> frequencySet v
         | PostponeSet d -> f |> postponeSet d
         | PostponeClear -> f |> postponeClear
         | CategoryModeChooseExisting -> f |> categoryModeChooseExisting
@@ -1111,6 +843,5 @@ module ItemForm =
         | NewCategoryName (TextBoxMessage.LoseFocus) -> f |> categoryNameBlur
         | StoresSetAvailability (id: StoreId, isSold: bool) -> f |> storesSetAvailability id isSold
         | StoresSetAllAvailability isSoldAt -> f |> storesSetAllAvailability isSoldAt
-        | Purchased -> f |> purchased
         | ToggleComplete -> f |> toggleComplete
         | Message.Transaction msgs -> msgs |> Seq.fold (fun f m -> update m f) f

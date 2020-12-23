@@ -1,23 +1,28 @@
 ﻿module Models.SelectZeroOrOnePostpone
 
-let create schedule now =
-    let current =
-        schedule
-        |> Schedule.postponedUntilDays now
-        |> Option.map (fun i -> max i 1<days>)
-
+let createFromRelativeDate postponeUntil =
     let choices =
-        Schedule.commonPostponeChoices
+        Item.commonPostponeChoices
         |> Seq.map Some
-        //|> Seq.append (current |> Seq.singleton)
         |> Seq.choose id
         |> Seq.distinctBy ItemForm.postponeDurationAsText
 
-    SelectZeroOrOne.create current choices
+    SelectZeroOrOne.create postponeUntil choices
+
+let createFromDate postponeUntil now =
+    let current =
+        postponeUntil
+        |> Option.map (fun postponeUntil -> Item.postponeDaysAway now postponeUntil) // negative numbers?
+
+    createFromRelativeDate current
 
 let createFromItemId itemId now state =
-    let item = state |> State.itemsTable |> DataTable.findCurrent itemId
-    create item.Schedule now
+    let item =
+        state
+        |> State.itemsTable
+        |> DataTable.findCurrent itemId
+
+    createFromDate item.PostponeUntil now
 
 let asStateMessage item (s: SelectZeroOrOne.SelectZeroOrOne<int>) =
     match s.CurrentChoice with

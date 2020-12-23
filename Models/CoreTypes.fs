@@ -25,17 +25,6 @@ type Note = Note of string
 [<Struct>]
 type Quantity = Quantity of string
 
-type Schedule =
-    | Completed
-    | Once
-    | Repeat of Repeat
-
-and Repeat =
-    { Frequency: Frequency
-      PostponedUntil: DateTimeOffset option }
-
-and Frequency = Frequency of int<days>
-
 [<Struct>]
 type CategoryName = CategoryName of string
 
@@ -51,7 +40,7 @@ type Item =
       Note: Note option
       Quantity: Quantity option
       CategoryId: CategoryId option
-      Schedule: Schedule }
+      PostponeUntil: DateTimeOffset option }
     interface IKey<ItemId> with
         member this.Key = this.ItemId
 
@@ -87,21 +76,18 @@ type SearchTerm = SearchTerm of string
 
 type ShoppingListSettings =
     { StoreFilter: StoreId option
-      PostponedViewHorizon: int<days>
-      HideCompletedItems: bool
-      IsTextFilterVisible : bool
-      TextFilter : TextBox 
-    }
+      PostponedViewHorizon: int<days> option
+      IsTextFilterVisible: bool
+      TextFilter: TextBox }
 
-type FontSize = 
+type FontSize =
     | NormalFontSize
     | LargeFontSize
 
 type UserSettings =
-    { UserId : UserId
-      FontSize : FontSize
-      ShoppingListSettings : ShoppingListSettings
-    }
+    { UserId: UserId
+      FontSize: FontSize
+      ShoppingListSettings: ShoppingListSettings }
     interface IKey<UserId> with
         member this.Key = this.UserId
 
@@ -114,9 +100,7 @@ type ItemForm =
       Etag: Etag option
       Quantity: TextBox
       Note: TextBox
-      ScheduleKind: ScheduleKind
-      IsComplete : bool
-      Frequency: Frequency
+      IsComplete: bool
       Postpone: int<days> option
       CategoryMode: CategoryMode
       NewCategoryName: TextBox
@@ -128,19 +112,14 @@ and CategoryMode =
     | ChooseExisting
     | CreateNew
 
-and ScheduleKind =
-    | Once
-    | Completed
-    | Repeat
-
 and ItemAvailability = { Store: Store; IsSold: bool }
 
 type ItemDenormalized =
     { ItemId: ItemId
       ItemName: ItemName
-      Etag : Etag option
+      Etag: Etag option
       Note: Note option
       Quantity: Quantity option
       Category: Category option
-      Schedule: Schedule
+      PostponeUntil: DateTimeOffset option
       Availability: ItemAvailability seq }

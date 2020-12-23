@@ -14,7 +14,6 @@ namespace WebApp.Shared
 {
     public partial class ItemEditFormSlick : ComponentBase
     {
-        private FrequencyDrawer _frequencyDrawer;
         private CategoryDrawer _categoryDrawer;
         private PostponeDrawer _postponeDrawer;
         private StoresDrawer _storesDrawer;
@@ -33,30 +32,6 @@ namespace WebApp.Shared
 
         [Parameter]
         public EventCallback<FormMessage> OnItemFormMessage { get; set; }
-
-        private async ValueTask OnClickFrequency() =>
-            await _frequencyDrawer.Open(SelectZeroOrOneFrequency.create(ItemFormModule.scheduleCurrent(DateTimeOffset.Now, Form)));
-
-        private void OnFrequencySelected(SelectZeroOrOneModule.SelectZeroOrOne<Frequency> f)
-        {
-            if (f.HasChanges)
-            {
-                if (f.CurrentChoice.IsNone())
-                {
-                    var removePostpone = FormMessage.PostponeClear;
-                    var scheduleOnce = FormMessage.ScheduleOnce;
-                    var trans = FormMessage.NewTransaction(new List<FormMessage> { removePostpone, scheduleOnce });
-                    Process(trans);
-                }
-                else
-                {
-                    var scheduleIsRepeat = FormMessage.ScheduleRepeat;
-                    var setFrequency = FormMessage.NewFrequencySet(FrequencyModule.days(f.CurrentChoice.Value));
-                    var trans = FormMessage.NewTransaction(new List<FormMessage> { scheduleIsRepeat, setFrequency });
-                    Process(trans);
-                }
-            }
-        }
 
         private async ValueTask OnClickCategory() =>
             await _categoryDrawer.Open(SelectZeroOrOneCategory.createFromPickList(Form.CategoryChoice, Form.CategoryChoiceList));
@@ -86,12 +61,8 @@ namespace WebApp.Shared
             }
         }
 
-        private async ValueTask OnClickPostpone()
-        {
-            var now = DateTimeOffset.Now;
-            var schedule = ItemFormModule.scheduleCurrent(now, Form);
-            await _postponeDrawer.Open(SelectZeroOrOnePostpone.create(schedule, now));
-        }
+        private async ValueTask OnClickPostpone() => 
+            await _postponeDrawer.Open(SelectZeroOrOnePostpone.createFromRelativeDate(Form.Postpone));
 
         private void OnPostponeSelected(SelectZeroOrOneModule.SelectZeroOrOne<int> f)
         {
@@ -134,7 +105,7 @@ namespace WebApp.Shared
 
         protected void OnToggleComplete()
         {
-            HighlightPostpone = !Form.IsComplete && Form.ScheduleKind.IsRepeat;
+            HighlightPostpone = !Form.IsComplete;
             Process(FormMessage.ToggleComplete);
         }
 

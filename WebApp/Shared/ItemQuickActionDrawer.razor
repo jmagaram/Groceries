@@ -29,9 +29,6 @@
             }
         </div>
         <div class="buttonGroup">
-            @if (_viewModel.CanBuyAgain) {
-                <button ontouchstart="" @onclick="async _ => await OnBuyAgain.InvokeAsync(_viewModel.ItemId)"><ion-icon name="add-outline"></ion-icon>Buy Again</button>
-            }
             <div class="buttonRow">
                 <button ontouchstart="" @onclick="async _ => await OnDelete.InvokeAsync(_viewModel.ItemId)" class="justIconButton"><ion-icon name="trash-outline"></ion-icon></button>
                 <button ontouchstart="" @onclick="async _ => await OnEdit.InvokeAsync(_viewModel.ItemId)"><ion-icon name="pencil-outline"></ion-icon>Edit...</button>

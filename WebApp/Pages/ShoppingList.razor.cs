@@ -23,7 +23,6 @@ namespace WebApp.Pages
     {
         ItemQuickActionDrawer _itemQuickActionDrawer;
         PostponeDrawer _postponeDrawer;
-        FrequencyDrawer _frequencyDrawer;
         CategoryNavigatorDrawer _categoryNavigationDrawer;
         StoreNavigatorDrawer _storesNavigatorDrawer;
         ViewOptionsDrawer _viewOptionsDrawer;
@@ -34,7 +33,6 @@ namespace WebApp.Pages
         {
             _itemQuickActionDrawer?.Dispose();
             _postponeDrawer?.Dispose();
-            _frequencyDrawer?.Dispose();
             _categoryNavigationDrawer?.Dispose();
             _storesNavigatorDrawer?.Dispose();
             _viewOptionsDrawer?.Dispose();
@@ -68,8 +66,7 @@ namespace WebApp.Pages
             var messages = new List<ShoppingListSettingsMessage>
             {
                 ShoppingListSettingsMessage.EndSearch,
-                ShoppingListSettingsMessage.NewHideCompletedItems(true),
-                ShoppingListSettingsMessage.NewSetPostponedViewHorizon(-365),
+                ShoppingListSettingsMessage.HidePostponedItems
             };
             var shoppingListMessage = ShoppingListSettingsMessage.NewTransaction(messages);
             var userSettingsMessage = UserSettingsModule.Message.NewShoppingListSettingsMessage(shoppingListMessage);
@@ -82,7 +79,6 @@ namespace WebApp.Pages
             var messages = new List<ShoppingListSettingsMessage>
             {
                 ShoppingListSettingsMessage.ClearItemFilter,
-                ShoppingListSettingsMessage.NewHideCompletedItems(false),
                 ShoppingListSettingsMessage.NewSetPostponedViewHorizon(days ?? 5),
                 ShoppingListSettingsMessage.ClearStoreFilter
             };
@@ -199,7 +195,7 @@ namespace WebApp.Pages
 
         private async Task OnClickAddToShoppingList(ItemId itemId)
         {
-            var msg = StateMessage.NewItemMessage(StateItemMessage.NewModifyItem(itemId, ItemMessage.BuyAgain));
+            var msg = StateMessage.NewItemMessage(StateItemMessage.NewModifyItem(itemId, ItemMessage.RemovePostpone));
             await StateService.UpdateAsync(msg);
         }
 
@@ -208,21 +204,6 @@ namespace WebApp.Pages
             var stateMessage = StateMessage.NewItemMessage(StateItemMessage.NewModifyItem(i.itemId, ItemMessage.NewPostpone(i.days)));
             await StateService.UpdateAsync(stateMessage);
             await _itemQuickActionDrawer.Close();
-        }
-
-        private async Task OnClickChooseFrequency(ItemId itemId)
-        {
-            _quickEditContext = itemId;
-            var viewModel = SelectZeroOrOneFrequency.createFromItemId(itemId, StateService.CurrentState);
-            await _itemQuickActionDrawer.Close();
-            await _frequencyDrawer.Open(viewModel);
-        }
-
-        private async Task OnFrequencyChosen(SelectZeroOrOneModule.SelectZeroOrOne<Frequency> i)
-        {
-            var stateMessage = SelectZeroOrOneFrequency.asStateMessage(_quickEditContext.Value, i);
-            await StateService.UpdateAsync(stateMessage);
-            await _frequencyDrawer.Close();
         }
 
         private async Task OnPostponeDurationChosen(SelectZeroOrOneModule.SelectZeroOrOne<int> i)
@@ -303,8 +284,14 @@ namespace WebApp.Pages
         protected ShoppingListSettings Settings =>
             StateService.CurrentState.LoggedInUserSettings().ShoppingListSettings;
 
-        protected ShoppingListModule.ShoppingList ShoppingListView =>
-            StateService.CurrentState.ShoppingList(DateTimeOffset.Now);
+        protected ShoppingListModule.ShoppingList ShoppingListView
+        {
+            get
+            {
+                var result = StateService.CurrentState.ShoppingList(DateTimeOffset.Now);
+                return result;
+            }
+        }
 
         protected List<Store> StoreFilterChoices =>
             ShoppingListView.Stores.OrderBy(i => i.StoreName).ToList();

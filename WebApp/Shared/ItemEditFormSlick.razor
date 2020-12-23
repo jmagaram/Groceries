@@ -30,14 +30,12 @@
 </nav>
 @{
     bool hasCategory = !string.IsNullOrWhiteSpace(Form.CategoryCommittedName());
-    bool hasRepeat = Form.ScheduleKind.IsRepeat;
     bool hasPostpone = Form.Postpone.IsSome();
     bool hasStores = Form.Stores.Any(i => !i.IsSold);
     bool hasNote = Form.Note.ValueCommitted.Length > 0;
     bool hasQuantity = !string.IsNullOrWhiteSpace(Form.Quantity.ValueCommitted);
 
     string hasCategoryClass = !hasCategory ? "text-secondary" : "";
-    string hasRepeatClass = !hasRepeat ? "text-secondary" : "";
     string hasPostponeClass = !hasPostpone ? "text-secondary" : "";
     string hasStoresClass = !hasStores ? "text-secondary" : "";
     string hasNoteClass = !hasNote ? "text-secondary" : "";
@@ -47,7 +45,7 @@
     <div style="margin-top:0.5rem; font-size:larger"><Checkbox IsChecked="@Form.IsComplete" IsCheckedChanged="_=>OnToggleComplete()" Title="" /></div>
     <div>
         @{
-            bool isHardComplete = Form.ScheduleKind.IsCompleted;
+            bool isHardComplete = Form.IsComplete;
             string c = (isHardComplete ? "hardComplete" : "");
         }
         <input class="@c" style="font-size:larger;" type="text" placeholder="Item to buy" @oninput="OnItemNameChange" @onfocusout="OnItemNameFocusOut" value="@Form.ItemName.ValueCommitted" />
@@ -71,19 +69,14 @@
     <ion-icon name="color-palette"></ion-icon>
     <div>@(hasCategory ? Form.CategoryCommittedName() : "Category")</div>
 </button>
-<button ontouchstart="" class="propertyGrid enterLeft @hasRepeatClass" @onclick="async _=>await OnClickFrequency()">
-    <ion-icon name="repeat-outline"></ion-icon>
-    <div>@(hasRepeat ? Models.ItemFormModule.frequencyAsText(Form.Frequency) : "Repeat")</div>
-</button>
-@if (Form.ScheduleKind.IsRepeat)
-{
+@{ 
     string animateClass = HighlightPostpone ? "bounce-top" : "";
     HighlightPostpone = false;
-    <button ontouchstart="" class="propertyGrid enterLeft" @onclick="async _=>await OnClickPostpone()">
-        <div class="@animateClass @hasPostponeClass"><ion-icon name="calendar-outline"></ion-icon></div>
-        <div class="@animateClass @hasPostponeClass">@(hasPostpone ? $"{@ItemFormModule.postponeDurationAsText(Form.Postpone.Value)} from now" : "Postpone")</div>
-    </button>
 }
+<button ontouchstart="" class="propertyGrid enterLeft" @onclick="async _=>await OnClickPostpone()">
+    <div class="@animateClass @hasPostponeClass"><ion-icon name="calendar-outline"></ion-icon></div>
+    <div class="@animateClass @hasPostponeClass">@(hasPostpone ? $"{@ItemFormModule.postponeDurationAsText(Form.Postpone.Value)} from now" : "Postpone")</div>
+</button>
 @if (Form.Stores.Any())
 {
     <button ontouchstart="" class="propertyGrid enterLeft @hasStoresClass" @onclick="async _ => await OnClickStores()">
@@ -118,6 +111,5 @@
     <button style="margin-top:1.0rem; margin-left:0.5rem" type="button" class="btn btn-light" ontouchstart="" @onclick="OnDelete"><ion-icon name="trash-outline"></ion-icon>&nbsp;Delete</button>
 }
 <StoresDrawer @ref="_storesDrawer" Closed="OnStoresSelected"></StoresDrawer>
-<FrequencyDrawer @ref="_frequencyDrawer" OnSelected="OnFrequencySelected"></FrequencyDrawer>
 <CategoryDrawer @ref="_categoryDrawer" OnSelected="OnCategorySelected"></CategoryDrawer>
 <PostponeDrawer @ref="_postponeDrawer" OnSelected="OnPostponeSelected"></PostponeDrawer>

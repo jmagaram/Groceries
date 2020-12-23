@@ -1,4 +1,12 @@
-﻿.categoryHeader {
+﻿.list-items {
+    margin-top:2rem;
+}
+
+.list-items.when-search-active {
+    margin-top:0rem;
+}
+
+.categoryHeader {
     margin-top: 1.0rem;
     margin-bottom: 0.4rem;
     background-color: white;
@@ -81,7 +89,7 @@ ion-icon {
     grid-column-gap: 1rem;
     padding: 15px;
     position: sticky;
-    margin-top: -20%;
+    margin-top: -6rem;
     transition-duration: 0.3s;
     transition-timing-function: ease;
     transition-property: margin-top;
@@ -92,7 +100,7 @@ ion-icon {
     }
 
     .search-bar.active {
-        margin-top: 0%;
+        margin-top: 0rem;
     }
 
 .fab {

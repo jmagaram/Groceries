@@ -30,20 +30,10 @@ type Document<'T> =
 
 type Item =
     { ItemName: string
-      ScheduleKind: ScheduleKind
-      ScheduleRepeat: Repeat
       Note: string
+      PostponeUntil : Nullable<DateTimeOffset>
       Quantity: string
       CategoryId: string }
-
-and ScheduleKind =
-    | Completed = 1
-    | Once = 2
-    | Repeat = 3
-
-and Repeat =
-    { Frequency: int<days>
-      PostponedUntil: Nullable<DateTimeOffset> }
 
 type Store = { StoreName: string }
 

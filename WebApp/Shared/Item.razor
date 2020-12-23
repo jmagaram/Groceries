@@ -3,23 +3,23 @@
 @using static Models.CoreTypes
 
 <div class="itemContainer">
-    @if (!ItemQry.Schedule.IsActive())
+    @if (!ItemQry.PostponeUntil.IsNone())
     {
         <button class="iconButton" ontouchstart="" @onclick="async _ => await OnClickAddToShoppingList.InvokeAsync(ItemQry.ItemId)"><ion-icon name="add-outline"></ion-icon></button>
     }
     <button ontouchstart="" @onclick="async _=>await OnClick.InvokeAsync(ItemQry.ItemId)" style="padding-right:0px;">
             @{
-                string completedClass = ItemQry.Schedule.IsCompleted ? "completed" : "";
-                var daysAway = ItemQry.Schedule.PostponedUntilDays(DateTimeOffset.Now).AsNullable();
+                var now = DateTimeOffset.Now;
+                var daysAway = ItemModule.postponeDaysAwayOptional(now, ItemQry.PostponeUntil).AsNullable();
                 bool isSoon = daysAway.HasValue && daysAway.Value <= 5;
                 bool isLater = daysAway.HasValue && daysAway.Value > 5;
                 var weeksAway = daysAway / 7;
                 var monthsAway = daysAway / 30;
-                var propertiesClass = ItemQry.Schedule.IsActive() ? "" : "inactive";
+                var propertiesClass = ItemQry.PostponeUntil.IsNone() ? "" : "inactive";
             }
         <div class="properties @propertiesClass">
             <div class="title">
-                <ul class="@completedClass">
+                <ul>
                     @foreach (var i in FormattedTextModule.spans(ItemQry.ItemName))
                     {
                         string highlightClass = i.Format.IsHighlight ? "highlight" : "";
@@ -47,7 +47,7 @@
             </div>
             @if (ItemQry.Quantity.IsSome())
             {
-                <ul class="quantity @completedClass">
+                <ul class="quantity">
                     @foreach (var i in FormattedTextModule.spans(ItemQry.Quantity.Value))
                     {
                         string highlightClass = i.Format.IsHighlight ? "highlight" : "";
@@ -65,12 +65,6 @@
                         <li class="@highlightClass">@i.Text</li>
                     }
                 </ul>}
-            @if (ItemQry.Schedule.IsRepeat)
-            {
-                string frequency = Models.ItemFormModule.frequencyAsText(ItemQry.Schedule.Frequency().Value);
-                <ion-icon class="frequencyIcon" name="repeat-outline"></ion-icon>
-                <div class="frequencyContent"><span>@frequency</span></div>
-            }
             @if (!HideStores && ItemQry.Availability.Any(i => i.IsSold == false))
             {
                 <ion-icon class="storesIcon" name="storefront-outline"></ion-icon>

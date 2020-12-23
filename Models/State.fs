@@ -238,37 +238,16 @@ let createSampleData loggedInUser =
                   note
                   |> tryParseOptional Note.tryParse
                   |> Result.okOrThrow
-              Item.Schedule = Schedule.Once
+              Item.PostponeUntil = None
               Item.CategoryId = if cat = "" then None else Some (findCategory cat s).CategoryId }
 
     let now = System.DateTimeOffset.Now
 
-    let markComplete n s =
+    let markComplete n (now:DateTimeOffset) s =
         let item =
             s
             |> findItem n
-            |> fun i -> { i with Schedule = Schedule.Completed }
-
-        s |> mapItems (DataTable.update item)
-
-    let makeRepeat n freq postpone s =
-        let freq =
-            Frequency.create freq |> Result.okOrThrow
-
-        let postpone =
-            postpone
-            |> Option.map (fun d -> now.AddDays(d |> float))
-
-        let repeat =
-            { Repeat.Frequency = freq
-              PostponedUntil = postpone }
-
-        let item =
-            s
-            |> findItem n
-            |> fun i ->
-                { i with
-                      Schedule = Schedule.Repeat repeat }
+            |> fun i -> i |> Item.markComplete now
 
         s |> mapItems (DataTable.update item)
 
@@ -293,10 +272,7 @@ let createSampleData loggedInUser =
     |> newItem "Nancy's lowfat yogurt" "Dairy" "1 tub" "Check the date"
     |> newItem "Ice cream" "Frozen" "2 pints" ""
     |> newItem "Dried flax seeds" "Dry" "1 bag" ""
-    |> makeRepeat "Bananas" 7<days> None
-    |> makeRepeat "Peanut butter" 14<days> (Some 3<days>)
-    |> makeRepeat "Apples" 14<days> (Some -3<days>)
-    |> markComplete "Ice cream"
+    |> markComplete "Ice cream" now   
     |> newStore "QFC"
     |> newStore "Whole Foods"
     |> newStore "Trader Joe's"
@@ -339,7 +315,7 @@ let handleItemEditPageMessage (now: DateTimeOffset) (msg: ItemEditPageMessage) (
           Etag = i.Etag
           Note = i.Note
           Quantity = i.Quantity
-          Schedule = i.Schedule
+          PostponeUntil = i.PostponeUntil
           Category =
               i.CategoryId
               |> Option.bind (fun id -> state |> tryFindCategory id)
@@ -481,7 +457,7 @@ let reorganizeCategories (msg: ReorganizeCategoriesMessage) (s: State) =
     |> deleteCats msg.Delete
 
 let reorganizeStores (msg: ReorganizeStoresMessage) (s: State) =
-    let storeName n =
+    let storeName n = // not used?
         StoreName.tryParse n |> Result.okOrThrow
 
     let findStore n s =

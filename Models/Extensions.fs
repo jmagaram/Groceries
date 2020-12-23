@@ -27,20 +27,6 @@ type StateExtensions =
     static member LoggedInUserSettings(me:StateTypes.State) = me |> State.userSettingsForLoggedInUser
 
 [<Extension>]
-type ScheduleExtensions =
-    [<Extension>]
-    static member IsPostponed(me: Schedule) = me |> Schedule.isPostponed
-
-    [<Extension>]
-    static member IsActive(me: Schedule) = me |> Schedule.isActive
-
-    [<Extension>]
-    static member DueDate(me: Schedule, now: DateTimeOffset) = me |> Schedule.dueDate now
-
-    [<Extension>]
-    static member PostponedUntilDays(me: Schedule, now: DateTimeOffset) = me |> Schedule.postponedUntilDays now
-
-[<Extension>]
 type CoreTypeExtensions =
     [<Extension>]
     static member AsText(me: ItemName) = me |> ItemName.asText
@@ -57,20 +43,17 @@ type CoreTypeExtensions =
     [<Extension>]
     static member QuantityText(me: Quantity) = me |> Quantity.asText
 
-    [<Extension>]
-    static member AsRepeat(me: Schedule) = me |> Schedule.asRepeat
+    //[<Extension>]
+    //static member AsText(me: Frequency) = me |> ItemForm.frequencyAsText
 
-    [<Extension>]
-    static member AsText(me: Frequency) = me |> ItemForm.frequencyAsText
+    //[<Extension>]
+    //static member Frequency(me: Schedule) =
+    //    me
+    //    |> Schedule.tryAsRepeat
+    //    |> Option.map (fun i -> i.Frequency)
 
-    [<Extension>]
-    static member Frequency(me: Schedule) =
-        me
-        |> Schedule.tryAsRepeat
-        |> Option.map (fun i -> i.Frequency)
-
-    [<Extension>]
-    static member PostponedUntil(me: Schedule, now: DateTimeOffset) = me |> Schedule.postponedUntilDays now
+    //[<Extension>]
+    //static member PostponedUntil(me: Schedule, now: DateTimeOffset) = me |> Schedule.postponedUntilDays now
 
 [<Extension>]
 type ItemDetailExtensions =
@@ -95,9 +78,6 @@ type ItemFormExtensions =
 
     [<Extension>]
     static member QuantityValidation(me: ItemForm) = me |> ItemForm.quantityValidation
-
-    [<Extension>]
-    static member FrequencyChoices(me: ItemForm) = me |> ItemForm.frequencyChoices
 
     [<Extension>]
     static member PostponeChoices(me: ItemForm) = me |> ItemForm.postponeChoices

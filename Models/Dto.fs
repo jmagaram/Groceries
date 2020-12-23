@@ -27,17 +27,9 @@ module Dto =
                     i.Quantity
                     |> Option.map Quantity.asText
                     |> Option.defaultValue null
-                ScheduleKind =
-                    match i.Schedule with
-                    | CoreTypes.Schedule.Completed -> DtoTypes.ScheduleKind.Completed
-                    | CoreTypes.Schedule.Once -> DtoTypes.ScheduleKind.Once
-                    | CoreTypes.Schedule.Repeat _ -> DtoTypes.ScheduleKind.Repeat
-                ScheduleRepeat =
-                    match i.Schedule with
-                    | CoreTypes.Schedule.Repeat r ->
-                        { Frequency = r.Frequency |> Frequency.days
-                          PostponedUntil = r.PostponedUntil |> Option.toNullable }
-                    | _ -> Unchecked.defaultof<DtoTypes.Repeat> } }
+                PostponeUntil = i.PostponeUntil |> Option.toNullable 
+              }
+        }
 
     let deserializeItem (i: DtoTypes.Document<DtoTypes.Item>) =
         result {
@@ -81,31 +73,7 @@ module Dto =
                     |> String.tryParseOptional Quantity.tryParse
                     |> Result.mapError (sprintf "Could not parse the quantity '%s'; error %A" i.Content.Quantity)
 
-                let! schedule =
-                    match i.Content.ScheduleKind with
-                    | DtoTypes.ScheduleKind.Completed -> CoreTypes.Schedule.Completed |> Ok
-                    | DtoTypes.ScheduleKind.Once -> CoreTypes.Schedule.Once |> Ok
-                    | DtoTypes.ScheduleKind.Repeat ->
-                        let frequency =
-                            i.Content.ScheduleRepeat.Frequency
-                            |> Frequency.create
-                            |> Result.mapError (fun e ->
-                                sprintf
-                                    "Could not parse the frequency '%i'; error %A"
-                                    i.Content.ScheduleRepeat.Frequency
-                                    e)
-
-                        let postponedUntil = i.Content.ScheduleRepeat.PostponedUntil |> Option.ofNullable
-
-                        frequency
-                        |> Result.map (fun f ->
-                            CoreTypes.Schedule.Repeat
-                                { CoreTypes.Repeat.Frequency = f
-                                  CoreTypes.Repeat.PostponedUntil = postponedUntil })
-
-                    | _ ->
-                        sprintf "An unexpected schedule type was found: '%A'" i.Content.ScheduleKind
-                        |> Error
+                let postponeUntil = i.Content.PostponeUntil |> Option.ofNullable
 
                 let item =
                     { StateItem.ItemId = itemId
@@ -114,7 +82,7 @@ module Dto =
                       StateItem.Note = note
                       StateItem.Etag = CoreTypes.Etag i.Etag |> Some
                       StateItem.Quantity = quantity
-                      StateItem.Schedule = schedule }
+                      StateItem.PostponeUntil = postponeUntil }
 
                 return (Upsert item)
         }
