@@ -48,7 +48,7 @@
             bool isHardComplete = Form.IsComplete;
             string c = (isHardComplete ? "hardComplete" : "");
         }
-        <input class="@c" style="font-size:larger;" type="text" placeholder="Item to buy" @oninput="OnItemNameChange" @onfocusout="OnItemNameFocusOut" value="@Form.ItemName.ValueCommitted" />
+        <input class="@c" style="font-size:larger; border:1px solid black" type="text" placeholder="Item to buy" @oninput="OnItemNameChange" @onfocusout="OnItemNameFocusOut" value="@Form.ItemName.ValueCommitted" />
         @if (Form.ItemNameValidation().IsError)
         {
             <div class="errorMessage">@Form.ItemNameValidation().ErrorValue</div>
@@ -107,10 +107,10 @@
         }
         else
         {
-            <ul style="list-style-type:none; padding-left:0px;margin:0px;">
+            <ul class="store-list">
                 @foreach (var s in Form.Stores.Where(i => !i.IsSold))
                 {
-                    <li style="margin-right:0.5rem; text-decoration:line-through; text-decoration-color:#808080; display:inline">@StoreNameModule.asText(s.Store.StoreName)</li>
+                    <li>@StoreNameModule.asText(s.Store.StoreName)</li>
                 }
             </ul>
         }

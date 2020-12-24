@@ -48,12 +48,11 @@
     display: grid;
     grid-column-gap: 0.5em;
     grid-template-columns: 1.5em auto;
-    width: 100%;
     margin-bottom: 1.25rem;
     margin-left: 1.25em;
+    margin-right: 1.25em;
     text-align: left;
     align-items: center;
-    padding-right: 3rem;
     user-select: none;
 }
 
@@ -72,9 +71,8 @@ button.propertyGrid {
     }
 
 .propertyGrid input[type=text] {
-    width: 85%;
-    max-width: 40ch;
-    border: none;
+    width: 100%;
+    border: none !important ;
     outline: none;
     padding-left: 0px;
 }
@@ -85,8 +83,7 @@ button.propertyGrid {
 }
 
 .propertyGrid elix-auto-size-textarea {
-    width: 85%;
-    max-width: 40ch;
+    width: 100%;
     outline:none;
 }
 
@@ -113,6 +110,19 @@ button.propertyGrid {
     padding-left: 0px;
     border: 0px;
 }
+
+ul.store-list {
+    list-style-type: none;
+    padding-left: 0px;
+    margin: 0px;
+}
+
+    ul.store-list li {
+        margin-right:0.5rem; 
+        text-decoration:line-through; 
+        text-decoration-color:#808080; 
+        display:inline-flex;
+    }
 
 .errorMessage {
     font-size: 80%;
