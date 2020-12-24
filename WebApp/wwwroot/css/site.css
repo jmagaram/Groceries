@@ -193,18 +193,21 @@
 }
 
     .buttonDrawer .threeColumnHeader {
-        display: flex;
-        flex-direction: row;
-        justify-content: space-between;
+        display: grid;
+        grid-template-columns:1fr 1fr 1fr;
         margin-top: 0.5rem;
         align-items:center;
     }
+
+        .buttonDrawer .threeColumnHeader :last-child {
+            justify-self:flex-end;
+        }
 
         .buttonDrawer .threeColumnHeader > h1 {
             font-size: 1rem;
             font-weight: bold;
             text-align: center;
-            margin-bottom:0px;
+            margin-bottom: 0px;
         }
 
         .buttonDrawer .threeColumnHeader button {
