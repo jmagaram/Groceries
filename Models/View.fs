@@ -159,49 +159,29 @@ module SetString =
         |> normalizeItems normalize
 
 [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
-module DurationEstimate =
+module TimeSpanEstimate =
 
     let fromTimeSpan (ts: TimeSpan) =
-        let ts = max ts TimeSpan.Zero
-        let daysTotal = ts.TotalDays
-        let weeksTotal = ts.TotalDays / 7.0
-        let monthsTotal = ts.TotalDays / 30.0
+        let (ts, neg) =
+            if ts < TimeSpan.Zero then (-ts, -1.0) else (ts, 1.0)
+
         let cutoff = 0.8
+        let days = ts.TotalDays
+        let months = ts.TotalDays / 30.0
+        let weeks = ts.TotalDays / 7.0
 
-        if monthsTotal > cutoff then
-            { DurationUnit = DurationUnit.Months
-              Quantity = Convert.ToInt32(monthsTotal) |> uint }
-        elif weeksTotal > cutoff then
-            { DurationUnit = DurationUnit.Weeks
-              Quantity = Convert.ToInt32(weeksTotal) |> uint }
-        else
-            { DurationUnit = DurationUnit.Days
-              Quantity = Convert.ToInt32(daysTotal) |> uint }
+        if months > cutoff
+        then Convert.ToInt32(months * neg) |> int |> Months
+        elif (weeks > cutoff)
+        then Convert.ToInt32(weeks * neg) |> int |> Weeks
+        else Convert.ToInt32(days * neg) |> int |> Days
 
-    let fromDays (d: int) =
-        TimeSpan.FromDays(d |> float) |> fromTimeSpan
+    let fromDays d = TimeSpan.FromDays(d |> float) |> fromTimeSpan
 
-    let toTimeSpan (d: DurationEstimate) =
-        match d.DurationUnit with
-        | Days -> TimeSpan.FromDays(d.Quantity |> float)
-        | Weeks -> TimeSpan.FromDays((d.Quantity * 7u) |> float)
-        | Months -> TimeSpan.FromDays((d.Quantity * 30u) |> float)
+    let between (a: DateTimeOffset) (b: DateTimeOffset) = (b - a) |> fromTimeSpan
 
-    let longLabel (d: DurationEstimate) =
-        match d.DurationUnit, d.Quantity with
-        | Days, 0u -> "Now"
-        | Days, 1u -> "1 day"
-        | Days, x -> $"{x} days"
-        | Weeks, 1u -> "1 week"
-        | Weeks, x -> $"{x} weeks"
-        | Months, 1u -> "1 month"
-        | Months, x -> $"{x} months"
-
-    let shortLabel (soon: TimeSpan) (d: DurationEstimate) =
-        if (d |> toTimeSpan) <= soon then
-            "soon"
-        else
-            match d.DurationUnit with
-            | Days -> $"{d.Quantity}d"
-            | Weeks -> $"{d.Quantity}w"
-            | Months -> $"{d.Quantity}m"
+    let toTimeSpan (ts: TimeSpanEstimate) =
+        match ts with
+        | Days d -> TimeSpan.FromDays(float d)
+        | Weeks w -> TimeSpan.FromDays((float w) * 7.0)
+        | Months m -> TimeSpan.FromDays((float m) * 30.0)

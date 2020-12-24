@@ -668,22 +668,6 @@ module ItemForm =
         | false -> { f with Postpone = Some 7<days>; IsComplete = true }
         | true -> { f with Postpone = None; IsComplete = false}
 
-    //let postponeDurationAsText (d: int<days>) =
-    //    let d = d |> int
-
-    //    let monthsExactly =
-    //        if d / 30 > 0 && d % 30 = 0 then Some(d / 30) else None
-
-    //    let weeksExactly =
-    //        if d / 7 > 0 && d % 7 = 0 then Some(d / 7) else None
-
-    //    match monthsExactly with
-    //    | Some m -> if m = 1 then "1 month" else sprintf "%i months" m
-    //    | None ->
-    //        match weeksExactly with
-    //        | Some w -> if w = 1 then "1 week" else sprintf "%i weeks" w
-    //        | None -> if d = 1 then "1 day" else sprintf "%i days" d
-
     let postponeChoices (f: ItemForm) =
         f.Postpone
         :: (Item.commonPostponeChoices |> List.map Some)

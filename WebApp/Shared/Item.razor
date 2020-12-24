@@ -1,6 +1,7 @@
 ﻿@using Common
 @using Models
 @using static Models.CoreTypes
+@using static Common.OptionExtensions
 
 <div class="itemContainer">
     @if (!ItemQry.PostponeUntil.IsNone())
@@ -18,23 +19,25 @@
                     }
                     @if (ItemQry.PostponeUntil.AsNullable() is DateTimeOffset p)
                     {
-                        var soonDays = 5u;
                         var now = DateTimeOffset.Now;
-                        var duration = p - now;
-                        var soon = now.AddDays(soonDays);
-                        var isSoon = p <= soon;
-                        var estimate = DurationEstimateModule.fromTimeSpan(duration);
-                        var description = DurationEstimateModule.shortLabel(TimeSpan.FromDays(soonDays), estimate);
+                        var estimate = TimeSpanEstimateModule.between(now, p);
+                        var isSoon = estimate.IsLessThanOrEqualTo(TimeSpan.FromDays(5));
+                        var description =
+                            isSoon
+                            ? "soon"
+                            : estimate.Format(d => $"{d}d", w => $"{w}w", m => $"{m}m");
                         string iconName =
                             isSoon
                             ? "alarm-outline"
                             : "calendar-outline";
                         string badgeClass =
-                            isSoon ? "soonBadge"
-                            : estimate.DurationUnit.IsDays ? "daysBadge"
-                            : estimate.DurationUnit.IsWeeks ? "weeksBadge"
-                            : "monthsBadge";
-                <li class="postponeBadge @badgeClass"><ion-icon name="@iconName" />@description</li>
+                            isSoon
+                            ? "soonBadge"
+                            : estimate.IsDays ? "daysBadge"
+                            : estimate.IsWeeks ? "weeksBadge"
+                            : estimate.IsMonths ? "monthsBadge"
+                            : throw new NotImplementedException();
+                        <li class="postponeBadge @badgeClass"><ion-icon name="@iconName" />@description</li>
                     }
                 </ul>
             </div>

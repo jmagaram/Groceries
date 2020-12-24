@@ -43,18 +43,6 @@ type CoreTypeExtensions =
     [<Extension>]
     static member QuantityText(me: Quantity) = me |> Quantity.asText
 
-    //[<Extension>]
-    //static member AsText(me: Frequency) = me |> ItemForm.frequencyAsText
-
-    //[<Extension>]
-    //static member Frequency(me: Schedule) =
-    //    me
-    //    |> Schedule.tryAsRepeat
-    //    |> Option.map (fun i -> i.Frequency)
-
-    //[<Extension>]
-    //static member PostponedUntil(me: Schedule, now: DateTimeOffset) = me |> Schedule.postponedUntilDays now
-
 [<Extension>]
 type ItemDetailExtensions =
     [<Extension>]

@@ -24,9 +24,18 @@
             @foreach (var i in _model.Choices.OrderBy(j => j))
             {
                 bool isSelected = _model.CurrentChoice.IsSomeValue(i);
-                DateTimeOffset postponeUntil = DateTimeOffset.Now.AddDays(i);
-                var postponeEstimate = DurationEstimateModule.fromTimeSpan(TimeSpan.FromDays(i));
-                var description = DurationEstimateModule.longLabel(postponeEstimate);
+                var estimate = TimeSpanEstimateModule.fromDays(i);
+                var description =
+                    estimate.IsZeroOrNegative()
+                    ? "Overdue"
+                    : estimate.Format(
+                        " ",
+                        "day",
+                        "days",
+                        "week",
+                        "weeks",
+                        "month",
+                        "months");
                 <button ontouchstart="" class="drawerButton" @onclick="async _=>await Select(i)">
                     <div style="display:flex; flex-direction:row; justify-content:space-between">
                         <div>@description</div>

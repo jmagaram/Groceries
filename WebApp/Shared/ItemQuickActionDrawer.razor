@@ -1,5 +1,5 @@
 ﻿@implements IDisposable
-@using Models 
+@using Models
 @using static Models.CoreTypes
 @using static Models.ItemQuickActionsModule
 
@@ -13,18 +13,19 @@
             <div></div>
         </header>
         <div class="buttonGroup">
-            @if (_viewModel.CanComplete) {
+            @if (_viewModel.CanComplete)
+            {
                 <button ontouchstart="" @onclick="async _ => await OnComplete.InvokeAsync(_viewModel.ItemId)"><ion-icon name="checkmark-outline"></ion-icon>Complete</button>
             }
-            @if (_viewModel.CanAddToShoppingListNow) {
+            @if (_viewModel.CanAddToShoppingListNow)
+            {
                 <button ontouchstart="" @onclick="async _ => await OnAddToShoppingListNow.InvokeAsync(_viewModel.ItemId)"><ion-icon name="add-outline"></ion-icon>Add to shopping list now</button>
             }
-            @if (_viewModel.CanPostpone) {
+            @if (_viewModel.CanPostpone)
+            {
                 var daysInWeek = 7;
-                var estimate = DurationEstimateModule.fromTimeSpan(TimeSpan.FromDays(daysInWeek));
-                var description = DurationEstimateModule.longLabel(estimate);
                 <div class="buttonRow">
-                    <button ontouchstart="" class="splitButtonDefault" @onclick="async _ => await OnPostponeDays.InvokeAsync((_viewModel.ItemId, daysInWeek))"><ion-icon name="calendar-outline"></ion-icon>Postpone @description</button>
+                    <button ontouchstart="" class="splitButtonDefault" @onclick="async _ => await OnPostponeDays.InvokeAsync((_viewModel.ItemId, daysInWeek))"><ion-icon name="calendar-outline"></ion-icon>Postpone 1 week</button>
                     <button ontouchstart="" class="splitButtonIcon" @onclick="async _ => await OnPostpone.InvokeAsync(_viewModel.ItemId)">
                         <ion-icon name="caret-down-outline"></ion-icon>
                     </button>
@@ -44,7 +45,8 @@
     ElixDrawer _drawer;
     ViewModel _viewModel;
 
-    public async ValueTask Open(ViewModel viewModel) {
+    public async ValueTask Open(ViewModel viewModel)
+    {
         _viewModel = viewModel;
         await InvokeAsync(() => StateHasChanged());
         await _drawer.Open();

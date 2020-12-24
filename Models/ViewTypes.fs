@@ -1,4 +1,5 @@
 ﻿module Models.ViewTypes
+
 open Models.CoreTypes
 open Models.ValidationTypes
 
@@ -10,11 +11,7 @@ type TextSpan = { Format: TextFormat; Text: string }
 
 type FormattedText = FormattedText of TextSpan list
 
-type DurationUnit = 
-    | Days
-    | Weeks
-    | Months
-
-type DurationEstimate =
-    { Quantity : uint
-      DurationUnit : DurationUnit }
+type TimeSpanEstimate =
+    | Days of int
+    | Weeks of int
+    | Months of int

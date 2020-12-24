@@ -42,7 +42,7 @@
     string hasQuantityClass = !hasQuantity ? "text-secondary" : "";
 }
 <div class="propertyGrid enterLeft" style="margin-top:1rem">
-    <div style="margin-top:0.5rem; font-size:larger"><Checkbox IsChecked="@Form.IsComplete" IsCheckedChanged="_=>OnToggleComplete()" Title="" /></div>
+    <div style="margin-top:0.5rem; font-size:larger"><Checkbox IsChecked="@Form.IsComplete" IsCheckedChanged="_ => OnToggleComplete()" Title="" /></div>
     <div>
         @{
             bool isHardComplete = Form.IsComplete;
@@ -58,26 +58,40 @@
 <div class="propertyGrid enterLeft @hasQuantityClass">
     <div><ion-icon name="bar-chart-outline"></ion-icon></div>
     <div>
-        <input type="text" placeholder="Quantity" @oninput="e=>OnQuantityChange((string)e.Value)" @onfocusout="OnQuantityFocusOut" value="@Form.Quantity.ValueCommitted" />
+        <input type="text" placeholder="Quantity" @oninput="e => OnQuantityChange((string)e.Value)" @onfocusout="OnQuantityFocusOut" value="@Form.Quantity.ValueCommitted" />
         @if (Form.QuantityValidation().IsError)
         {
             <div class="errorMessage text-danger">@Form.QuantityValidation().ErrorValue</div>
         }
     </div>
 </div>
-<button ontouchstart="" class="propertyGrid enterLeft @hasCategoryClass" @onclick="async _=> await OnClickCategory()">
+<button ontouchstart="" class="propertyGrid enterLeft @hasCategoryClass" @onclick="async _ => await OnClickCategory()">
     <ion-icon name="color-palette"></ion-icon>
     <div>@(hasCategory ? Form.CategoryCommittedName() : "Category")</div>
 </button>
 @{
     string animateClass = HighlightPostpone ? "bounce-top" : "";
     HighlightPostpone = false;
-    string postponeDescription =
-        Form.Postpone.AsNullable() switch
-        {
-            int d => $"{DurationEstimateModule.longLabel(DurationEstimateModule.fromDays(d))} from now",
-            _ => "Postpone"
-        };
+    string postponeDescription;
+    if (Form.Postpone.AsNullable() is int d)
+    {
+        var estimate = TimeSpanEstimateModule.fromDays(d);
+        postponeDescription =
+            estimate.IsZeroOrNegative()
+            ? "Overdue"
+            : estimate.Format(
+                " ",
+                "day from now",
+                "days from now",
+                "week from now",
+                "weeks from now",
+                "month from now",
+                "months from now");
+    }
+    else
+    {
+        postponeDescription = "Postpone";
+    }
 }
 <button ontouchstart="" class="propertyGrid enterLeft" @onclick="async _=>await OnClickPostpone()">
     <div class="@animateClass @hasPostponeClass"><ion-icon name="calendar-outline"></ion-icon></div>

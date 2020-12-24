@@ -61,21 +61,18 @@ namespace WebApp.Shared
             }
         }
 
-        private async ValueTask OnClickPostpone() => 
+        private async ValueTask OnClickPostpone() =>
             await _postponeDrawer.Open(SelectZeroOrOnePostpone.create);
 
         private void OnPostponeSelected(SelectZeroOrOneModule.SelectZeroOrOne<int> f)
         {
-            if (f.HasChanges)
+            if (f.CurrentChoice.IsNone())
             {
-                if (f.CurrentChoice.IsNone())
-                {
-                    Process(FormMessage.PostponeClear);
-                }
-                else
-                {
-                    Process(FormMessage.NewPostponeSet(f.CurrentChoice.Value));
-                }
+                Process(FormMessage.PostponeClear);
+            }
+            else
+            {
+                Process(FormMessage.NewPostponeSet(f.CurrentChoice.Value));
             }
         }
 
