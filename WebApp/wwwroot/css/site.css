@@ -182,9 +182,10 @@
         border-bottom: 1px solid #d6d6d6;
     }
 
-.selectedDrawerButton {
-    background-color: ButtonFace;
-}
+    .drawerButton.selected {
+        color: #0055b1;
+        font-weight:bold;
+    }
 
 .buttonDrawer {
     margin: 10px;

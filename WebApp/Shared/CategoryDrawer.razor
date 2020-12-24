@@ -10,26 +10,31 @@
         <h1>Category</h1>
         @foreach (var i in _model.Choices.OrderBy(j => j.CategoryName)) {
             bool isSelected = _model.CurrentChoice.IsSomeValue(i);
-            <button class="drawerButton" ontouchstart="" @onclick="async _=>await Select(i)">
-                <div style="display:flex; flex-direction:row; justify-content:space-between">
-                    <div>@i.CategoryName.AsText()</div>
-                    @if (isSelected) {
-                        <ion-icon name="checkmark-outline"></ion-icon>
+            string selectedClass = isSelected ? "selected" : "";
+        <button class="drawerButton @selectedClass" ontouchstart="" @onclick="async _=>await Select(i)">
+            <div style="display:flex; flex-direction:row; justify-content:space-between">
+                <div>@i.CategoryName.AsText()</div>
+                @if (isSelected) {
+                <ion-icon name="checkmark-outline"></ion-icon>
                     }
                     else {
-                        <div>&nbsp;</div>
+                <div>&nbsp;</div>
                     }
-                </div>
-            </button>
+            </div>
+        </button>
         }
-        <button class="drawerButton" ontouchstart="" @onclick="async _ => await Select(null)">
+        @{
+            bool isUncategorized = _model.CurrentChoice.IsNone();
+            string uncategorizedClass = isUncategorized ? "selected" : "";
+        }
+        <button class="drawerButton @uncategorizedClass" ontouchstart="" @onclick="async _ => await Select(null)">
             <div style="display:flex; flex-direction:row; justify-content:space-between">
                 <div>None (Uncategorized)</div>
-                @if (_model.CurrentChoice.IsNone()) {
-                    <ion-icon name="checkmark-outline"></ion-icon>
+                @if (isUncategorized) {
+                <ion-icon name="checkmark-outline"></ion-icon>
                 }
                 else {
-                    <div>&nbsp;</div>
+                <div>&nbsp;</div>
                 }
             </div>
         </button>

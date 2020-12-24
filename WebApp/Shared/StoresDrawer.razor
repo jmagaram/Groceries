@@ -13,7 +13,8 @@
             <button class="drawerButton" ontouchstart="" @onclick="async _ => await Close()">Done</button>
         </div>
         @foreach (var i in _model.SelectionSummary.OrderBy(i => i.Item.StoreName)) {
-            <button class="drawerButton" ontouchstart="" @onclick="_=>_model = _model.Toggle(i.Item)">
+            string selectedClass = i.IsSelected ? "selected" : "";
+            <button class="drawerButton @selectedClass" ontouchstart="" @onclick="_=>_model = _model.Toggle(i.Item)">
                 <div style="display:flex; flex-direction:row; justify-content:space-between">
                     <div>@i.Item.StoreName.AsText()</div>
                     @if (i.IsSelected) {
