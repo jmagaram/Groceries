@@ -192,6 +192,30 @@
     flex-direction: column;
 }
 
+    .buttonDrawer .threeColumnHeader {
+        display: flex;
+        flex-direction: row;
+        justify-content: space-between;
+        margin-top: 0.5rem;
+        align-items:center;
+    }
+
+        .buttonDrawer .threeColumnHeader > h1 {
+            font-size: 1rem;
+            font-weight: bold;
+            text-align: center;
+            margin-bottom:0px;
+        }
+
+        .buttonDrawer .threeColumnHeader button {
+            background-color:white;
+            border:none;
+        }
+
+        .buttonDrawer .threeColumnHeader button:active {
+            background-color:ButtonFace;
+        }
+
     .buttonDrawer button:focus {
         outline: none;
     }
@@ -205,7 +229,7 @@
 
     .buttonDrawer ion-icon {
         vertical-align: bottom;
-        font-size:24px;
+        font-size: 24px;
     }
 
 .primaryDrawerButton {

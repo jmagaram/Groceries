@@ -7,9 +7,10 @@
         return;
     }
     <div class="buttonDrawer">
-        <div style="display:flex; flex-direction:row; justify-content:space-between; margin:10px;">
-            <div style="font-weight:bold">Stores</div>
-            <button class="drawerButton" style="background-color:white;border:none" ontouchstart="" @onclick="async _ => await Close()">Done</button>
+        <div class="threeColumnHeader">
+            <div></div>
+            <h1>Stores</h1>
+            <button class="drawerButton" ontouchstart="" @onclick="async _ => await Close()">Done</button>
         </div>
         @foreach (var i in _model.SelectionSummary.OrderBy(i => i.Item.StoreName)) {
             <button class="drawerButton" ontouchstart="" @onclick="_=>_model = _model.Toggle(i.Item)">
