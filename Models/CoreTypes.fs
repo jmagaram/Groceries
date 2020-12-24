@@ -64,6 +64,12 @@ type NotSoldItem =
     interface IKey<NotSoldItem> with
         member this.Key = this
 
+type Purchase =
+    { ItemId : ItemId
+      PurchasedOn : DateTimeOffset }
+    interface IKey<Purchase> with
+        member this.Key = this
+
 type TextBox =
     { ValueTyping: string
       ValueCommitted: string }

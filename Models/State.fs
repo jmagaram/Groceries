@@ -13,6 +13,7 @@ let storesTable (s: State) = s.Stores
 let itemsTable (s: State) = s.Items
 let notSoldTable (s: State) = s.NotSoldItems
 let userSettingsTable (s: State) = s.UserSettings
+let purchasesTable (s: State) = s.Purchases
 
 let userSettingsForLoggedInUser (s: State) =
     s
@@ -25,6 +26,7 @@ let stores = storesTable >> DataTable.current
 let items = itemsTable >> DataTable.current
 let notSold = notSoldTable >> DataTable.current
 let userSettings = userSettingsTable >> DataTable.current
+let purchases = purchasesTable >> DataTable.current
 
 let tryFindItem id s =
     s |> itemsTable |> DataTable.tryFindCurrent id
@@ -79,6 +81,8 @@ let mapNotSoldItems f s =
     { s with
           NotSoldItems = f s.NotSoldItems }
 
+let mapPurchases f s = { s with Purchases = f s.Purchases }
+
 let fixItemForeignKeys s =
     s
     |> items
@@ -95,6 +99,12 @@ let fixNotSoldForeignKeys s =
             let isStoreInvalid = s |> notSoldHasInvalidStore n
             isItemInvalid || isStoreInvalid)
     |> Seq.fold (fun s i -> s |> mapNotSoldItems (DataTable.delete i)) s
+
+let fixPurchaseForeignKeys s =
+    s
+    |> purchases
+    |> Seq.filter (fun p -> s |> tryFindItem p.ItemId |> Option.isNone)
+    |> Seq.fold (fun s i -> s |> mapPurchases (DataTable.delete i)) s
 
 let fixUserSettingsForeignKeys s =
     let stores =
@@ -118,6 +128,7 @@ let fixForeignKeys s =
     |> fixItemForeignKeys
     |> fixNotSoldForeignKeys
     |> fixUserSettingsForeignKeys
+    |> fixPurchaseForeignKeys
 
 let (insertCategory, updateCategory, upsertCategory) =
     let go f (c: Category) s = s |> mapCategories (f c)
@@ -141,6 +152,11 @@ let insertNotSoldItem (n: NotSoldItem) s =
     elif s |> notSoldHasInvalidStore n
     then failwith "The notSoldItem has an invalid store foreign key."
     else s |> mapNotSoldItems (DataTable.insert n)
+
+let insertPurchase (p: Purchase) s =
+    match s |> tryFindItem p.ItemId with
+    | None -> failwith "The purchase has an invalid item foreign key."
+    | Some _ -> s |> mapPurchases (DataTable.insert p)
 
 let deleteStore k s =
     s
@@ -174,6 +190,9 @@ let importChanges (i: ImportChanges) (s: StateTypes.State) =
           NotSoldItems =
               i.NotSoldItemChanges
               |> Seq.fold (fun dt i -> dt |> DataTable.acceptChange i) s.NotSoldItems
+          Purchases =
+              i.PurchaseChanges
+              |> Seq.fold (fun dt i -> dt |> DataTable.acceptChange i) s.Purchases
           LastCosmosTimestamp = i.LatestTimestamp }
     |> fixForeignKeys
 
@@ -183,6 +202,7 @@ let acceptAllChanges s =
     |> mapCategories DataTable.acceptChanges
     |> mapStores DataTable.acceptChanges
     |> mapNotSoldItems DataTable.acceptChanges
+    |> mapPurchases DataTable.acceptChanges
     |> fixForeignKeys
 
 let createDefault loggedInUser =
@@ -190,6 +210,7 @@ let createDefault loggedInUser =
       Items = DataTable.empty
       Stores = DataTable.empty
       NotSoldItems = DataTable.empty
+      Purchases = DataTable.empty
       UserSettings = DataTable.empty
       LoggedInUser = loggedInUser
       LastCosmosTimestamp = None
@@ -243,11 +264,11 @@ let createSampleData loggedInUser =
 
     let now = System.DateTimeOffset.Now
 
-    let markComplete n (now:DateTimeOffset) s =
+    let markComplete n (now: DateTimeOffset) s =
         let item =
             s
             |> findItem n
-            |> fun i -> i |> Item.markComplete now
+            |> fun i -> i |> Item.postpone now 7<days>
 
         s |> mapItems (DataTable.update item)
 
@@ -272,7 +293,7 @@ let createSampleData loggedInUser =
     |> newItem "Nancy's lowfat yogurt" "Dairy" "1 tub" "Check the date"
     |> newItem "Ice cream" "Frozen" "2 pints" ""
     |> newItem "Dried flax seeds" "Dry" "1 bag" ""
-    |> markComplete "Ice cream" now   
+    |> markComplete "Ice cream" now
     |> newStore "QFC"
     |> newStore "Whole Foods"
     |> newStore "Trader Joe's"
@@ -327,6 +348,8 @@ let handleItemEditPageMessage (now: DateTimeOffset) (msg: ItemEditPageMessage) (
                       { ItemAvailability.Store = s
                         IsSold = state |> storeSellsItem i s }) }
 
+    // add to purchases?
+    // delete duplicates per day
     let processResult (r: ItemForm.ItemFormResult) (s: State) =
         let s =
             match r.InsertCategory with
@@ -457,9 +480,6 @@ let reorganizeCategories (msg: ReorganizeCategoriesMessage) (s: State) =
     |> deleteCats msg.Delete
 
 let reorganizeStores (msg: ReorganizeStoresMessage) (s: State) =
-    let storeName n = // not used?
-        StoreName.tryParse n |> Result.okOrThrow
-
     let findStore n s =
         let n = n |> StoreName
         s |> stores |> Seq.find (fun i -> i.StoreName = n)
@@ -530,6 +550,18 @@ let handleUserSettingsMessage (msg: UserSettings.Message) (s: State) =
 
     s |> mapUserSettings (DataTable.upsert settings)
 
+let handleRecordPurchase (now: DateTimeOffset) (id: ItemId) (s: State) =
+    let purchases =
+        s
+        |> purchases
+        |> Seq.choose (fun p -> if p.ItemId = id then Some p.PurchasedOn else None)
+
+    s
+    |> insertPurchase
+        { ItemId = id
+          PurchasedOn = now }
+    |> handleItemMessage now (ModifyItem(id, Item.PostponeUsingPurchaseHistory(now, purchases)))
+
 let update: Update =
     fun clock msg s ->
         let now = clock ()
@@ -540,6 +572,7 @@ let update: Update =
             |> dprintln
 
             match msg with
+            | RecordPurchase msg -> s |> handleRecordPurchase now msg
             | ItemMessage msg -> s |> handleItemMessage now msg
             | UserSettingsMessage msg -> s |> handleUserSettingsMessage msg
             | ReorganizeCategoriesMessage msg -> s |> reorganizeCategories msg

@@ -158,7 +158,7 @@ module Dto =
         }
 
     let serializeNotSoldItem isDeleted (i: CoreTypes.NotSoldItem): DtoTypes.Document<DtoTypes.NotSoldItem> =
-        { Id = i |> NotSoldItem.serialize // use Json here
+        { Id = i |> NotSoldItem.serialize // Could use Json implementation
           CustomerId = null
           DocumentKind = DtoTypes.DocumentKind.NotSoldItem
           Etag = null
@@ -175,6 +175,24 @@ module Dto =
             | false -> return id |> Change.Upsert
         }
 
+    let serializePurchase isDeleted (i: CoreTypes.Purchase): DtoTypes.Document<DtoTypes.Purchase> =
+        { Id = i |> Purchase.serialize // Could use Json implementation
+          CustomerId = null
+          DocumentKind = DtoTypes.DocumentKind.Purchase
+          Etag = null
+          IsDeleted = isDeleted
+          Timestamp = Nullable<int>()
+          Content = () }
+
+    let deserializePurchase (i: DtoTypes.Document<DtoTypes.Purchase>) =
+        result {
+            let! id = i.Id |> Purchase.deserialize
+
+            match i.IsDeleted with
+            | true -> return id |> Change.Delete
+            | false -> return id |> Change.Upsert
+        }
+
     let withCustomerId id (i: DtoTypes.Document<_>) = { i with CustomerId = id }
 
     let hasChanges (changes: DtoTypes.Changes) =
@@ -182,6 +200,7 @@ module Dto =
         || changes.Categories.Length > 0
         || changes.Stores.Length > 0
         || changes.NotSoldItems.Length > 0
+        || changes.Purchases.Length > 0
 
     let pushRequest (s: Models.StateTypes.State) =
         let collect table f =
@@ -206,7 +225,9 @@ module Dto =
             { DtoTypes.Changes.Items = collect State.itemsTable serializeItem
               DtoTypes.Changes.Categories = collect State.categoriesTable serializeCategory
               DtoTypes.Changes.Stores = collect State.storesTable serializeStore
-              DtoTypes.Changes.NotSoldItems = collect State.notSoldTable serializeNotSoldItem }
+              DtoTypes.Changes.NotSoldItems = collect State.notSoldTable serializeNotSoldItem 
+              DtoTypes.Changes.Purchases = collect State.purchasesTable serializePurchase 
+            }
 
         match changes |> hasChanges with
         | true -> Some changes
@@ -225,6 +246,7 @@ module Dto =
                   StateTypes.ImportChanges.CategoryChanges = deserialize<_, _> deserializeCategory c.Categories
                   StateTypes.ImportChanges.StoreChanges = deserialize<_, _> deserializeStore c.Stores
                   StateTypes.ImportChanges.NotSoldItemChanges = deserialize<_, _> deserializeNotSoldItem c.NotSoldItems
+                  StateTypes.ImportChanges.PurchaseChanges = deserialize<_,_> deserializePurchase c.Purchases
                   StateTypes.ImportChanges.LatestTimestamp =
                       [ c.Items
                         |> Seq.map (fun i -> i.Timestamp |> Option.ofNullable)

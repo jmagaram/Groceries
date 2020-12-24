@@ -15,7 +15,10 @@ module Miscellaneous =
     let newGuid () = Guid.NewGuid()
 
     let inline dprintln s = System.Diagnostics.Debug.WriteLine(s)
-    let inline dprintlnIf f s = System.Diagnostics.Debug.WriteLineIf(f, s)
+
+    let inline dprintlnIf f s =
+        System.Diagnostics.Debug.WriteLineIf(f, s)
+
     let inline dprint s = System.Diagnostics.Debug.Write(s)
     let inline dprintIf f s = System.Diagnostics.Debug.WriteIf(f, s)
 
@@ -42,6 +45,12 @@ module Seq =
                 isDone <- predicate en.Current
         }
 
+    let takeAtMost<'T> n (source: 'T seq) =
+        source
+        |> Seq.indexed
+        |> Seq.takeWhile (fun (i, _) -> i < n)
+        |> Seq.map (fun (_, j) -> j)
+
 [<AutoOpen>]
 module Option =
 
@@ -52,7 +61,10 @@ module Option =
 
     let option = OptionBuilder()
 
-    let asResult e o = o |> Option.map Ok |> Option.defaultValue (Error e)
+    let asResult e o =
+        o
+        |> Option.map Ok
+        |> Option.defaultValue (Error e)
 
 [<AutoOpen>]
 module Result =
@@ -98,10 +110,12 @@ module Result =
 
     let fromResults rs =
         rs
-        |> Seq.scan (fun (vs, err) i ->
-            match i with
-            | Ok v -> (v :: vs, err)
-            | Error e -> (vs, Some e)) ([], None)
+        |> Seq.scan
+            (fun (vs, err) i ->
+                match i with
+                | Ok v -> (v :: vs, err)
+                | Error e -> (vs, Some e))
+            ([], None)
         |> Seq.takeTo (fun (vs, err) -> err.IsSome)
         |> Seq.last
         |> fun (vs, err) ->
@@ -189,3 +203,16 @@ module Guid =
     let serialize (g: Guid) = g.ToString()
 
     let tryDeserialize s = s |> String.tryParseWith Guid.TryParse
+
+[<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
+module DateTimeOffset =
+
+    let serialize (d: DateTimeOffset) = d.ToString("o")
+
+    let deserialize (s: string) =
+        let (success, res) =
+            DateTimeOffset.TryParseExact(s, "o", null, System.Globalization.DateTimeStyles.RoundtripKind)
+
+        match success with
+        | true -> Some res
+        | false -> None

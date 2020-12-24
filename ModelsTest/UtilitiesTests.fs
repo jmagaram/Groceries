@@ -297,6 +297,18 @@ module ResultTests =
 
         failing |> Seq.isEmpty |> should equal true
 
+module DateTimeOffsetTests = 
+
+    [<Property>]
+    let ``serialize and tryDeserialize results in same thing`` (source:DateTimeOffset) =
+        let roundTripped = 
+            source 
+            |> DateTimeOffset.serialize
+            |> DateTimeOffset.deserialize
+            |> Option.get
+
+        source |> should equal roundTripped
+
 module GuidTests =
 
     [<Property>]

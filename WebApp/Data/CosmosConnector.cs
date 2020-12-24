@@ -11,8 +11,10 @@ using WebApp.Common;
 using static Models.DtoTypes;
 using static Models.ServiceTypes;
 
-namespace WebApp.Data {
-    public class CosmosConnector : ICosmosConnector, IDisposable {
+namespace WebApp.Data
+{
+    public class CosmosConnector : ICosmosConnector, IDisposable
+    {
         private CosmosClient _client;
         private readonly string _databaseId = "db";
         private readonly string _containerId = "items";
@@ -27,48 +29,61 @@ namespace WebApp.Data {
 #endif
         private int _delaySeconds = 3;
 
-        public CosmosConnector(string connectionString) {
+        public CosmosConnector(string connectionString)
+        {
             _client = new CosmosClient(connectionString);
         }
 
-        public CosmosConnector(string endpointUri, string primaryKey, string applicationName) {
+        public CosmosConnector(string endpointUri, string primaryKey, string applicationName)
+        {
             _client = new CosmosClient(endpointUri, primaryKey, new CosmosClientOptions() { ApplicationName = applicationName });
         }
 
-        private async Task ArtificialDelay() {
-            if (_delay) {
+        private async Task ArtificialDelay()
+        {
+            if (_delay)
+            {
                 await Task.Delay(_delaySeconds * 1000);
             }
-            else {
+            else
+            {
                 await Task.CompletedTask;
             }
         }
 
-        public async Task CreateDatabaseAsync() {
+        public async Task CreateDatabaseAsync()
+        {
             Database db = await _client.CreateDatabaseIfNotExistsAsync(_databaseId);
             Container ct = await db.CreateContainerIfNotExistsAsync(_containerId, _partitionKeyPath);
         }
 
-        public async Task DeleteDatabaseAsync() {
+        public async Task DeleteDatabaseAsync()
+        {
             Database db = _client.GetDatabase(_databaseId);
             await db.DeleteAsync();
         }
 
-        public async Task PushAsync(Changes c, CancellationToken cancel) {
+        public async Task PushAsync(Changes c, CancellationToken cancel)
+        {
             await PushCore(c.Items.Select(i => Dto.withCustomerId(_customerId, i)), i => i.Etag, cancel);
             await PushCore(c.Categories.Select(i => Dto.withCustomerId(_customerId, i)), i => i.Etag, cancel);
             await PushCore(c.Stores.Select(i => Dto.withCustomerId(_customerId, i)), i => i.Etag, cancel);
             await PushCore(c.NotSoldItems.Select(i => Dto.withCustomerId(_customerId, i)), i => i.Etag, cancel);
+            await PushCore(c.Purchases.Select(i => Dto.withCustomerId(_customerId, i)), i => i.Etag, cancel);
             await ArtificialDelay();
         }
 
-        private async Task PushCore<T>(IEnumerable<T> items, Func<T, string> etag, CancellationToken cancel) {
+        private async Task PushCore<T>(IEnumerable<T> items, Func<T, string> etag, CancellationToken cancel)
+        {
             var ct = _client.GetContainer(_databaseId, _containerId);
-            foreach (var i in items) {
-                try {
+            foreach (var i in items)
+            {
+                try
+                {
                     await ct.UpsertItemAsync(item: i, requestOptions: new ItemRequestOptions { IfMatchEtag = etag(i) }, cancellationToken: cancel);
                 }
-                catch (CosmosException e) when (e.StatusCode == System.Net.HttpStatusCode.PreconditionFailed) {
+                catch (CosmosException e) when (e.StatusCode == System.Net.HttpStatusCode.PreconditionFailed)
+                {
                 }
             }
         }
@@ -77,26 +92,32 @@ namespace WebApp.Data {
 
         public async Task<Changes> PullEverythingAsync(CancellationToken token) => await PullCore(null, token);
 
-        private async Task<Changes> PullCore(int? lastSync, CancellationToken cancel) {
+        private async Task<Changes> PullCore(int? lastSync, CancellationToken cancel)
+        {
             var items = await PullByKindCore<Item>(_customerId, lastSync, DocumentKind.Item, cancel);
             var stores = await PullByKindCore<Store>(_customerId, lastSync, DocumentKind.Store, cancel);
             var categories = await PullByKindCore<Category>(_customerId, lastSync, DocumentKind.Category, cancel);
             var notSoldItems = await PullByKindCore<Unit>(_customerId, lastSync, DocumentKind.NotSoldItem, cancel);
-            var import = new Changes(items, categories, stores, notSoldItems);
+            var purchases = await PullByKindCore<Unit>(_customerId, lastSync, DocumentKind.Purchase, cancel);
+            var import = new Changes(items, categories, stores, notSoldItems, purchases);
             await ArtificialDelay();
             return import;
         }
 
-        private async Task<Document<T>[]> PullByKindCore<T>(string customerId, int? timestamp, DocumentKind kind, CancellationToken cancel) {
+        private async Task<Document<T>[]> PullByKindCore<T>(string customerId, int? timestamp, DocumentKind kind, CancellationToken cancel)
+        {
             var container = _client.GetContainer(_databaseId, _containerId);
             var query = container.GetItemLinqQueryable<Document<T>>()
                 .Where(i => i.Timestamp > (timestamp ?? int.MinValue))
                 .Where(i => i.CustomerId == customerId)
                 .Where(i => i.DocumentKind == kind);
             var docs = new List<Document<T>>();
-            using (var iterator = query.ToFeedIterator()) {
-                while (iterator.HasMoreResults) {
-                    foreach (var item in await iterator.ReadNextAsync(cancel)) {
+            using (var iterator = query.ToFeedIterator())
+            {
+                while (iterator.HasMoreResults)
+                {
+                    foreach (var item in await iterator.ReadNextAsync(cancel))
+                    {
                         docs.Add(item);
                     }
                 }
@@ -104,9 +125,12 @@ namespace WebApp.Data {
             return docs.ToArray();
         }
 
-        protected virtual void Dispose(bool disposing) {
-            if (!_isDisposed) {
-                if (disposing) {
+        protected virtual void Dispose(bool disposing)
+        {
+            if (!_isDisposed)
+            {
+                if (disposing)
+                {
                     _client?.Dispose();
                 }
                 // TODO: free unmanaged resources (unmanaged objects) and override finalizer
@@ -115,7 +139,8 @@ namespace WebApp.Data {
             }
         }
 
-        public void Dispose() {
+        public void Dispose()
+        {
             Dispose(disposing: true);
             GC.SuppressFinalize(this);
         }

@@ -178,38 +178,58 @@ module Quantity =
 [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
 module Item =
 
-    let markComplete (now: DateTimeOffset) (i:Item) =
-        { i with PostponeUntil = now.AddDays(7.0) |> Some }
+    let estimatePurchaseFrequency (purchases: DateTimeOffset seq) =
+        let purchases =
+            purchases
+            |> Seq.distinctBy (fun i -> i.Date)
+            |> Seq.sort
+            |> Seq.takeAtMost 12
+            |> List.ofSeq
+        match purchases |> List.ofSeq with
+        | [] -> TimeSpan.FromDays(14.0)
+        | [ _ ] -> TimeSpan.FromDays(14.0)
+        | xs ->
 
-    let removePostpone (i:Item) =
-        { i with PostponeUntil = None }
+            let count = xs |> List.length
+            let oldest = xs |> List.head
+            let mostRecent = xs |> List.last
+            let timePassed = mostRecent - oldest
+            TimeSpan.FromDays(timePassed.TotalDays / (float (count - 1)))
 
-    let postpone (now:DateTimeOffset) days (i:Item)  =
-        { i with PostponeUntil = now.AddDays(days |> float) |> Some }
+    let removePostpone (i: Item) = { i with PostponeUntil = None }
 
-    let postponeDaysAway (now:DateTimeOffset) (dt:DateTimeOffset) = 
-        1<days> * ((dt - now).TotalDays |> int)
+    let postpone (now: DateTimeOffset) days (i: Item) =
+        { i with
+              PostponeUntil = now.AddDays(days |> float) |> Some }
 
-    let postponeDaysAwayOptional (now:DateTimeOffset) (postponedUntil:DateTimeOffset option) = 
+    let postponeUsingPurchaseHistory (now: DateTimeOffset) purchaseHistory (i: Item) =
+        { i with
+              PostponeUntil =
+                  now.Add(purchaseHistory |> estimatePurchaseFrequency)
+                  |> Some }
+
+    let postponeDaysAway (now: DateTimeOffset) (dt: DateTimeOffset) = 1<days> * ((dt - now).TotalDays |> int)
+
+    let postponeDaysAwayOptional (now: DateTimeOffset) (postponedUntil: DateTimeOffset option) =
         postponedUntil
         |> Option.map (fun postponedUntil -> postponeDaysAway now postponedUntil)
 
     let commonPostponeChoices =
         [ 7; 14; 21; 30; 60; 90; 180 ]
-        |> List.map (fun i -> i * 1<days>)  
+        |> List.map (fun i -> i * 1<days>)
 
     type Message =
-        | MarkComplete
         | RemovePostpone
         | Postpone of int<days>
+        | PostponeUsingPurchaseHistory of DateTimeOffset * DateTimeOffset seq
         | UpdateCategory of CategoryId
         | ClearCategory
 
     let update now msg i =
         match msg with
-        | MarkComplete -> i |> markComplete now
         | RemovePostpone -> i |> removePostpone
         | Postpone d -> i |> postpone now d
+        | PostponeUsingPurchaseHistory (now, history) -> i |> postponeUsingPurchaseHistory now history
         | UpdateCategory id -> { i with CategoryId = Some id }
         | ClearCategory -> { i with CategoryId = None }
 
@@ -317,6 +337,58 @@ module NotSoldItem =
         }
 
 [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
+module Purchase =
+
+    let private separator = '|'
+
+    let serialize (p: Purchase) =
+        let itemId = p.ItemId |> ItemId.serialize
+
+        let purchasedOn =
+            p.PurchasedOn |> DateTimeOffset.serialize
+
+        sprintf "%s%c%s" itemId separator purchasedOn
+
+    let deserialize (s: string) =
+        result {
+            if s |> String.isNullOrWhiteSpace then
+                return!
+                    "Could not deserialize an empty or null string to a Purchase"
+                    |> Error
+            else
+                let parts = s.Split(separator)
+
+                match parts.Length with
+                | 2 ->
+                    let! itemId =
+                        parts.[0]
+                        |> ItemId.deserialize
+                        |> Option.map Ok
+                        |> Option.defaultValue (
+                            sprintf "Could not deserialize the item ID in a Purchase: %s" s
+                            |> Error
+                        )
+
+                    let! purchasedOn =
+                        parts.[1]
+                        |> DateTimeOffset.deserialize
+                        |> Option.map Ok
+                        |> Option.defaultValue (
+                            sprintf "Could not deserialize the purchased on date in a Purchase: %s" s
+                            |> Error
+                        )
+
+                    return
+                        { Purchase.ItemId = itemId
+                          Purchase.PurchasedOn = purchasedOn }
+                | _ ->
+                    return!
+                        s
+                        |> sprintf "Attempting to deserialize a Purchase that does not have exactly two parts: %s"
+                        |> Error
+        }
+
+[<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
 module TextBox =
 
     let create s = { ValueTyping = s; ValueCommitted = s }
@@ -395,8 +467,7 @@ module SearchTerm =
           "gram"
           "lots"
           "many"
-          "whole"
-        ]
+          "whole" ]
         |> Set.ofSeq
 
     let splitOnSpace minWordLength wordsToIgnore (termsAsTyped: string) =
@@ -657,16 +728,20 @@ module ItemForm =
             |> Option.defaultValue ""
         | CategoryMode.CreateNew -> f.NewCategoryName.ValueCommitted
 
-    let postponeSet v f =
-        { f with Postpone = Some v }
+    let postponeSet v f = { f with Postpone = Some v }
 
-    let postponeClear f =
-        { f with Postpone = None }
+    let postponeClear f = { f with Postpone = None }
 
-    let toggleComplete (f:ItemForm) =
+    let toggleComplete (f: ItemForm) =
         match f.IsComplete with
-        | false -> { f with Postpone = Some 7<days>; IsComplete = true }
-        | true -> { f with Postpone = None; IsComplete = false}
+        | false ->
+            { f with
+                  Postpone = Some 7<days>
+                  IsComplete = true }
+        | true ->
+            { f with
+                  Postpone = None
+                  IsComplete = false }
 
     let postponeChoices (f: ItemForm) =
         f.Postpone
@@ -732,7 +807,9 @@ module ItemForm =
               |> Option.defaultValue ""
               |> TextBox.create
           IsComplete = false
-          Postpone = i.PostponeUntil |> Option.map (fun p -> Item.postponeDaysAway now p)
+          Postpone =
+              i.PostponeUntil
+              |> Option.map (fun p -> Item.postponeDaysAway now p)
           CategoryMode = CategoryMode.ChooseExisting
           NewCategoryName = "" |> TextBox.create
           CategoryChoice = i.Category
@@ -784,8 +861,9 @@ module ItemForm =
                   |> Option.map (fun i -> i.CategoryId)
               Item.Quantity = f |> quantityValidation |> Result.okOrThrow
               Item.Note = f |> noteValidation |> Result.okOrThrow
-              Item.PostponeUntil = f.Postpone |> Option.map (fun d -> now.AddDays(d |> float))
-            }
+              Item.PostponeUntil =
+                  f.Postpone
+                  |> Option.map (fun d -> now.AddDays(d |> float)) }
 
         let notSold =
             f.Stores

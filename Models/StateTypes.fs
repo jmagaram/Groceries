@@ -9,7 +9,8 @@ type State =
       Categories: DataTable<CategoryId, Category>
       Stores: DataTable<StoreId, Store>
       NotSoldItems: DataTable<NotSoldItem, NotSoldItem>
-      UserSettings : DataTable<UserId,UserSettings>
+      UserSettings : DataTable<UserId, UserSettings>
+      Purchases : DataTable<Purchase, Purchase>
       LoggedInUser : UserId
       LastCosmosTimestamp: int option
       ItemEditPage: ItemForm option }
@@ -26,6 +27,7 @@ type ReorganizeStoresMessage =
 
 type StateMessage =
     | ItemEditPageMessage of ItemEditPageMessage
+    | RecordPurchase of ItemId
     | ReorganizeCategoriesMessage of ReorganizeCategoriesMessage
     | ReorganizeStoresMessage of ReorganizeStoresMessage
     | ItemMessage of ItemMessage
@@ -41,6 +43,7 @@ and ImportChanges =
       CategoryChanges: Change<Category, CategoryId> list
       StoreChanges: Change<Store, StoreId> list
       NotSoldItemChanges: Change<NotSoldItem, NotSoldItem> list
+      PurchaseChanges : Change<Purchase,Purchase> list
       LatestTimestamp: int option }
 
 and ItemEditPageMessage =

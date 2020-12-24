@@ -163,9 +163,9 @@ namespace WebApp.Pages
 
         private async Task OnClickComplete(ItemId itemId)
         {
-            var itemMsg = StateMessage.NewItemMessage(StateItemMessage.NewModifyItem(itemId, ItemMessage.MarkComplete));
+            var recordPurchase = StateMessage.NewRecordPurchase(itemId);
             var userSettingsMsg = StateMessage.NewUserSettingsMessage(UserSettingsModule.Message.NewShoppingListSettingsMessage(ShoppingListSettingsMessage.EndSearch));
-            var transaction = StateMessage.NewTransaction(new List<StateMessage> { itemMsg, userSettingsMsg });
+            var transaction = StateMessage.NewTransaction(new List<StateMessage> { recordPurchase, userSettingsMsg });
             await _itemQuickActionDrawer.Close();
             await StateService.UpdateAsync(transaction);
         }
@@ -239,7 +239,7 @@ namespace WebApp.Pages
                         await EndSearch();
                     }
                 }
-                else if (e.Key == "Return" || e.Key=="Enter")
+                else if (e.Key == "Return" || e.Key == "Enter")
                 {
                     OnStartCreateNew();
                 }

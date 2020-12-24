@@ -14,6 +14,7 @@ type DocumentKind =
     | Store = 2
     | Category = 3
     | NotSoldItem = 4
+    | Purchase = 5
 
 type Document<'T> =
     { DocumentKind: DocumentKind
@@ -41,8 +42,12 @@ type Category = { CategoryName: string }
 
 type NotSoldItem = unit
 
+type Purchase = unit
+
 type Changes =
     { Items: Document<Item> []
       Categories: Document<Category> []
       Stores: Document<Store> []
-      NotSoldItems: Document<NotSoldItem> [] }
+      NotSoldItems: Document<NotSoldItem> [] 
+      Purchases : Document<Purchase> []
+    }
