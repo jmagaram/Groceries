@@ -188,9 +188,9 @@ namespace WebApp.Pages
         private async Task OnClickChoosePostpone(ItemId itemId)
         {
             _quickEditContext = itemId;
-            var viewModel = SelectZeroOrOnePostpone.create;
             await _itemQuickActionDrawer.Close();
-            await _postponeDrawer.Open(viewModel);
+            bool isPostponed = StateModule.tryFindItem(itemId, StateService.CurrentState).Value.PostponeUntil.IsSome();
+            await _postponeDrawer.Open(ItemModule.commonPostponeChoices,isPostponed);
         }
 
         private async Task OnClickAddToShoppingList(ItemId itemId)
@@ -201,15 +201,18 @@ namespace WebApp.Pages
 
         private async Task OnClickPostponeDays((ItemId itemId, int days) i)
         {
-            var stateMessage = StateMessage.NewItemMessage(StateItemMessage.NewModifyItem(i.itemId, ItemMessage.NewPostpone(i.days)));
-            await StateService.UpdateAsync(stateMessage);
+            var stateItemMsg = StateItemMessage.NewModifyItem(i.itemId, ItemMessage.NewPostpone(i.days));
+            var stateMsg = StateMessage.NewItemMessage(stateItemMsg);
+            await StateService.UpdateAsync(stateMsg);
             await _itemQuickActionDrawer.Close();
         }
 
-        private async Task OnPostponeDurationChosen(SelectZeroOrOneModule.SelectZeroOrOne<int> i)
+        private async Task OnPostponeDurationChosen(int? d)
         {
-            var stateMessage = SelectZeroOrOnePostpone.asStateMessage(_quickEditContext.Value, i);
-            await StateService.UpdateAsync(stateMessage);
+            var itemMsg = (d is int days) ? ItemMessage.NewPostpone(days) : ItemMessage.RemovePostpone;
+            var stateItemMsg = StateItemMessage.NewModifyItem(_quickEditContext.Value, itemMsg);
+            var stateMsg = StateMessage.NewItemMessage(stateItemMsg);
+            await StateService.UpdateAsync(stateMsg);
             await _postponeDrawer.Close();
         }
 

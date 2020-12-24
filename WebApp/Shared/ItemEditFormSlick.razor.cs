@@ -62,17 +62,17 @@ namespace WebApp.Shared
         }
 
         private async ValueTask OnClickPostpone() =>
-            await _postponeDrawer.Open(SelectZeroOrOnePostpone.create);
+            await _postponeDrawer.Open(ItemModule.commonPostponeChoices, Form.Postpone.IsSome());
 
-        private void OnPostponeSelected(SelectZeroOrOneModule.SelectZeroOrOne<int> f)
+        private void OnPostponeSelected(int? d)
         {
-            if (f.CurrentChoice.IsNone())
+            if (d is int days)
             {
-                Process(FormMessage.PostponeClear);
+                Process(FormMessage.NewPostponeSet(days));
             }
             else
             {
-                Process(FormMessage.NewPostponeSet(f.CurrentChoice.Value));
+                Process(FormMessage.PostponeClear);
             }
         }
 

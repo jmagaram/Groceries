@@ -1,67 +1,47 @@
 ﻿@implements IDisposable
 @using Models
-@using static Models.CoreTypes
-@using static Models.SelectZeroOrOneModule
 @using Common
 <ElixDrawer @ref="_drawer">
-    @if (_model != null)
-    {
-        <div class="buttonDrawer">
-            <h1>Postpone</h1>
-            <button ontouchstart="" class="drawerButton" @onclick="async _ => await Select(null)">
-                <div style="display:flex; flex-direction:row; justify-content:space-between">
-                    <div>Add to shopping list now</div>
-                    @if (_model.CurrentChoice.IsNone())
-                    {
-                        <ion-icon name="checkmark-outline"></ion-icon>
-                    }
-                    else
-                    {
-                        <div>&nbsp;</div>
-                    }
+    @if (_choices == null) return;
+    <div class="buttonDrawer">
+        <h1>Postpone</h1>
+        @foreach (var i in _choices.OrderBy(j => j))
+        {
+            var description = i switch
+            {
+                int d => TimeSpanEstimateModule.fromDays(d).Format(
+                    " ",
+                    "day",
+                    "days",
+                    "week",
+                    "weeks",
+                    "month",
+                    "months"),
+                _ => "Add to shopping list now"
+            };
+            string iconName = i.HasValue ? "calendar-outline" : "add-outline";
+            <button ontouchstart="" class="drawerButton" @onclick="async _=>await Select(i)">
+                <div style="display:flex; flex-direction:row; align-items:center">
+                    <div style="width:2rem; text-align:left"><ion-icon name="@iconName"></ion-icon></div>
+                    <div>@description</div>
                 </div>
             </button>
-            @foreach (var i in _model.Choices.OrderBy(j => j))
-            {
-                bool isSelected = _model.CurrentChoice.IsSomeValue(i);
-                var estimate = TimeSpanEstimateModule.fromDays(i);
-                var description =
-                    estimate.IsZeroOrNegative()
-                    ? "Overdue"
-                    : estimate.Format(
-                        " ",
-                        "day",
-                        "days",
-                        "week",
-                        "weeks",
-                        "month",
-                        "months");
-                <button ontouchstart="" class="drawerButton" @onclick="async _=>await Select(i)">
-                    <div style="display:flex; flex-direction:row; justify-content:space-between">
-                        <div>@description</div>
-                        @if (isSelected)
-                        {
-                            <ion-icon name="checkmark-outline"></ion-icon>
-                        }
-                        else
-                        {
-                            <div>&nbsp;</div>
-                        }
-                    </div>
-                </button>
-            }
-        </div>  }
+        }
+    </div>
 </ElixDrawer>
 
 @code {
     private ElixDrawer _drawer;
-    private SelectZeroOrOne<int> _model;
+    private List<int?> _choices;
 
     public void Dispose() => _drawer?.Dispose();
 
-    public async ValueTask Open(SelectZeroOrOne<int> model)
+    public async ValueTask Open(IEnumerable<int> choices, bool includeAddToShoppingList)
     {
-        _model = model;
+        _choices =
+            Enumerable.Repeat(new int?(), includeAddToShoppingList ? 1 : 0)
+            .Concat(choices.Select(i => new int?(i)))
+            .ToList();
         await InvokeAsync(() => StateHasChanged());
         await _drawer.Open();
     }
@@ -69,12 +49,11 @@
     public async ValueTask Close() => await _drawer.Close();
 
     [Parameter]
-    public EventCallback<SelectZeroOrOne<int>> OnSelected { get; set; }
+    public EventCallback<int?> Selected { get; set; }
 
-    private async Task Select(int? c)
+    private async Task Select(int? d)
     {
-        _model = (c == null) ? _model.SelectNone() : _model.Select(c.Value);
         await _drawer.Close();
-        await OnSelected.InvokeAsync(_model);
+        await Selected.InvokeAsync(d);
     }
 }
