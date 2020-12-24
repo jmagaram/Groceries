@@ -188,7 +188,7 @@ namespace WebApp.Pages
         private async Task OnClickChoosePostpone(ItemId itemId)
         {
             _quickEditContext = itemId;
-            var viewModel = SelectZeroOrOnePostpone.createFromItemId(itemId, DateTimeOffset.Now, StateService.CurrentState);
+            var viewModel = SelectZeroOrOnePostpone.create;
             await _itemQuickActionDrawer.Close();
             await _postponeDrawer.Open(viewModel);
         }

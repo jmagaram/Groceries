@@ -69,13 +69,19 @@
     <ion-icon name="color-palette"></ion-icon>
     <div>@(hasCategory ? Form.CategoryCommittedName() : "Category")</div>
 </button>
-@{ 
+@{
     string animateClass = HighlightPostpone ? "bounce-top" : "";
     HighlightPostpone = false;
+    string postponeDescription =
+        Form.Postpone.AsNullable() switch
+        {
+            int d => $"{DurationEstimateModule.longLabel(DurationEstimateModule.fromDays(d))} from now",
+            _ => "Postpone"
+        };
 }
 <button ontouchstart="" class="propertyGrid enterLeft" @onclick="async _=>await OnClickPostpone()">
     <div class="@animateClass @hasPostponeClass"><ion-icon name="calendar-outline"></ion-icon></div>
-    <div class="@animateClass @hasPostponeClass">@(hasPostpone ? $"{@ItemFormModule.postponeDurationAsText(Form.Postpone.Value)} from now" : "Postpone")</div>
+    <div class="@animateClass @hasPostponeClass">@postponeDescription</div>
 </button>
 @if (Form.Stores.Any())
 {

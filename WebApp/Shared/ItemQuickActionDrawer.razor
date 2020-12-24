@@ -20,8 +20,11 @@
                 <button ontouchstart="" @onclick="async _ => await OnAddToShoppingListNow.InvokeAsync(_viewModel.ItemId)"><ion-icon name="add-outline"></ion-icon>Add to shopping list now</button>
             }
             @if (_viewModel.CanPostpone) {
+                var daysInWeek = 7;
+                var estimate = DurationEstimateModule.fromTimeSpan(TimeSpan.FromDays(daysInWeek));
+                var description = DurationEstimateModule.longLabel(estimate);
                 <div class="buttonRow">
-                    <button ontouchstart="" class="splitButtonDefault" @onclick="async _ => await OnPostponeDays.InvokeAsync((_viewModel.ItemId,7))"><ion-icon name="calendar-outline"></ion-icon>Postpone +1 week</button>
+                    <button ontouchstart="" class="splitButtonDefault" @onclick="async _ => await OnPostponeDays.InvokeAsync((_viewModel.ItemId, daysInWeek))"><ion-icon name="calendar-outline"></ion-icon>Postpone @description</button>
                     <button ontouchstart="" class="splitButtonIcon" @onclick="async _ => await OnPostpone.InvokeAsync(_viewModel.ItemId)">
                         <ion-icon name="caret-down-outline"></ion-icon>
                     </button>

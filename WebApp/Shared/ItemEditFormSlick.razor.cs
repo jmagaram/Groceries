@@ -62,7 +62,7 @@ namespace WebApp.Shared
         }
 
         private async ValueTask OnClickPostpone() => 
-            await _postponeDrawer.Open(SelectZeroOrOnePostpone.createFromRelativeDate(Form.Postpone));
+            await _postponeDrawer.Open(SelectZeroOrOnePostpone.create);
 
         private void OnPostponeSelected(SelectZeroOrOneModule.SelectZeroOrOne<int> f)
         {

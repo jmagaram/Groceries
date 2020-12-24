@@ -9,3 +9,12 @@ type TextFormat =
 type TextSpan = { Format: TextFormat; Text: string }
 
 type FormattedText = FormattedText of TextSpan list
+
+type DurationUnit = 
+    | Days
+    | Weeks
+    | Months
+
+type DurationEstimate =
+    { Quantity : uint
+      DurationUnit : DurationUnit }

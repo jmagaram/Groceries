@@ -49,25 +49,12 @@
             background-color: ButtonFace;
         }
 
-    .itemContainer .soonBadge {
-        background-color: #d77600;
-        color: white;
-    }
-
-    .itemContainer .laterBadge {
-        background-color: darkgray;
-    }
-
 .properties {
     display: grid;
     grid-template-columns: 1rem auto;
     grid-column-gap: 0.4rem;
     grid-row-gap: 0.2rem;
 }
-
-    .properties.inactive {
-        opacity: 0.6;
-    }
 
     .properties .title {
         grid-column: 1/3;
@@ -127,7 +114,7 @@
     align-items: center;
 }
 
-.myBadge {
+.postponeBadge {
     border-radius: 5px;
     display: inline-flex !important;
     flex-direction: row;
@@ -143,7 +130,27 @@
     top: 0.2rem;
 }
 
-    .myBadge ion-icon {
+    .postponeBadge ion-icon {
         font-size: 18px;
         margin-right: 3px;
+    }
+
+    .postponeBadge.soonBadge {
+        background-color: #d77600;
+        color: white;
+    }
+
+    .postponeBadge.daysBadge {
+        background-color: #555555;
+        color: white;
+    }
+
+    .postponeBadge.weeksBadge {
+        background-color: #888888;
+        color: white;
+    }
+
+    .postponeBadge.monthsBadge {
+        background-color: #bbbbbb;
+        color: white;
     }

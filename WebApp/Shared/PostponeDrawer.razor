@@ -3,38 +3,45 @@
 @using static Models.CoreTypes
 @using static Models.SelectZeroOrOneModule
 @using Common
-
 <ElixDrawer @ref="_drawer">
-    @if (_model != null) {
-    <div class="buttonDrawer">
-        <h1>Postpone</h1>
-        <button ontouchstart="" class="drawerButton" @onclick="async _ => await Select(null)">
-            <div style="display:flex; flex-direction:row; justify-content:space-between">
-                <div>Add to shopping list now</div>
-                @if (_model.CurrentChoice.IsNone()) {
-                    <ion-icon name="checkmark-outline"></ion-icon>
-                }
-                else {
-                    <div>&nbsp;</div>
-                }
-            </div>
-        </button>
-        @foreach (var i in _model.Choices.OrderBy(j => j)) {
-            bool isSelected = _model.CurrentChoice.IsSomeValue(i);
-            string description = $"+{Models.ItemFormModule.postponeDurationAsText(i)}";
-            <button ontouchstart="" class="drawerButton" @onclick="async _=>await Select(i)">
+    @if (_model != null)
+    {
+        <div class="buttonDrawer">
+            <h1>Postpone</h1>
+            <button ontouchstart="" class="drawerButton" @onclick="async _ => await Select(null)">
                 <div style="display:flex; flex-direction:row; justify-content:space-between">
-                    <div>@description</div>
-                    @if (isSelected) {
+                    <div>Add to shopping list now</div>
+                    @if (_model.CurrentChoice.IsNone())
+                    {
                         <ion-icon name="checkmark-outline"></ion-icon>
                     }
-                    else {
+                    else
+                    {
                         <div>&nbsp;</div>
                     }
                 </div>
             </button>
-        }
-    </div>    }
+            @foreach (var i in _model.Choices.OrderBy(j => j))
+            {
+                bool isSelected = _model.CurrentChoice.IsSomeValue(i);
+                DateTimeOffset postponeUntil = DateTimeOffset.Now.AddDays(i);
+                var postponeEstimate = DurationEstimateModule.fromTimeSpan(TimeSpan.FromDays(i));
+                var description = DurationEstimateModule.longLabel(postponeEstimate);
+                <button ontouchstart="" class="drawerButton" @onclick="async _=>await Select(i)">
+                    <div style="display:flex; flex-direction:row; justify-content:space-between">
+                        <div>@description</div>
+                        @if (isSelected)
+                        {
+                            <ion-icon name="checkmark-outline"></ion-icon>
+                        }
+                        else
+                        {
+                            <div>&nbsp;</div>
+                        }
+                    </div>
+                </button>
+            }
+        </div>  }
 </ElixDrawer>
 
 @code {
@@ -43,7 +50,8 @@
 
     public void Dispose() => _drawer?.Dispose();
 
-    public async ValueTask Open(SelectZeroOrOne<int> model) {
+    public async ValueTask Open(SelectZeroOrOne<int> model)
+    {
         _model = model;
         await InvokeAsync(() => StateHasChanged());
         await _drawer.Open();
@@ -54,7 +62,8 @@
     [Parameter]
     public EventCallback<SelectZeroOrOne<int>> OnSelected { get; set; }
 
-    private async Task Select(int? c) {
+    private async Task Select(int? c)
+    {
         _model = (c == null) ? _model.SelectNone() : _model.Select(c.Value);
         await _drawer.Close();
         await OnSelected.InvokeAsync(_model);

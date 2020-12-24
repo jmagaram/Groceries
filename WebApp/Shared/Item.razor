@@ -8,16 +8,7 @@
         <button class="iconButton" ontouchstart="" @onclick="async _ => await OnClickAddToShoppingList.InvokeAsync(ItemQry.ItemId)"><ion-icon name="add-outline"></ion-icon></button>
     }
     <button ontouchstart="" @onclick="async _=>await OnClick.InvokeAsync(ItemQry.ItemId)" style="padding-right:0px;">
-            @{
-                var now = DateTimeOffset.Now;
-                var daysAway = ItemModule.postponeDaysAwayOptional(now, ItemQry.PostponeUntil).AsNullable();
-                bool isSoon = daysAway.HasValue && daysAway.Value <= 5;
-                bool isLater = daysAway.HasValue && daysAway.Value > 5;
-                var weeksAway = daysAway / 7;
-                var monthsAway = daysAway / 30;
-                var propertiesClass = ItemQry.PostponeUntil.IsNone() ? "" : "inactive";
-            }
-        <div class="properties @propertiesClass">
+        <div class="properties">
             <div class="title">
                 <ul>
                     @foreach (var i in FormattedTextModule.spans(ItemQry.ItemName))
@@ -25,23 +16,25 @@
                         string highlightClass = i.Format.IsHighlight ? "highlight" : "";
                         <li class="@highlightClass">@i.Text</li>
                     }
-                    @if (isSoon)
+                    @if (ItemQry.PostponeUntil.AsNullable() is DateTimeOffset p)
                     {
-                        <li class="soonBadge myBadge">
-                            <ion-icon name="calendar-outline"></ion-icon><span>soon</span>
-                        </li>
-                    }
-                    else if (isLater)
-                    {
-                        string description =
-                            (weeksAway <= 1) ? "+1w" :
-                            (monthsAway == 0) ? $"+{weeksAway.Value}w" :
-                            (monthsAway == 1) ? "+1m" :
-                            $"+{monthsAway.Value}m";
-
-                        <li class="laterBadge myBadge">
-                            <ion-icon name="calendar-outline"></ion-icon><span>@description</span>
-                        </li>
+                        var soonDays = 5u;
+                        var now = DateTimeOffset.Now;
+                        var duration = p - now;
+                        var soon = now.AddDays(soonDays);
+                        var isSoon = p <= soon;
+                        var estimate = DurationEstimateModule.fromTimeSpan(duration);
+                        var description = DurationEstimateModule.shortLabel(TimeSpan.FromDays(soonDays), estimate);
+                        string iconName =
+                            isSoon
+                            ? "alarm-outline"
+                            : "calendar-outline";
+                        string badgeClass =
+                            isSoon ? "soonBadge"
+                            : estimate.DurationUnit.IsDays ? "daysBadge"
+                            : estimate.DurationUnit.IsWeeks ? "weeksBadge"
+                            : "monthsBadge";
+                <li class="postponeBadge @badgeClass"><ion-icon name="@iconName" />@description</li>
                     }
                 </ul>
             </div>
