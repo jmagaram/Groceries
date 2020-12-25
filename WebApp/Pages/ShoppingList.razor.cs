@@ -10,6 +10,7 @@ using WebApp.Common;
 using WebApp.Shared;
 using static Models.CoreTypes;
 using static Models.ServiceTypes;
+using static Models.ViewTypes;
 using ItemMessage = Models.ItemModule.Message;
 using ShoppingListSettingsMessage = Models.ShoppingListSettingsModule.Message;
 using StateItemMessage = Models.StateTypes.ItemMessage;
@@ -215,7 +216,7 @@ namespace WebApp.Pages
 
         private async Task OnSpecificStoresSelected(SelectMany<Store> f)
         {
-            if (f.HasChanges)
+            if (SelectManyModule.hasChanges(f))
             {
                 var stateMsg = StateMessage.NewItemOnlySoldAt(_quickEditContext.Value, f.Selected.Select(i => i.StoreId));
                 await StateService.UpdateAsync(stateMsg);

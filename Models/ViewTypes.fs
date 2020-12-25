@@ -20,3 +20,8 @@ type SelectZeroOrOne<'T when 'T: comparison> =
     { Choices: Set<'T>
       OriginalChoice: 'T option
       CurrentChoice: 'T option }
+
+type SelectMany<'T when 'T: comparison> =
+    { Items: Set<'T>
+      SelectedOriginal: Set<'T>
+      Selected: Set<'T> }

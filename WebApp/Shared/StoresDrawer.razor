@@ -1,5 +1,6 @@
 ﻿@using Models
 @using static Models.CoreTypes
+@using static Models.ViewTypes
 
 <ElixDrawer Closed="OnClose" @ref="_drawer">
     @if (_model == null)
@@ -15,10 +16,10 @@
             </header>
             <button class="drawerButton" ontouchstart="" @onclick="async _ => await Close()">Done</button>
         </div>
-        @foreach (var i in _model.SelectionSummary.OrderBy(i => i.Item.StoreName))
+        @foreach (var i in SelectManyModule.selectionSummary(_model).OrderBy(i => i.Item.StoreName))
         {
             string selectedClass = i.IsSelected ? "selected" : "";
-            <button class="drawerButton @selectedClass" ontouchstart="" @onclick="_=>_model = _model.Toggle(i.Item)">
+            <button class="drawerButton @selectedClass" ontouchstart="" @onclick="_=>_model = SelectManyModule.toggleSelected(i.Item,_model)">
                 <div style="display:flex; flex-direction:row; justify-content:space-between">
                     <div>@i.Item.StoreName.AsText()</div>
                     @if (i.IsSelected)
@@ -32,10 +33,10 @@
                 </div>
             </button>
         }
-        <button class="drawerButton" ontouchstart="" @onclick="_=>_model = _model.SelectAll()">
+        <button class="drawerButton" ontouchstart="" @onclick="_=>_model = SelectManyModule.selectAll(_model)">
             <div style="display:flex; flex-direction:row; justify-content:space-between">
                 <span>All Stores</span>
-                @if (_model.AllSelected)
+                @if (SelectManyModule.allSelected(_model))
                 {
                     <ion-icon name="checkmark-outline"></ion-icon>
                 }
@@ -64,7 +65,7 @@
 
     private async ValueTask Cancel()
     {
-        _model = _model.RevertToOriginalSelection();
+        _model = SelectManyModule.revertToOriginalSelection(_model);
         await Closed.InvokeAsync(_model);
         await _drawer.Close();
         _model = null;
