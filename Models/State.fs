@@ -162,8 +162,9 @@ let insertPurchase (p: Purchase) s =
     | None -> failwith "The purchase has an invalid item foreign key."
     | Some _ ->
         let areDatesClose (x: DateTimeOffset) (y: DateTimeOffset) =
-            let daysDiff = ((x - y).TotalDays) |> abs
-            daysDiff <= 1.0
+            (x - y)
+            |> TimeSpan.abs
+            |> fun t -> t < TimeSpan.FromDays(1.0)
 
         match s
               |> purchases

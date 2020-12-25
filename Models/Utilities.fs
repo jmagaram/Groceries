@@ -205,6 +205,11 @@ module Guid =
     let tryDeserialize s = s |> String.tryParseWith Guid.TryParse
 
 [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
+module TimeSpan =
+
+    let abs (t: TimeSpan) = if t < TimeSpan.Zero then -t else t
+
+[<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
 module DateTimeOffset =
 
     let serialize (d: DateTimeOffset) = d.ToString("o")
