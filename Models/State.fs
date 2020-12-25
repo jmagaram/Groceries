@@ -160,7 +160,19 @@ let insertNotSoldItem (n: NotSoldItem) s =
 let insertPurchase (p: Purchase) s =
     match s |> tryFindItem p.ItemId with
     | None -> failwith "The purchase has an invalid item foreign key."
-    | Some _ -> s |> mapPurchases (DataTable.insert p)
+    | Some _ ->
+        let areDatesClose (x: DateTimeOffset) (y: DateTimeOffset) =
+            let daysDiff = ((x - y).TotalDays) |> abs
+            daysDiff <= 1.0
+
+        match s
+              |> purchases
+              |> Seq.exists
+                  (fun i ->
+                      i.ItemId = p.ItemId
+                      && areDatesClose i.PurchasedOn p.PurchasedOn) with
+        | true -> s
+        | false -> s |> mapPurchases (DataTable.insert p)
 
 let deleteStore k s =
     s
