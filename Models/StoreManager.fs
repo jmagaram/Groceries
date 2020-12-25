@@ -74,10 +74,16 @@ let reorganizeResult (f: StoreManagerWizard) =
               |> Seq.choose (fun (x, y) -> y |> Option.map (fun y -> (x, y)))
               |> List.ofSeq }
 
+let bulkEdit (f: StoreManagerWizard) =
+    f |> getWizard |> SetEditWizardForm.bulkEdit
+
+let summary (f: StoreManagerWizard) =
+    f |> getWizard |> SetEditWizardForm.summary
+
 type StoreManagerWizard with
     static member FromState(state) = state |> fromState
-    member me.BulkEdit = me |> getWizard |> SetEditWizardForm.bulkEdit
-    member me.Summary = me |> getWizard |> SetEditWizardForm.summary
+    member me.BulkEdit = me |> bulkEdit
+    member me.Summary = me |> summary
     member me.Update(msg) = me |> update msg
     member me.Errors = me |> errors
     member me.HasChanges = me |> hasChanges
