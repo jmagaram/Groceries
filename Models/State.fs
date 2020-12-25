@@ -39,6 +39,18 @@ let tryFindCategory id s =
     |> categoriesTable
     |> DataTable.tryFindCurrent id
 
+let purchasesOf itemId s =
+    s
+    |> purchases
+    |> Seq.filter (fun p -> p.ItemId = itemId)
+    |> Seq.map (fun p -> p.PurchasedOn)
+
+let tryFindMostRecentPurchase itemId s =
+    s
+    |> purchasesOf itemId
+    |> Seq.sortByDescending id
+    |> Seq.tryHead
+
 let itemHasInvalidCategory (i: Item) s =
     i.CategoryId
     |> Option.map (fun c -> s |> tryFindCategory c |> Option.isNone)
