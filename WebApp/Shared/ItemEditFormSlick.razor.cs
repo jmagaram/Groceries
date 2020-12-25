@@ -34,7 +34,9 @@ namespace WebApp.Shared
         public EventCallback<FormMessage> OnItemFormMessage { get; set; }
 
         private async ValueTask OnClickCategory() =>
-            await _categoryDrawer.Open(SelectZeroOrOneCategory.createFromPickList(Form.CategoryChoice, Form.CategoryChoiceList));
+            await _categoryDrawer.Open(
+                SelectZeroOrOneCategory.createFromPickList(Form.CategoryChoice, Form.CategoryChoiceList),
+                Form.ItemName.ValueCommitted);
 
         private void OnCategorySelected(SelectZeroOrOneModule.SelectZeroOrOne<Category> f)
         {
