@@ -54,7 +54,7 @@
                 {
                     var item = itemUncaptured;
                     <div class="activeGroup">
-                        <WebApp.Shared.Item HideStores="@hideStores" OnClickAddToShoppingList="async i => await OnClickAddToShoppingList(i)" OnClickDue="async i => await OnClickChoosePostpone(i)" OnClick="async i => await OnClickItem(item.ItemId)" ItemQry="@item" />
+                        <WebApp.Shared.Item @key="item.ItemId.Serialize()" HideStores="@hideStores" OnClickAddToShoppingList="async i => await OnClickAddToShoppingList(i)" OnClickDue="async i => await OnClickChoosePostpone(i)" OnClick="async i => await OnClickItem(item.ItemId)" ItemQry="@item" />
                     </div> }
                 @if (inactiveItems.Length > 0)
                 {
@@ -62,7 +62,7 @@
                         @foreach (var itemUncaptured in inactiveItems)
                         {
                             var item = itemUncaptured;
-                            <WebApp.Shared.Item HideStores="@hideStores" OnClickAddToShoppingList="async i => await OnClickAddToShoppingList(i)" OnClickDue="async i => await OnClickChoosePostpone(i)" OnClick="async i => await OnClickItem(item.ItemId)" ItemQry="@item" />
+                            <WebApp.Shared.Item @key="item.ItemId.Serialize()" HideStores="@hideStores" OnClickAddToShoppingList="async i => await OnClickAddToShoppingList(i)" OnClickDue="async i => await OnClickChoosePostpone(i)" OnClick="async i => await OnClickItem(item.ItemId)" ItemQry="@item" />
                         }
                     </div>
                 }
