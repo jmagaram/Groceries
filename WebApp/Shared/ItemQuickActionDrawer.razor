@@ -14,22 +14,39 @@
             <div></div>
         </header>
         <div class="buttonGroup">
-            <button ontouchstart="" @onclick="async _ => await OnComplete.InvokeAsync(_viewModel.ItemId)"><ion-icon name="checkmark-outline"></ion-icon>Complete</button>
+            <button ontouchstart="" @onclick="async _ => await OnComplete.InvokeAsync(_viewModel.ItemId)"><ion-icon name="checkmark-outline" />Complete</button>
             @if (_viewModel.PostponeUntil.IsSome())
             {
-                <button ontouchstart="" @onclick="async _ => await OnAddToShoppingListNow.InvokeAsync(_viewModel.ItemId)"><ion-icon name="add-outline"></ion-icon>Add to shopping list now</button>
+                <button ontouchstart="" @onclick="async _ => await OnAddToShoppingListNow.InvokeAsync(_viewModel.ItemId)"><ion-icon name="add-outline" />Add to shopping list now</button>
             }
             <div class="buttonRow">
-                <button ontouchstart="" class="splitButtonDefault" @onclick="async _ => await OnPostponeDays.InvokeAsync((_viewModel.ItemId, 7))"><ion-icon name="calendar-outline"></ion-icon>Postpone 1 week</button>
+                <button ontouchstart="" class="splitButtonDefault" @onclick="async _ => await OnPostponeDays.InvokeAsync((_viewModel.ItemId, 7))"><ion-icon name="calendar-outline" />Postpone 1 week</button>
                 <button ontouchstart="" class="splitButtonIcon" @onclick="async _ => await OnPostpone.InvokeAsync(_viewModel.ItemId)">
                     <ion-icon name="caret-down-outline"></ion-icon>
                 </button>
             </div>
         </div>
         <div class="buttonGroup">
+            @if (_viewModel.PermitStoresCustomization)
+            {
+                if (_viewModel.PermitQuickNotSoldAt.IsNone())
+                {
+                    <button ontouchstart="" @onclick="async _ => await OnCustomizeStores.InvokeAsync(_viewModel.ItemId)"><ion-icon name="storefront-outline" />Stores...</button>
+                }
+                else
+                {
+                    var store = _viewModel.PermitQuickNotSoldAt.Value;
+                    <div class="buttonRow">
+                        <button ontouchstart="" class="splitButtonDefault" @onclick="async _ => await OnNotSoldAtSpecificStore.InvokeAsync((_viewModel.ItemId,store.StoreId))"><ion-icon name="storefront-outline" />Never at&nbsp;<span style="text-decoration: line-through; text-decoration-color: #0000006e">@store.StoreName.AsText()</span></button>
+                        <button ontouchstart="" class="splitButtonIcon" @onclick="async _ => await OnCustomizeStores.InvokeAsync(_viewModel.ItemId)">
+                            <ion-icon name="caret-down-outline" />
+                        </button>
+                    </div>
+                }
+            }
             <div class="buttonRow">
-                <button ontouchstart="" @onclick="async _ => await OnDelete.InvokeAsync(_viewModel.ItemId)" class="justIconButton"><ion-icon name="trash-outline"></ion-icon></button>
-                <button ontouchstart="" @onclick="async _ => await OnEdit.InvokeAsync(_viewModel.ItemId)"><ion-icon name="pencil-outline"></ion-icon>Edit...</button>
+                <button ontouchstart="" @onclick="async _ => await OnDelete.InvokeAsync(_viewModel.ItemId)" class="justIconButton"><ion-icon name="trash-outline" /></button>
+                <button ontouchstart="" @onclick="async _ => await OnEdit.InvokeAsync(_viewModel.ItemId)"><ion-icon name="pencil-outline" />Edit...</button>
             </div>
         </div>
     </div>
@@ -59,6 +76,12 @@
 
     [Parameter]
     public EventCallback<ItemId> OnEdit { get; set; }
+
+    [Parameter]
+    public EventCallback<ItemId> OnCustomizeStores { get; set; }
+
+    [Parameter]
+    public EventCallback<(ItemId, StoreId)> OnNotSoldAtSpecificStore { get; set; }
 
     [Parameter]
     public EventCallback<ItemId> OnPostpone { get; set; }

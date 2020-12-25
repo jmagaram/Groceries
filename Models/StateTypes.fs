@@ -32,6 +32,8 @@ type StateMessage =
     | ReorganizeStoresMessage of ReorganizeStoresMessage
     | ItemMessage of ItemMessage
     | ItemAvailabilityMessage of ItemId * ItemAvailability seq
+    | ItemOnlySoldAt of ItemId * StoreId seq
+    | ItemNotSoldAt of ItemId * StoreId
     | UserSettingsMessage of UserSettings.Message
     | Import of ImportChanges
     | AcceptAllChanges

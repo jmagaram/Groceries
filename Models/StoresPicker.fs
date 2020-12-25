@@ -8,45 +8,27 @@ let createFromAvailability availability =
     availability
     |> Seq.map (fun j -> j.Store)
     |> create
-    |> withOriginalSelection
-        (availability
-            |> Seq.choose (fun j -> if j.IsSold then Some j.Store else None))
+    |> withOriginalSelection (
+        availability
+        |> Seq.choose (fun j -> if j.IsSold then Some j.Store else None)
+    )
 
 let create itemId state =
     state
     |> State.stores
-    |> Seq.map (fun s ->
+    |> Seq.map
+        (fun s ->
             { ItemAvailability.Store = s
-              IsSold =
-                  state
-                  |> State.notSoldTable
-                  |> DataTable.tryFindCurrent { NotSoldItem.ItemId = itemId; StoreId = s.StoreId }
-                  |> Option.isNone })
+              IsSold = state |> State.storeSellsItemById itemId s.StoreId })
     |> createFromAvailability
-
-//let storeAvailabilityPicker itemId state =
-//    state
-//    |> State.stores
-//    |> Seq.map
-//        (fun s ->
-//            { ItemAvailability.Store = s
-//              IsSold =
-//                  state
-//                  |> State.notSoldTable
-//                  |> DataTable.tryFindCurrent { NotSoldItem.ItemId = itemId; StoreId = s.StoreId }
-//                  |> Option.isNone })
-//    |> fun i ->
-//        i
-//        |> Seq.map (fun j -> j.Store)
-//        |> create
-//        |> withOriginalSelection
-//            (i
-//             |> Seq.choose (fun j -> if j.IsSold then Some j.Store else None))
 
 let asItemAvailability s =
     s
     |> SelectMany.selectionSummary
-    |> Seq.map (fun i -> { ItemAvailability.Store = i.Item; IsSold = i.IsSelected })
+    |> Seq.map
+        (fun i ->
+            { ItemAvailability.Store = i.Item
+              IsSold = i.IsSelected })
 
 let asItemAvailabilityMessage itemId s =
     (itemId, s |> asItemAvailability)

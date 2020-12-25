@@ -31,6 +31,9 @@ let purchases = purchasesTable >> DataTable.current
 let tryFindItem id s =
     s |> itemsTable |> DataTable.tryFindCurrent id
 
+let tryFindStore id s =
+    s |> storesTable |> DataTable.tryFindCurrent id
+
 let tryFindCategory id s =
     s
     |> categoriesTable
@@ -53,13 +56,14 @@ let notSoldHasInvalidStore (ns: NotSoldItem) s =
     |> DataTable.tryFindCurrent ns.StoreId
     |> Option.isNone
 
-let storeSellsItem (i: Item) (s: Store) state =
+let storeSellsItemById itemId storeId state =
     state
     |> notSoldTable
-    |> DataTable.tryFindCurrent
-        { StoreId = s.StoreId
-          ItemId = i.ItemId }
+    |> DataTable.tryFindCurrent { StoreId = storeId; ItemId = itemId }
     |> Option.isNone
+
+let storeSellsItem (i: Item) (s: Store) state =
+    state |> storeSellsItemById i.ItemId s.StoreId
 
 let hasChanges s =
     (s |> itemsTable |> DataTable.hasChanges)
@@ -542,6 +546,21 @@ let handleItemAvailabilityMessage itemId (msg: ItemAvailability seq) s =
     msg
     |> Seq.fold (fun s i -> s |> updateItemAvailability itemId i) s
 
+let handleItemOnlySoldAt itemId onlySoldAt s =
+    let onlySoldAt = onlySoldAt |> Set.ofSeq
+
+    s
+    |> stores
+    |> Seq.map
+        (fun s ->
+            { ItemAvailability.Store = s
+              IsSold = onlySoldAt |> Set.contains (s.StoreId) })
+    |> Seq.fold (fun state ia -> state |> updateItemAvailability itemId ia) s
+
+let handleItemNotSoldAt itemId storeId s =
+    s
+    |> mapNotSoldItems (DataTable.upsert { ItemId = itemId; StoreId = storeId })
+
 let handleUserSettingsMessage (msg: UserSettings.Message) (s: State) =
     let settings =
         s
@@ -557,10 +576,9 @@ let handleRecordPurchase (now: DateTimeOffset) (id: ItemId) (s: State) =
         |> Seq.choose (fun p -> if p.ItemId = id then Some p.PurchasedOn else None)
 
     s
-    |> insertPurchase
-        { ItemId = id
-          PurchasedOn = now }
+    |> insertPurchase { ItemId = id; PurchasedOn = now }
     |> handleItemMessage now (ModifyItem(id, Item.PostponeUsingPurchaseHistory(now, purchases)))
+
 
 let update: Update =
     fun clock msg s ->
@@ -581,6 +599,8 @@ let update: Update =
             | Import c -> s |> importChanges c
             | ResetToSampleData -> createSampleData s.LoggedInUser
             | ItemEditPageMessage msg -> s |> handleItemEditPageMessage now msg
+            | ItemNotSoldAt (itemId, storeId) -> s |> handleItemNotSoldAt itemId storeId
+            | ItemOnlySoldAt (itemId, stores) -> s |> handleItemOnlySoldAt itemId stores
             | ItemAvailabilityMessage (itemId, availability) ->
                 s
                 |> handleItemAvailabilityMessage itemId availability

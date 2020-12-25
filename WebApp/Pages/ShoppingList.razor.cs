@@ -21,6 +21,7 @@ namespace WebApp.Pages
     {
         ItemQuickActionDrawer _itemQuickActionDrawer;
         PostponeDrawer _postponeDrawer;
+        StoresDrawer _storesDrawer;
         CategoryNavigatorDrawer _categoryNavigationDrawer;
         StoreNavigatorDrawer _storesNavigatorDrawer;
         ViewOptionsDrawer _viewOptionsDrawer;
@@ -36,6 +37,7 @@ namespace WebApp.Pages
             _categoryNavigationDrawer?.Dispose();
             _storesNavigatorDrawer?.Dispose();
             _viewOptionsDrawer?.Dispose();
+            _storesDrawer?.Dispose();
         }
 
         public bool IsSearchBarVisible => CurrentState.LoggedInUserSettings().ShoppingListSettings.IsTextFilterVisible;
@@ -180,7 +182,11 @@ namespace WebApp.Pages
 
         private async Task OnClickItem(ItemId itemId)
         {
-            var configuration = ItemQuickActionsModule.create(itemId, CurrentState);
+            var storeFilter = CurrentState.LoggedInUserSettings().ShoppingListSettings.StoreFilter;
+            var configuration =
+                IsSearchBarVisible || storeFilter.IsNone()
+                ? ItemQuickActionsModule.createNoActiveStore(itemId, CurrentState)
+                : ItemQuickActionsModule.createWithActiveStore(itemId, storeFilter.Value, CurrentState);
             await _itemQuickActionDrawer.Open(configuration);
         }
 
@@ -211,6 +217,30 @@ namespace WebApp.Pages
         {
             var stateItemMsg = StateItemMessage.NewModifyItem(i.itemId, ItemMessage.NewPostpone(i.days));
             var stateMsg = StateMessage.NewItemMessage(stateItemMsg);
+            await StateService.UpdateAsync(stateMsg);
+            await _itemQuickActionDrawer.Close();
+        }
+
+        private async Task OnSpecificStoresSelected(SelectMany<Store> f)
+        {
+            if (f.HasChanges)
+            {
+                var stateMsg = StateMessage.NewItemOnlySoldAt(_quickEditContext.Value, f.Selected.Select(i => i.StoreId));
+                await StateService.UpdateAsync(stateMsg);
+            }
+        }
+
+        private async ValueTask OnCustomizeStores(ItemId itemId)
+        {
+            _quickEditContext = itemId;
+            await _itemQuickActionDrawer.Close();
+            var model = StoresPickerModule.create(itemId, CurrentState);
+            await _storesDrawer.Open(model);
+        }
+
+        private async Task OnNotSoldAtSpecificStore((ItemId itemId, StoreId storeId) i)
+        {
+            var stateMsg = StateMessage.NewItemNotSoldAt(i.itemId, i.storeId);
             await StateService.UpdateAsync(stateMsg);
             await _itemQuickActionDrawer.Close();
         }

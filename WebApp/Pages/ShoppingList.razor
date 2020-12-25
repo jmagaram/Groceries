@@ -103,8 +103,11 @@
                        OnEdit="async i => await OnEditItem(i)"
                        OnPostpone="async i=> await OnClickChoosePostpone(i)"
                        OnPostponeDays="async i=>await OnClickPostponeDays(i)"
+                       OnCustomizeStores="async i=>await OnCustomizeStores(i)"
+                       OnNotSoldAtSpecificStore="async i=>await OnNotSoldAtSpecificStore(i)"
                        @ref="_itemQuickActionDrawer"></ItemQuickActionDrawer>
 <PostponeDrawer Selected="async d => await OnPostponeDurationChosen(d)" @ref="_postponeDrawer"></PostponeDrawer>
 <CategoryNavigatorDrawer OnSelect="async id => await OnNavigateToCategory(id)" OnManageCategories="OnManageCategories" @ref="_categoryNavigationDrawer"></CategoryNavigatorDrawer>
 <StoreNavigatorDrawer OnSelect="async id => await OnChooseStore(id)" OnManageStores="_ => OnManageStores()" @ref="_storesNavigatorDrawer"></StoreNavigatorDrawer>
+<StoresDrawer @ref="_storesDrawer" Closed="OnSpecificStoresSelected"></StoresDrawer>
 <ViewOptionsDrawer ChooseFontSize="async s => await UseFontSize(s)" OnHideUpcoming="async _ => await SwitchToShoppingMode()" OnSelectUpcomingDays="async d=>await SwitchToPlanningMode(d)" @ref="_viewOptionsDrawer"></ViewOptionsDrawer>
