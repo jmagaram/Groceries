@@ -20,7 +20,6 @@
     <Compile Include="ViewTypes.fs" />
     <Compile Include="View.fs" />
     <Compile Include="ShoppingList.fs" />
-    <Compile Include="SetManager.fs" />
     <Compile Include="CategoryManager.fs" />
     <Compile Include="StoreManager.fs" />
     <Compile Include="ServiceTypes.fs" />

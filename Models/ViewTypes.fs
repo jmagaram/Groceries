@@ -34,3 +34,21 @@ type ItemQuickActionsView =
       PermitQuickNotSoldAt: Store option
       PermitStoresCustomization: bool }
 
+type SetBulkEditForm = { Original: Set<string>; Proposed: TextBox }
+
+type SetMapChangesForm =
+    { Proposed: List<string>
+      Unchanged: Set<string>
+      Create: Set<string>
+      MoveOrDelete: Map<string, string option> }
+
+type SetEditWizard =
+    | BulkEditMode of SetBulkEditForm
+    | SetMapChangesMode of SetMapChangesForm
+
+type SetEditWizardMessage =
+    | BulkTextBoxMessage of TextBoxMessage
+    | GoToSummary
+    | GoBackToBulkEdit
+    | MoveRename of string * string
+    | Delete of string

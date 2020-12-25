@@ -2,7 +2,7 @@
 
 open CoreTypes
 open StateTypes
-open SetManager
+open ViewTypes
 
 type CategoryManagerWizard = CategoryManagerWizard of SetEditWizard
 

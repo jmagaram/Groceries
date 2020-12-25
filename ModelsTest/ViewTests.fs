@@ -457,7 +457,7 @@ module SetStringTests =
 
 module SetManagerTests =
 
-    open Models.SetManager
+    open Models.ViewTypes
     open CoreTypes
 
     let normalizer = String.trim

@@ -1,9 +1,9 @@
 ﻿@page "/categories"
 @using Models
 @using static Models.CoreTypes
-@using static Models.SetManager
+@using static Models.ViewTypes
 @using static Models.CategoryManager
-@using Message = Models.SetManager.SetEditWizardMessage 
+@using Message = Models.ViewTypes.SetEditWizardMessage
 @using Common
 
 @if (Form == null) {
@@ -69,7 +69,7 @@
     <ModesItem>
         @if (Form.Summary.IsSome()) {
             var f = Form.Summary?.Value;
-            var finalList = Models.SetManager.SetMapChangesFormModule.targets(f).OrderBy(i => i);
+            var finalList = SetMapChangesFormModule.targets(f).OrderBy(i => i);
             <nav class="navbar navbar-dark bg-dark sticky-top">
                 <button class="btn btn-dark iconButton" @onclick="_=> GoBulkEdit()"><ion-icon name="chevron-back-outline" /></button>
                 <span class="navbar-text enterLeft">Categories</span>
