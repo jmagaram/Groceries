@@ -17,7 +17,7 @@
             <button ontouchstart="" @onclick="async _ => await OnComplete.InvokeAsync(_viewModel.ItemId)"><ion-icon name="checkmark-outline" />Complete</button>
             @if (_viewModel.PostponeUntil.IsSome())
             {
-                <button ontouchstart="" @onclick="async _ => await OnAddToShoppingListNow.InvokeAsync(_viewModel.ItemId)"><ion-icon name="add-outline" />Add to shopping list now</button>
+            <button ontouchstart="" @onclick="async _ => await OnAddToShoppingListNow.InvokeAsync(_viewModel.ItemId)"><ion-icon name="add-outline" />Add to shopping list now</button>
             }
             <div class="buttonRow">
                 <button ontouchstart="" class="splitButtonDefault" @onclick="async _ => await OnPostponeDays.InvokeAsync((_viewModel.ItemId, 7))"><ion-icon name="calendar-outline" />Postpone 1 week</button>
@@ -31,17 +31,27 @@
             {
                 if (_viewModel.PermitQuickNotSoldAt.IsNone())
                 {
-                    <button ontouchstart="" @onclick="async _ => await OnCustomizeStores.InvokeAsync(_viewModel.ItemId)"><ion-icon name="storefront-outline" />Stores...</button>
+            <button ontouchstart="" @onclick="async _ => await OnCustomizeStores.InvokeAsync(_viewModel.ItemId)"><ion-icon name="storefront-outline" />Stores...</button>
                 }
                 else
                 {
                     var store = _viewModel.PermitQuickNotSoldAt.Value;
-                    <div class="buttonRow">
-                        <button ontouchstart="" class="splitButtonDefault" @onclick="async _ => await OnNotSoldAtSpecificStore.InvokeAsync((_viewModel.ItemId,store.StoreId))"><ion-icon name="storefront-outline" />Never at&nbsp;<span style="text-decoration: line-through; text-decoration-color: #0000006e">@store.StoreName.AsText()</span></button>
-                        <button ontouchstart="" class="splitButtonIcon" @onclick="async _ => await OnCustomizeStores.InvokeAsync(_viewModel.ItemId)">
-                            <ion-icon name="caret-down-outline" />
-                        </button>
+            <div class="buttonRow">
+                <button ontouchstart="" class="splitButtonDefault" style="display:flex; justify-content:center; flex-grow:1" @onclick="async _ => await OnNotSoldAtSpecificStore.InvokeAsync((_viewModel.ItemId,store.StoreId))">
+                    <ion-icon name="storefront-outline" />
+                    <div class="crossed-out-content">
+                        <div>@store.StoreName.AsText()</div><div class="svg-container">
+                            <svg class="diagonal">
+                                <line x1="0" y1="100%" x2="100%" y2="0" style="stroke:rgb(255,0,0);stroke-width:1; stroke-linecap:round; stroke-dasharray:5,5" />
+                                <line x1="0" y1="0" x2="100%" y2="100%" style="stroke:rgb(255,0,0);stroke-width:1; stroke-linecap:round; stroke-dasharray:5,5" />
+                            </svg>
+                        </div>
                     </div>
+                </button>
+                <button ontouchstart="" class="splitButtonIcon" @onclick="async _ => await OnCustomizeStores.InvokeAsync(_viewModel.ItemId)">
+                    <ion-icon name="caret-down-outline" />
+                </button>
+            </div>
                 }
             }
             <div class="buttonRow">

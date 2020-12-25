@@ -379,10 +379,28 @@
         .drawer .buttonRow .splitButtonIcon {
             margin-right: 0;
             border-left: 0;
-            max-width: fit-content;
+            flex-grow:0;
             border-radius: 0px 5px 5px 0px;
         }
 
     .drawer .justIconButton {
         max-width: fit-content;
+    }
+
+.crossed-out-content {
+    position: relative;
+}
+
+    .crossed-out-content .svg-container {
+        display:inline-flex;
+        position: absolute;
+        top: 0;
+        left: 0;
+        bottom: 0;
+        right: 0;
+    }
+
+    .diagonal {
+        width:100%;
+        height:100%;
     }
