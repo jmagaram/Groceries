@@ -1,5 +1,6 @@
 ﻿module Models.ViewTypes
 
+open System
 open Models.CoreTypes
 open Models.ValidationTypes
 
@@ -25,3 +26,11 @@ type SelectMany<'T when 'T: comparison> =
     { Items: Set<'T>
       SelectedOriginal: Set<'T>
       Selected: Set<'T> }
+
+type ItemQuickActionsView =
+    { ItemId: ItemId
+      ItemName: ItemName
+      PostponeUntil: DateTimeOffset option
+      PermitQuickNotSoldAt: Store option
+      PermitStoresCustomization: bool }
+

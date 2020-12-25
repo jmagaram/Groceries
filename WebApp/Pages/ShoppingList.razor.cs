@@ -177,8 +177,8 @@ namespace WebApp.Pages
             var storeFilter = CurrentState.LoggedInUserSettings().ShoppingListSettings.StoreFilter;
             var configuration =
                 IsSearchBarVisible || storeFilter.IsNone()
-                ? ItemQuickActionsModule.createNoActiveStore(itemId, CurrentState)
-                : ItemQuickActionsModule.createWithActiveStore(itemId, storeFilter.Value, CurrentState);
+                ? ItemQuickActionsViewModule.createNoActiveStore(itemId, CurrentState)
+                : ItemQuickActionsViewModule.createWithActiveStore(itemId, storeFilter.Value, CurrentState);
             await _itemQuickActionDrawer.Open(configuration);
         }
 
