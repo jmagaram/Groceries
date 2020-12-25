@@ -3,9 +3,11 @@
 @using static Models.CoreTypes
 @using static Models.SetManager
 @using static Models.StoreManager
+@using Message = Models.SetManager.SetEditWizardMessage
 @using Common
 
-@if (Form == null) {
+@if (Form == null)
+{
     <p>Loading...</p>
     return;
 }
@@ -43,7 +45,8 @@
 </style>
 <Modes ActiveIndex="Form.BulkEdit.IsSome() ? 0 : 1">
     <ModesItem>
-        @if (Form.BulkEdit.IsSome()) {
+        @if (Form.BulkEdit.IsSome())
+        {
             bool hasErrors = Form.Errors.Any();
             var f = Form.BulkEdit?.Value;
             <nav class="navbar navbar-dark bg-dark sticky-top">
@@ -56,9 +59,11 @@
                 <small class="text-secondary">Type the few stores you go to most often, each on a separate line.</small>
                 <textarea class="form-control" style="width:100%; margin-top:1rem" spellcheck="false" rows=10 @oninput="e=>OnBulkTextEdit((string)e.Value)" @onfocusout="_=>OnFocusOut()" value="@f.Proposed.ValueCommitted">
     </textarea>
-                @if (hasErrors) {
+                @if (hasErrors)
+                {
                     <ul style="margin-top:1rem" class="alert alert-warning" role="alert">
-                        @foreach (var e in Form.Errors) {
+                        @foreach (var e in Form.Errors)
+                        {
                             <li>"@e.Proposed" | @e.Error</li>
                         }
                     </ul>
@@ -66,46 +71,56 @@
             </div>  }
     </ModesItem>
     <ModesItem>
-        @if (Form.Summary.IsSome()) {
+        @if (Form.Summary.IsSome())
+        {
             var f = Form.Summary?.Value;
-            var finalList = Models.SetManager.SummaryModule.targets(f).OrderBy(i => i);
+            var finalList = Models.SetManager.SetMapChangesFormModule.targets(f).OrderBy(i => i);
             <nav class="navbar navbar-dark bg-dark sticky-top">
                 <button class="btn btn-dark iconButton" @onclick="_=> GoBulkEdit()"><ion-icon name="chevron-back-outline" /></button>
                 <span class="navbar-text enterLeft">Stores</span>
                 <button @onclick="_=>SaveChanges()" class="btn btn-dark iconButton">Save</button>
             </nav>
             <div class="col" style="margin-top:1rem">
-                @if (f.MoveOrDelete.Any()) {
+                @if (f.MoveOrDelete.Any())
+                {
                     <h5 style="margin-top:1rem; margin-bottom:0">Deleted and renamed stores</h5>
                     <small style="margin-bottom:1rem;display:block">Reassign deleted stores to one of your new ones.</small>
                     <div class="mapper">
                         <strong>Delete</strong>
                         <span>&nbsp;</span>
                         <strong>Move To</strong>
-                        @foreach (var i in f.MoveOrDelete.OrderBy(j => j.Key)) {
+                        @foreach (var i in f.MoveOrDelete.OrderBy(j => j.Key))
+                        {
                             <span>@i.Key</span>
                             <ion-icon name="arrow-forward-outline"></ion-icon>
                             <select @oninput="e=>Reassign(i.Key,(string)e.Value)">
-                                @foreach (var t in finalList) {
+                                @foreach (var t in finalList)
+                                {
                                     <option selected="@(i.Value.IsSomeValue(t))" value="@t">@t</option>
                                 }
                                 <option selected="@i.Value.IsNone()" value="@NoStore">(No Store)</option>
                             </select>
                         }
                     </div> }
-                else {
-                    if (finalList.Any()) {
+                else
+                {
+                    if (finalList.Any())
+                    {
                         <h5 style="margin-top:1rem">Your stores</h5>
-                        @foreach (var t in finalList) {
-                            if (f.Create.Contains(t)) {
+                        @foreach (var t in finalList)
+                        {
+                            if (f.Create.Contains(t))
+                            {
                                 <div>@t <span class="badge badge-secondary">new</span></div>
                             }
-                            else {
+                            else
+                            {
                                 <div>@t</div>
                             }
                         }
                     }
-                    else {
+                    else
+                    {
                         <h4>Your stores</h4>
                         <div>You haven't chosen any stores, which is usually fine. All items on your shopping list will appear, regardless of which store you are shopping at.</div>
                     }
@@ -121,10 +136,11 @@
     [Inject]
     public NavigationManager Navigation { get; set; }
 
-    protected override async Task OnInitializedAsync() {
+    protected override async Task OnInitializedAsync()
+    {
         await base.OnInitializedAsync();
         await StateService.InitializeAsync();
-        Form = StoreManagerForm.FromState(StateService.CurrentState);
+        Form = StoreManagerWizard.FromState(StateService.CurrentState);
     }
 
     private string NoStore = "_nostore_";
@@ -141,20 +157,23 @@
     public void GoBulkEdit() =>
         Form = Form.Update(Message.GoBackToBulkEdit);
 
-    public void Reassign(string x, string y) {
+    public void Reassign(string x, string y)
+    {
         var message = y.Equals(NoStore) ? Message.NewDelete(x) : Message.NewMoveRename(x, y);
         Form = Form.Update(message);
     }
 
     public void OnCancel() => Navigation.NavigateTo("/shoppinglist");
 
-    public async Task SaveChanges() {
-        if (Form.HasChanges) {
+    public async Task SaveChanges()
+    {
+        if (Form.HasChanges)
+        {
             var message = Models.StateTypes.StateMessage.NewReorganizeStoresMessage(Form.ReorganizeResult);
             await StateService.UpdateAsync(message);
         }
         Navigation.NavigateTo("/shoppinglist");
     }
 
-    public StoreManagerForm Form { get; set; }
+    public StoreManagerWizard Form { get; set; }
 }

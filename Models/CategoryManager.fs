@@ -4,11 +4,11 @@ open CoreTypes
 open StateTypes
 open SetManager
 
-type CategoryManagerForm = CategoryManagerForm of Form
+type CategoryManagerWizard = CategoryManagerWizard of SetEditWizard
 
-let form cm =
+let getWizard cm =
     match cm with
-    | CategoryManagerForm f -> f
+    | CategoryManagerWizard f -> f
 
 let crlf = "\r\n"
 
@@ -21,49 +21,44 @@ let tryParse = CategoryName.tryParse >> Result.map CategoryName.asText
 let create categories =
     categories
     |> Seq.map CategoryName.asText
-    |> BulkEdit.create normalizer crlf
+    |> SetBulkEditForm.create normalizer crlf
     |> BulkEditMode
-    |> CategoryManagerForm
+    |> CategoryManagerWizard
 
-type CategoryManagerForm with
-    static member FromState(state) =
+let fromState state = 
         state
         |> State.categories
         |> Seq.map (fun i -> i.CategoryName)
         |> create
 
-    member me.Form = me |> form
-    member me.BulkEdit = me |> form |> Form.bulkEdit
-    member me.Summary = me |> form |> Form.summary
-
-    member me.Update(msg) =
-        me
-        |> form
-        |> Form.update normalizer splitOn tryParse crlf msg
-        |> CategoryManagerForm
-
-    member me.Errors =
-        me
-        |> form
-        |> Form.bulkEdit
+let update msg (f:CategoryManagerWizard) =
+        f
+        |> getWizard 
+        |> SetEditWizardForm.update normalizer splitOn tryParse crlf msg
+        |> CategoryManagerWizard
+        
+let errors (f:CategoryManagerWizard) =
+        f
+        |> getWizard
+        |> SetEditWizardForm.bulkEdit
         |> Option.map (fun b ->
             b
-            |> BulkEdit.items normalizer splitOn
-            |> BulkEdit.validationResults tryParse
+            |> SetBulkEditForm.items normalizer splitOn
+            |> SetBulkEditForm.validationResults tryParse
             |> Seq.choose Result.asErrorOption)
         |> Option.defaultValue Seq.empty
 
-    member me.HasChanges = 
-        me
-        |> form
-        |> Form.summary
+let hasChanges (f:CategoryManagerWizard) = 
+        f
+        |> getWizard
+        |> SetEditWizardForm.summary
         |> Option.get
-        |> Summary.hasChanges
+        |> SetMapChangesForm.hasChanges
 
-    member me.ReorganizeResult =
-        me
-        |> form
-        |> Form.summary
+let reorganizeResult (f:CategoryManagerWizard) =
+        f
+        |> getWizard
+        |> SetEditWizardForm.summary
         |> Option.get
         |> fun s ->
             { ReorganizeCategoriesMessage.Delete =
@@ -77,3 +72,12 @@ type CategoryManagerForm with
                   |> Seq.choose (fun (x, y) -> y |> Option.map (fun y -> (x, y)))
                   |> List.ofSeq
             }
+
+type CategoryManagerWizard with
+    static member FromState(state) = state |> fromState
+    member me.BulkEdit = me |> getWizard |> SetEditWizardForm.bulkEdit
+    member me.Summary = me |> getWizard |> SetEditWizardForm.summary
+    member me.Update(msg) = me |> update msg
+    member me.Errors = me |> errors
+    member me.HasChanges = me |> hasChanges
+    member me.ReorganizeResult = me |> reorganizeResult

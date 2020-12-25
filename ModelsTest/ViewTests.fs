@@ -491,10 +491,10 @@ module SetManagerTests =
             (source, target)
 
         let result =
-            BulkEdit.create normalizer delimiter (original |> asSet)
-            |> BulkEdit.update normalizer splitOn delimiter (TextBoxMessage.TypeText proposed)
-            |> BulkEdit.update normalizer splitOn delimiter TextBoxMessage.LoseFocus
-            |> BulkEdit.summary normalizer splitOn parseNeverFail
+            SetBulkEditForm.create normalizer delimiter (original |> asSet)
+            |> SetBulkEditForm.update normalizer splitOn delimiter (TextBoxMessage.TypeText proposed)
+            |> SetBulkEditForm.update normalizer splitOn delimiter TextBoxMessage.LoseFocus
+            |> SetBulkEditForm.summary normalizer splitOn parseNeverFail
             |> Option.get
 
         result.Create |> should equal (created |> asSet)

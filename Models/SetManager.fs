@@ -2,26 +2,27 @@
 
 open CoreTypes
 
-type BulkEdit = { Original: Set<string>; Proposed: TextBox }
+type SetBulkEditForm = { Original: Set<string>; Proposed: TextBox }
 
-type Summary =
+type SetMapChangesForm =
     { Proposed: List<string>
       Unchanged: Set<string>
       Create: Set<string>
       MoveOrDelete: Map<string, string option> }
 
-type Form =
-    | BulkEditMode of BulkEdit
-    | SummaryMode of Summary
+type SetEditWizard =
+    | BulkEditMode of SetBulkEditForm
+    | SetMapChangesMode of SetMapChangesForm
 
-type Message =
+type SetEditWizardMessage =
     | BulkTextBoxMessage of TextBoxMessage
     | GoToSummary
     | GoBackToBulkEdit
     | MoveRename of string * string
     | Delete of string
 
-module BulkEdit =
+[<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
+module SetBulkEditForm =
 
     let create normalizer delimeter items =
         { Original = items |> Seq.map normalizer |> Set.ofSeq
@@ -32,7 +33,7 @@ module BulkEdit =
 
     let propose normalizer delimiter ps b =
         { b with
-              BulkEdit.Proposed =
+              SetBulkEditForm.Proposed =
                   System.String.Join(delimiter, ps |> Seq.map normalizer)
                   |> TextBox.create }
 
@@ -40,9 +41,9 @@ module BulkEdit =
         let normalize = SetString.fromString normalize splitOn delimiter
 
         { b with
-              BulkEdit.Proposed = b.Proposed |> TextBox.update normalize msg }
+              SetBulkEditForm.Proposed = b.Proposed |> TextBox.update normalize msg }
 
-    let items normalize splitOn (b: BulkEdit) =
+    let items normalize splitOn (b: SetBulkEditForm) =
         b.Proposed.ValueTyping
         |> SetString.toItems normalize splitOn
 
@@ -82,7 +83,8 @@ module BulkEdit =
               Proposed = items |> List.ofSeq }
             |> Some
 
-module Summary =
+[<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
+module SetMapChangesForm =
 
     let targets s = s.Unchanged |> Seq.append s.Create |> Seq.sort
 
@@ -110,10 +112,11 @@ module Summary =
         || (s.MoveOrDelete |> Map.isEmpty |> not)
 
     let bulkEdit normalizer delimeter s =
-        BulkEdit.create normalizer delimeter (original s)
-        |> BulkEdit.propose normalizer delimeter s.Proposed
+        SetBulkEditForm.create normalizer delimeter (original s)
+        |> SetBulkEditForm.propose normalizer delimeter s.Proposed
 
-module Form =
+[<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
+module SetEditWizardForm =
 
     let bulkEdit f =
         match f with
@@ -122,7 +125,7 @@ module Form =
 
     let summary f =
         match f with
-        | SummaryMode s -> Some s
+        | SetMapChangesMode s -> Some s
         | _ -> None
 
     let update normalize splitOn tryParse delimiter msg f =
@@ -133,30 +136,30 @@ module Form =
             |> Option.get
             |> fun b ->
                 b
-                |> BulkEdit.update normalize splitOn delimiter msg
+                |> SetBulkEditForm.update normalize splitOn delimiter msg
                 |> BulkEditMode
         | GoToSummary ->
             f
             |> bulkEdit
             |> Option.get
-            |> BulkEdit.summary normalize splitOn tryParse
+            |> SetBulkEditForm.summary normalize splitOn tryParse
             |> Option.get
-            |> SummaryMode
+            |> SetMapChangesMode
         | GoBackToBulkEdit ->
             f
             |> summary
             |> Option.get
-            |> Summary.bulkEdit normalize delimiter
+            |> SetMapChangesForm.bulkEdit normalize delimiter
             |> BulkEditMode
         | MoveRename (x, y) ->
             f
             |> summary
             |> Option.get
-            |> Summary.move x y
-            |> SummaryMode
+            |> SetMapChangesForm.move x y
+            |> SetMapChangesMode
         | Delete x ->
             f
             |> summary
             |> Option.get
-            |> Summary.delete x
-            |> SummaryMode
+            |> SetMapChangesForm.delete x
+            |> SetMapChangesMode

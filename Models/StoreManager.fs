@@ -4,11 +4,11 @@ open CoreTypes
 open StateTypes
 open SetManager
 
-type StoreManagerForm = StoreManagerForm of Form
+type StoreManagerWizard = StoreManagerWizard of SetEditWizard
 
-let form cm =
+let getWizard cm =
     match cm with
-    | StoreManagerForm f -> f
+    | StoreManagerWizard f -> f
 
 let crlf = "\r\n"
 
@@ -16,60 +16,69 @@ let splitOn = [| crlf; "\r"; "\n"; ","; ";" |]
 
 let normalizer = StoreName.normalizer
 
-let tryParse = StoreName.tryParse >> Result.map StoreName.asText
+let tryParse =
+    StoreName.tryParse >> Result.map StoreName.asText
 
 let create stores =
     stores
     |> Seq.map StoreName.asText
-    |> BulkEdit.create normalizer crlf
+    |> SetBulkEditForm.create normalizer crlf
     |> BulkEditMode
-    |> StoreManagerForm
+    |> StoreManagerWizard
 
-type StoreManagerForm with
-    static member FromState(state) =
-        state
-        |> State.stores
-        |> Seq.map (fun i -> i.StoreName)
-        |> create
+let fromState state =
+    state
+    |> State.stores
+    |> Seq.map (fun i -> i.StoreName)
+    |> create
 
-    member me.Form = me |> form
-    member me.BulkEdit = me |> form |> Form.bulkEdit
-    member me.Summary = me |> form |> Form.summary
+let update msg (f: StoreManagerWizard) =
+    f
+    |> getWizard
+    |> SetEditWizardForm.update normalizer splitOn tryParse crlf msg
+    |> StoreManagerWizard
 
-    member me.Update(msg) =
-        me
-        |> form
-        |> Form.update normalizer splitOn tryParse crlf msg
-        |> StoreManagerForm
-
-    member me.Errors =
-        me
-        |> form
-        |> Form.bulkEdit
-        |> Option.map (fun b ->
+let errors (f: StoreManagerWizard) =
+    f
+    |> getWizard
+    |> SetEditWizardForm.bulkEdit
+    |> Option.map
+        (fun b ->
             b
-            |> BulkEdit.items normalizer splitOn
-            |> BulkEdit.validationResults tryParse
+            |> SetBulkEditForm.items normalizer splitOn
+            |> SetBulkEditForm.validationResults tryParse
             |> Seq.choose Result.asErrorOption)
-        |> Option.defaultValue Seq.empty
+    |> Option.defaultValue Seq.empty
 
-    member me.HasChanges =
-        me
-        |> form
-        |> Form.summary
-        |> Option.get
-        |> Summary.hasChanges
+let hasChanges (f: StoreManagerWizard) =
+    f
+    |> getWizard
+    |> SetEditWizardForm.summary
+    |> Option.get
+    |> SetMapChangesForm.hasChanges
 
-    member me.ReorganizeResult =
-        me
-        |> form
-        |> Form.summary
-        |> Option.get
-        |> fun s ->
-            { ReorganizeStoresMessage.Delete = s.MoveOrDelete |> Seq.map (fun i -> i.Key) |> List.ofSeq
-              ReorganizeStoresMessage.Create = s.Create |> List.ofSeq
-              Move =
-                  s.MoveOrDelete
-                  |> Map.toSeq
-                  |> Seq.choose (fun (x, y) -> y |> Option.map (fun y -> (x, y)))
-                  |> List.ofSeq }
+let reorganizeResult (f: StoreManagerWizard) =
+    f
+    |> getWizard
+    |> SetEditWizardForm.summary
+    |> Option.get
+    |> fun s ->
+        { ReorganizeStoresMessage.Delete =
+              s.MoveOrDelete
+              |> Seq.map (fun i -> i.Key)
+              |> List.ofSeq
+          ReorganizeStoresMessage.Create = s.Create |> List.ofSeq
+          Move =
+              s.MoveOrDelete
+              |> Map.toSeq
+              |> Seq.choose (fun (x, y) -> y |> Option.map (fun y -> (x, y)))
+              |> List.ofSeq }
+
+type StoreManagerWizard with
+    static member FromState(state) = state |> fromState
+    member me.BulkEdit = me |> getWizard |> SetEditWizardForm.bulkEdit
+    member me.Summary = me |> getWizard |> SetEditWizardForm.summary
+    member me.Update(msg) = me |> update msg
+    member me.Errors = me |> errors
+    member me.HasChanges = me |> hasChanges
+    member me.ReorganizeResult = me |> reorganizeResult
