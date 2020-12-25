@@ -1,5 +1,4 @@
-﻿@implements IDisposable
-@using Models
+﻿@using Models
 @using static Models.CoreTypes
 @using Common
 
@@ -80,8 +79,6 @@
         await InvokeAsync(() => StateHasChanged());
         await _drawer.Open();
     }
-
-    public void Dispose() => _drawer?.Dispose();
 
     private async Task OnSelectCore(Store s) {
         await _drawer.Close();

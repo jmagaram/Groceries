@@ -1,5 +1,4 @@
-﻿@implements IDisposable
-@using Models
+﻿@using Models
 @using static Models.CoreTypes
 @using static Models.SelectZeroOrOneModule
 @using Common
@@ -32,8 +31,6 @@
 @code {
     private ElixDrawer _drawer;
     private FontSize _currentFontSize;
-
-    public void Dispose() => _drawer?.Dispose();
 
     public async ValueTask Open(FontSize currentFontSize)
     {

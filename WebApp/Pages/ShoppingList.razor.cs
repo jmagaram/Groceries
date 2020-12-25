@@ -29,16 +29,7 @@ namespace WebApp.Pages
         IDisposable _stateSubscription;
         Dictionary<CategoryId, ElementReference> _categoryReferences = new Dictionary<CategoryId, ElementReference>();
 
-        public void Dispose()
-        {
-            _stateSubscription?.Dispose();
-            _itemQuickActionDrawer?.Dispose();
-            _postponeDrawer?.Dispose();
-            _categoryNavigationDrawer?.Dispose();
-            _storesNavigatorDrawer?.Dispose();
-            _viewOptionsDrawer?.Dispose();
-            _storesDrawer?.Dispose();
-        }
+        public void Dispose() => _stateSubscription?.Dispose();
 
         public bool IsSearchBarVisible => CurrentState.LoggedInUserSettings().ShoppingListSettings.IsTextFilterVisible;
 

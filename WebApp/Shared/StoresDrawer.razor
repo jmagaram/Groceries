@@ -1,6 +1,5 @@
 ﻿@using Models
 @using static Models.CoreTypes
-@implements IDisposable
 
 <ElixDrawer Closed="OnClose" @ref="_drawer">
     @if (_model == null)
@@ -59,8 +58,6 @@
     ElixDrawer _drawer;
     string _itemName;
     SelectMany<Store> _model;
-
-    public void Dispose() => _drawer?.Dispose();
 
     [Parameter]
     public EventCallback<SelectMany<Store>> Closed { get; set; }

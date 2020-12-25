@@ -1,5 +1,4 @@
-﻿@implements IDisposable
-@using Models
+﻿@using Models
 @using static Models.CoreTypes
 @using static Models.SelectZeroOrOneModule
 @using Common
@@ -56,8 +55,6 @@
     private ElixDrawer _drawer;
     private SelectZeroOrOne<Category> _model;
     private string _itemName;
-
-    public void Dispose() => _drawer?.Dispose();
 
     public async ValueTask Open(SelectZeroOrOne<Category> model, string itemName) {
         _model = model;

@@ -1,5 +1,4 @@
-﻿@implements IDisposable
-@using Models
+﻿@using Models
 @using Common
 <ElixDrawer @ref="_drawer">
     @if (_choices == null) return;
@@ -37,8 +36,6 @@
     private ElixDrawer _drawer;
     private List<int?> _choices;
     private string _itemName;
-
-    public void Dispose() => _drawer?.Dispose();
 
     public async ValueTask Open(IEnumerable<int> choices, bool includeAddToShoppingList, string itemName)
     {

@@ -1,5 +1,4 @@
-﻿@implements IDisposable
-@using Models
+﻿@using Models
 @using static Models.CoreTypes
 @using static Models.ItemQuickActionsModule
 @using Common
@@ -112,6 +111,4 @@
 
     [Parameter]
     public EventCallback<ItemId> OnAddToShoppingListNow { get; set; }
-
-    public void Dispose() => _drawer?.Dispose();
 }
