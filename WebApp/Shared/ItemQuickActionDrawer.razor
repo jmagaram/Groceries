@@ -2,6 +2,7 @@
 @using Models
 @using static Models.CoreTypes
 @using static Models.ItemQuickActionsModule
+@using Common
 
 <ElixDrawer @ref="_drawer">
     @if (_viewModel == null)
@@ -13,24 +14,17 @@
             <div></div>
         </header>
         <div class="buttonGroup">
-            @if (_viewModel.CanComplete)
-            {
-                <button ontouchstart="" @onclick="async _ => await OnComplete.InvokeAsync(_viewModel.ItemId)"><ion-icon name="checkmark-outline"></ion-icon>Complete</button>
-            }
-            @if (_viewModel.CanAddToShoppingListNow)
+            <button ontouchstart="" @onclick="async _ => await OnComplete.InvokeAsync(_viewModel.ItemId)"><ion-icon name="checkmark-outline"></ion-icon>Complete</button>
+            @if (_viewModel.PostponeUntil.IsSome())
             {
                 <button ontouchstart="" @onclick="async _ => await OnAddToShoppingListNow.InvokeAsync(_viewModel.ItemId)"><ion-icon name="add-outline"></ion-icon>Add to shopping list now</button>
             }
-            @if (_viewModel.CanPostpone)
-            {
-                var daysInWeek = 7;
-                <div class="buttonRow">
-                    <button ontouchstart="" class="splitButtonDefault" @onclick="async _ => await OnPostponeDays.InvokeAsync((_viewModel.ItemId, daysInWeek))"><ion-icon name="calendar-outline"></ion-icon>Postpone 1 week</button>
-                    <button ontouchstart="" class="splitButtonIcon" @onclick="async _ => await OnPostpone.InvokeAsync(_viewModel.ItemId)">
-                        <ion-icon name="caret-down-outline"></ion-icon>
-                    </button>
-                </div>
-            }
+            <div class="buttonRow">
+                <button ontouchstart="" class="splitButtonDefault" @onclick="async _ => await OnPostponeDays.InvokeAsync((_viewModel.ItemId, 7))"><ion-icon name="calendar-outline"></ion-icon>Postpone 1 week</button>
+                <button ontouchstart="" class="splitButtonIcon" @onclick="async _ => await OnPostpone.InvokeAsync(_viewModel.ItemId)">
+                    <ion-icon name="caret-down-outline"></ion-icon>
+                </button>
+            </div>
         </div>
         <div class="buttonGroup">
             <div class="buttonRow">

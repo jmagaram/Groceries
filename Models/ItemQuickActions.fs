@@ -12,8 +12,3 @@ let create itemId state =
     { ItemId = item.ItemId
       ItemName = item.ItemName
       PostponeUntil = item.PostponeUntil }
-
-type ViewModel with
-    member me.CanComplete = true
-    member me.CanPostpone = true
-    member me.CanAddToShoppingListNow = me.PostponeUntil.IsSome
