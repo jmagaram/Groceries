@@ -2,9 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using Microsoft.ApplicationInsights.WindowsServer;
 using Microsoft.AspNetCore.Components;
-using Microsoft.AspNetCore.Components.Forms;
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.JSInterop;
 using Models;
@@ -27,10 +25,12 @@ namespace WebApp.Pages
         StoreNavigatorDrawer _storesNavigatorDrawer;
         ViewOptionsDrawer _viewOptionsDrawer;
         ItemId? _quickEditContext;
+        IDisposable _stateSubscription;
         Dictionary<CategoryId, ElementReference> _categoryReferences = new Dictionary<CategoryId, ElementReference>();
 
         public void Dispose()
         {
+            _stateSubscription?.Dispose();
             _itemQuickActionDrawer?.Dispose();
             _postponeDrawer?.Dispose();
             _categoryNavigationDrawer?.Dispose();
@@ -38,7 +38,7 @@ namespace WebApp.Pages
             _viewOptionsDrawer?.Dispose();
         }
 
-        public bool IsSearchBarVisible => StateService.CurrentState.LoggedInUserSettings().ShoppingListSettings.IsTextFilterVisible;
+        public bool IsSearchBarVisible => CurrentState.LoggedInUserSettings().ShoppingListSettings.IsTextFilterVisible;
 
         public string SearchBarClass => IsSearchBarVisible ? "search-bar active" : "search-bar";
 
@@ -111,6 +111,14 @@ namespace WebApp.Pages
             await EndSearch();
         }
 
+        protected override void OnInitialized()
+        {
+            base.OnInitialized();
+            _stateSubscription = StateService.State.Subscribe(s => { CurrentState = s; StateHasChanged(); });
+        }
+
+        protected StateTypes.State CurrentState { get; private set; }
+
         private async Task OnClickCategoryHeader()
         {
             await _categoryNavigationDrawer.Open(ShoppingListView.Categories);
@@ -172,7 +180,7 @@ namespace WebApp.Pages
 
         private async Task OnClickItem(ItemId itemId)
         {
-            var configuration = ItemQuickActionsModule.create(itemId, StateService.CurrentState);
+            var configuration = ItemQuickActionsModule.create(itemId, CurrentState);
             await _itemQuickActionDrawer.Open(configuration);
         }
 
@@ -189,8 +197,8 @@ namespace WebApp.Pages
         {
             _quickEditContext = itemId;
             await _itemQuickActionDrawer.Close();
-            bool isPostponed = StateModule.tryFindItem(itemId, StateService.CurrentState).Value.PostponeUntil.IsSome();
-            await _postponeDrawer.Open(ItemModule.commonPostponeChoices,isPostponed);
+            bool isPostponed = StateModule.tryFindItem(itemId, CurrentState).Value.PostponeUntil.IsSome();
+            await _postponeDrawer.Open(ItemModule.commonPostponeChoices, isPostponed);
         }
 
         private async Task OnClickAddToShoppingList(ItemId itemId)
@@ -284,17 +292,8 @@ namespace WebApp.Pages
         protected Guid StoreFilter =>
             ShoppingListView.StoreFilter.IsNone() ? Guid.Empty : ShoppingListView.StoreFilter.Value.StoreId.Item;
 
-        protected ShoppingListSettings Settings =>
-            StateService.CurrentState.LoggedInUserSettings().ShoppingListSettings;
-
-        protected ShoppingListModule.ShoppingList ShoppingListView
-        {
-            get
-            {
-                var result = StateService.CurrentState.ShoppingList(DateTimeOffset.Now);
-                return result;
-            }
-        }
+        protected ShoppingListModule.ShoppingList ShoppingListView =>
+            CurrentState.ShoppingList(DateTimeOffset.Now);
 
         protected List<Store> StoreFilterChoices =>
             ShoppingListView.Stores.OrderBy(i => i.StoreName).ToList();
