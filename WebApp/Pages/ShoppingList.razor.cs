@@ -227,7 +227,7 @@ namespace WebApp.Pages
         {
             _quickEditContext = itemId;
             await _itemQuickActionDrawer.Close();
-            var (itemName, model) = StoresPickerModule.create(itemId, CurrentState);
+            var (itemName, model) = SelectManyStores.create(itemId, CurrentState);
             await _storesDrawer.Open(model, itemName.AsText());
         }
 
