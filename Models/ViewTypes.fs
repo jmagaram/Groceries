@@ -15,3 +15,8 @@ type TimeSpanEstimate =
     | Days of int
     | Weeks of int
     | Months of int
+
+type SelectZeroOrOne<'T when 'T: comparison> =
+    { Choices: Set<'T>
+      OriginalChoice: 'T option
+      CurrentChoice: 'T option }

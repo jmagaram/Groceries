@@ -185,3 +185,36 @@ module TimeSpanEstimate =
         | Days d -> TimeSpan.FromDays(float d)
         | Weeks w -> TimeSpan.FromDays((float w) * 7.0)
         | Months m -> TimeSpan.FromDays((float m) * 30.0)
+
+[<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
+module SelectZeroOrOne =
+
+    let create choice items =
+        { Choices = items |> Set.ofSeq
+          CurrentChoice = choice
+          OriginalChoice = choice }
+
+    let select i z = 
+        { z with CurrentChoice = Some i }
+
+    let selectNone z = 
+        { z with CurrentChoice = None }
+
+    let hasChanges z = z.OriginalChoice <> z.CurrentChoice
+
+module SelectZeroOrOneCategory =
+
+    let createFromPickList current choices =
+        SelectZeroOrOne.create current choices
+
+    let create current state =
+        createFromPickList current (state |> State.categories)
+
+    let asStateMessage item (s:SelectZeroOrOne<CoreTypes.Category>) =
+        match s.CurrentChoice with
+        | None -> StateTypes.ModifyItem (item, Item.Message.ClearCategory)
+        | Some c -> StateTypes.ModifyItem (item, Item.Message.UpdateCategory c.CategoryId)
+        |> StateTypes.ItemMessage
+
+
+

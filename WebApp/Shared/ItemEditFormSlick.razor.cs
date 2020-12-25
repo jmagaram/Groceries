@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
 using Models;
 using static Models.CoreTypes;
+using static Models.ViewTypes;
 using WebApp.Common;
 using FormMessage = Models.ItemFormModule.Message;
 using TextBoxMessage = Models.CoreTypes.TextBoxMessage;
@@ -38,9 +39,9 @@ namespace WebApp.Shared
                 SelectZeroOrOneCategory.createFromPickList(Form.CategoryChoice, Form.CategoryChoiceList),
                 Form.ItemName.ValueCommitted);
 
-        private void OnCategorySelected(SelectZeroOrOneModule.SelectZeroOrOne<Category> f)
+        private void OnCategorySelected(SelectZeroOrOne<Category> f)
         {
-            if (f.HasChanges)
+            if (SelectZeroOrOneModule.hasChanges(f))
             {
                 if (f.CurrentChoice.IsNone())
                 {
