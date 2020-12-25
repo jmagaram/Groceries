@@ -352,9 +352,7 @@ let handleItemEditPageMessage (now: DateTimeOffset) (msg: ItemEditPageMessage) (
                       { ItemAvailability.Store = s
                         IsSold = state |> storeSellsItem i s }) }
 
-    // add to purchases?
-    // delete duplicates per day
-    let processResult (r: ItemForm.ItemFormResult) (s: State) =
+    let processResult (now: DateTimeOffset) (r: ItemForm.ItemFormResult) (s: State) =
         let s =
             match r.InsertCategory with
             | None -> s
@@ -382,6 +380,15 @@ let handleItemEditPageMessage (now: DateTimeOffset) (msg: ItemEditPageMessage) (
             |> Seq.map (fun s -> { StoreId = s; ItemId = r.Item.ItemId })
             |> Seq.fold (fun s i -> s |> insertNotSoldItem i) s
 
+        let s =
+            match r.RecordPurchase with
+            | false -> s
+            | true ->
+                s
+                |> insertPurchase
+                    { Purchase.ItemId = r.Item.ItemId
+                      PurchasedOn = now }
+
         s
 
     match msg with
@@ -406,7 +413,7 @@ let handleItemEditPageMessage (now: DateTimeOffset) (msg: ItemEditPageMessage) (
         result {
             let! form = s |> form
             let itemFormResult = form |> ItemForm.asItemFormResult now
-            let s = s |> processResult itemFormResult
+            let s = s |> processResult now itemFormResult
             let s = s |> cancel
             return s
         }
@@ -578,7 +585,6 @@ let handleRecordPurchase (now: DateTimeOffset) (id: ItemId) (s: State) =
     s
     |> insertPurchase { ItemId = id; PurchasedOn = now }
     |> handleItemMessage now (ModifyItem(id, Item.PostponeUsingPurchaseHistory(now, purchases)))
-
 
 let update: Update =
     fun clock msg s ->

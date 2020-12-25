@@ -737,6 +737,7 @@ module ItemForm =
     type ItemFormResult =
         { Item: Item
           InsertCategory: Category option
+          RecordPurchase : bool
           NotSold: StoreId list }
 
     let asItemFormResult (now: DateTimeOffset) (f: ItemForm) =
@@ -777,7 +778,9 @@ module ItemForm =
 
         { Item = item
           InsertCategory = insertCategory
-          NotSold = notSold }
+          NotSold = notSold 
+          RecordPurchase = f.IsComplete
+        }
 
     type Message =
         | ItemName of TextBoxMessage

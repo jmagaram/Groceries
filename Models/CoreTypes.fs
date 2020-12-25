@@ -97,9 +97,6 @@ type UserSettings =
     interface IKey<UserId> with
         member this.Key = this.UserId
 
-// If this was a generic add-on to State, maybe could define this and it's
-// extension methods in one file (using implicit extensions) later in the
-// dependency order.
 type ItemForm =
     { ItemId: ItemId option
       ItemName: TextBox
