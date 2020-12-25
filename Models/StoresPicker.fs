@@ -14,13 +14,22 @@ let createFromAvailability availability =
     )
 
 let create itemId state =
-    state
-    |> State.stores
-    |> Seq.map
-        (fun s ->
-            { ItemAvailability.Store = s
-              IsSold = state |> State.storeSellsItemById itemId s.StoreId })
-    |> createFromAvailability
+    let itemName =
+        state
+        |> State.tryFindItem itemId
+        |> Option.get
+        |> fun i -> i.ItemName
+
+    let model =
+        state
+        |> State.stores
+        |> Seq.map
+            (fun s ->
+                { ItemAvailability.Store = s
+                  IsSold = state |> State.storeSellsItemById itemId s.StoreId })
+        |> createFromAvailability
+
+    (itemName, model)
 
 let asItemAvailability s =
     s

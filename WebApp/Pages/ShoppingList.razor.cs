@@ -234,8 +234,8 @@ namespace WebApp.Pages
         {
             _quickEditContext = itemId;
             await _itemQuickActionDrawer.Close();
-            var model = StoresPickerModule.create(itemId, CurrentState);
-            await _storesDrawer.Open(model);
+            var (itemName, model) = StoresPickerModule.create(itemId, CurrentState);
+            await _storesDrawer.Open(model, itemName.AsText());
         }
 
         private async Task OnNotSoldAtSpecificStore((ItemId itemId, StoreId storeId) i)

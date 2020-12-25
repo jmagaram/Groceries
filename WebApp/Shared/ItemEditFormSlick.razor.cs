@@ -79,7 +79,7 @@ namespace WebApp.Shared
         private async ValueTask OnClickStores()
         {
             var model = StoresPickerModule.createFromAvailability(Form.Stores);
-            await _storesDrawer.Open(model);
+            await _storesDrawer.Open(model,Form.ItemName.ValueCommitted);
         }
 
         private void OnStoresSelected(SelectMany<Store> f)
