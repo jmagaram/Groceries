@@ -202,9 +202,10 @@ namespace WebApp.Pages
         private async Task OnClickChoosePostpone(ItemId itemId)
         {
             _quickEditContext = itemId;
+            string itemName = StateModule.tryFindItem(itemId, StateService.CurrentState).Value.ItemName.AsText();
             await _itemQuickActionDrawer.Close();
             bool isPostponed = StateModule.tryFindItem(itemId, CurrentState).Value.PostponeUntil.IsSome();
-            await _postponeDrawer.Open(ItemModule.commonPostponeChoices, isPostponed);
+            await _postponeDrawer.Open(ItemModule.commonPostponeChoices, isPostponed, itemName);
         }
 
         private async Task OnClickAddToShoppingList(ItemId itemId)

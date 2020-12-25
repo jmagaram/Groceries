@@ -4,7 +4,10 @@
 <ElixDrawer @ref="_drawer">
     @if (_choices == null) return;
     <div class="buttonDrawer">
-        <h1>Postpone</h1>
+        <header>
+            <h1>Postpone</h1>
+            <p>@_itemName</p>
+        </header>
         @foreach (var i in _choices.OrderBy(j => j))
         {
             var description = i switch
@@ -33,15 +36,17 @@
 @code {
     private ElixDrawer _drawer;
     private List<int?> _choices;
+    private string _itemName;
 
     public void Dispose() => _drawer?.Dispose();
 
-    public async ValueTask Open(IEnumerable<int> choices, bool includeAddToShoppingList)
+    public async ValueTask Open(IEnumerable<int> choices, bool includeAddToShoppingList, string itemName)
     {
         _choices =
             Enumerable.Repeat(new int?(), includeAddToShoppingList ? 1 : 0)
             .Concat(choices.Select(i => new int?(i)))
             .ToList();
+        _itemName = itemName;
         await InvokeAsync(() => StateHasChanged());
         await _drawer.Open();
     }

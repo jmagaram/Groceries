@@ -62,7 +62,7 @@ namespace WebApp.Shared
         }
 
         private async ValueTask OnClickPostpone() =>
-            await _postponeDrawer.Open(ItemModule.commonPostponeChoices, Form.Postpone.IsSome());
+            await _postponeDrawer.Open(ItemModule.commonPostponeChoices, Form.Postpone.IsSome(), Form.ItemName.ValueCommitted);
 
         private void OnPostponeSelected(int? d)
         {
