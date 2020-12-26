@@ -37,7 +37,7 @@
                             : estimate.IsWeeks ? "weeksBadge"
                             : estimate.IsMonths ? "monthsBadge"
                             : throw new NotImplementedException();
-                        <li class="postponeBadge @badgeClass"><ion-icon name="@iconName" />@description</li>
+                        <li @ref="_badgeElement" class="postponeBadge @badgeClass"><ion-icon name="@iconName" />@description</li>
                     }
                 </ul>
             </div>
@@ -76,8 +76,43 @@
 </div>
 
 @code {
+#nullable enable
+    ElementReference _badgeElement;
+    bool _postponeUntilChanged;
+    ShoppingListModule.Item? _itemQry;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (_postponeUntilChanged)
+        {
+            await TryRunAnimation(_badgeElement, JSRuntime, "bounce-top");
+        }
+        await base.OnAfterRenderAsync(firstRender);
+    }
+
+    protected static async Task TryRunAnimation(ElementReference element, IJSRuntime? jsRuntime, string animationClass)
+    {
+        if (element.Id != null && jsRuntime != null)
+        {
+            await using var generalModule = await jsRuntime.InvokeAsync<IJSObjectReference>("import", "./js/general.js").AsTask();
+            await generalModule.InvokeVoidAsync("startAnimation", element, animationClass);
+        }
+    }
+
+    [Inject]
+    public IJSRuntime? JSRuntime { get; set; }
+
     [Parameter]
-    public Models.ShoppingListModule.Item ItemQry { get; set; }
+    public ShoppingListModule.Item? ItemQry
+    {
+        get => _itemQry;
+        set
+        {
+            _postponeUntilChanged =
+                (value != null && _itemQry != null) ? (value.PostponeUntil != _itemQry.PostponeUntil) : false;
+            _itemQry = value;
+        }
+    }
 
     [Parameter]
     public bool HideStores { get; set; } = false;
