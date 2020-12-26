@@ -210,8 +210,17 @@ namespace WebApp.Pages
         {
             var stateItemMsg = StateItemMessage.NewModifyItem(i.itemId, ItemMessage.NewPostpone(i.days));
             var stateMsg = StateMessage.NewItemMessage(stateItemMsg);
-            await StateService.UpdateAsync(stateMsg);
             await _itemQuickActionDrawer.Close();
+            await StateService.UpdateAsync(stateMsg);
+        }
+
+        private async Task OnPostponeDurationChosen(int? d)
+        {
+            var itemMsg = (d is int days) ? ItemMessage.NewPostpone(days) : ItemMessage.RemovePostpone;
+            var stateItemMsg = StateItemMessage.NewModifyItem(_quickEditContext.Value, itemMsg);
+            var stateMsg = StateMessage.NewItemMessage(stateItemMsg);
+            await _postponeDrawer.Close();
+            await StateService.UpdateAsync(stateMsg);
         }
 
         private async Task OnSpecificStoresSelected(SelectMany<Store> f)
@@ -234,17 +243,8 @@ namespace WebApp.Pages
         private async Task OnNotSoldAtSpecificStore((ItemId itemId, StoreId storeId) i)
         {
             var stateMsg = StateMessage.NewItemNotSoldAt(i.itemId, i.storeId);
-            await StateService.UpdateAsync(stateMsg);
             await _itemQuickActionDrawer.Close();
-        }
-
-        private async Task OnPostponeDurationChosen(int? d)
-        {
-            var itemMsg = (d is int days) ? ItemMessage.NewPostpone(days) : ItemMessage.RemovePostpone;
-            var stateItemMsg = StateItemMessage.NewModifyItem(_quickEditContext.Value, itemMsg);
-            var stateMsg = StateMessage.NewItemMessage(stateItemMsg);
             await StateService.UpdateAsync(stateMsg);
-            await _postponeDrawer.Close();
         }
 
         private async Task OnEditItem(ItemId itemId)
