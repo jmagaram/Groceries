@@ -52,10 +52,12 @@
                 {
                     var item = itemUncaptured;
                     var itemClass = item.PostponeUntil.IsNone() ? "activeItem" : "postponedItem";
-                    bool postponeUntilChanged = PostponeUntilChanged?.TryFind(item.ItemId).IsSome()==true;
-                    <div class="@itemClass">
-                        <WebApp.Shared.Item @key="item.ItemId.Serialize()" PostponeUntilChanged="@postponeUntilChanged" HideStores="@hideStores" OnClickAddToShoppingList="async i => await OnClickAddToShoppingList(i)" OnClickDue="async i => await OnClickChoosePostpone(i)" OnClick="async i => await OnClickItem(item.ItemId)" ItemQry="@item" />
-                    </div> }
+                    bool postponeUntilChanged = PostponeUntilChanged?.Contains(item.ItemId) == true;
+
+                    <div @key="item.ItemId.Serialize()" class="@itemClass">
+                        <WebApp.Shared.Item PostponeUntilChanged="@postponeUntilChanged" HideStores="@hideStores" OnClickAddToShoppingList="async i => await OnClickAddToShoppingList(i)" OnClickDue="async i => await OnClickChoosePostpone(i)" OnClick="async i => await OnClickItem(item.ItemId)" ItemQry="@item" />
+                    </div>
+                }
             }
             else
             {

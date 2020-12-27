@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reactive.Subjects;
+using System.Reactive.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
@@ -17,6 +19,7 @@ using ItemMessage = Models.ItemModule.Message;
 using ShoppingListSettingsMessage = Models.ShoppingListSettingsModule.Message;
 using StateItemMessage = Models.StateTypes.ItemMessage;
 using StateMessage = Models.StateTypes.StateMessage;
+using System.Reactive.Disposables;
 
 namespace WebApp.Pages
 {
@@ -29,10 +32,43 @@ namespace WebApp.Pages
         StoreNavigatorDrawer _storesNavigatorDrawer;
         ViewOptionsDrawer _viewOptionsDrawer;
         ItemId? _quickEditContext;
-        IDisposable _stateSubscription;
+        CompositeDisposable _disposables;
         Dictionary<CategoryId, ElementReference> _categoryReferences = new Dictionary<CategoryId, ElementReference>();
 
-        public void Dispose() => _stateSubscription?.Dispose();
+        protected override async Task OnInitializedAsync()
+        {
+            await StateService.InitializeAsync();
+            await EndSearch();
+        }
+
+        protected override void OnInitialized()
+        {
+            base.OnInitialized();
+            var state = StateService.State.Publish();
+            IDisposable updateCurrentState() =>
+                state.StartWith(StateService.CurrentState).Subscribe(i =>
+                {
+                    CurrentState = i;
+                    StateHasChanged();
+                });
+            IDisposable calcPostponeChanged() =>
+                ShoppingListModule.postponeChanged(state)
+                .Subscribe(i =>
+                {
+                    PostponeUntilChanged = i;
+                    StateHasChanged();
+                });
+            _disposables = new CompositeDisposable(
+                updateCurrentState(),
+                calcPostponeChanged(),
+                state.Connect()
+            );
+        }
+
+        protected ShoppingListModule.ShoppingList ShoppingListView =>
+            CurrentState.ShoppingList(DateTimeOffset.Now);
+
+        public void Dispose() => _disposables?.Dispose();
 
         public bool IsSearchBarVisible => CurrentState.LoggedInUserSettings().ShoppingListSettings.IsTextFilterVisible;
 
@@ -101,32 +137,9 @@ namespace WebApp.Pages
         [Inject]
         NavigationManager Navigation { get; set; }
 
-        protected override async Task OnInitializedAsync()
-        {
-            await StateService.InitializeAsync();
-            await EndSearch();
-        }
-
-        protected override void OnInitialized()
-        {
-            base.OnInitialized();
-            _stateSubscription = StateService.State.Subscribe(s =>
-            {
-                PreviousState = CurrentState;
-                CurrentState = s;
-                if (PreviousState != null)
-                {
-                    PostponeUntilChanged = ShoppingListModule.postponeUntilChanged(PreviousState, CurrentState);
-                }
-                StateHasChanged();
-            });
-        }
-
         protected StateTypes.State CurrentState { get; private set; }
 
-        protected StateTypes.State PreviousState { get; private set; }
-
-        protected FSharpMap<ItemId, FSharpOption<DateTimeOffset>> PostponeUntilChanged { get; set; }
+        protected FSharpSet<ItemId> PostponeUntilChanged { get; set; }
 
         private async Task OnClickCategoryHeader()
         {
@@ -330,8 +343,6 @@ namespace WebApp.Pages
         protected Guid StoreFilter =>
             ShoppingListView.StoreFilter.IsNone() ? Guid.Empty : ShoppingListView.StoreFilter.Value.StoreId.Item;
 
-        protected ShoppingListModule.ShoppingList ShoppingListView =>
-            CurrentState.ShoppingList(DateTimeOffset.Now);
 
         protected List<Store> StoreFilterChoices =>
             ShoppingListView.Stores.OrderBy(i => i.StoreName).ToList();

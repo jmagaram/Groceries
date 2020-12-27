@@ -4,6 +4,7 @@ module Models.ShoppingList
 open System
 open CoreTypes
 open StateTypes
+open FSharp.Control.Reactive
 open ViewTypes
 
 type Item =
@@ -44,7 +45,7 @@ type CategorySummary with
     member me.Total = me.Items |> Seq.length
     member me.Inactive = me.Total - me.Active
 
-let postponeUntilChanged (s1:State) (s2:State) =
+let private postponeChangedCore (s1, s2) =
     s2
     |> State.items
     |> Seq.choose (fun i2 ->
@@ -53,8 +54,26 @@ let postponeUntilChanged (s1:State) (s2:State) =
         |> Option.bind (fun i1 -> 
             match i1.PostponeUntil = i2.PostponeUntil with
             | true -> None
-            | false -> Some (i2.ItemId, i2.PostponeUntil)))
-    |> Map.ofSeq
+            | false -> Some i2.ItemId))
+    |> Set.ofSeq
+
+let postponeChanged (s:IObservable<State>) =
+    s 
+    |> Observable.pairwise
+    |> Observable.map postponeChangedCore
+    |> Observable.distinctUntilChanged
+
+let private deletedCore (s1, s2) =
+    let s1Items = s1 |> State.items |> Seq.map (fun i -> i.ItemId) |> Set.ofSeq
+    let s2Items = s2 |> State.items |> Seq.map (fun i -> i.ItemId) |> Set.ofSeq
+    s1Items - s2Items
+
+let deleted (s:IObservable<State>) = 
+    s
+    |> Observable.pairwise
+    |> Observable.map deletedCore
+    |> Observable.filter (fun i -> i.Count > 0)
+    |> Observable.distinctUntilChanged
 
 let createItem find (item: CoreTypes.Item) state =
     let find =
