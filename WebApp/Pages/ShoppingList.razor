@@ -29,7 +29,7 @@
     <div class="regular-bar bg-dark @searchClass">
         <button class="titleButton" ontouchstart="" @onclick="async _=>await OpenStoreNavigator()">@currentStoreName</button>
         <div>
-            <SyncButton Style=""/>
+            <SyncButton Style="" />
             <button type="button" ontouchstart="" @onclick="async _ => await _viewOptionsDrawer.Open(StateService.CurrentState.LoggedInUserSettings().FontSize)" class="btn text-light"><ion-icon name="eye-outline"></ion-icon></button>
         </div>
     </div>
@@ -48,24 +48,13 @@
             </button>
             if (c.Total > 0)
             {
-                var activeItems = c.Items.Where(j => j.PostponeUntil.IsNone()).ToArray();
-                var inactiveItems = c.Items.Where(j => j.PostponeUntil.IsSome()).ToArray();
-                foreach (var itemUncaptured in activeItems)
+                foreach (var itemUncaptured in c.Items)
                 {
                     var item = itemUncaptured;
-                    <div class="activeGroup">
+                    var itemClass = item.PostponeUntil.IsNone() ? "activeItem" : "postponedItem";
+                    <div class="@itemClass">
                         <WebApp.Shared.Item @key="item.ItemId.Serialize()" HideStores="@hideStores" OnClickAddToShoppingList="async i => await OnClickAddToShoppingList(i)" OnClickDue="async i => await OnClickChoosePostpone(i)" OnClick="async i => await OnClickItem(item.ItemId)" ItemQry="@item" />
                     </div> }
-                @if (inactiveItems.Length > 0)
-                {
-                    <div class="buyAgainGroup">
-                        @foreach (var itemUncaptured in inactiveItems)
-                        {
-                            var item = itemUncaptured;
-                            <WebApp.Shared.Item @key="item.ItemId.Serialize()" HideStores="@hideStores" OnClickAddToShoppingList="async i => await OnClickAddToShoppingList(i)" OnClickDue="async i => await OnClickChoosePostpone(i)" OnClick="async i => await OnClickItem(item.ItemId)" ItemQry="@item" />
-                        }
-                    </div>
-                }
             }
             else
             {
