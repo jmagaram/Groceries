@@ -3,7 +3,7 @@
 @using static Models.CoreTypes
 @using static Common.OptionExtensions
 
-<div class="itemContainer">
+<div @ref="_entireElement" style="opacity:@InitialOpacity" class="itemContainer">
     @if (!ItemQry.PostponeUntil.IsNone())
     {
         <button class="iconButton" ontouchstart="" @onclick="async _ => await OnClickAddToShoppingList.InvokeAsync(ItemQry.ItemId)"><ion-icon name="add-outline"></ion-icon></button>
@@ -79,13 +79,21 @@
 @code {
 #nullable enable
     ElementReference _badgeElement;
+    ElementReference _entireElement;
     ShoppingListModule.Item? _itemQry;
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        if (PostponeUntilChanged)
+        if (PostponeUntilChanged && ItemQry is ShoppingListModule.Item item)
         {
-            await TryRunAnimation(_badgeElement, JSRuntime, "bounce-top", 1000);
+            if (item.PostponeUntil.IsSome())
+            {
+                await TryRunAnimation(_badgeElement, JSRuntime, "bounce-top", 1000);
+            }
+            else
+            {
+                await TryRunAnimation(_entireElement, JSRuntime, "fade-in-right", 5000);
+            }
         }
         await base.OnAfterRenderAsync(firstRender);
     }
@@ -98,10 +106,13 @@
     {
         if (element.Id != null && jsRuntime != null)
         {
-            await using var generalModule = await jsRuntime.InvokeAsync<IJSObjectReference>("import", "./js/general.js").AsTask();
+            await using var generalModule = await jsRuntime.InvokeAsync<IJSObjectReference>
+    ("import", "./js/general.js").AsTask();
             await generalModule.InvokeVoidAsync("startAnimation", element, animationClass, timeoutMilliseconds);
         }
     }
+
+    private string InitialOpacity => (ItemQry?.PostponeUntil.IsNone() == true && PostponeUntilChanged) ? "0" : "1";
 
     [Inject]
     public IJSRuntime? JSRuntime { get; set; }
