@@ -114,7 +114,9 @@
         set
         {
             _postponeUntilChanged =
-                (value != null && _itemQry != null) ? (value.PostponeUntil != _itemQry.PostponeUntil) : false;
+                (value != null && _itemQry != null) 
+                ? (value.PostponeUntil.AsNullable() != _itemQry.PostponeUntil.AsNullable()) 
+                : false;
             _itemQry = value;
         }
     }
