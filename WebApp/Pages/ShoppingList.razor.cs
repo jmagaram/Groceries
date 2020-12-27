@@ -4,6 +4,8 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
+using Microsoft.FSharp.Collections;
+using Microsoft.FSharp.Core;
 using Microsoft.JSInterop;
 using Models;
 using WebApp.Common;
@@ -108,10 +110,23 @@ namespace WebApp.Pages
         protected override void OnInitialized()
         {
             base.OnInitialized();
-            _stateSubscription = StateService.State.Subscribe(s => { CurrentState = s; StateHasChanged(); });
+            _stateSubscription = StateService.State.Subscribe(s =>
+            {
+                PreviousState = CurrentState;
+                CurrentState = s;
+                if (PreviousState != null)
+                {
+                    PostponeUntilChanged = ShoppingListModule.postponeUntilChanged(PreviousState, CurrentState);
+                }
+                StateHasChanged();
+            });
         }
 
         protected StateTypes.State CurrentState { get; private set; }
+
+        protected StateTypes.State PreviousState { get; private set; }
+
+        protected FSharpMap<ItemId, FSharpOption<DateTimeOffset>> PostponeUntilChanged { get; set; }
 
         private async Task OnClickCategoryHeader()
         {

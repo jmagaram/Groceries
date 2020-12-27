@@ -79,23 +79,22 @@
 @code {
 #nullable enable
     ElementReference _badgeElement;
-    bool _postponeUntilChanged;
     ShoppingListModule.Item? _itemQry;
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        if (_postponeUntilChanged)
+        if (PostponeUntilChanged)
         {
-            await TryRunAnimation(_badgeElement, JSRuntime, "bounce-top");
+            await TryRunAnimation(_badgeElement, JSRuntime, "bounce-top", 1000);
         }
         await base.OnAfterRenderAsync(firstRender);
     }
 
     protected static async Task TryRunAnimation(
-    ElementReference element,
-    IJSRuntime? jsRuntime,
-    string animationClass,
-    int timeoutMilliseconds = 1000)
+        ElementReference element,
+        IJSRuntime? jsRuntime,
+        string animationClass,
+        int timeoutMilliseconds = 1000)
     {
         if (element.Id != null && jsRuntime != null)
         {
@@ -108,18 +107,10 @@
     public IJSRuntime? JSRuntime { get; set; }
 
     [Parameter]
-    public ShoppingListModule.Item? ItemQry
-    {
-        get => _itemQry;
-        set
-        {
-            _postponeUntilChanged =
-                (value != null && _itemQry != null) 
-                ? (value.PostponeUntil.AsNullable() != _itemQry.PostponeUntil.AsNullable()) 
-                : false;
-            _itemQry = value;
-        }
-    }
+    public ShoppingListModule.Item? ItemQry { get; set; }
+
+    [Parameter]
+    public bool PostponeUntilChanged { get; set; }
 
     [Parameter]
     public bool HideStores { get; set; } = false;

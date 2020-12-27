@@ -44,6 +44,18 @@ type CategorySummary with
     member me.Total = me.Items |> Seq.length
     member me.Inactive = me.Total - me.Active
 
+let postponeUntilChanged (s1:State) (s2:State) =
+    s2
+    |> State.items
+    |> Seq.choose (fun i2 ->
+        s1 
+        |> State.tryFindItem i2.ItemId
+        |> Option.bind (fun i1 -> 
+            match i1.PostponeUntil = i2.PostponeUntil with
+            | true -> None
+            | false -> Some (i2.ItemId, i2.PostponeUntil)))
+    |> Map.ofSeq
+
 let createItem find (item: CoreTypes.Item) state =
     let find =
         match find with
