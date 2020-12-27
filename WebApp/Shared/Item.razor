@@ -71,6 +71,7 @@
                     }
                 </ul>
             }
+
         </div>
     </button>
 </div>
@@ -90,12 +91,16 @@
         await base.OnAfterRenderAsync(firstRender);
     }
 
-    protected static async Task TryRunAnimation(ElementReference element, IJSRuntime? jsRuntime, string animationClass)
+    protected static async Task TryRunAnimation(
+    ElementReference element,
+    IJSRuntime? jsRuntime,
+    string animationClass,
+    int timeoutMilliseconds = 1000)
     {
         if (element.Id != null && jsRuntime != null)
         {
             await using var generalModule = await jsRuntime.InvokeAsync<IJSObjectReference>("import", "./js/general.js").AsTask();
-            await generalModule.InvokeVoidAsync("startAnimation", element, animationClass);
+            await generalModule.InvokeVoidAsync("startAnimation", element, animationClass, timeoutMilliseconds);
         }
     }
 
