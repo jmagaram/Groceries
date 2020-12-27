@@ -2,6 +2,10 @@
     element[key] = value;
 }
 
+export function setAttribute(element, name, value) {
+    element.setAttribute(name, value);
+}
+
 export function getProperty(element, key) {
     return element[key];
 }
