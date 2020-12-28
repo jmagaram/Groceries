@@ -1,190 +1,65 @@
 ﻿@page "/experiment"
-@using Models
-@using Common
-@using Microsoft.FSharp.Core;
-@using WebApp.Shared;
-@using static Models.Experiment.GroceryItemsViewModule
-@using System.Linq
-@inject IJSRuntime JSRuntime
 
 <style>
-    ul {
-        list-style-type: none;
+    dom-flip {
+        display: flex;
+        flex-direction: row;
+        flex-wrap:wrap;
+        margin-top:30px;
     }
 
-    li {
-        margin-bottom: 3px;
-        margin-top: 3px;
-    }
-
-    .isCompleted {
-        text-decoration: line-through;
-    }
-
-    .oneitem {
-        transition: all ease-out 0.2s; /*when returning to this*/
-        background-color: rgba(255, 255, 255, 0.00);
-        margin-bottom: 1em;
-    }
-
-        .oneitem.editing {
-            background-color: rgba(255, 255, 255, 1.00);
-            margin-top: 20px;
-            margin-bottom: 20px;
-            padding-left: 20px;
-            margin-left: -20px;
-            padding-top: 10px;
-            padding-bottom: 10px;
-            transition: all ease-in 0.2s; /*when going TO this*/
-        }
-
-    .background {
-        background-color: rgba(230, 230, 227, 0.0);
-    }
-
-        .background.deactivatebackground {
-            background-color: rgba(230, 230, 227, 1.0);
-        }
-
-    .activeFromLeft {
-        animation-name: appearFromLeft;
-        animation-duration: 0.25s;
-        animation-fill-mode: forwards;
-    }
-
-    @@keyframes appearFromLeft {
-        from {
-            margin-left: -100%;
-            opacity: 0.5;
-        }
-
-        to {
-            margin-left: 0%;
-            opacity: 1.0;
-        }
-    }
-
-    .activeFromRight {
-        animation-name: appearFromRight;
-        animation-duration: 0.25s;
-        animation-fill-mode: forwards;
-    }
-
-    @@keyframes appearFromRight {
-        from {
-            margin-left: 100%;
-            opacity: 0.5;
-        }
-
-        to {
-            margin-left: 0%;
-            opacity: 1.0;
-        }
-    }
-
-    .touchFriendlyButton {
-        background-color: white;
-        color: black;
+    .list-item {
+        background-color: lightblue;
         border: 1px solid black;
-        border-radius: 3px;
-        padding: 8px;
-        -webkit-user-select: none !important;
+        margin: 10px;
+        padding: 5px;
+        width: fit-content;
     }
-
-        .touchFriendlyButton:active {
-            background-color: blue;
-        }
 </style>
 
-<button @onclick="_ => UpdateMessage()" class="touchFriendlyButton" ontouchstart="">touch friendly button</button>
-<button ontouchstart="">regular button</button>
-<div>Message: @MessageAt</div>
-<div>Click count: @ClickCount</div>
+<h1>Flipper</h1>
 
-<div @onclick="e => OnMainDivClick()" class="@BackgroundClass" style="transition:background-color ease-in 0.2s">
-    <h3>Grocery items</h3>
-    <button @onclick="InsertNew">Insert</button>
-    <ul>
-        @foreach (var i in View.Items) {
-            var groceryItem = Models.Experiment.ItemModule.getReadOnly(i);
-            var editor = Models.Experiment.ItemModule.getEdit(i);
-            var c = editor != null ? ItemClass : "oneitem";
-            <li class="@c">
-                @if (groceryItem != null) {
-                    var itemClass = groceryItem.IsCompleted ? "isCompleted" : "";
-                    <div @onclick="_ => BeginEdit(groceryItem.Id)">
-                        <div class="@itemClass">@groceryItem.Name</div>
-                        @if (!groceryItem.IsCompleted) {
-                            <div>@groceryItem.Note</div>
-                        }
-                    </div>
-                }
-                else if (editor != null) {
-                    <div class="editing">
-                        <div>
-                            <input checked="@editor.IsCompleted" @onchange="ToggleIsComplete" type="checkbox" value="@editor.IsCompleted" />
-                            <input @onchange="UpdateName" value="@editor.Name" />
-                        </div>
-                        <div>
-                            <input @onchange="UpdateNote" value="@editor.Note" />
-                        </div>
-                        <div>
-                            <button @onclick="_ => CancelEdit()">cancel</button>
-                            <button disabled="@(!View.CanCommit)" style="margin-left:0.2em" @onclick="_ => Save()">save</button>
-                        </div>
-                    </div>
-                }
-                else {
-                    <div>
-                        What the hell is that!
-                    </div>
-                }
-            </li>
-        }
-    </ul>
-</div>
+<input type="text" @bind-value="@NewItemToInsert" @bind-value:event="oninput" />
+<button @onclick="_=>InsertAtBeginning()">Insert</button>
+<button @onclick="_=>Items.RemoveAt(0)">Delete first</button>
+<button @onclick="_ => Shuffle(Items)">Shuffle</button>
+
+<dom-flip>
+    @foreach (var i in Items)
+    {
+        <div class="list-item" data-flip-id="@i">@i</div>
+    }
+</dom-flip>
+
 @code {
+    private Random rng = new Random();
 
-    public void UpdateMessage() {
-        MessageAt = DateTime.Now.Second.ToString();
-        ClickCount++;
+    protected override void OnInitialized()
+    {
+        base.OnInitialized();
+        Items = new List<string> { "Apple", "Banana", "Pear", "Pineapple", "Grapefruit", "Pomegrante", "Orange", "Kiwi", "Mandarin", "Chestnut" };
     }
 
-    public string MessageAt { get; set; }
-    public int ClickCount { get; set; }
+    public List<string> Items { get; private set; }
 
-    protected void UpdateName(ChangeEventArgs e) => ProcessMessage(Message.NewUpdateName((string)e.Value));
+    public string NewItemToInsert { get; set; }
 
-    protected void UpdateNote(ChangeEventArgs e) => ProcessMessage(Message.NewUpdateNote((string)e.Value));
-
-    protected void ToggleIsComplete(ChangeEventArgs e) => ProcessMessage(Message.ToggleCompleted);
-
-    protected void Insert(MouseEventArgs e) => ProcessMessage(Message.InsertNew);
-
-    protected void ProcessMessage(Message m) => View = processMessage(m, View);
-
-    public void OnMainDivClick() { }
-
-    public Models.Experiment.GroceryItemsViewModule.GroceryItemView View { get; private set; } =
-        init();
-
-    public void BeginEdit(Guid id) {
-        if (View.IsEditing) {
-            ProcessMessage(Message.CancelEdit);
-        }
-        else {
-            ProcessMessage(Message.NewStartEdit(id));
-        }
+    public void InsertAtBeginning()
+    {
+        Items.Insert(0, NewItemToInsert);
+        NewItemToInsert = "";
     }
 
-    public void InsertNew() => ProcessMessage(Message.InsertNew);
-
-    public void CancelEdit() => ProcessMessage(Message.CancelEdit);
-
-    public void Save() => ProcessMessage(Message.CommitEdit);
-
-    public string BackgroundClass => View.IsEditing ? "background deactivatebackground" : "background";
-
-    public string ItemClass => View.IsEditing ? "oneitem editing" : "oneitem";
-
+    public void Shuffle<T>(IList<T> list)
+    {
+        int n = list.Count;
+        while (n > 1)
+        {
+            n--;
+            int k = rng.Next(n + 1);
+            T value = list[k];
+            list[k] = list[n];
+            list[n] = value;
+        }
+    }
 }
