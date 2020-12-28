@@ -9,6 +9,7 @@
         text-align: center;
         display: inline-flex;
         align-items: center;
+        padding-bottom: 0.4rem;
     }
 
     .itemContainer ul {
@@ -154,3 +155,4 @@
         background-color: #bbbbbb;
         color: white;
     }
+

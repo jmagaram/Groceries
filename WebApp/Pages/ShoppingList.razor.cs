@@ -193,10 +193,10 @@ namespace WebApp.Pages
 
         private async Task OnClickComplete(ItemId itemId)
         {
+            await _itemQuickActionDrawer.Close();
             var recordPurchase = StateMessage.NewRecordPurchase(itemId);
             var userSettingsMsg = StateMessage.NewUserSettingsMessage(UserSettingsModule.Message.NewShoppingListSettingsMessage(ShoppingListSettingsMessage.EndSearch));
             var transaction = StateMessage.NewTransaction(new List<StateMessage> { recordPurchase, userSettingsMsg });
-            await _itemQuickActionDrawer.Close();
             await StateService.UpdateAsync(transaction);
         }
 

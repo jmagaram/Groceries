@@ -38,6 +38,7 @@
     @{
         var now = DateTimeOffset.Now;
         var hideStores = !IsSearchBarVisible && ShoppingListView.StoreFilter.IsSome();
+        var enableOneClickComplete = CurrentState.LoggedInUserSettings().ShoppingListSettings.PostponedViewHorizon.IsNone();
         foreach (var categorySummary in ShoppingListView.Categories.Where(j => j.Total > 0))
         {
             var c = categorySummary;
@@ -57,7 +58,15 @@
                         var itemId = item.ItemId.Serialize();
 
                         <div data-flip-id="@itemId" @key="item.ItemId.Serialize()" class="@itemClass">
-                            <WebApp.Shared.Item PostponeUntilChanged="@postponeUntilChanged" HideStores="@hideStores" OnClickAddToShoppingList="async i => await OnClickAddToShoppingList(i)" OnClickDue="async i => await OnClickChoosePostpone(i)" OnClick="async i => await OnClickItem(item.ItemId)" ItemQry="@item" />
+                            <WebApp.Shared.Item 
+                                EnableOneClickComplete="@enableOneClickComplete"
+                                OnClickCompleted="OnClickComplete" 
+                                PostponeUntilChanged="@postponeUntilChanged"
+                                HideStores="@hideStores" 
+                                OnClickAddToShoppingList="async i => await OnClickAddToShoppingList(i)" 
+                                OnClickDue="async i => await OnClickChoosePostpone(i)" 
+                                OnClick="async i => await OnClickItem(item.ItemId)"
+                                ItemQry="@item" />
                         </div>
                     }
                 </dom-flip>

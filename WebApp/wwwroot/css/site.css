@@ -560,3 +560,28 @@
         opacity: 1
     }
 }
+
+.complete-countdown {
+    -webkit-animation: complete-countdown 2s ease-out both;
+    animation: complete-countdown 2s ease-out both
+}
+
+@-webkit-keyframes complete-countdown {
+    0% {
+        opacity: 1
+    }
+
+    100% {
+        opacity: 0
+    }
+}
+
+@keyframes complete-countdown {
+    0% {
+        opacity: 1
+    }
+
+    100% {
+        opacity: 0
+    }
+}
