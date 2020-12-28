@@ -3,7 +3,7 @@
 @using static Models.CoreTypes
 @using static Common.OptionExtensions
 
-<div @ref="_entireElement" style="opacity:@InitialOpacity" class="itemContainer">
+<div class="itemContainer">
     @if (!ItemQry.PostponeUntil.IsNone())
     {
         <button class="iconButton" ontouchstart="" @onclick="async _ => await OnClickAddToShoppingList.InvokeAsync(ItemQry.ItemId)"><ion-icon name="add-outline"></ion-icon></button>
@@ -71,7 +71,6 @@
                     }
                 </ul>
             }
-
         </div>
     </button>
 </div>
@@ -79,7 +78,6 @@
 @code {
 #nullable enable
     ElementReference _badgeElement;
-    ElementReference _entireElement;
     ShoppingListModule.Item? _itemQry;
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
@@ -89,10 +87,6 @@
             if (item.PostponeUntil.IsSome())
             {
                 await TryRunAnimation(_badgeElement, JSRuntime, "bounce-top", 1000);
-            }
-            else
-            {
-                await TryRunAnimation(_entireElement, JSRuntime, "fade-in-right", 1000);
             }
         }
         await base.OnAfterRenderAsync(firstRender);
@@ -111,8 +105,6 @@
             await generalModule.InvokeVoidAsync("startAnimation", element, animationClass, timeoutMilliseconds);
         }
     }
-
-    private string InitialOpacity => (ItemQry?.PostponeUntil.IsNone() == true && PostponeUntilChanged) ? "0" : "1";
 
     [Inject]
     public IJSRuntime? JSRuntime { get; set; }

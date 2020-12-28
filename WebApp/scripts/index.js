@@ -11,3 +11,4 @@ import Option from "../node_modules/elix/define/Option.js";
 import Drawer from 'elix/define/Drawer.js';
 import FilterComboBox from 'elix/define/FilterComboBox.js';
 import AutoSizeTextarea from 'elix/define/AutoSizeTextarea.js'
+import * as DomFlip from 'dom-flip/dist/dom-flip.js'

@@ -48,16 +48,19 @@
             </button>
             if (c.Total > 0)
             {
-                foreach (var itemUncaptured in c.Items)
-                {
-                    var item = itemUncaptured;
-                    var itemClass = item.PostponeUntil.IsNone() ? "activeItem" : "postponedItem";
-                    bool postponeUntilChanged = PostponeUntilChanged?.Contains(item.ItemId) == true;
+                <dom-flip>
+                    @foreach (var itemUncaptured in c.Items)
+                    {
+                        var item = itemUncaptured;
+                        var itemClass = item.PostponeUntil.IsNone() ? "activeItem" : "postponedItem";
+                        bool postponeUntilChanged = PostponeUntilChanged?.Contains(item.ItemId) == true;
+                        var itemId = item.ItemId.Serialize();
 
-                    <div @key="item.ItemId.Serialize()" class="@itemClass">
-                        <WebApp.Shared.Item PostponeUntilChanged="@postponeUntilChanged" HideStores="@hideStores" OnClickAddToShoppingList="async i => await OnClickAddToShoppingList(i)" OnClickDue="async i => await OnClickChoosePostpone(i)" OnClick="async i => await OnClickItem(item.ItemId)" ItemQry="@item" />
-                    </div>
-                }
+                        <div data-flip-id="@itemId" @key="item.ItemId.Serialize()" class="@itemClass">
+                            <WebApp.Shared.Item PostponeUntilChanged="@postponeUntilChanged" HideStores="@hideStores" OnClickAddToShoppingList="async i => await OnClickAddToShoppingList(i)" OnClickDue="async i => await OnClickChoosePostpone(i)" OnClick="async i => await OnClickItem(item.ItemId)" ItemQry="@item" />
+                        </div>
+                    }
+                </dom-flip>
             }
             else
             {
