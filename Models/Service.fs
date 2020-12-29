@@ -9,6 +9,10 @@ open StateTypes
 open ServiceTypes
 
 type Service(state: StateTypes.State, clock, cosmos: ICosmosConnector) =
+    let waitForPullIncremental = TimeSpan.FromSeconds(2.0)
+    let waitForPullEverything = TimeSpan.FromSeconds(10.0)
+    let waitForPush = TimeSpan.FromSeconds(2.0)
+
     // Hack for now; probably better to make this step a part of the state observable
     let mutable isInitialized = false
     let stateSub = state |> Subject.behavior
@@ -19,10 +23,12 @@ type Service(state: StateTypes.State, clock, cosmos: ICosmosConnector) =
 
     let statusObs =
         isSynchronizing
-        |> Observable.withLatestFrom (fun i j ->
-            if i = true then Synchronizing
-            elif j |> State.hasChanges then HasChanges
-            else NoChanges) stateObs
+        |> Observable.withLatestFrom
+            (fun i j ->
+                if i = true then Synchronizing
+                elif j |> State.hasChanges then HasChanges
+                else NoChanges)
+            stateObs
 
     let update msg =
         let state' = stateSub.Value |> State.update clock msg
@@ -44,8 +50,8 @@ type Service(state: StateTypes.State, clock, cosmos: ICosmosConnector) =
         async {
             let timeout =
                 match since with
-                | None -> TimeSpan.FromSeconds(10.0)
-                | Some _ -> TimeSpan.FromSeconds(2.0)
+                | None -> waitForPullEverything
+                | Some _ -> waitForPullIncremental
 
             use source = new CancellationTokenSource(timeout)
 
@@ -64,7 +70,8 @@ type Service(state: StateTypes.State, clock, cosmos: ICosmosConnector) =
 
     let push s =
         async {
-            use source = new CancellationTokenSource(TimeSpan.FromSeconds(2.0))
+            use source = new CancellationTokenSource(waitForPush)
+
             "Synchronization: pushing" |> dprintln
 
             match s |> Dto.pushRequest with
@@ -74,9 +81,9 @@ type Service(state: StateTypes.State, clock, cosmos: ICosmosConnector) =
 
     let sync since =
         async {
-            isSynchronizing.OnNext(true)
-
             try
+                isSynchronizing.OnNext(true)
+
                 let state = stateSub.Value
                 let unsaved = stateSub.Value |> State.hasChanges
                 if unsaved then do! push state
@@ -90,9 +97,8 @@ type Service(state: StateTypes.State, clock, cosmos: ICosmosConnector) =
                     match p with
                     | Some p -> update (Import p) |> ignore
                     | None -> ()
-            with e -> "Synchronization: exception thrown" |> dprintln
-
-            isSynchronizing.OnNext(false)
+            finally
+                isSynchronizing.OnNext(false)
         }
 
     let syncIncremental = sync stateSub.Value.LastCosmosTimestamp
@@ -121,4 +127,3 @@ type Service(state: StateTypes.State, clock, cosmos: ICosmosConnector) =
     member me.State = stateObs
     member me.CurrentState = stateSub.Value
     member me.SyncronizationStatus = statusObs
-    
