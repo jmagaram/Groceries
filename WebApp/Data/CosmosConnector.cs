@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Azure.Cosmos;
@@ -11,12 +12,14 @@ using WebApp.Common;
 using static Models.DtoTypes;
 using static Models.ServiceTypes;
 
+#nullable enable
+
 namespace WebApp.Data
 {
     public class CosmosConnector : ICosmosConnector, IDisposable
     {
         private CosmosClient _client;
-        private readonly string _databaseId = "db";
+        private string _databaseId = "db";
         private readonly string _containerId = "items";
         private bool _isDisposed;
         private const string _partitionKeyPath = "/CustomerId";
@@ -34,8 +37,9 @@ namespace WebApp.Data
             _client = new CosmosClient(connectionString);
         }
 
-        public CosmosConnector(string endpointUri, string primaryKey, string applicationName)
+        public CosmosConnector(string endpointUri, string primaryKey, string applicationName, string databaseId = "db")
         {
+            _databaseId = databaseId;
             _client = new CosmosClient(endpointUri, primaryKey, new CosmosClientOptions() { ApplicationName = applicationName });
         }
 
@@ -63,28 +67,56 @@ namespace WebApp.Data
             await db.DeleteAsync();
         }
 
-        public async Task PushAsync(Changes c, CancellationToken cancel)
+        public async Task<Changes> PushAsync(Changes c, CancellationToken cancel)
         {
-            await PushCore(c.Items.Select(i => Dto.withCustomerId(_customerId, i)), i => i.Etag, cancel);
-            await PushCore(c.Categories.Select(i => Dto.withCustomerId(_customerId, i)), i => i.Etag, cancel);
-            await PushCore(c.Stores.Select(i => Dto.withCustomerId(_customerId, i)), i => i.Etag, cancel);
-            await PushCore(c.NotSoldItems.Select(i => Dto.withCustomerId(_customerId, i)), i => i.Etag, cancel);
-            await PushCore(c.Purchases.Select(i => Dto.withCustomerId(_customerId, i)), i => i.Etag, cancel);
-            await ArtificialDelay();
+            using var cancelIfException = new CancellationTokenSource();
+            using var cancelRoot = CancellationTokenSource.CreateLinkedTokenSource(cancel, cancelIfException.Token);
+            try
+            {
+                var items = await GetItems(cancelRoot.Token, c.Items);
+                var categories = await GetItems(cancelRoot.Token, c.Categories);
+                var purchases = await GetItems(cancelRoot.Token, c.Purchases);
+                var stores = await GetItems(cancelRoot.Token, c.Stores);
+                var notSoldItems = await GetItems(cancelRoot.Token, c.NotSoldItems);
+                return new Changes(items, categories, stores, notSoldItems, purchases);
+            }
+            catch (Exception e) when (e is not OperationCanceledException)
+            {
+                cancelIfException.Cancel();
+                throw;
+            }
+
+            async Task<Document<T>[]> GetItems<T>(CancellationToken cancel, Document<T>[] x)
+            {
+                return ServiceModule.pushed(await PushBulkCoreAsync(x.Select(i => Dto.withCustomerId(_customerId, i)), i => i.Etag, cancel));
+            }
         }
 
-        private async Task PushCore<T>(IEnumerable<T> items, Func<T, string> etag, CancellationToken cancel)
+        public Task<PushResult<T>[]> PushBulkCoreAsync<T>(
+            IEnumerable<T> docs,
+            Func<T, string> etag,
+            CancellationToken cancel)
         {
-            var ct = _client.GetContainer(_databaseId, _containerId);
-            foreach (var i in items)
+            var upserts = docs.Select(i => PushCoreAsync(i, etag, cancel));
+            return Task.WhenAll(upserts);
+        }
+
+        public async Task<PushResult<T>> PushCoreAsync<T>(T doc, Func<T, string> etag, CancellationToken cancel)
+        {
+            var container = _client.GetContainer(_databaseId, _containerId);
+            try
             {
-                try
-                {
-                    await ct.UpsertItemAsync(item: i, requestOptions: new ItemRequestOptions { IfMatchEtag = etag(i) }, cancellationToken: cancel);
-                }
-                catch (CosmosException e) when (e.StatusCode == System.Net.HttpStatusCode.PreconditionFailed)
-                {
-                }
+                var options = new ItemRequestOptions { IfMatchEtag = etag(doc) };
+                var task = container.UpsertItemAsync(
+                    item: doc,
+                    requestOptions: options,
+                    cancellationToken: cancel);
+                var result = await task;
+                return PushResult<T>.NewPushed(doc, result.Resource);
+            }
+            catch (CosmosException e) when (e.StatusCode == System.Net.HttpStatusCode.PreconditionFailed)
+            {
+                return PushResult<T>.NewConcurrencyConflict(doc);
             }
         }
 

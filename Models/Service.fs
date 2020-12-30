@@ -8,8 +8,21 @@ open FSharp.Control.Reactive
 open StateTypes
 open ServiceTypes
 
+[<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
+module Service =
+
+    let pushedSeq res =
+        res
+        |> Seq.choose
+            (fun r ->
+                match r with
+                | ConcurrencyConflict _ -> None
+                | Pushed (a, b) -> Some b)
+
+    let pushed res = res |> pushedSeq |> Seq.toArray
+
 type Service(state: StateTypes.State, clock, cosmos: ICosmosConnector) =
-    let waitForPullIncremental = TimeSpan.FromSeconds(2.0)
+    let waitForPullIncremental = TimeSpan.FromSeconds(2.0) 
     let waitForPullEverything = TimeSpan.FromSeconds(10.0)
     let waitForPush = TimeSpan.FromSeconds(2.0)
 
@@ -75,8 +88,10 @@ type Service(state: StateTypes.State, clock, cosmos: ICosmosConnector) =
             "Synchronization: pushing" |> dprintln
 
             match s |> Dto.pushRequest with
-            | None -> ()
-            | Some c -> return! cosmos.PushAsync c source.Token |> Async.AwaitTask
+            | None -> return None
+            | Some c ->
+                let! pushed = cosmos.PushAsync c source.Token |> Async.AwaitTask
+                return (Some pushed)
         }
 
     let sync since =
@@ -86,7 +101,7 @@ type Service(state: StateTypes.State, clock, cosmos: ICosmosConnector) =
 
                 let state = stateSub.Value
                 let unsaved = stateSub.Value |> State.hasChanges
-                if unsaved then do! push state
+                if unsaved then do! (push state |> Async.Ignore)
 
                 if unsaved || (since |> Option.isNone) then
                     let! p = pull since
