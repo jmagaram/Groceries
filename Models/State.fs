@@ -308,6 +308,19 @@ let createSampleData loggedInUser =
 
         s |> mapNotSoldItems (DataTable.insert ns)
 
+    let purchaseHistory item days (s: State) =
+        let item = s |> findItem item
+
+        days
+        |> Seq.fold
+            (fun total d ->
+                let purchase =
+                    { Purchase.ItemId = item.ItemId
+                      PurchasedOn = now.AddDays(-d) }
+
+                total |> insertPurchase purchase)
+            s
+
     createDefault loggedInUser
     |> newCategory "Meat and Seafood"
     |> newCategory "Dairy"
@@ -330,6 +343,8 @@ let createSampleData loggedInUser =
     |> newStore "Walgreens"
     |> doesNotSellItem "QFC" "Dried flax seeds"
     |> doesNotSellItem "Costco" "Chocolate bars"
+    |> purchaseHistory "Ice cream" [ 7.0; 14.0 ]
+    |> purchaseHistory "Bananas" [ 3.0; 17.0; 21.0 ]
 
 let handleItemMessage now msg (s: State) =
     match msg with
@@ -616,9 +631,9 @@ let update: Update =
         let now = clock ()
 
         let rec go msg s =
-            (sprintf "Update: %A" msg)
-            |> String.ellipsize 100
-            |> dprintln
+            //(sprintf "Update: %A" msg)
+            //|> String.ellipsize 100
+            //|> dprintln
 
             match msg with
             | RecordPurchase msg -> s |> handleRecordPurchase now msg
