@@ -164,6 +164,10 @@ module DataTable =
     let upsertUnchanged v dt =
         let key = keyOf v
         let row = DataRow.unchanged v
+
+        //let currentRow = dt |> tryFindRow key
+        //let isSame = currentRow |> Option.map (fun r -> r = row) |> Option.defaultValue false
+
         dt |> asMap |> Map.add key row |> fromMap
 
     let current dt =

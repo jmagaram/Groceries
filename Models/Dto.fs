@@ -270,30 +270,14 @@ module Dto =
         | false -> None
         | true ->
             let import =
-                let timestamps = c |> timestamps |> Seq.choose id
+                let timestamps = c |> timestamps
 
                 { StateTypes.ImportChanges.ItemChanges = deserialize<_, _> deserializeItem c.Items
                   StateTypes.ImportChanges.CategoryChanges = deserialize<_, _> deserializeCategory c.Categories
                   StateTypes.ImportChanges.StoreChanges = deserialize<_, _> deserializeStore c.Stores
                   StateTypes.ImportChanges.NotSoldItemChanges = deserialize<_, _> deserializeNotSoldItem c.NotSoldItems
                   StateTypes.ImportChanges.PurchaseChanges = deserialize<_, _> deserializePurchase c.Purchases
-                  StateTypes.ImportChanges.LatestTimestamp =
-                      timestamps
-                      |> Seq.fold
-                          (fun m i ->
-                              m
-                              |> Option.map (fun m -> max m i)
-                              |> Option.orElse (Some i))
-                          None
-                  StateTypes.ImportChanges.EarliestTimestamp =
-                      timestamps
-                      |> Seq.fold
-                          (fun m i ->
-                              m
-                              |> Option.map (fun m -> min m i)
-                              |> Option.orElse (Some i))
-                          None
-
-                }
+                  StateTypes.ImportChanges.LatestTimestamp = timestamps |> Seq.max
+                  StateTypes.ImportChanges.EarliestTimestamp = timestamps |> Seq.min }
 
             Some import
