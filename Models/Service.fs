@@ -3,7 +3,6 @@
 open System
 open System.Threading.Tasks
 open System.Threading
-open System.Runtime.CompilerServices
 open FSharp.Control.Reactive
 open StateTypes
 open ServiceTypes
@@ -22,7 +21,7 @@ module Service =
     let pushed res = res |> pushedSeq |> Seq.toArray
 
 type Service(state: StateTypes.State, clock, cosmos: ICosmosConnector) =
-    let waitForPullIncremental = TimeSpan.FromSeconds(2.0) 
+    let waitForPullIncremental = TimeSpan.FromSeconds(2.0)
     let waitForPullEverything = TimeSpan.FromSeconds(10.0)
     let waitForPush = TimeSpan.FromSeconds(2.0)
 
@@ -59,7 +58,7 @@ type Service(state: StateTypes.State, clock, cosmos: ICosmosConnector) =
         | true -> Async.StartAsTask a :> Task
         | false -> Async.StartImmediateAsTask a :> Task
 
-    let pull since =
+    let pull since earlierThan =
         async {
             let timeout =
                 match since with
@@ -75,7 +74,7 @@ type Service(state: StateTypes.State, clock, cosmos: ICosmosConnector) =
                     cosmos.PullEverythingAsync source.Token
                 | Some since ->
                     "Synchronization: pulling incremental" |> dprintln
-                    cosmos.PullSinceAsync since source.Token
+                    cosmos.PullSinceAsync since earlierThan source.Token
                 |> Async.AwaitTask
 
             return changes |> Dto.changesAsImport
@@ -94,24 +93,37 @@ type Service(state: StateTypes.State, clock, cosmos: ICosmosConnector) =
                 return (Some pushed)
         }
 
-    let sync since =
+    let sync after =
         async {
             try
                 isSynchronizing.OnNext(true)
 
                 let state = stateSub.Value
-                let unsaved = stateSub.Value |> State.hasChanges
-                if unsaved then do! (push state |> Async.Ignore)
 
-                if unsaved || (since |> Option.isNone) then
-                    let! p = pull since
+                let! pushed =
+                    match stateSub.Value |> State.hasChanges with
+                    | true -> push state
+                    | false -> async { return None }
 
-                    // Note that resolving the pulled changes can cause
-                    // additional changes, such as if there are foreign key
-                    // problems that are fixed after import.
-                    match p with
-                    | Some p -> update (Import p) |> ignore
-                    | None -> ()
+                let pushedChanges =
+                    pushed |> Option.bind Dto.changesAsImport
+
+                do
+                    pushedChanges
+                    |> Option.iter (fun import -> update (Import import) |> ignore)
+
+                let before =
+                    pushedChanges
+                    |> Option.bind (fun pc -> pc.EarliestTimestamp)
+
+                let! p = pull after before
+
+                // Note that resolving the pulled changes can cause
+                // additional changes, such as if there are foreign key
+                // problems that are fixed after import.
+                match p with
+                | Some p -> update (Import p) |> ignore
+                | None -> ()
             finally
                 isSynchronizing.OnNext(false)
         }

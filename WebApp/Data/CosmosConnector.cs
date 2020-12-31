@@ -69,6 +69,8 @@ namespace WebApp.Data
 
         public async Task<Changes> PushAsync(Changes c, CancellationToken cancel)
         {
+            // Might be able to push this up into the service; no need to handling it here
+            // Also not tested at all to see how it handles connection issues
             using var cancelIfException = new CancellationTokenSource();
             using var cancelRoot = CancellationTokenSource.CreateLinkedTokenSource(cancel, cancelIfException.Token);
             try
@@ -120,29 +122,31 @@ namespace WebApp.Data
             }
         }
 
-        public async Task<Changes> PullSinceAsync(int lastSync, CancellationToken token) => await PullCore(lastSync, token);
+        public async Task<Changes> PullSinceAsync(int lastSync, FSharpOption<int> earlierThan, CancellationToken token) => await PullCore(lastSync, earlierThan.AsNullable(), token);
 
-        public async Task<Changes> PullEverythingAsync(CancellationToken token) => await PullCore(null, token);
+        public async Task<Changes> PullEverythingAsync(CancellationToken token) => await PullCore(null, new int?(), token);
 
-        private async Task<Changes> PullCore(int? lastSync, CancellationToken cancel)
+        private async Task<Changes> PullCore(int? lastSync, int? earlierThan, CancellationToken cancel)
         {
-            var items = await PullByKindCore<Item>(_customerId, lastSync, DocumentKind.Item, cancel);
-            var stores = await PullByKindCore<Store>(_customerId, lastSync, DocumentKind.Store, cancel);
-            var categories = await PullByKindCore<Category>(_customerId, lastSync, DocumentKind.Category, cancel);
-            var notSoldItems = await PullByKindCore<Unit>(_customerId, lastSync, DocumentKind.NotSoldItem, cancel);
-            var purchases = await PullByKindCore<Unit>(_customerId, lastSync, DocumentKind.Purchase, cancel);
+            var items = await PullByKindCore<Item>(_customerId, lastSync, earlierThan, DocumentKind.Item, cancel);
+            var stores = await PullByKindCore<Store>(_customerId, lastSync, earlierThan, DocumentKind.Store, cancel);
+            var categories = await PullByKindCore<Category>(_customerId, lastSync, earlierThan, DocumentKind.Category, cancel);
+            var notSoldItems = await PullByKindCore<Unit>(_customerId, lastSync, earlierThan, DocumentKind.NotSoldItem, cancel);
+            var purchases = await PullByKindCore<Unit>(_customerId, lastSync, earlierThan, DocumentKind.Purchase, cancel);
             var import = new Changes(items, categories, stores, notSoldItems, purchases);
             await ArtificialDelay();
             return import;
         }
 
-        private async Task<Document<T>[]> PullByKindCore<T>(string customerId, int? timestamp, DocumentKind kind, CancellationToken cancel)
+        private async Task<Document<T>[]> PullByKindCore<T>(string customerId, int? timestamp, int? earlierThan, DocumentKind kind, CancellationToken cancel)
         {
             var container = _client.GetContainer(_databaseId, _containerId);
             var query = container.GetItemLinqQueryable<Document<T>>()
                 .Where(i => i.Timestamp > (timestamp ?? int.MinValue))
+                .Where(i => i.Timestamp < (earlierThan ?? int.MaxValue))
                 .Where(i => i.CustomerId == customerId)
                 .Where(i => i.DocumentKind == kind);
+
             var docs = new List<Document<T>>();
             using (var iterator = query.ToFeedIterator())
             {

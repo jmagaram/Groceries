@@ -99,7 +99,8 @@ module DataTable =
 
     let keys dt = dt |> asMap |> Map.keys
 
-    let empty<'Key, 'T when 'Key: comparison> = Map.empty<'Key, DataRow<'T>> |> DataTable
+    let empty<'Key, 'T when 'Key: comparison> =
+        Map.empty<'Key, DataRow<'T>> |> DataTable
 
     let tryFindRow k dt = dt |> asMap |> Map.tryFind k
 
@@ -114,7 +115,12 @@ module DataTable =
 
         match dt |> rowHasKey k with
         | true -> Error DuplicateKey
-        | false -> dt |> asMap |> Map.add k (DataRow.added v) |> fromMap |> Ok
+        | false ->
+            dt
+            |> asMap
+            |> Map.add k (DataRow.added v)
+            |> fromMap
+            |> Ok
 
     let insert v dt =
         match dt |> tryInsert v with
@@ -124,8 +130,17 @@ module DataTable =
     let tryUpdate v dt =
         result {
             let k = v |> keyOf
-            let! row = dt |> tryFindRow k |> Option.asResult RowToUpdateNotFound
-            let! row = row |> DataRow.tryUpdate v |> Result.mapError (fun _ -> RowIsDeletedInTable)
+
+            let! row =
+                dt
+                |> tryFindRow k
+                |> Option.asResult RowToUpdateNotFound
+
+            let! row =
+                row
+                |> DataRow.tryUpdate v
+                |> Result.mapError (fun _ -> RowIsDeletedInTable)
+
             return dt |> asMap |> Map.add k row |> fromMap
         }
 
@@ -158,7 +173,10 @@ module DataTable =
 
     let tryDelete k dt =
         result {
-            let! r = dt |> tryFindRow k |> Option.asResult RowToDeleteNotFound
+            let! r =
+                dt
+                |> tryFindRow k
+                |> Option.asResult RowToDeleteNotFound
 
             return
                 match r |> DataRow.delete with
@@ -200,9 +218,17 @@ module DataTable =
         |> Map.values
         |> Seq.choose DataRow.isAddedOrModified
 
-    let isDeleted dt = dt |> asMap |> Map.values |> Seq.choose DataRow.isDeleted
+    let isDeleted dt =
+        dt
+        |> asMap
+        |> Map.values
+        |> Seq.choose DataRow.isDeleted
 
-    let tryFindCurrent k dt = dt |> asMap |> Map.tryFind k |> Option.bind DataRow.current
+    let tryFindCurrent k dt =
+        dt
+        |> asMap
+        |> Map.tryFind k
+        |> Option.bind DataRow.current
 
     let findCurrent k dt = tryFindCurrent k dt |> Option.get
 

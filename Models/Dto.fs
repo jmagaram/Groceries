@@ -13,7 +13,10 @@ module Dto =
         { Id = i.ItemId |> ItemId.serialize
           CustomerId = null
           DocumentKind = DtoTypes.DocumentKind.Item
-          Etag = i.Etag |> Option.map (Etag.tag) |> Option.defaultValue null
+          Etag =
+              i.Etag
+              |> Option.map (Etag.tag)
+              |> Option.defaultValue null
           IsDeleted = isDeleted
           Timestamp = Nullable<int>()
           Content =
@@ -22,14 +25,15 @@ module Dto =
                     i.CategoryId
                     |> Option.map CategoryId.serialize
                     |> Option.defaultValue null
-                Note = i.Note |> Option.map Note.asText |> Option.defaultValue null
+                Note =
+                    i.Note
+                    |> Option.map Note.asText
+                    |> Option.defaultValue null
                 Quantity =
                     i.Quantity
                     |> Option.map Quantity.asText
                     |> Option.defaultValue null
-                PostponeUntil = i.PostponeUntil |> Option.toNullable 
-              }
-        }
+                PostponeUntil = i.PostponeUntil |> Option.toNullable } }
 
     let deserializeItem (i: DtoTypes.Document<DtoTypes.Item>) =
         result {
@@ -37,10 +41,11 @@ module Dto =
                 i.Id
                 |> ItemId.deserialize
                 |> Option.map Ok
-                |> Option.defaultValue
-                    (i.Id
-                     |> sprintf "Could not deserialize the item ID '%s'"
-                     |> Error)
+                |> Option.defaultValue (
+                    i.Id
+                    |> sprintf "Could not deserialize the item ID '%s'"
+                    |> Error
+                )
 
             match i.IsDeleted with
             | true -> return (itemId |> Change.Delete)
@@ -48,8 +53,8 @@ module Dto =
                 let! itemName =
                     i.Content.ItemName
                     |> ItemName.tryParse
-                    |> Result.mapError (fun e ->
-                        sprintf "Could not deserialize the item name '%s'; error: %A" i.Content.ItemName e)
+                    |> Result.mapError
+                        (fun e -> sprintf "Could not deserialize the item name '%s'; error: %A" i.Content.ItemName e)
 
                 let! categoryId =
                     match i.Content.CategoryId |> String.isNullOrWhiteSpace with
@@ -58,10 +63,11 @@ module Dto =
                         i.Content.CategoryId
                         |> CategoryId.deserialize
                         |> Option.map (Some >> Ok)
-                        |> Option.defaultValue
-                            (i.Content.CategoryId
-                             |> sprintf "Could not deserialize the category ID '%s'"
-                             |> Error)
+                        |> Option.defaultValue (
+                            i.Content.CategoryId
+                            |> sprintf "Could not deserialize the category ID '%s'"
+                            |> Error
+                        )
 
                 let! note =
                     i.Content.Note
@@ -73,7 +79,8 @@ module Dto =
                     |> String.tryParseOptional Quantity.tryParse
                     |> Result.mapError (sprintf "Could not parse the quantity '%s'; error %A" i.Content.Quantity)
 
-                let postponeUntil = i.Content.PostponeUntil |> Option.ofNullable
+                let postponeUntil =
+                    i.Content.PostponeUntil |> Option.ofNullable
 
                 let item =
                     { StateItem.ItemId = itemId
@@ -91,7 +98,10 @@ module Dto =
         { Id = i.CategoryId |> CategoryId.serialize
           CustomerId = null
           DocumentKind = DtoTypes.DocumentKind.Category
-          Etag = i.Etag |> Option.map (Etag.tag) |> Option.defaultValue null
+          Etag =
+              i.Etag
+              |> Option.map (Etag.tag)
+              |> Option.defaultValue null
           IsDeleted = isDeleted
           Timestamp = Nullable<int>()
           Content = { CategoryName = i.CategoryName |> CategoryName.asText } }
@@ -102,15 +112,17 @@ module Dto =
                 i.Id
                 |> CategoryId.deserialize
                 |> Option.map Ok
-                |> Option.defaultValue
-                    (sprintf "Could not deserialize this category ID: %s" i.Id
-                     |> Error)
+                |> Option.defaultValue (
+                    sprintf "Could not deserialize this category ID: %s" i.Id
+                    |> Error
+                )
 
             let! categoryName =
                 i.Content.CategoryName
                 |> CategoryName.tryParse
-                |> Result.mapError (fun e ->
-                    (sprintf "Could not deserialize '%s' as a category name; error: %A" i.Content.CategoryName e))
+                |> Result.mapError
+                    (fun e ->
+                        (sprintf "Could not deserialize '%s' as a category name; error: %A" i.Content.CategoryName e))
 
             match i.IsDeleted with
             | true -> return Change.Delete categoryId
@@ -126,7 +138,10 @@ module Dto =
         { Id = i.StoreId |> StoreId.serialize
           CustomerId = null
           DocumentKind = DtoTypes.DocumentKind.Store
-          Etag = i.Etag |> Option.map (Etag.tag) |> Option.defaultValue null
+          Etag =
+              i.Etag
+              |> Option.map (Etag.tag)
+              |> Option.defaultValue null
           IsDeleted = isDeleted
           Timestamp = Nullable<int>()
           Content = { StoreName = i.StoreName |> StoreName.asText } }
@@ -137,15 +152,16 @@ module Dto =
                 i.Id
                 |> StoreId.deserialize
                 |> Option.map Ok
-                |> Option.defaultValue
-                    (sprintf "Could not deserialize this store ID: %s" i.Id
-                     |> Error)
+                |> Option.defaultValue (
+                    sprintf "Could not deserialize this store ID: %s" i.Id
+                    |> Error
+                )
 
             let! storeName =
                 i.Content.StoreName
                 |> StoreName.tryParse
-                |> Result.mapError (fun e ->
-                    (sprintf "Could not deserialize '%s' as a store name; error: %A" i.Content.StoreName e))
+                |> Result.mapError
+                    (fun e -> (sprintf "Could not deserialize '%s' as a store name; error: %A" i.Content.StoreName e))
 
             match i.IsDeleted with
             | true -> return Change.Delete storeId
@@ -225,9 +241,8 @@ module Dto =
             { DtoTypes.Changes.Items = collect State.itemsTable serializeItem
               DtoTypes.Changes.Categories = collect State.categoriesTable serializeCategory
               DtoTypes.Changes.Stores = collect State.storesTable serializeStore
-              DtoTypes.Changes.NotSoldItems = collect State.notSoldTable serializeNotSoldItem 
-              DtoTypes.Changes.Purchases = collect State.purchasesTable serializePurchase 
-            }
+              DtoTypes.Changes.NotSoldItems = collect State.notSoldTable serializeNotSoldItem
+              DtoTypes.Changes.Purchases = collect State.purchasesTable serializePurchase }
 
         match changes |> hasChanges with
         | true -> Some changes
@@ -235,30 +250,50 @@ module Dto =
 
     // maybe should take what works, not throw
     let private deserialize<'T, 'U> (f: DtoTypes.Document<'T> -> Result<'U, string>) (i: DtoTypes.Document<'T> seq) =
-        i |> Seq.map f |> Result.fromResults |> Result.okOrThrow
+        i
+        |> Seq.map f
+        |> Result.fromResults
+        |> Result.okOrThrow
+
+    let private timestamp (d: DtoTypes.Document<_>) = d.Timestamp |> Option.ofNullable
+
+    let private timestamps (c: DtoTypes.Changes) =
+        [ c.Items |> Seq.map timestamp
+          c.Purchases |> Seq.map timestamp
+          c.Categories |> Seq.map timestamp
+          c.NotSoldItems |> Seq.map timestamp
+          c.Stores |> Seq.map timestamp ]
+        |> Seq.concat
 
     let changesAsImport (c: DtoTypes.Changes) =
         match c |> hasChanges with
         | false -> None
         | true ->
             let import =
+                let timestamps = c |> timestamps |> Seq.choose id
+
                 { StateTypes.ImportChanges.ItemChanges = deserialize<_, _> deserializeItem c.Items
                   StateTypes.ImportChanges.CategoryChanges = deserialize<_, _> deserializeCategory c.Categories
                   StateTypes.ImportChanges.StoreChanges = deserialize<_, _> deserializeStore c.Stores
                   StateTypes.ImportChanges.NotSoldItemChanges = deserialize<_, _> deserializeNotSoldItem c.NotSoldItems
-                  StateTypes.ImportChanges.PurchaseChanges = deserialize<_,_> deserializePurchase c.Purchases
+                  StateTypes.ImportChanges.PurchaseChanges = deserialize<_, _> deserializePurchase c.Purchases
                   StateTypes.ImportChanges.LatestTimestamp =
-                      [ c.Items
-                        |> Seq.map (fun i -> i.Timestamp |> Option.ofNullable)
-                        c.Stores
-                        |> Seq.map (fun i -> i.Timestamp |> Option.ofNullable)
-                        c.Categories
-                        |> Seq.map (fun i -> i.Timestamp |> Option.ofNullable)
-                        c.NotSoldItems
-                        |> Seq.map (fun i -> i.Timestamp |> Option.ofNullable) ]
-                      |> Seq.concat
-                      |> Seq.choose id
-                      |> Seq.toList
-                      |> Seq.fold (fun m i -> m |> Option.map (fun m -> max m i) |> Option.orElse (Some i)) None }
+                      timestamps
+                      |> Seq.fold
+                          (fun m i ->
+                              m
+                              |> Option.map (fun m -> max m i)
+                              |> Option.orElse (Some i))
+                          None
+                  StateTypes.ImportChanges.EarliestTimestamp =
+                      timestamps
+                      |> Seq.fold
+                          (fun m i ->
+                              m
+                              |> Option.map (fun m -> min m i)
+                              |> Option.orElse (Some i))
+                          None
+
+                }
 
             Some import

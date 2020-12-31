@@ -46,7 +46,9 @@ and ImportChanges =
       StoreChanges: Change<Store, StoreId> list
       NotSoldItemChanges: Change<NotSoldItem, NotSoldItem> list
       PurchaseChanges : Change<Purchase,Purchase> list
-      LatestTimestamp: int option }
+      LatestTimestamp: int option 
+      EarliestTimestamp : int option
+    }
 
 and ItemEditPageMessage =
     | BeginEditItem of SerializedId
