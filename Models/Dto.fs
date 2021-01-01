@@ -211,6 +211,13 @@ module Dto =
 
     let withCustomerId id (i: DtoTypes.Document<_>) = { i with CustomerId = id }
 
+    let emptyChanges =
+        { DtoTypes.Changes.Items = [||]
+          DtoTypes.Changes.Categories = [||]
+          DtoTypes.Changes.Purchases = [||]
+          DtoTypes.Changes.Stores = [||]
+          DtoTypes.Changes.NotSoldItems = [||] }
+
     let hasChanges (changes: DtoTypes.Changes) =
         changes.Items.Length > 0
         || changes.Categories.Length > 0
