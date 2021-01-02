@@ -23,7 +23,7 @@ namespace WebApp {
             services.AddRazorPages();
             services.AddServerSideBlazor();
             services.AddApplicationInsightsTelemetry(Configuration["APPINSIGHTS_CONNECTIONSTRING"]);
-            services.AddSingleton<CosmosConnector>(i => new CosmosConnector(Configuration.GetValue<string>("CosmosConnectionString")));
+            services.AddSingleton<ICosmosConnector, CosmosConnector>(i => new CosmosConnector(Configuration.GetValue<string>("CosmosConnectionString")));
             services.AddScoped<Service>();
             services.AddServerSideBlazor().AddCircuitOptions(options => { options.DetailedErrors = true; });
         }
@@ -44,8 +44,7 @@ namespace WebApp {
 
             app.UseRouting();
 
-            app.UseEndpoints(endpoints =>
-            {
+            app.UseEndpoints(endpoints => {
                 endpoints.MapBlazorHub();
                 endpoints.MapFallbackToPage("/_Host");
             });
