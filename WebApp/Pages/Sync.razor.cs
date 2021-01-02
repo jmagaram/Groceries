@@ -13,7 +13,7 @@ namespace WebApp.Pages {
         public Service StateService { get; set; }
 
         [Inject]
-        public CosmosConnector Cosmos { get; set; }
+        public ICosmosConnector Cosmos { get; set; }
 
         private void LogMessage(string s) => Log.Insert(0, s);
 
@@ -22,16 +22,16 @@ namespace WebApp.Pages {
         private async Task ResetToEmpty() {
             LogMessage("Resetting database...");
             ModalStatusMessage = "Resetting database...";
-            await Cosmos.DeleteDatabaseAsync();
-            await Cosmos.CreateDatabaseAsync();
+            await (Cosmos as CosmosConnector).DeleteDatabaseAsync();
+            await (Cosmos as CosmosConnector).CreateDatabaseAsync();
             ModalStatusMessage = "";
         }
 
         private async Task ResetToSampleData() {
             ModalStatusMessage = "Resetting to sample data...";
             LogMessage("Resetting to sample data...");
-            await Cosmos.DeleteDatabaseAsync();
-            await Cosmos.CreateDatabaseAsync();
+            await (Cosmos as CosmosConnector).DeleteDatabaseAsync();
+            await (Cosmos as CosmosConnector).CreateDatabaseAsync();
             await StateService.UpdateAsync(StateTypes.StateMessage.ResetToSampleData);
             await StateService.SyncEverythingAsync();
             ModalStatusMessage = "";
