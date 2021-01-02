@@ -653,3 +653,5 @@ let update: Update =
             | Transaction msg -> msg |> Seq.fold (fun res i -> go i res) s
 
         go msg s
+
+let updateUsingStandardClock msg s = s |> update Miscellaneous.clock msg
