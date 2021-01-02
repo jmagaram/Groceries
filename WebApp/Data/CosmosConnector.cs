@@ -8,13 +8,13 @@ using Microsoft.Azure.Cosmos;
 using Microsoft.Azure.Cosmos.Linq;
 using Microsoft.FSharp.Core;
 using Models;
-using WebApp.Common;
-using static Models.DtoTypes;
 using static Models.ServiceTypes;
+using static Models.DtoTypes;
+using WebApp.Common;
 
 #nullable enable
 
-namespace WebApp.Data
+namespace WebApp.Server.Services
 {
     public class CosmosConnector : ICosmosConnector, IDisposable
     {
@@ -24,13 +24,7 @@ namespace WebApp.Data
         private bool _isDisposed;
         private const string _partitionKeyPath = "/CustomerId";
         private const string _customerId = "justin@magaram.com";
-
-#if DEBUG
-        private bool _delay = false;
-#else
-        private bool _delay = false;
-#endif
-        private int _delaySeconds = 3;
+        private const int timoutMs = 5000;
 
         public CosmosConnector(string connectionString)
         {
@@ -41,18 +35,6 @@ namespace WebApp.Data
         {
             _databaseId = databaseId;
             _client = new CosmosClient(endpointUri, primaryKey, new CosmosClientOptions() { ApplicationName = applicationName });
-        }
-
-        private async Task ArtificialDelay()
-        {
-            if (_delay)
-            {
-                await Task.Delay(_delaySeconds * 1000);
-            }
-            else
-            {
-                await Task.CompletedTask;
-            }
         }
 
         public async Task CreateDatabaseAsync()
@@ -67,24 +49,23 @@ namespace WebApp.Data
             await db.DeleteAsync();
         }
 
-        public async Task<Changes> PushAsync(Changes c, CancellationToken cancel)
+        public async Task<Changes> PushAsync(Changes c)
         {
             // Might be able to push this up into the service; no need to handling it here
             // Also not tested at all to see how it handles connection issues
-            using var cancelIfException = new CancellationTokenSource();
-            using var cancelRoot = CancellationTokenSource.CreateLinkedTokenSource(cancel, cancelIfException.Token);
+            using CancellationTokenSource cancel = new(timoutMs);
             try
             {
-                var items = await GetItems(cancelRoot.Token, c.Items);
-                var categories = await GetItems(cancelRoot.Token, c.Categories);
-                var purchases = await GetItems(cancelRoot.Token, c.Purchases);
-                var stores = await GetItems(cancelRoot.Token, c.Stores);
-                var notSoldItems = await GetItems(cancelRoot.Token, c.NotSoldItems);
+                var items = await GetItems(cancel.Token, c.Items);
+                var categories = await GetItems(cancel.Token, c.Categories);
+                var purchases = await GetItems(cancel.Token, c.Purchases);
+                var stores = await GetItems(cancel.Token, c.Stores);
+                var notSoldItems = await GetItems(cancel.Token, c.NotSoldItems);
                 return new Changes(items, categories, stores, notSoldItems, purchases);
             }
             catch (Exception e) when (e is not OperationCanceledException)
             {
-                cancelIfException.Cancel();
+                cancel.Cancel();
                 throw;
             }
 
@@ -122,19 +103,19 @@ namespace WebApp.Data
             }
         }
 
-        public async Task<Changes> PullSinceAsync(int lastSync, FSharpOption<int> earlierThan, CancellationToken token) => await PullCore(lastSync, earlierThan.AsNullable(), token);
+        public async Task<Changes> PullSinceAsync(int lastSync, FSharpOption<int> earlierThan) => await PullCore(lastSync, earlierThan.AsNullable());
 
-        public async Task<Changes> PullEverythingAsync(CancellationToken token) => await PullCore(null, new int?(), token);
+        public async Task<Changes> PullEverythingAsync() => await PullCore(null, new int?());
 
-        private async Task<Changes> PullCore(int? lastSync, int? earlierThan, CancellationToken cancel)
+        private async Task<Changes> PullCore(int? lastSync, int? earlierThan)
         {
-            var items = await PullByKindCore<Item>(_customerId, lastSync, earlierThan, DocumentKind.Item, cancel);
-            var stores = await PullByKindCore<Store>(_customerId, lastSync, earlierThan, DocumentKind.Store, cancel);
-            var categories = await PullByKindCore<Category>(_customerId, lastSync, earlierThan, DocumentKind.Category, cancel);
-            var notSoldItems = await PullByKindCore<Unit>(_customerId, lastSync, earlierThan, DocumentKind.NotSoldItem, cancel);
-            var purchases = await PullByKindCore<Unit>(_customerId, lastSync, earlierThan, DocumentKind.Purchase, cancel);
+            using CancellationTokenSource cancel = new(timoutMs);
+            var items = await PullByKindCore<Item>(_customerId, lastSync, earlierThan, DocumentKind.Item, cancel.Token);
+            var stores = await PullByKindCore<Store>(_customerId, lastSync, earlierThan, DocumentKind.Store, cancel.Token);
+            var categories = await PullByKindCore<Category>(_customerId, lastSync, earlierThan, DocumentKind.Category, cancel.Token);
+            var notSoldItems = await PullByKindCore<Unit>(_customerId, lastSync, earlierThan, DocumentKind.NotSoldItem, cancel.Token);
+            var purchases = await PullByKindCore<Unit>(_customerId, lastSync, earlierThan, DocumentKind.Purchase, cancel.Token);
             var import = new Changes(items, categories, stores, notSoldItems, purchases);
-            await ArtificialDelay();
             return import;
         }
 

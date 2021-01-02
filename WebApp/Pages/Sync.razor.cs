@@ -3,7 +3,8 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Components;
 using Models;
 using WebApp.Common;
-using WebApp.Data;
+using WebApp.Server.Services;
+using WebApp.Shared;
 using static Models.ServiceTypes;
 
 namespace WebApp.Pages {
@@ -12,7 +13,7 @@ namespace WebApp.Pages {
         public Service StateService { get; set; }
 
         [Inject]
-        public ICosmosConnector Cosmos { get; set; }
+        public CosmosConnector Cosmos { get; set; }
 
         private void LogMessage(string s) => Log.Insert(0, s);
 

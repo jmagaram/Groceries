@@ -5,13 +5,13 @@ using Models;
 using static Models.ServiceTypes;
 using static Models.CoreTypes;
 using WebApp.Common;
-using WebApp.Data;
 using Xunit;
 using System;
 using System.Linq;
 using System.Collections.Immutable;
 using System.Collections.Generic;
 using System.Diagnostics;
+using WebApp.Server.Services;
 
 namespace WebAppTest
 {
@@ -167,8 +167,8 @@ namespace WebAppTest
             // with the eTag values removed
             using var c = await CreateTargetAsync();
             var stateA = StateModule.createSampleData(UserIdModule.anonymous);
-            await Dto.pushRequest(stateA).DoAsync(changes => c.PushAsync(changes, CancellationToken.None));
-            var pulledChanges = await c.PullEverythingAsync(CancellationToken.None);
+            await Dto.pushRequest(stateA).DoAsync(changes => c.PushAsync(changes));
+            var pulledChanges = await c.PullEverythingAsync();
             var pulledChangesAsImport = Dto.changesAsImport(pulledChanges);
             var stateB = StateModule.importChanges(pulledChangesAsImport.Value, stateA);
             Assert.Equal(stateA.Items.Item.Count, stateB.Items.Item.Count);

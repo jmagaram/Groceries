@@ -60,21 +60,14 @@ type Service(state: StateTypes.State, clock, cosmos: ICosmosConnector) =
 
     let pull since earlierThan =
         async {
-            let timeout =
-                match since with
-                | None -> waitForPullEverything
-                | Some _ -> waitForPullIncremental
-
-            use source = new CancellationTokenSource(timeout)
-
             let! changes =
                 match since with
                 | None ->
                     "Synchronization: pulling everything" |> dprintln
-                    cosmos.PullEverythingAsync source.Token
+                    cosmos.PullEverythingAsync ()
                 | Some since ->
                     "Synchronization: pulling incremental" |> dprintln
-                    cosmos.PullSinceAsync since earlierThan source.Token
+                    cosmos.PullSinceAsync since earlierThan
                 |> Async.AwaitTask
 
             return changes |> Dto.changesAsImport
@@ -82,14 +75,12 @@ type Service(state: StateTypes.State, clock, cosmos: ICosmosConnector) =
 
     let push s =
         async {
-            use source = new CancellationTokenSource(waitForPush)
-
             "Synchronization: pushing" |> dprintln
 
             match s |> Dto.pushRequest with
             | None -> return None
             | Some c ->
-                let! pushed = cosmos.PushAsync c source.Token |> Async.AwaitTask
+                let! pushed = cosmos.PushAsync c |> Async.AwaitTask
                 return (Some pushed)
         }
 

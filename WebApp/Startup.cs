@@ -5,7 +5,8 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Models;
-using WebApp.Data;
+using WebApp.Server.Services;
+using WebApp.Shared;
 using static Models.ServiceTypes;
 
 namespace WebApp {
@@ -21,10 +22,10 @@ namespace WebApp {
         public void ConfigureServices(IServiceCollection services) {
             services.AddRazorPages();
             services.AddServerSideBlazor();
-            services.AddSingleton<ICosmosConnector, CosmosConnector>(i => new CosmosConnector(Configuration.GetValue<string>("CosmosConnectionString")));
+            services.AddApplicationInsightsTelemetry(Configuration["APPINSIGHTS_CONNECTIONSTRING"]);
+            services.AddSingleton<CosmosConnector>(i => new CosmosConnector(Configuration.GetValue<string>("CosmosConnectionString")));
             services.AddScoped<Service>();
             services.AddServerSideBlazor().AddCircuitOptions(options => { options.DetailedErrors = true; });
-            services.AddApplicationInsightsTelemetry(Configuration["APPINSIGHTS_CONNECTIONSTRING"]);
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
