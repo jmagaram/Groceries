@@ -124,7 +124,7 @@
 
     protected override async Task OnInitializedAsync() {
         await base.OnInitializedAsync();
-        await StateService.Initialize();
+        await StateService.InitializeAsync();
         Form = CategoryManagerWizard.FromState(StateService.State);
     }
 

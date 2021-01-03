@@ -39,7 +39,7 @@ namespace WebApp.Services {
         /// Performs and incremental synchronization but only if the service has
         /// not synchronized yet.
         /// </summary>
-        public async Task Initialize() {
+        public async Task InitializeAsync() {
             if (!_hasSynchronized) {
                 await SyncCoreAsync(isIncremental: true, ignoreIfSynchronizing: true);
             }

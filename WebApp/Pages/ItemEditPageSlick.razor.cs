@@ -12,7 +12,7 @@ namespace WebApp.Pages {
     public partial class ItemEditPageSlick : ComponentBase {
 
         protected override async Task OnInitializedAsync() {
-            await StateService.Initialize();
+            await StateService.InitializeAsync();
             if (!string.IsNullOrWhiteSpace(Id)) {
                 var pageMessage = PageMessage.NewBeginEditItem(Id);
                 var stateMessage = StateMessage.NewItemEditPageMessage(pageMessage);

@@ -33,7 +33,7 @@ namespace WebApp.Pages {
 
         protected override async Task OnInitializedAsync()
         {
-            await StateService.Initialize();
+            await StateService.InitializeAsync();
             await EndSearch();
         }
 
