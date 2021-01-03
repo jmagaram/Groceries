@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Azure.Cosmos;
@@ -19,7 +20,7 @@ namespace WebApp.Services {
         private bool _isDisposed;
         private const string _partitionKeyPath = "/CustomerId";
         private const string _customerId = "justin@magaram.com";
-        private const int timoutMs = 5000;
+        private TimeSpan _timeout = TimeSpan.FromSeconds(6);
 
         public CosmosConnector(string connectionString) {
             _client = new CosmosClient(connectionString);
@@ -41,25 +42,30 @@ namespace WebApp.Services {
         }
 
         public async Task<Changes> PushAsync(Changes c) {
-            // Might be able to push this up into the service; no need to handling it here
-            // Also not tested at all to see how it handles connection issues
-            using CancellationTokenSource cancel = new(timoutMs);
+            using CancellationTokenSource source = new(_timeout);
             try {
-                var items = await GetItems(cancel.Token, c.Items);
-                var categories = await GetItems(cancel.Token, c.Categories);
-                var purchases = await GetItems(cancel.Token, c.Purchases);
-                var stores = await GetItems(cancel.Token, c.Stores);
-                var notSoldItems = await GetItems(cancel.Token, c.NotSoldItems);
-                return new Changes(items, categories, stores, notSoldItems, purchases);
+                var items = GetItems(c.Items);
+                var categories = GetItems(c.Categories);
+                var purchases = GetItems(c.Purchases);
+                var stores = GetItems(c.Stores);
+                var notSoldItems = GetItems(c.NotSoldItems);
+                await Task.WhenAll(items, categories, purchases, stores, notSoldItems);
+                return new Changes(items.Result, categories.Result, stores.Result, notSoldItems.Result, purchases.Result);
             }
-            catch (Exception e) when (e is not OperationCanceledException) {
-                cancel.Cancel();
-                throw;
+            catch (OperationCanceledException) {
+                return Dto.emptyChanges;
             }
-
-            async Task<Document<T>[]> GetItems<T>(CancellationToken cancel, Document<T>[] x) {
+            catch (CosmosException e) when (e.StatusCode is HttpStatusCode.ServiceUnavailable or HttpStatusCode.InternalServerError or HttpStatusCode.TooManyRequests) {
+                source.Cancel();
+                return Dto.emptyChanges;
+            }
+            async Task<Document<T>[]> GetItems<T>(Document<T>[] x) {
+                var pushBulk = PushBulkCoreAsync(
+                    x.Select(i => Dto.withCustomerId(_customerId, i)),
+                    i => i.Etag,
+                    source.Token);
                 return
-                    (await PushBulkCoreAsync(x.Select(i => Dto.withCustomerId(_customerId, i)), i => i.Etag, cancel))
+                    (await pushBulk)
                     .OfType<PushSuccess<Document<T>>>()
                     .Select(i => i.Pull)
                     .ToArray();
@@ -85,34 +91,49 @@ namespace WebApp.Services {
                 var result = await task;
                 return new PushSuccess<T>(doc, result.Resource);
             }
-            catch (CosmosException e) when (e.StatusCode == System.Net.HttpStatusCode.PreconditionFailed) {
+            catch (CosmosException e) when (e.StatusCode == HttpStatusCode.PreconditionFailed) {
                 return new ConcurrencyConflict<T>(doc);
             }
         }
 
-        public async Task<Changes> PullIncrementalAsync(int after, int? before) => await PullCore(after, before);
+        public async Task<Changes> PullIncrementalAsync(int after, int? before) => await PullCoreAsync(after, before);
 
-        public async Task<Changes> PullEverythingAsync() => await PullCore(null, new int?());
+        public async Task<Changes> PullEverythingAsync() => await PullCoreAsync(null, null);
 
-        private async Task<Changes> PullCore(int? after, int? before) {
-            using CancellationTokenSource cancel = new(timoutMs);
-            var items = await PullByKindCore<Item>(_customerId, after, before, DocumentKind.Item, cancel.Token);
-            var stores = await PullByKindCore<Store>(_customerId, after, before, DocumentKind.Store, cancel.Token);
-            var categories = await PullByKindCore<Category>(_customerId, after, before, DocumentKind.Category, cancel.Token);
-            var notSoldItems = await PullByKindCore<Unit>(_customerId, after, before, DocumentKind.NotSoldItem, cancel.Token);
-            var purchases = await PullByKindCore<Unit>(_customerId, after, before, DocumentKind.Purchase, cancel.Token);
-            var import = new Changes(items, categories, stores, notSoldItems, purchases);
-            return import;
+        // Would be better for the return value to be a discriminated union
+        // indicating success or one of the expected error conditions; that
+        // would make it possible for the caller to implement smart logic for
+        // retry and going online and offline. Detailed list of exceptions at
+        // https://docs.microsoft.com/en-us/azure/cosmos-db/troubleshoot-dot-net-sdk
+        private async Task<Changes> PullCoreAsync(int? after, int? before) {
+            using CancellationTokenSource source = new(_timeout);
+            try {
+                var items = Pull<Item>(DocumentKind.Item);
+                var stores = Pull<Store>(DocumentKind.Store);
+                var categories = Pull<Category>(DocumentKind.Category);
+                var notSoldItems = Pull<Unit>(DocumentKind.NotSoldItem);
+                var purchases = Pull<Unit>(DocumentKind.Purchase);
+                await Task.WhenAll(items, stores, categories, notSoldItems, purchases);
+                var import = new Changes(items.Result, categories.Result, stores.Result, notSoldItems.Result, purchases.Result);
+                return import;
+            }
+            catch (OperationCanceledException) {
+                return Dto.emptyChanges;
+            }
+            catch (CosmosException e) when (e.StatusCode is HttpStatusCode.ServiceUnavailable or HttpStatusCode.InternalServerError or HttpStatusCode.TooManyRequests) {
+                source.Cancel();
+                return Dto.emptyChanges;
+            }
+            Task<Document<T>[]> Pull<T>(DocumentKind kind) => PullByKindCore<T>(_customerId, after, before, kind, source.Token);
         }
 
-        private async Task<Document<T>[]> PullByKindCore<T>(string customerId, int? timestamp, int? earlierThan, DocumentKind kind, CancellationToken cancel) {
+        private async Task<Document<T>[]> PullByKindCore<T>(string customerId, int? after, int? before, DocumentKind kind, CancellationToken cancel) {
             var container = _client.GetContainer(_databaseId, _containerId);
             var query = container.GetItemLinqQueryable<Document<T>>()
-                .Where(i => i.Timestamp > (timestamp ?? int.MinValue))
-                .Where(i => i.Timestamp < (earlierThan ?? int.MaxValue))
+                .Where(i => i.Timestamp > (after ?? int.MinValue))
+                .Where(i => i.Timestamp < (before ?? int.MaxValue))
                 .Where(i => i.CustomerId == customerId)
                 .Where(i => i.DocumentKind == kind);
-
             var docs = new List<Document<T>>();
             using (var iterator = query.ToFeedIterator()) {
                 while (iterator.HasMoreResults) {
