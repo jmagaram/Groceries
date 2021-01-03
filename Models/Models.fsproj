@@ -22,16 +22,12 @@
     <Compile Include="ShoppingList.fs" />
     <Compile Include="CategoryManager.fs" />
     <Compile Include="StoreManager.fs" />
-    <Compile Include="ServiceTypes.fs" />
-    <Compile Include="Service.fs" />
     <Compile Include="Extensions.fs" />
     <Compile Include="Experiment.fs" />
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="FSharp.Control.Reactive" Version="4.5.0" />
     <PackageReference Include="Newtonsoft.Json" Version="12.0.3" />
-    <PackageReference Include="System.Reactive" Version="5.0.0" />
   </ItemGroup>
 
   <ItemGroup>

@@ -2,6 +2,7 @@
 @using static Models.CoreTypes
 @using ViewModel = Models.ViewTypes.ItemQuickActionsView
 @using Common
+@using WebApp.Services 
 
 <ElixDrawer @ref="_drawer">
     @if (_viewModel == null)
@@ -39,7 +40,7 @@
                         <button ontouchstart="" class="splitButtonDefault" style="display:flex; justify-content:center; flex-grow:1" @onclick="async _ => await OnNotSoldAtSpecificStore.InvokeAsync((_viewModel.ItemId,store.StoreId))">
                             <ion-icon name="storefront-outline" />
                             @{
-                                int maxCharacters = StateService.CurrentState.LoggedInUserSettings().FontSize.IsNormalFontSize ? 14 : 12;
+                                int maxCharacters = StateService.State.LoggedInUserSettings().FontSize.IsNormalFontSize ? 14 : 12;
                                 bool showNeverAt = store.StoreName.AsText().Length <= maxCharacters;
                             }
                             @if (showNeverAt)
@@ -107,7 +108,7 @@
     public EventCallback<(ItemId, int)> OnPostponeDays { get; set; }
 
     [Inject]
-    public Service StateService { get; set; }
+    public StateService StateService { get; set; }
 
     [Parameter]
     public EventCallback<ItemId> OnAddToShoppingListNow { get; set; }

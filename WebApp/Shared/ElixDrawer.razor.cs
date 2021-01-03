@@ -8,7 +8,9 @@ namespace WebApp.Shared
 {
     public partial class ElixDrawer : ComponentBase, IDisposable, IAsyncDisposable
     {
+#pragma warning disable IDE0044 // Add readonly modifier
         ElementReference _drawer;
+#pragma warning restore IDE0044 // Add readonly modifier
         IJSObjectReference _elixModule;
         IJSObjectReference _generalModule;
         DotNetObjectReference<CallbackHelper<bool>> _openedChangeCallbackReference;

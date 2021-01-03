@@ -1,13 +1,9 @@
-using System;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using Models;
-using WebApp.Server.Services;
-using WebApp.Shared;
-using static Models.ServiceTypes;
+using WebApp.Services;
 
 namespace WebApp {
     public class Startup {
@@ -24,7 +20,7 @@ namespace WebApp {
             services.AddServerSideBlazor();
             services.AddApplicationInsightsTelemetry(Configuration["APPINSIGHTS_CONNECTIONSTRING"]);
             services.AddSingleton<ICosmosConnector, CosmosConnector>(i => new CosmosConnector(Configuration.GetValue<string>("CosmosConnectionString")));
-            services.AddScoped<Service>();
+            services.AddScoped<StateService>();
             services.AddServerSideBlazor().AddCircuitOptions(options => { options.DetailedErrors = true; });
         }
 

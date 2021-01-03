@@ -1,8 +1,9 @@
 ﻿@inherits LayoutComponentBase
 @using Models
 @using static Models.StateExtensions
-
-@if (StateService.CurrentState.LoggedInUserSettings().FontSize.IsLargeFontSize) {
+@using WebApp.Services
+ 
+@if (StateService.State.LoggedInUserSettings().FontSize.IsLargeFontSize) {
     <style>
         body {
             font-size:larger;
@@ -15,5 +16,5 @@
 
 @code {
     [Inject]
-    public Service StateService { get; set; }
+    public StateService StateService { get; set; }
 }

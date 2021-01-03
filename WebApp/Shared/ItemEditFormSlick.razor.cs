@@ -15,12 +15,14 @@ namespace WebApp.Shared
 {
     public partial class ItemEditFormSlick : ComponentBase
     {
+#pragma warning disable IDE0044 // Add readonly modifier
         private CategoryDrawer _categoryDrawer;
         private PostponeDrawer _postponeDrawer;
         private StoresDrawer _storesDrawer;
+#pragma warning restore IDE0044 // Add readonly modifier
 
         [Parameter]
-        public CoreTypes.ItemForm Form { get; set; }
+        public ItemForm Form { get; set; }
 
         [Parameter]
         public EventCallback OnDeleteCallback { get; set; }

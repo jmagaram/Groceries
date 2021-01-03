@@ -3,6 +3,7 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Components;
 using Models;
 using WebApp.Common;
+using WebApp.Services;
 using FormMessage = Models.ItemFormModule.Message;
 using PageMessage = Models.StateTypes.ItemEditPageMessage;
 using StateMessage = Models.StateTypes.StateMessage;
@@ -11,7 +12,7 @@ namespace WebApp.Pages {
     public partial class ItemEditPageSlick : ComponentBase {
 
         protected override async Task OnInitializedAsync() {
-            await StateService.InitializeAsync();
+            await StateService.Initialize();
             if (!string.IsNullOrWhiteSpace(Id)) {
                 var pageMessage = PageMessage.NewBeginEditItem(Id);
                 var stateMessage = StateMessage.NewItemEditPageMessage(pageMessage);
@@ -28,7 +29,7 @@ namespace WebApp.Pages {
         }
 
         [Inject]
-        public Service StateService { get; set; }
+        public StateService StateService { get; set; }
 
         [Inject]
         NavigationManager Navigation { get; set; }
@@ -39,7 +40,7 @@ namespace WebApp.Pages {
         [Parameter]
         public string Id { get; set; }
 
-        public CoreTypes.ItemForm Form => StateService.CurrentState.ItemEditPage?.Value;
+        public CoreTypes.ItemForm Form => StateService.State.ItemEditPage?.Value;
 
         protected async Task OnFormMessage(FormMessage message) {
             var pageMessage = PageMessage.NewItemEditFormMessage(message);

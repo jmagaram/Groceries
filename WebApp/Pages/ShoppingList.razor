@@ -30,7 +30,7 @@
         <button class="titleButton" ontouchstart="" @onclick="async _=>await OpenStoreNavigator()">@currentStoreName</button>
         <div>
             <SyncButton Style="" />
-            <button type="button" ontouchstart="" @onclick="async _ => await _viewOptionsDrawer.Open(StateService.CurrentState.LoggedInUserSettings().FontSize)" class="btn text-light"><ion-icon name="eye-outline"></ion-icon></button>
+            <button type="button" ontouchstart="" @onclick="async _ => await _viewOptionsDrawer.Open(StateService.State.LoggedInUserSettings().FontSize)" class="btn text-light"><ion-icon name="eye-outline"></ion-icon></button>
         </div>
     </div>
 }

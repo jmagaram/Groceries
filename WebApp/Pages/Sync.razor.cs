@@ -3,14 +3,13 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Components;
 using Models;
 using WebApp.Common;
-using WebApp.Server.Services;
+using WebApp.Services;
 using WebApp.Shared;
-using static Models.ServiceTypes;
 
 namespace WebApp.Pages {
     public partial class Sync : ComponentBase {
         [Inject]
-        public Service StateService { get; set; }
+        public StateService StateService { get; set; }
 
         [Inject]
         public ICosmosConnector Cosmos { get; set; }

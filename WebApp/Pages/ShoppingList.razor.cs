@@ -1,74 +1,63 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Reactive.Subjects;
-using System.Reactive.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.FSharp.Collections;
-using Microsoft.FSharp.Core;
 using Microsoft.JSInterop;
 using Models;
 using WebApp.Common;
 using WebApp.Shared;
 using static Models.CoreTypes;
-using static Models.ServiceTypes;
 using static Models.ViewTypes;
 using ItemMessage = Models.ItemModule.Message;
 using ShoppingListSettingsMessage = Models.ShoppingListSettingsModule.Message;
 using StateItemMessage = Models.StateTypes.ItemMessage;
 using StateMessage = Models.StateTypes.StateMessage;
-using System.Reactive.Disposables;
+using WebApp.Services;
 
-namespace WebApp.Pages
-{
+namespace WebApp.Pages {
     public partial class ShoppingList : ComponentBase, IDisposable
     {
+#pragma warning disable IDE0044 // Add readonly modifier
         ItemQuickActionDrawer _itemQuickActionDrawer;
         PostponeDrawer _postponeDrawer;
         StoresDrawer _storesDrawer;
         CategoryNavigatorDrawer _categoryNavigationDrawer;
         StoreNavigatorDrawer _storesNavigatorDrawer;
         ViewOptionsDrawer _viewOptionsDrawer;
+#pragma warning restore IDE0044 // Add readonly modifier
         ItemId? _quickEditContext;
-        CompositeDisposable _disposables;
-        Dictionary<CategoryId, ElementReference> _categoryReferences = new Dictionary<CategoryId, ElementReference>();
+        readonly Dictionary<CategoryId, ElementReference> _categoryReferences = new();
 
         protected override async Task OnInitializedAsync()
         {
-            await StateService.InitializeAsync();
+            await StateService.Initialize();
             await EndSearch();
         }
 
         protected override void OnInitialized()
         {
-            base.OnInitialized();
-            var state = StateService.State.Publish();
-            IDisposable updateCurrentState() =>
-                state.StartWith(StateService.CurrentState).Subscribe(i =>
-                {
-                    CurrentState = i;
-                    StateHasChanged();
-                });
-            IDisposable calcPostponeChanged() =>
-                ShoppingListModule.postponeChanged(state)
-                .Subscribe(i =>
-                {
-                    PostponeUntilChanged = i;
-                    StateHasChanged();
-                });
-            _disposables = new CompositeDisposable(
-                updateCurrentState(),
-                calcPostponeChanged(),
-                state.Connect()
-            );
+            StateService.OnChange += StartServiceHasChanged;
+        }
+
+        public void StartServiceHasChanged() {
+            PostponeUntilChanged = ShoppingListModule.postponeChangedCore(StateService.PriorState, StateService.State);
+            StateHasChanged();
+        }
+
+        protected override void OnAfterRender(bool firstRender) {
+            base.OnAfterRender(firstRender);
+            PostponeUntilChanged = null;
         }
 
         protected ShoppingListModule.ShoppingList ShoppingListView =>
             CurrentState.ShoppingList(DateTimeOffset.Now);
 
-        public void Dispose() => _disposables?.Dispose();
+        public void Dispose() {
+            StateService.OnChange -= StartServiceHasChanged;
+        }
 
         public bool IsSearchBarVisible => CurrentState.LoggedInUserSettings().ShoppingListSettings.IsTextFilterVisible;
 
@@ -129,7 +118,7 @@ namespace WebApp.Pages
         }
 
         [Inject]
-        public Service StateService { get; set; }
+        public StateService StateService { get; set; }
 
         [Inject]
         public IJSRuntime JS { get; set; }
@@ -137,9 +126,9 @@ namespace WebApp.Pages
         [Inject]
         NavigationManager Navigation { get; set; }
 
-        protected StateTypes.State CurrentState { get; private set; }
+        protected StateTypes.State CurrentState => StateService.State;
 
-        protected FSharpSet<ItemId> PostponeUntilChanged { get; set; }
+        protected FSharpSet<ItemId> PostponeUntilChanged { get; set; }          
 
         private async Task OnClickCategoryHeader()
         {
@@ -222,7 +211,7 @@ namespace WebApp.Pages
         private async Task OnClickChoosePostpone(ItemId itemId)
         {
             _quickEditContext = itemId;
-            string itemName = StateModule.tryFindItem(itemId, StateService.CurrentState).Value.ItemName.AsText();
+            string itemName = StateModule.tryFindItem(itemId, StateService.State).Value.ItemName.AsText();
             await _itemQuickActionDrawer.Close();
             bool isPostponed = StateModule.tryFindItem(itemId, CurrentState).Value.PostponeUntil.IsSome();
             await _postponeDrawer.Open(ItemModule.commonPostponeChoices, isPostponed, itemName);
@@ -342,7 +331,6 @@ namespace WebApp.Pages
 
         protected Guid StoreFilter =>
             ShoppingListView.StoreFilter.IsNone() ? Guid.Empty : ShoppingListView.StoreFilter.Value.StoreId.Item;
-
 
         protected List<Store> StoreFilterChoices =>
             ShoppingListView.Stores.OrderBy(i => i.StoreName).ToList();

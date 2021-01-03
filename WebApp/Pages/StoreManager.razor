@@ -131,7 +131,7 @@
 
 @code {
     [Inject]
-    public Service StateService { get; set; }
+    public WebApp.Services.StateService StateService { get; set; }
 
     [Inject]
     public NavigationManager Navigation { get; set; }
@@ -139,8 +139,8 @@
     protected override async Task OnInitializedAsync()
     {
         await base.OnInitializedAsync();
-        await StateService.InitializeAsync();
-        Form = StoreManagerWizard.FromState(StateService.CurrentState);
+        await StateService.Initialize();
+        Form = StoreManagerWizard.FromState(StateService.State);
     }
 
     private string NoStore = "_nostore_";

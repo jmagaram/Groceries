@@ -1,9 +1,7 @@
 ﻿namespace Models
 
 open System
-open System.Reactive.Linq
 open System.Text.RegularExpressions
-open FSharp.Control.Reactive
 open ViewTypes
 open CoreTypes
 
