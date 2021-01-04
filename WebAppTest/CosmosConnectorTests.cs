@@ -23,7 +23,6 @@ namespace WebAppTest {
     public class CosmosConnectorTests {
         private static readonly string _localEndpointUri = "https://localhost:8081";
         private static readonly string _localPrimaryKey = "C2y6yDjf5/R+ob0N8A7Cgv30VRDJIWEHLM+4QDU5DE2nQ9nDuVTqobD4b8mGGyPMbIZnqyMsEcaGQy67XIw/Jw==";
-        private const string _applicationName = "CosmosDBDotnetQuickstart";
         private const string _databaseId = "unitTestDb";
 
         [Fact]
@@ -143,7 +142,7 @@ namespace WebAppTest {
             Assert.Equal(stateA.Purchases.Item.Count, stateB.Purchases.Item.Count);
         }
 
-        private CosmosConnector TestConnector() => new CosmosConnector(_localEndpointUri, _localPrimaryKey, _applicationName, _databaseId);
+        private CosmosConnector TestConnector() => new CosmosConnector(_localEndpointUri, _localPrimaryKey, _databaseId);
 
         private async Task<CosmosConnector> CreateTargetAsync() {
             var c = TestConnector();

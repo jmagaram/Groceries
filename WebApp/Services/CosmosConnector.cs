@@ -6,6 +6,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Azure.Cosmos;
 using Microsoft.Azure.Cosmos.Linq;
+using Microsoft.Azure.Cosmos.Fluent;
 using Microsoft.FSharp.Core;
 using Models;
 using static Models.DtoTypes;
@@ -20,15 +21,16 @@ namespace WebApp.Services {
         private bool _isDisposed;
         private const string _partitionKeyPath = "/CustomerId";
         private const string _customerId = "justin@magaram.com";
+        private const string _applicationName = "groceries";
         private TimeSpan _timeout = TimeSpan.FromSeconds(6);
 
         public CosmosConnector(string connectionString) {
-            _client = new CosmosClient(connectionString);
+            _client = new CosmosClientBuilder(connectionString).WithApplicationName(_applicationName).Build();
         }
 
-        public CosmosConnector(string endpointUri, string primaryKey, string applicationName, string databaseId = "db") {
+        public CosmosConnector(string endpointUri, string primaryKey, string databaseId = "db") {
             _databaseId = databaseId;
-            _client = new CosmosClient(endpointUri, primaryKey, new CosmosClientOptions() { ApplicationName = applicationName });
+            _client = new CosmosClientBuilder(endpointUri, primaryKey).WithApplicationName(_applicationName).Build();
         }
 
         public async Task CreateDatabaseAsync() {
