@@ -22,7 +22,7 @@ namespace WebApp.Services {
         private const string _partitionKeyPath = "/CustomerId";
         private const string _customerId = "justin@magaram.com";
         private const string _applicationName = "groceries";
-        private TimeSpan _timeout = TimeSpan.FromSeconds(6);
+        private readonly TimeSpan _timeout = TimeSpan.FromSeconds(6);
 
         public CosmosConnector(string connectionString) {
             _client = new CosmosClientBuilder(connectionString).WithApplicationName(_applicationName).Build();
