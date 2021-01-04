@@ -8,8 +8,6 @@ using WebApp.Common;
 
 namespace WebApp.Services {
 
-    // try catch errors due to network connectivity?
-
     public class StateService {
         private readonly ICosmosConnector _cosmos;
         private bool _hasSynchronized;
@@ -33,8 +31,6 @@ namespace WebApp.Services {
 
         public StateTypes.State State { get; private set; }
 
-        public StateTypes.State? PriorState { get; private set; }
-
         /// <summary>
         /// Performs and incremental synchronization but only if the service has
         /// not synchronized yet.
@@ -46,7 +42,6 @@ namespace WebApp.Services {
         }
 
         public async Task UpdateAsync(StateTypes.StateMessage message) {
-            PriorState = State;
             State = StateModule.updateUsingStandardClock(message, State);
             OnChange?.Invoke();
             await SyncCoreAsync(isIncremental: true, ignoreIfSynchronizing: false);
@@ -98,7 +93,6 @@ namespace WebApp.Services {
             var import = Dto.changesAsImport(pullResponse);
             if (import.IsSome()) {
                 var message = StateTypes.StateMessage.NewImport(import.Value);
-                PriorState = State;
                 State = StateModule.updateUsingStandardClock(message, State);
                 OnChange?.Invoke();
             }
@@ -116,7 +110,6 @@ namespace WebApp.Services {
                 var import = Dto.changesAsImport(pushResponse);
                 if (import.IsSome()) {
                     var message = StateTypes.StateMessage.NewImport(import.Value);
-                    PriorState = State;
                     State = StateModule.updateUsingStandardClock(message, State);
                     OnChange?.Invoke();
                     return import.Value.EarliestTimestamp.AsNullable();

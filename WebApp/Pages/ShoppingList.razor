@@ -1,10 +1,9 @@
 ﻿@page "/shoppinglist"
 @using Models
 @using Common
-@using Microsoft.FSharp.Core;
 @using WebApp.Shared;
 @using static Models.CoreTypes;
-@using static Models.ShoppingListSettingsModule;
+@*@using static Models.ShoppingListSettingsModule;*@
 
 @{
     string searchClass = IsSearchBarVisible ? "search" : "";
@@ -29,7 +28,7 @@
     <div class="regular-bar bg-dark @searchClass">
         <button class="titleButton" ontouchstart="" @onclick="async _=>await OpenStoreNavigator()">@currentStoreName</button>
         <div>
-            <SyncButton Style="" />
+            <SyncButton />
             <button type="button" ontouchstart="" @onclick="async _ => await _viewOptionsDrawer.Open(StateService.State.LoggedInUserSettings().FontSize)" class="btn text-light"><ion-icon name="eye-outline"></ion-icon></button>
         </div>
     </div>
@@ -109,9 +108,9 @@
                        OnPostponeDays="async i=>await OnClickPostponeDays(i)"
                        OnCustomizeStores="async i=>await OnCustomizeStores(i)"
                        OnNotSoldAtSpecificStore="async i=>await OnNotSoldAtSpecificStore(i)"
-                       @ref="_itemQuickActionDrawer"></ItemQuickActionDrawer>
-<PostponeDrawer Selected="async d => await OnPostponeDurationChosen(d)" @ref="_postponeDrawer"></PostponeDrawer>
-<CategoryNavigatorDrawer OnSelect="async id => await OnNavigateToCategory(id)" OnManageCategories="OnManageCategories" @ref="_categoryNavigationDrawer"></CategoryNavigatorDrawer>
-<StoreNavigatorDrawer OnSelect="async id => await OnChooseStore(id)" OnManageStores="_ => OnManageStores()" @ref="_storesNavigatorDrawer"></StoreNavigatorDrawer>
-<StoresDrawer @ref="_storesDrawer" Closed="OnSpecificStoresSelected"></StoresDrawer>
-<ViewOptionsDrawer ChooseFontSize="async s => await UseFontSize(s)" OnHideUpcoming="async _ => await SwitchToShoppingMode()" OnSelectUpcomingDays="async d=>await SwitchToPlanningMode(d)" @ref="_viewOptionsDrawer"></ViewOptionsDrawer>
+                       @ref="_itemQuickActionDrawer"/>
+<PostponeDrawer Selected="async d => await OnPostponeDurationChosen(d)" @ref="_postponeDrawer"/>
+<CategoryNavigatorDrawer OnSelect="async id => await OnNavigateToCategory(id)" OnManageCategories="OnManageCategories" @ref="_categoryNavigationDrawer"/>
+<StoreNavigatorDrawer OnSelect="async id => await OnChooseStore(id)" OnManageStores="_ => OnManageStores()" @ref="_storesNavigatorDrawer"/>
+<StoresDrawer @ref="_storesDrawer" Closed="OnSpecificStoresSelected"/>
+<ViewOptionsDrawer ChooseFontSize="async s => await UseFontSize(s)" OnHideUpcoming="async _ => await SwitchToShoppingMode()" OnSelectUpcomingDays="async d=>await SwitchToPlanningMode(d)" @ref="_viewOptionsDrawer"/>
