@@ -207,8 +207,10 @@ namespace WebApp.Pages {
         }
 
         private async Task OnClickAddToShoppingList(ItemId itemId) {
-            var msg = StateMessage.NewItemMessage(StateItemMessage.NewModifyItem(itemId, ItemMessage.RemovePostpone));
-            await StateService.UpdateAsync(msg);
+            var removePostponeMsg = StateMessage.NewItemMessage(StateItemMessage.NewModifyItem(itemId, ItemMessage.RemovePostpone));
+            var endSearchMsg = StateMessage.NewUserSettingsMessage(UserSettingsModule.Message.NewShoppingListSettingsMessage(ShoppingListSettingsMessage.EndSearch));
+            var transaction = StateMessage.NewTransaction(new List<StateMessage> { removePostponeMsg, endSearchMsg });
+            await StateService.UpdateAsync(transaction);
         }
 
         private async Task OnClickPostponeDays((ItemId itemId, int days) i) {
