@@ -9,7 +9,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Client\GroceryApp.Client.csproj" />
     <ProjectReference Include="..\Shared\GroceryApp.Shared.csproj" />
   </ItemGroup>
 
