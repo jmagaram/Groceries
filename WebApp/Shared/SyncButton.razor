@@ -16,7 +16,7 @@ else {
         throw new NotImplementedException("Unexpected synchronization status; can't choose color for it.");
     <button class="btn text-light @color" style="@Style" type="button"
             disabled="@(SyncStatus == SynchronizationStatus.Synchronizing)" @onclick:preventDefault
-            @onclick="StateService.SyncIncrementalAsync">
+            @onclick="Synchronize">
         <ion-icon name="cloud-upload-outline"></ion-icon>
     </button>
 }
@@ -25,6 +25,11 @@ else {
     protected override void OnInitialized() {
         StateService.OnChange += StateHasChanged;
     }
+
+    private Task Synchronize(MouseEventArgs _) =>
+        (StateService.SynchronizationStatus == SynchronizationStatus.HasChanges)
+        ? StateService.SyncEverythingAsync()
+        : StateService.SyncIncrementalAsync();
 
     public void Dispose() {
         StateService.OnChange -= StateHasChanged;
