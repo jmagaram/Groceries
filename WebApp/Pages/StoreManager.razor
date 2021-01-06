@@ -139,7 +139,7 @@
     protected override async Task OnInitializedAsync()
     {
         await base.OnInitializedAsync();
-        await StateService.InitializeAsync();
+        await StateService.InitializeAsync("justin@magaram.com");
         Form = StoreManagerWizard.FromState(StateService.State);
     }
 

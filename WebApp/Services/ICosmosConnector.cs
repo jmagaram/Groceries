@@ -5,8 +5,8 @@ using static Models.DtoTypes;
 
 namespace WebApp.Services {
     public interface ICosmosConnector {
-        Task<Changes> PullIncrementalAsync(int after, int? before);
-        Task<Changes> PullEverythingAsync();
-        Task<Changes> PushAsync(Changes changes);
+        Task<Changes> PullIncrementalAsync(string familyId, int after, int? before);
+        Task<Changes> PullEverythingAsync(string familyId);
+        Task<Changes> PushAsync(string familyId, Changes changes);
     }
 }

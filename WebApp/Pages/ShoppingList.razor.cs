@@ -34,7 +34,7 @@ namespace WebApp.Pages {
         readonly Dictionary<CategoryId, ElementReference> _categoryReferences = new();
 
         protected override async Task OnInitializedAsync() {
-            await StateService.InitializeAsync();
+            await StateService.InitializeAsync("justin@magaram.com");
             await EndSearch();
         }
 

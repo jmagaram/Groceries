@@ -20,7 +20,6 @@ namespace WebApp.Services {
         private readonly string _containerId = "items";
         private bool _isDisposed;
         private const string _partitionKeyPath = "/CustomerId";
-        private const string _customerId = "justin@magaram.com";
         private const string _applicationName = "groceries";
         private readonly TimeSpan _timeout = TimeSpan.FromSeconds(6);
 
@@ -43,8 +42,9 @@ namespace WebApp.Services {
             await db.DeleteAsync();
         }
 
-        public async Task<Changes> PushAsync(Changes c) {
+        public async Task<Changes> PushAsync(string familyId, Changes c) {
             using CancellationTokenSource source = new(_timeout);
+            c = Dto.affixFamilyId(familyId, c);
             try {
                 var items = GetItems(c.Items);
                 var categories = GetItems(c.Categories);
@@ -61,9 +61,9 @@ namespace WebApp.Services {
                 source.Cancel();
                 return Dto.emptyChanges;
             }
-            async Task<Document<T>[]> GetItems<T>(Document<T>[] x) {
+            async Task<Document<T>[]> GetItems<T>(Document<T>[] docs) {
                 var pushBulk = PushBulkCoreAsync(
-                    x.Select(i => Dto.withCustomerId(_customerId, i)),
+                    docs,
                     i => i.Etag,
                     source.Token);
                 return
@@ -98,16 +98,16 @@ namespace WebApp.Services {
             }
         }
 
-        public async Task<Changes> PullIncrementalAsync(int after, int? before) => await PullCoreAsync(after, before);
+        public async Task<Changes> PullIncrementalAsync(string familyId, int after, int? before) => await PullCoreAsync(familyId, after, before);
 
-        public async Task<Changes> PullEverythingAsync() => await PullCoreAsync(null, null);
+        public async Task<Changes> PullEverythingAsync(string familyId) => await PullCoreAsync(familyId, null, null);
 
         // Would be better for the return value to be a discriminated union
         // indicating success or one of the expected error conditions; that
         // would make it possible for the caller to implement smart logic for
         // retry and going online and offline. Detailed list of exceptions at
         // https://docs.microsoft.com/en-us/azure/cosmos-db/troubleshoot-dot-net-sdk
-        private async Task<Changes> PullCoreAsync(int? after, int? before) {
+        private async Task<Changes> PullCoreAsync(string familyId, int? after, int? before) {
             using CancellationTokenSource source = new(_timeout);
             try {
                 var items = Pull<Item>(DocumentKind.Item);
@@ -126,15 +126,15 @@ namespace WebApp.Services {
                 source.Cancel();
                 return Dto.emptyChanges;
             }
-            Task<Document<T>[]> Pull<T>(DocumentKind kind) => PullByKindCore<T>(_customerId, after, before, kind, source.Token);
+            Task<Document<T>[]> Pull<T>(DocumentKind kind) => PullByKindCore<T>(familyId, after, before, kind, source.Token);
         }
 
-        private async Task<Document<T>[]> PullByKindCore<T>(string customerId, int? after, int? before, DocumentKind kind, CancellationToken cancel) {
+        private async Task<Document<T>[]> PullByKindCore<T>(string familyId, int? after, int? before, DocumentKind kind, CancellationToken cancel) {
             var container = _client.GetContainer(_databaseId, _containerId);
-            var query = container.GetItemLinqQueryable<Document<T>>()
+            var requestOptions = new QueryRequestOptions { PartitionKey = new PartitionKey(familyId) };
+            var query = container.GetItemLinqQueryable<Document<T>>(requestOptions: requestOptions)
                 .Where(i => i.Timestamp > (after ?? int.MinValue))
                 .Where(i => i.Timestamp < (before ?? int.MaxValue))
-                .Where(i => i.CustomerId == customerId)
                 .Where(i => i.DocumentKind == kind);
             var docs = new List<Document<T>>();
             using (var iterator = query.ToFeedIterator()) {

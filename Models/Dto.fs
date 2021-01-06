@@ -209,7 +209,18 @@ module Dto =
             | false -> return id |> Change.Upsert
         }
 
-    let withCustomerId id (i: DtoTypes.Document<_>) = { i with CustomerId = id }
+    let private affixFamilyIdToDocument id (i: DtoTypes.Document<_>) =
+        if i.CustomerId = id then i else { i with CustomerId = id }
+
+    let affixFamilyId familyId (i: DtoTypes.Changes) =
+        { i with
+              Items = i.Items |> Array.map (affixFamilyIdToDocument familyId)
+              Categories = i.Categories |> Array.map (affixFamilyIdToDocument familyId)
+              Purchases = i.Purchases |> Array.map (affixFamilyIdToDocument familyId)
+              Stores = i.Stores |> Array.map (affixFamilyIdToDocument familyId)
+              NotSoldItems =
+                  i.NotSoldItems
+                  |> Array.map (affixFamilyIdToDocument familyId) }
 
     let emptyChanges =
         { DtoTypes.Changes.Items = [||]

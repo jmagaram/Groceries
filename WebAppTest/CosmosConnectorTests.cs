@@ -11,8 +11,10 @@ using System.Collections.Immutable;
 using System.Collections.Generic;
 using System.Diagnostics;
 using WebApp.Services;
+using System.Diagnostics.CodeAnalysis;
 
 namespace WebAppTest {
+    [SuppressMessage("Style", "IDE1006:Naming Styles", Justification = "CosmosDb requires a case-sensitive property name.")]
     public record Document(string id, string Title, string _eTag, string CustomerId = "justin") {
         public static Document Random() => new($"ID {Guid.NewGuid()}", $"TITLE {Guid.NewGuid()}", "");
         public Document ClearEtag() => this with { _eTag = "" };
@@ -24,6 +26,7 @@ namespace WebAppTest {
         private static readonly string _localEndpointUri = "https://localhost:8081";
         private static readonly string _localPrimaryKey = "C2y6yDjf5/R+ob0N8A7Cgv30VRDJIWEHLM+4QDU5DE2nQ9nDuVTqobD4b8mGGyPMbIZnqyMsEcaGQy67XIw/Jw==";
         private const string _databaseId = "unitTestDb";
+        private const string _familyId = "testfamily";
 
         [Fact]
         public async Task CanCreateDatabase() {
@@ -131,8 +134,8 @@ namespace WebAppTest {
             // with the eTag values removed
             using var c = await CreateTargetAsync();
             var stateA = StateModule.createSampleData(UserIdModule.anonymous);
-            await Dto.pushRequest(stateA).DoAsync(changes => c.PushAsync(changes));
-            var pulledChanges = await c.PullEverythingAsync();
+            await Dto.pushRequest(stateA).DoAsync(changes => c.PushAsync(_familyId, changes));
+            var pulledChanges = await c.PullEverythingAsync(_familyId);
             var pulledChangesAsImport = Dto.changesAsImport(pulledChanges);
             var stateB = StateModule.importChanges(pulledChangesAsImport.Value, stateA);
             Assert.Equal(stateA.Items.Item.Count, stateB.Items.Item.Count);

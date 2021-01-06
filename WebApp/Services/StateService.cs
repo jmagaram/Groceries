@@ -11,6 +11,7 @@ namespace WebApp.Services {
     public class StateService {
         private readonly ICosmosConnector _cosmos;
         private bool _hasSynchronized;
+        private string? _familyId;
 
         public StateService(StateTypes.State state, ICosmosConnector cosmos) {
             _cosmos = cosmos;
@@ -35,8 +36,9 @@ namespace WebApp.Services {
         /// Performs and incremental synchronization but only if the service has
         /// not synchronized yet.
         /// </summary>
-        public async Task InitializeAsync() {
-            if (!_hasSynchronized) {
+        public async Task InitializeAsync(string familyId) {
+            if (!_hasSynchronized || familyId != _familyId) {
+                _familyId = familyId;
                 await SyncCoreAsync(isIncremental: true, ignoreIfSynchronizing: true);
             }
         }
@@ -86,10 +88,13 @@ namespace WebApp.Services {
         /// <param name="after">Modification timestamp in Unix seconds</param>
         /// <param name="before">Modification timestamp in Unix seconds</param>
         private async Task PullCoreAsync(int? after, int? before) {
+            if (_familyId == null) {
+                throw new InvalidOperationException("No familyId has been specified; the service must be initialized first with a valid familyId.");
+            }
             var pullResponse =
                 (after is null && before is null)
-                ? await _cosmos.PullEverythingAsync()
-                : await _cosmos.PullIncrementalAsync(after ?? int.MinValue, before);
+                ? await _cosmos.PullEverythingAsync(_familyId)
+                : await _cosmos.PullIncrementalAsync(_familyId, after ?? int.MinValue, before);
             var import = Dto.changesAsImport(pullResponse);
             if (import.IsSome()) {
                 var message = StateTypes.StateMessage.NewImport(import.Value);
@@ -104,9 +109,12 @@ namespace WebApp.Services {
         /// </summary>
         /// <returns>The earliest timestamp of the pushed documents.</returns>
         private async Task<int?> PushCoreAsync() {
+            if (_familyId == null) {
+                throw new InvalidOperationException("No familyId has been specified; the service must be initialized first with a valid familyId.");
+            }
             var pushRequest = Dto.pushRequest(State);
             if (pushRequest.IsSome()) {
-                var pushResponse = await _cosmos.PushAsync(pushRequest.Value);
+                var pushResponse = await _cosmos.PushAsync(_familyId, pushRequest.Value);
                 var import = Dto.changesAsImport(pushResponse);
                 if (import.IsSome()) {
                     var message = StateTypes.StateMessage.NewImport(import.Value);
