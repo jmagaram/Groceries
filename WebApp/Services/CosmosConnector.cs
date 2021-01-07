@@ -46,11 +46,11 @@ namespace WebApp.Services {
             using CancellationTokenSource source = new(_timeout);
             c = Dto.affixFamilyId(familyId, c);
             try {
-                var items = GetItems(c.Items);
-                var categories = GetItems(c.Categories);
-                var purchases = GetItems(c.Purchases);
-                var stores = GetItems(c.Stores);
-                var notSoldItems = GetItems(c.NotSoldItems);
+                var items = GetPushResponse(c.Items);
+                var categories = GetPushResponse(c.Categories);
+                var purchases = GetPushResponse(c.Purchases);
+                var stores = GetPushResponse(c.Stores);
+                var notSoldItems = GetPushResponse(c.NotSoldItems);
                 await Task.WhenAll(items, categories, purchases, stores, notSoldItems);
                 return new Changes(items.Result, categories.Result, stores.Result, notSoldItems.Result, purchases.Result);
             }
@@ -61,46 +61,52 @@ namespace WebApp.Services {
                 source.Cancel();
                 return Dto.emptyChanges;
             }
-            async Task<Document<T>[]> GetItems<T>(Document<T>[] docs) {
+            async Task<Document<T>[]> GetPushResponse<T>(Document<T>[] docs) {
                 var pushBulk = PushBulkCoreAsync(
-                    docs,
-                    i => i.Etag,
-                    source.Token);
+                    docs: docs,
+                    properties: i => new CosmosDocumentProperties(Id: i.Id, Etag: i.Etag, PartitionKey: i.CustomerId),
+                    cancel: source.Token);
+                var results = (await pushBulk);
                 return
-                    (await pushBulk)
-                    .OfType<PushSuccess<Document<T>>>()
-                    .Select(i => i.Pull)
+                    results
+                    .Select(i => i.ServerVersion())
                     .ToArray();
             }
         }
 
         public Task<PushResult<T>[]> PushBulkCoreAsync<T>(
             IEnumerable<T> docs,
-            Func<T, string> etag,
+             Func<T, CosmosDocumentProperties> properties,
             CancellationToken cancel) {
-            var upserts = docs.Select(i => PushCoreAsync(i, etag, cancel));
+            var upserts = docs.Select(i => PushCoreAsync(i, properties, cancel));
             return Task.WhenAll(upserts);
         }
 
-        public async Task<PushResult<T>> PushCoreAsync<T>(T doc, Func<T, string> etag, CancellationToken cancel) {
+        public async Task<PushResult<T>> PushCoreAsync<T>(T doc, Func<T, CosmosDocumentProperties> properties, CancellationToken cancel) {
+            var props = properties(doc);
             var container = _client.GetContainer(_databaseId, _containerId);
+            var options = new ItemRequestOptions { IfMatchEtag = props.Etag };
+            var key = new PartitionKey(props.PartitionKey);
             try {
-                var options = new ItemRequestOptions { IfMatchEtag = etag(doc) };
                 var task = container.UpsertItemAsync(
                     item: doc,
+                    partitionKey: key,
                     requestOptions: options,
                     cancellationToken: cancel);
                 var result = await task;
                 return new PushSuccess<T>(doc, result.Resource);
             }
             catch (CosmosException e) when (e.StatusCode == HttpStatusCode.PreconditionFailed) {
-                return new ConcurrencyConflict<T>(doc);
+                var serverDoc = await container.ReadItemAsync<T>(id: props.Id, partitionKey: key, cancellationToken: cancel);
+                return new ConcurrencyConflict<T>(doc, serverDoc.Resource);
             }
         }
 
-        public async Task<Changes> PullIncrementalAsync(string familyId, int after, int? before) => await PullCoreAsync(familyId, after, before);
+        public async Task<Changes> PullIncrementalAsync(string familyId, int after, int? before)
+            => await PullCoreAsync(familyId, after, before);
 
-        public async Task<Changes> PullEverythingAsync(string familyId) => await PullCoreAsync(familyId, null, null);
+        public async Task<Changes> PullEverythingAsync(string familyId)
+            => await PullCoreAsync(familyId, null, null);
 
         // Would be better for the return value to be a discriminated union
         // indicating success or one of the expected error conditions; that

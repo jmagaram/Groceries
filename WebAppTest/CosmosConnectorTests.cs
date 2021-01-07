@@ -1,17 +1,16 @@
+using System;
+using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Data;
+using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Models;
-using static Models.CoreTypes;
 using WebApp.Common;
-using Xunit;
-using System;
-using System.Linq;
-using System.Collections.Immutable;
-using System.Collections.Generic;
-using System.Diagnostics;
 using WebApp.Services;
-using System.Diagnostics.CodeAnalysis;
+using Xunit;
 
 namespace WebAppTest {
     [SuppressMessage("Style", "IDE1006:Naming Styles", Justification = "CosmosDb requires a case-sensitive property name.")]
@@ -20,6 +19,7 @@ namespace WebAppTest {
         public Document ClearEtag() => this with { _eTag = "" };
         public Document WithRandomEtag() => this with { _eTag = Guid.NewGuid().ToString() };
         public bool HasAnEtag => !string.IsNullOrWhiteSpace(this._eTag);
+        public CosmosDocumentProperties Properties => new(Id: id, Etag: _eTag, PartitionKey: CustomerId);
     }
 
     public class CosmosConnectorTests {
@@ -39,9 +39,9 @@ namespace WebAppTest {
             using var c = await CreateTargetAsync();
             using var source = new CancellationTokenSource(TimeSpan.FromSeconds(5));
             var doc = Document.Random();
-            var result = await c.PushCoreAsync(doc, i => i._eTag, source.Token);
-            Assert.Equal(result.Pulled().ClearEtag(), doc.ClearEtag());
-            Assert.True(result.Pulled().HasAnEtag);
+            var result = await c.PushCoreAsync(doc, i => i.Properties, source.Token);
+            Assert.Equal(result.UpdatedDocument().ClearEtag(), doc.ClearEtag());
+            Assert.True(result.UpdatedDocument().HasAnEtag);
         }
 
         [Fact]
@@ -49,9 +49,9 @@ namespace WebAppTest {
             using var c = await CreateTargetAsync();
             using var source = new CancellationTokenSource(TimeSpan.FromSeconds(5));
             var doc1 = Document.Random();
-            var doc2 = (await c.PushCoreAsync(doc1, i => i._eTag, source.Token)).Pulled();
+            var doc2 = (await c.PushCoreAsync(doc1, i => i.Properties, source.Token)).UpdatedDocument();
             var doc3 = doc2 with { Title = "banana" };
-            var doc4 = (await c.PushCoreAsync(doc3, i => i._eTag, source.Token)).Pulled();
+            var doc4 = (await c.PushCoreAsync(doc3, i => i.Properties, source.Token)).UpdatedDocument();
             Assert.Equal(doc1 with { Title = "banana" }, doc4.ClearEtag());
             Assert.True(doc4.HasAnEtag);
             Assert.NotEqual(doc3._eTag, doc4._eTag);
@@ -62,13 +62,13 @@ namespace WebAppTest {
             using var c = await CreateTargetAsync();
             using var source = new CancellationTokenSource(TimeSpan.FromSeconds(5));
             var doc1 = Document.Random();
-            var doc2 = (await c.PushCoreAsync(doc1, i => i._eTag, source.Token)).Pulled();
+            var doc2 = (await c.PushCoreAsync(doc1, i => i.Properties, source.Token)).UpdatedDocument();
             var doc3 = doc2.WithRandomEtag() with { Title = "some new title" };
-            var doc4 = await c.PushCoreAsync(doc3, i => i._eTag, source.Token);
-            Assert.Equal((doc4 as ConcurrencyConflict<Document>).FailedPush, doc3);
+            var doc4 = await c.PushCoreAsync(doc3, i => i.Properties, source.Token);
+            Assert.Equal((doc4 as ConcurrencyConflict<Document>).PushFailure, doc3);
         }
 
-        private void AssertSameDocuments(IEnumerable<Document> a, IEnumerable<Document> b) {
+        private static void AssertSameDocuments(IEnumerable<Document> a, IEnumerable<Document> b) {
             var aSet = a.ToImmutableHashSet();
             var bSet = b.ToImmutableHashSet();
             Assert.True(aSet.SetEquals(bSet));
@@ -80,9 +80,9 @@ namespace WebAppTest {
             const int itemCount = 200;
             using var source = new CancellationTokenSource(TimeSpan.FromSeconds(5));
             var docs1 = Enumerable.Range(1, itemCount).Select(i => Document.Random()).ToArray();
-            var docs2 = await c.PushBulkCoreAsync(docs1, i => i._eTag, source.Token);
-            AssertSameDocuments(docs1, docs2.Select(i => i.Pulled().ClearEtag()));
-            Assert.True(docs2.All(i => i.Pulled().HasAnEtag));
+            var docs2 = await c.PushBulkCoreAsync(docs1, i => i.Properties, source.Token);
+            AssertSameDocuments(docs1, docs2.Select(i => i.UpdatedDocument().ClearEtag()));
+            Assert.True(docs2.All(i => i.UpdatedDocument().HasAnEtag));
         }
 
         [Fact]
@@ -91,11 +91,11 @@ namespace WebAppTest {
             const int itemCount = 1000;
             using var source = new CancellationTokenSource(TimeSpan.FromSeconds(5));
             var docs1 = Enumerable.Range(1, itemCount).Select(i => Document.Random()).ToImmutableArray();
-            var docs2 = (await c.PushBulkCoreAsync(docs1, i => i._eTag, source.Token)).Select(i => i.Pulled()).ToImmutableArray();
+            var docs2 = (await c.PushBulkCoreAsync(docs1, i => i.Properties, source.Token)).Select(i => i.UpdatedDocument()).ToImmutableArray();
             var modifiedA = docs2[3].WithRandomEtag() with { Title = "banana" }; // what if no etag? 
             var modifiedB = docs2[750].WithRandomEtag() with { Title = "zebra" };
             var docs3 = docs2.RemoveAt(750).RemoveAt(3).Insert(0, modifiedA).Add(modifiedB);
-            var docs4 = await c.PushBulkCoreAsync(docs3, i => i._eTag, source.Token);
+            var docs4 = await c.PushBulkCoreAsync(docs3, i => i.Properties, source.Token);
             Assert.Equal(2, docs4.Count(i => i is ConcurrencyConflict<Document>));
             Assert.Equal(itemCount - 2, docs4.Count(i => i is not ConcurrencyConflict<Document>));
         }
@@ -110,13 +110,13 @@ namespace WebAppTest {
             try {
                 c = await CreateTargetAsync();
                 Stopwatch bulk = Stopwatch.StartNew();
-                await c.PushBulkCoreAsync(docs, i => i._eTag, source.Token);
+                await c.PushBulkCoreAsync(docs, i => i.Properties, source.Token);
                 bulk.Stop();
 
                 c = await CreateTargetAsync();
                 Stopwatch oneAtATime = Stopwatch.StartNew();
                 foreach (var d in docs) {
-                    await c.PushCoreAsync(d, i => i._eTag, source.Token);
+                    await c.PushCoreAsync(d, i => i.Properties, source.Token);
                 }
                 oneAtATime.Stop();
 
@@ -145,7 +145,7 @@ namespace WebAppTest {
             Assert.Equal(stateA.Purchases.Item.Count, stateB.Purchases.Item.Count);
         }
 
-        private CosmosConnector TestConnector() => new CosmosConnector(_localEndpointUri, _localPrimaryKey, _databaseId);
+        private static CosmosConnector TestConnector() => new(_localEndpointUri, _localPrimaryKey, _databaseId);
 
         private async Task<CosmosConnector> CreateTargetAsync() {
             var c = TestConnector();
