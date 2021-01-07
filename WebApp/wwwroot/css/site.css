@@ -562,8 +562,8 @@
 }
 
 .complete-countdown {
-    -webkit-animation: complete-countdown 2s ease-out both;
-    animation: complete-countdown 2s ease-out both
+    -webkit-animation: complete-countdown 0.5s ease-out both;
+    animation: complete-countdown 0.5s ease-out both
 }
 
 @-webkit-keyframes complete-countdown {
