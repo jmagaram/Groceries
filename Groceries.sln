@@ -17,6 +17,12 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "WebApp", "WebApp\WebApp.csp
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "WebAppTest", "WebAppTest\WebAppTest.csproj", "{C1BC5645-8BA2-46BB-B602-139383ADD791}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "GroceriesWasmApp.Client", "GroceriesWasmApp\Client\GroceriesWasmApp.Client.csproj", "{7470B870-7BE7-4B21-91F3-629CB2AACCDA}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "GroceriesWasmApp.Server", "GroceriesWasmApp\Server\GroceriesWasmApp.Server.csproj", "{0F67FE35-995D-435A-A277-63CFDFF5A64A}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "GroceriesWasmApp.Shared", "GroceriesWasmApp\Shared\GroceriesWasmApp.Shared.csproj", "{3077EC05-C7C6-4862-99D7-DFECD8403402}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -39,6 +45,18 @@ Global
 		{C1BC5645-8BA2-46BB-B602-139383ADD791}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{C1BC5645-8BA2-46BB-B602-139383ADD791}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{C1BC5645-8BA2-46BB-B602-139383ADD791}.Release|Any CPU.Build.0 = Release|Any CPU
+		{7470B870-7BE7-4B21-91F3-629CB2AACCDA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7470B870-7BE7-4B21-91F3-629CB2AACCDA}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7470B870-7BE7-4B21-91F3-629CB2AACCDA}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7470B870-7BE7-4B21-91F3-629CB2AACCDA}.Release|Any CPU.Build.0 = Release|Any CPU
+		{0F67FE35-995D-435A-A277-63CFDFF5A64A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{0F67FE35-995D-435A-A277-63CFDFF5A64A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{0F67FE35-995D-435A-A277-63CFDFF5A64A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{0F67FE35-995D-435A-A277-63CFDFF5A64A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{3077EC05-C7C6-4862-99D7-DFECD8403402}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3077EC05-C7C6-4862-99D7-DFECD8403402}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3077EC05-C7C6-4862-99D7-DFECD8403402}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3077EC05-C7C6-4862-99D7-DFECD8403402}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
