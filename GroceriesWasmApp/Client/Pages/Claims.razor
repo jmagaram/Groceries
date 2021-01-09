@@ -1,0 +1,30 @@
+﻿@page "/claims"
+
+<h3>Claims</h3>
+<button @onclick="async _ => await CalculateClaims()">Display claims</button>
+<ul>
+    @foreach (var c in ClaimsText) {
+        <li>@c</li>
+    }
+</ul>
+
+@code {
+    public IEnumerable<string> ClaimsText { get; set; } = Enumerable.Empty<string>();
+
+    private async Task CalculateClaims() {
+        var authState = await AuthenticationStateTask;
+        var user = authState.User;
+        if (user.Identity.IsAuthenticated) {
+            ClaimsText =
+                user.Claims
+                .Select(i => $"{i.Type}|{i.Value}")
+                .ToList();
+        }
+        else {
+            ClaimsText = Enumerable.Repeat("User is not authenticated", 1).ToList();
+        }
+    }
+
+    [CascadingParameter]
+    private Task<AuthenticationState> AuthenticationStateTask { get; set; }
+}
