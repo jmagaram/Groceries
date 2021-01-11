@@ -1,0 +1,79 @@
+﻿@implements IDisposable
+@using System.Threading
+
+<div style="touch-action:none" oncontextmenu="return false;" @ontouchstart="OnTouchStart" @ontouchmove="OnTouchMove" @ontouchend="OnTouchEnd">@ChildContent</div>
+
+@code {
+    private CancellationTokenSource _token = null;
+    private bool _touchDurationReached = false;
+    private TouchPoint _startPoint = null;
+
+    [Parameter]
+    public TimeSpan MinimumDuration { get; set; } = TimeSpan.FromSeconds(0.75);
+
+    [Parameter]
+    public long MaxMoveRadius { get; set; } = 10;
+
+    [Parameter]
+    public EventCallback Started { get; set; }
+
+    [Parameter]
+    public EventCallback Finished { get; set; }
+
+    [Parameter]
+    public RenderFragment ChildContent { get; set; }
+
+    public async Task OnTouchStart(TouchEventArgs t) {
+        if (_token != null) {
+            CancelToken();
+        }
+        if (t.TargetTouches.Length == 1) {
+            _token = new CancellationTokenSource();
+            _touchDurationReached = false;
+            _startPoint = t.TargetTouches[0];
+            await LongPressAsync(_token.Token);
+        }
+    }
+
+    public async Task OnTouchEnd(TouchEventArgs t) {
+        if (_token != null) {
+            CancelToken();
+            if (_touchDurationReached) {
+                await Finished.InvokeAsync();
+            }
+        }
+    }
+
+    public async Task LongPressAsync(CancellationToken token) {
+        try {
+            await Task.Delay((int)MinimumDuration.TotalMilliseconds, token);
+            await Started.InvokeAsync();
+            _touchDurationReached = true;
+        }
+        catch (OperationCanceledException) {
+        }
+    }
+
+    public void OnTouchMove(TouchEventArgs t) {
+        if (_token != null && !_touchDurationReached) {
+            var current = t.ChangedTouches[0];
+            var xDifference = Math.Abs(current.ClientX - _startPoint.ClientX);
+            var yDifference = Math.Abs(current.ClientY - _startPoint.ClientY);
+            var length = Math.Sqrt(Math.Pow(xDifference, 2) + Math.Pow(yDifference, 2));
+            if (length > MaxMoveRadius) {
+                CancelToken();
+            }
+        }
+    }
+
+    private void CancelToken() {
+        if (_token != null) {
+            _token?.Cancel();
+            _token?.Dispose();
+            _token = null;
+        }
+    }
+
+    public void Dispose() => CancelToken();
+}
+

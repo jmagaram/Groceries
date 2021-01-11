@@ -1,0 +1,98 @@
+﻿@using Models
+@using static Models.CoreTypes
+@using Common
+
+@*Make this a scoped style!
+    learn how to use named columns*@
+<style>
+    .iconButtonMenu {
+        margin: 10px;
+        display: flex;
+        flex-direction: column;
+    }
+
+        .iconButtonMenu button {
+            display: grid;
+            grid-template-columns: 2em auto;
+            grid-column-gap:.25em;
+            justify-content: flex-start;
+            border: none;
+            padding: 0.5rem;
+            background-color: white;
+            padding-top: 0.75rem;
+            padding-bottom: 0.75rem;
+            outline: none;
+            align-items:center;
+            box-shadow: none !important;
+        }
+
+            .iconButtonMenu button:focus {
+                outline: none !important;
+            }
+
+            .iconButtonMenu button:active {
+                outline: none !important;
+                background-color: ButtonFace;
+            }
+
+            .iconButtonMenu button.separatorAbove {
+                border-top: 1px solid #cecece;
+            }
+
+            .iconButtonMenu button.separatorBelow {
+                border-bottom: 1px solid #cecece;
+            }
+</style>
+<ElixDrawer @ref="_drawer" FromEdge="ElixDrawerEdge.Start">
+    @if (_stores == null) { return; }
+    <div class="iconButtonMenu">
+        <button class="separatorBelow" ontouchstart="" @onclick="async _=> await OnSelectCore(null)">
+            @if (_current == null) {
+                <div style="grid-column:1/2"><ion-icon name="checkmark-outline"></ion-icon></div>
+            }
+            <span style="grid-column:2/3">All Stores</span>
+        </button>
+        @foreach (var store in _stores) {
+            var s = store;
+            string description = s.StoreName.AsText();
+            bool isSelected = s.Equals(_current);
+            <button ontouchstart="" @onclick="async _=> await OnSelectCore(s)">
+                @if (isSelected) {
+                    <div style="grid-column:1/2"><ion-icon name="checkmark-outline"></ion-icon></div>
+                }
+                <span style="grid-column:2/3">@description</span>
+            </button>
+        }
+        <button class="separatorAbove" ontouchstart="" @onclick="async _=> await OnManageStoresCore()">
+            <span style="grid-column:1/2"><ion-icon name="settings-outline"></ion-icon></span><span style="grid-column:2/3">Manage stores</span>
+        </button>
+    </div>
+</ElixDrawer>
+@code {
+    private Store[] _stores;
+    private ElixDrawer _drawer;
+    private Store _current;
+
+    public async Task Open(IEnumerable<Store> stores, Store current) {
+        _stores = stores.ToArray();
+        _current = current;
+        await InvokeAsync(() => StateHasChanged());
+        await _drawer.Open();
+    }
+
+    private async Task OnSelectCore(Store s) {
+        await _drawer.Close();
+        await OnSelect.InvokeAsync(s?.StoreId);
+    }
+
+    private async Task OnManageStoresCore() {
+        await _drawer.Close();
+        await OnManageStores.InvokeAsync();
+    }
+
+    [Parameter]
+    public EventCallback<StoreId?> OnSelect { get; set; }
+
+    [Parameter]
+    public EventCallback OnManageStores { get; set; }
+}

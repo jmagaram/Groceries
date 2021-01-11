@@ -1,0 +1,78 @@
+﻿@using Models
+@using static Models.CoreTypes
+@using static Models.ViewTypes
+@using Common
+
+<ElixDrawer @ref="_drawer">
+    @if (_model != null)
+    {
+        <div class="buttonDrawer">
+            <header>
+                <h1>Category</h1>
+                @if (!string.IsNullOrWhiteSpace(_itemName))
+                {
+                    <p>@_itemName</p>
+                }
+            </header>
+            @foreach (var i in _model.Choices.OrderBy(j => j.CategoryName))
+            {
+                bool isSelected = _model.CurrentChoice.IsSomeValue(i);
+                string selectedClass = isSelected ? "selected" : "";
+                <button class="drawerButton @selectedClass" ontouchstart="" @onclick="async _=>await Select(i)">
+                    <div style="display:flex; flex-direction:row; justify-content:space-between">
+                        <div>@i.CategoryName.AsText()</div>
+                        @if (isSelected)
+                        {
+                            <ion-icon name="checkmark-outline"></ion-icon>
+                        }
+                        else
+                        {
+                            <div>&nbsp;</div>
+                        }
+                    </div>
+                </button>
+            }
+            @{
+                bool isUncategorized = _model.CurrentChoice.IsNone();
+                string uncategorizedClass = isUncategorized ? "selected" : "";
+            }
+            <button class="drawerButton @uncategorizedClass" ontouchstart="" @onclick="async _ => await Select(null)">
+                <div style="display:flex; flex-direction:row; justify-content:space-between">
+                    <div>None (Uncategorized)</div>
+                    @if (isUncategorized)
+                    {
+                        <ion-icon name="checkmark-outline"></ion-icon>
+                    }
+                    else
+                    {
+                        <div>&nbsp;</div>
+                    }
+                </div>
+            </button>
+        </div>      }
+</ElixDrawer>
+
+@code {
+    private ElixDrawer _drawer;
+    private SelectZeroOrOne<Category> _model;
+    private string _itemName;
+
+    public async ValueTask Open(SelectZeroOrOne<Category> model, string itemName)
+    {
+        _model = model;
+        _itemName = itemName;
+        await _drawer.Open();
+    }
+
+    public async ValueTask Close() => await _drawer.Close();
+
+    [Parameter]
+    public EventCallback<SelectZeroOrOne<Category>> OnSelected { get; set; }
+
+    private async Task Select(Category c)
+    {
+        _model = (c == null) ? SelectZeroOrOneModule.selectNone(_model) : SelectZeroOrOneModule.select(c, _model);
+        await _drawer.Close();
+        await OnSelected.InvokeAsync(_model);
+    }
+}

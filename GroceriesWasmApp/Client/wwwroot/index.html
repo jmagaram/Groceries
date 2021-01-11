@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html>
 
 <head>
@@ -9,6 +9,25 @@
     <link href="css/bootstrap/bootstrap.min.css" rel="stylesheet" />
     <link href="css/app.css" rel="stylesheet" />
     <link href="GroceriesWasmApp.Client.styles.css" rel="stylesheet" />
+
+    <!--Added these from my other projecrt-->
+    <!--@*Replaced the original style sheet in the Blazor template with the official one specified on Bootstrap web site.-->
+    <link rel="stylesheet" href="css/bootstrap/bootstrap.min.css" />*@
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" integrity="sha384-JcKb8q3iqJ61gNV9KGb8thSsNjpSL0n8PARn9HuZOnIxN0hoP+VmmDGMN5t9UJ0Z" crossorigin="anonymous">
+
+    <!--@*For scoped styles; added manually by me*@-->
+    <!--<link href="WebApp.styles.css" rel="stylesheet">-->
+
+    <!--<link href="css/site.css" rel="stylesheet" />-->
+    <link rel="icon" href="/favicon.png">
+    <link rel="apple-touch-icon" href="/img/watermelon120.png">
+    <link rel="manifest" href="manifest.json">
+
+    <script type="module" src="/js/bundle.js"></script>
+    <script src="/js/interop.js"></script>
+
+    <script src="_content/BlazorDeferredRemove/BlazorDeferredRemove.js"></script>
+
 </head>
 
 <body>
@@ -21,6 +40,14 @@
     </div>
     <script src="_content/Microsoft.Authentication.WebAssembly.Msal/AuthenticationService.js"></script>
     <script src="_framework/blazor.webassembly.js"></script>
+
+
+<!--    @*    Ionic web component icons from https://ionicons.com/usage *@-->
+    <script type="module" src="https://unpkg.com/ionicons@5.2.3/dist/ionicons/ionicons.esm.js"></script>
+    <script nomodule="" src="https://unpkg.com/ionicons@5.2.3/dist/ionicons/ionicons.js"></script>
+
+
+
 </body>
 
 </html>

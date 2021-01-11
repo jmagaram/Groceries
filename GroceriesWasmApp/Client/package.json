@@ -1,0 +1,16 @@
+{
+  "version": "1.0.0",
+  "name": "asp.net",
+  "private": true,
+  "devDependencies": {
+    "webpack": "^5.0.0",
+    "webpack-cli": "4.0.0",
+    "elix": "14.1.1",
+    "bootstrap-icons": "1.1.0",
+    "dom-flip": "0.4.3"
+  },
+  "scripts": {
+    "build": "webpack -p",
+    "watch": "webpack --watch"
+  }
+}

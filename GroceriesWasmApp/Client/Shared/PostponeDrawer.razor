@@ -1,0 +1,61 @@
+﻿@using Models
+@using Common
+<ElixDrawer @ref="_drawer">
+    @if (_choices == null) return;
+    <div class="buttonDrawer">
+        <header>
+            <h1>Postpone</h1>
+            <p>@_itemName</p>
+        </header>
+        @foreach (var i in _choices.OrderBy(j => j))
+        {
+            var description = i switch
+            {
+                int d => TimeSpanEstimateModule.fromDays(d).Format(
+                    " ",
+                    "day",
+                    "days",
+                    "week",
+                    "weeks",
+                    "month",
+                    "months"),
+                _ => "Add to shopping list now"
+            };
+            string iconName = i.HasValue ? "calendar-outline" : "add-outline";
+            <button ontouchstart="" class="drawerButton" @onclick="async _=>await Select(i)">
+                <div style="display:flex; flex-direction:row; align-items:center">
+                    <div style="width:2rem; text-align:left"><ion-icon name="@iconName"></ion-icon></div>
+                    <div>@description</div>
+                </div>
+            </button>
+        }
+    </div>
+</ElixDrawer>
+
+@code {
+    private ElixDrawer _drawer;
+    private List<int?> _choices;
+    private string _itemName;
+
+    public async ValueTask Open(IEnumerable<int> choices, bool includeAddToShoppingList, string itemName)
+    {
+        _choices =
+            Enumerable.Repeat(new int?(), includeAddToShoppingList ? 1 : 0)
+            .Concat(choices.Select(i => new int?(i)))
+            .ToList();
+        _itemName = itemName;
+        await InvokeAsync(() => StateHasChanged());
+        await _drawer.Open();
+    }
+
+    public async ValueTask Close() => await _drawer.Close();
+
+    [Parameter]
+    public EventCallback<int?> Selected { get; set; }
+
+    private async Task Select(int? d)
+    {
+        await _drawer.Close();
+        await Selected.InvokeAsync(d);
+    }
+}

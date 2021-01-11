@@ -7,9 +7,11 @@
 
   <ItemGroup>
     <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.Server" Version="5.0.1" />
+    <PackageReference Include="Microsoft.Azure.Cosmos" Version="3.15.1" />
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\Models\Models.fsproj" />
     <ProjectReference Include="..\Client\GroceriesWasmApp.Client.csproj" />
     <ProjectReference Include="..\Shared\GroceriesWasmApp.Shared.csproj" />
   </ItemGroup>

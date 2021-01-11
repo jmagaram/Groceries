@@ -1,0 +1,45 @@
+﻿@using GroceriesWasmApp.Client.Services;
+@implements IDisposable;
+
+<style>
+    ion-icon {
+        font-size: 24px;
+    }
+</style>
+@if (SyncStatus == SynchronizationStatus.Synchronizing) {
+    <button class="btn text-light" style="@Style" type="button" disabled><div class="spinner-border text-light spinner-border-sm" role="status" /></button>
+}
+else {
+    string color =
+        (SyncStatus == SynchronizationStatus.HasChanges) ? "btn-danger" :
+        (SyncStatus == SynchronizationStatus.NoChanges) ? "" :
+        throw new NotImplementedException("Unexpected synchronization status; can't choose color for it.");
+    <button class="btn text-light @color" style="@Style" type="button"
+            disabled="@(SyncStatus == SynchronizationStatus.Synchronizing)" @onclick:preventDefault
+            @onclick="Synchronize">
+        <ion-icon name="cloud-upload-outline"></ion-icon>
+    </button>
+}
+
+@code {
+    protected override void OnInitialized() {
+        StateService.OnChange += StateHasChanged;
+    }
+
+    private Task Synchronize(MouseEventArgs _) =>
+        (StateService.SynchronizationStatus == SynchronizationStatus.HasChanges)
+        ? StateService.SyncEverythingAsync()
+        : StateService.SyncIncrementalAsync();
+
+    public void Dispose() {
+        StateService.OnChange -= StateHasChanged;
+    }
+
+    public SynchronizationStatus SyncStatus => StateService.SynchronizationStatus;
+
+    [Inject]
+    public StateService StateService { get; set; }
+
+    [Parameter]
+    public string Style { get; set; } = "";
+}

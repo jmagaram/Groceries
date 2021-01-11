@@ -1,0 +1,22 @@
+﻿@page "/testing"
+@attribute [Microsoft.AspNetCore.Authorization.Authorize]
+
+@using GroceriesWasmApp.Client.Services
+
+<h3>Testing</h3>
+
+<button @onclick="async _=>await LoadGroceries()">Load groceries</button>
+
+@code {
+    [Inject]
+    StateService StateService { get; set; }
+
+    //protected override async Task OnInitializedAsync() {
+    //    //await StateService.InitializeAsync("justin@magaram.com");
+    //}
+
+    public async Task LoadGroceries() {
+        await StateService.InitializeAsync("justin@magaram.com");
+        await StateService.SyncEverythingAsync();
+    }
+}

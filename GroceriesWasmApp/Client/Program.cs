@@ -8,6 +8,8 @@ using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using GroceriesWasmApp.Client.Services;
+using GroceriesWasmApp.Shared;
 
 namespace GroceriesWasmApp.Client {
     public class Program {
@@ -26,6 +28,11 @@ namespace GroceriesWasmApp.Client {
                 options.ProviderOptions.DefaultAccessTokenScopes.Add("https://groceriesb2c.onmicrosoft.com/1a9edbbe-db91-4b4d-9c56-80a52d60762c/API.Access");
                 options.ProviderOptions.LoginMode = "redirect";
             });
+
+
+            //builder.Services.AddApplicationInsightsTelemetry(Configuration["APPINSIGHTS_CONNECTIONSTRING"]);
+            builder.Services.AddScoped<ICosmosConnector, ServerStorage>();
+            builder.Services.AddScoped<StateService>();
 
             await builder.Build().RunAsync();
         }

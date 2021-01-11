@@ -1,0 +1,99 @@
+﻿@using Models
+@using static Models.CoreTypes
+@using static Models.ViewTypes
+
+<ElixDrawer Closed="OnClose" @ref="_drawer">
+    @if (_model == null)
+    {
+        return;
+    }
+    <div class="buttonDrawer">
+        <div class="threeColumnHeader">
+            <div></div>
+            <header>
+                <h1>Stores</h1>
+                <p>@_itemName</p>
+            </header>
+            <button class="drawerButton" ontouchstart="" @onclick="async _ => await Close()">Done</button>
+        </div>
+        @foreach (var i in SelectManyModule.selectionSummary(_model).OrderBy(i => i.Item.StoreName))
+        {
+            string selectedClass = i.IsSelected ? "selected" : "";
+            <button class="drawerButton @selectedClass" ontouchstart="" @onclick="_=>_model = SelectManyModule.toggleSelected(i.Item,_model)">
+                <div style="display:flex; flex-direction:row; justify-content:space-between">
+                    <div>@i.Item.StoreName.AsText()</div>
+                    @if (i.IsSelected)
+                    {
+                        <ion-icon name="checkmark-outline"></ion-icon>
+                    }
+                    else
+                    {
+                        <div>&nbsp;</div>
+                    }
+                </div>
+            </button>
+        }
+        <button class="drawerButton" ontouchstart="" @onclick="_=>_model = SelectManyModule.selectAll(_model)">
+            <div style="display:flex; flex-direction:row; justify-content:space-between">
+                <span>All Stores</span>
+                @if (SelectManyModule.allSelected(_model))
+                {
+                    <ion-icon name="checkmark-outline"></ion-icon>
+                }
+                else
+                {
+                    <div>&nbsp;</div>
+                }
+            </div>
+        </button>
+        <button class="drawerButton" ontouchstart="" @onclick="async _ => await Cancel()">
+            <div style="display:flex; flex-direction:row; justify-content:space-between">
+                <span>Cancel</span>
+                <div>&nbsp;</div>
+            </div>
+        </button>
+    </div>
+</ElixDrawer>
+
+@code {
+    ElixDrawer _drawer;
+    string _itemName;
+    SelectMany<Store> _model;
+
+    [Parameter]
+    public EventCallback<SelectMany<Store>> Closed { get; set; }
+
+    private async ValueTask Cancel()
+    {
+        _model = SelectManyModule.revertToOriginalSelection(_model);
+        await Closed.InvokeAsync(_model);
+        await _drawer.Close();
+        _model = null;
+    }
+
+    public async ValueTask Open(SelectMany<Store> model, string itemName)
+    {
+        _model = model;
+        _itemName = itemName;
+        await _drawer.Open();
+    }
+
+    public async ValueTask Close()
+    {
+        await _drawer.Close(); // Can't could on event being raised
+        if (_model != null)
+        {
+            await Closed.InvokeAsync(_model);
+            _model = null;
+        }
+    }
+
+    private async Task OnClose()
+    {
+        if (_model != null)
+        {
+            await Closed.InvokeAsync(_model);
+            _model = null;
+        }
+    }
+}

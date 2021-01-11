@@ -9,6 +9,8 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using System.Linq;
+using GroceriesWasmApp.Shared;
+using GroceriesWasmApp.Server.Services;
 
 namespace GroceriesWasmApp.Server
 {
@@ -32,6 +34,9 @@ namespace GroceriesWasmApp.Server
                 JwtBearerDefaults.AuthenticationScheme, options => {
                     options.TokenValidationParameters.NameClaimType = "name";
                 });
+
+            services.AddSingleton<ICosmosConnector, CosmosConnector>(i => new CosmosConnector(Configuration.GetValue<string>("CosmosConnectionString")));
+
 
             services.AddControllersWithViews();
             services.AddRazorPages();

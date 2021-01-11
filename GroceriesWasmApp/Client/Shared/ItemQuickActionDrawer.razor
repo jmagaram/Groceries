@@ -1,0 +1,115 @@
+﻿@using Models
+@using static Models.CoreTypes
+@using ViewModel = Models.ViewTypes.ItemQuickActionsView
+@using Common
+@using GroceriesWasmApp.Client.Services 
+
+<ElixDrawer @ref="_drawer">
+    @if (_viewModel == null)
+        return;
+    <div class="drawer">
+        <header>
+            <div></div>
+            <h1>@_viewModel.ItemName.AsText()</h1>
+            <div></div>
+        </header>
+        <div class="buttonGroup">
+            <button ontouchstart="" @onclick="async _ => await OnComplete.InvokeAsync(_viewModel.ItemId)"><ion-icon name="checkmark-outline" />Complete</button>
+            @if (_viewModel.PostponeUntil.IsSome())
+            {
+                <button ontouchstart="" @onclick="async _ => await OnAddToShoppingListNow.InvokeAsync(_viewModel.ItemId)"><ion-icon name="add-outline" />Add to shopping list now</button>
+            }
+            <div class="buttonRow">
+                <button ontouchstart="" class="splitButtonDefault" @onclick="async _ => await OnPostponeDays.InvokeAsync((_viewModel.ItemId, 7))"><ion-icon name="calendar-outline" />Postpone 1 week</button>
+                <button ontouchstart="" class="splitButtonIcon" @onclick="async _ => await OnPostpone.InvokeAsync(_viewModel.ItemId)">
+                    <ion-icon name="caret-down-outline"></ion-icon>
+                </button>
+            </div>
+        </div>
+        <div class="buttonGroup">
+            @if (_viewModel.PermitStoresCustomization)
+            {
+                if (_viewModel.PermitQuickNotSoldAt.IsNone())
+                {
+                    <button ontouchstart="" @onclick="async _ => await OnCustomizeStores.InvokeAsync(_viewModel.ItemId)"><ion-icon name="storefront-outline" />Stores...</button>
+                }
+                else
+                {
+                    var store = _viewModel.PermitQuickNotSoldAt.Value;
+                    <div class="buttonRow">
+                        <button ontouchstart="" class="splitButtonDefault" style="display:flex; justify-content:center; flex-grow:1" @onclick="async _ => await OnNotSoldAtSpecificStore.InvokeAsync((_viewModel.ItemId,store.StoreId))">
+                            <ion-icon name="storefront-outline" />
+                            @{
+                                int maxCharacters = StateService.State.LoggedInUserSettings().FontSize.IsNormalFontSize ? 14 : 12;
+                                bool showNeverAt = store.StoreName.AsText().Length <= maxCharacters;
+                            }
+                            @if (showNeverAt)
+                            {
+                                <div>Never at&nbsp;</div>
+                            }
+                            <div class="crossed-out-content">
+                                <div>@store.StoreName.AsText()</div><div class="svg-container">
+                                    <svg class="diagonal">
+                                        <line x1="5%" y1="95%" x2="95%" y2="5%" />
+                                        <line x1="5%" y1="5%" x2="95%" y2="95%" />
+                                    </svg>
+                                </div>
+                            </div>
+                        </button>
+                        <button ontouchstart="" class="splitButtonIcon" @onclick="async _ => await OnCustomizeStores.InvokeAsync(_viewModel.ItemId)">
+                            <ion-icon name="caret-down-outline" />
+                        </button>
+                    </div>
+                }
+            }
+            <div class="buttonRow">
+                <button ontouchstart="" @onclick="async _ => await OnDelete.InvokeAsync(_viewModel.ItemId)" class="justIconButton"><ion-icon name="trash-outline" /></button>
+                <button ontouchstart="" @onclick="async _ => await OnEdit.InvokeAsync(_viewModel.ItemId)"><ion-icon name="pencil-outline" />Edit...</button>
+            </div>
+        </div>
+    </div>
+</ElixDrawer>
+
+@code {
+    ElixDrawer _drawer;
+    ViewModel _viewModel;
+
+    public async ValueTask Open(ViewModel viewModel)
+    {
+        _viewModel = viewModel;
+        await InvokeAsync(() => StateHasChanged());
+        await _drawer.Open();
+    }
+
+    public async ValueTask Close() => await _drawer.Close();
+
+    [Parameter]
+    public EventCallback<ItemId> OnComplete { get; set; }
+
+    [Parameter]
+    public EventCallback<ItemId> OnDelete { get; set; }
+
+    [Parameter]
+    public EventCallback<ItemId> OnBuyAgain { get; set; }
+
+    [Parameter]
+    public EventCallback<ItemId> OnEdit { get; set; }
+
+    [Parameter]
+    public EventCallback<ItemId> OnCustomizeStores { get; set; }
+
+    [Parameter]
+    public EventCallback<(ItemId, StoreId)> OnNotSoldAtSpecificStore { get; set; }
+
+    [Parameter]
+    public EventCallback<ItemId> OnPostpone { get; set; }
+
+    [Parameter]
+    public EventCallback<(ItemId, int)> OnPostponeDays { get; set; }
+
+    [Inject]
+    public StateService StateService { get; set; }
+
+    [Parameter]
+    public EventCallback<ItemId> OnAddToShoppingListNow { get; set; }
+}

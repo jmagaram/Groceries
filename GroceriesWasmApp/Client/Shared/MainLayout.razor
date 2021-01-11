@@ -1,18 +1,24 @@
 @inherits LayoutComponentBase
+@using Models
+@using static Models.StateExtensions
+@using GroceriesWasmApp.Client.Services
 
-<div class="page">
-    <div class="sidebar">
-        <NavMenu />
-    </div>
-
-    <div class="main">
-        <div class="top-row px-4 auth">
-            <LoginDisplay />
-            <a href="https://docs.microsoft.com/aspnet/" target="_blank">About</a>
-        </div>
-
-        <div class="content px-4">
-            @Body
-        </div>
-    </div>
+@if (StateService.State.LoggedInUserSettings().FontSize.IsLargeFontSize) {
+    <style>
+        body {
+            font-size: larger;
+        }
+    </style>
+}
+<div class="top-row px-4 auth">
+    <LoginDisplay />
+    <a href="https://docs.microsoft.com/aspnet/" target="_blank">About</a>
 </div>
+<div class="container-fluid px-0">
+    @Body
+</div>
+
+@code {
+    [Inject]
+    public StateService StateService { get; set; }
+}

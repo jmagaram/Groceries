@@ -1,0 +1,15 @@
+﻿<div class="@(Parent.ActiveItem==this ? "" : "hideModesItem")">@ChildContent</div>
+@code {
+    [CascadingParameter]
+    private Modes Parent { get; set; }
+
+    [Parameter]
+    public RenderFragment ChildContent { get; set; }
+
+    protected override void OnInitialized() {
+        if (Parent == null)
+            throw new ArgumentNullException(nameof(Parent), "ModesItem must exist within a Modes component.");
+        base.OnInitialized();
+        Parent.AddItem(this);
+    }
+}

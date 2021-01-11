@@ -1,0 +1,75 @@
+﻿@inject IJSRuntime JSRuntime
+@implements IDisposable
+@implements IAsyncDisposable
+@using Common
+
+<elix-menu-button @ref="_menu">
+    @ChildContent
+</elix-menu-button>
+
+@code {
+    private ElementReference _menu;
+    private IJSObjectReference _elixModule;
+    private DotNetObjectReference<CallbackHelper<string>> _closeCallbackReference;
+
+    [Parameter]
+    public RenderFragment ChildContent { get; set; }
+
+    [Parameter]
+    public EventCallback<string> MenuItemSelected { get; set; }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            _elixModule = await JSRuntime.InvokeAsync<IJSObjectReference>("import", "./js/elix.js").AsTask();
+
+            var closeCallback = new CallbackHelper<string>(OnMenuItemSelected);
+            _closeCallbackReference = DotNetObjectReference.Create(closeCallback);
+            await _elixModule.InvokeVoidAsync(
+                "MenuButtonAddCloseEventListener",
+                _menu,
+                "WebApp",
+                "Invoke",
+                _closeCallbackReference);
+        }
+        await base.OnAfterRenderAsync(firstRender);
+    }
+
+    private async Task OnMenuItemSelected(string elementId) => await MenuItemSelected.InvokeAsync(elementId);
+
+    public void Dispose()
+    {
+        Dispose(disposing: true);
+        GC.SuppressFinalize(this);
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        await DisposeAsyncCore();
+        Dispose(disposing: false);
+        GC.SuppressFinalize(this);
+    }
+
+    protected virtual void Dispose(bool disposing)
+    {
+        if (disposing)
+        {
+            _closeCallbackReference?.Dispose();
+            (_elixModule as IDisposable)?.Dispose();
+        }
+        _closeCallbackReference = null;
+        _elixModule = null;
+    }
+
+    protected virtual async ValueTask DisposeAsyncCore()
+    {
+        if (_elixModule is not null)
+        {
+            await _elixModule.DisposeAsync().ConfigureAwait(false);
+            _elixModule = null;
+        }
+        _closeCallbackReference?.Dispose();
+        _closeCallbackReference = null;
+    }
+}

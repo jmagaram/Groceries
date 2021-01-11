@@ -1,0 +1,157 @@
+﻿@using Common
+@using Models
+@using static Models.CoreTypes
+@using static Common.OptionExtensions
+@using BlazorDeferredRemove.Components
+
+<div class="itemContainer">
+    @if (!ItemQry.PostponeUntil.IsNone())
+    {
+        <button class="iconButton" ontouchstart="" @onclick="async _ => await OnClickAddToShoppingList.InvokeAsync(ItemQry.ItemId)"><ion-icon name="add-outline"></ion-icon></button>
+    }
+    @if (ItemQry.PostponeUntil.IsNone() && EnableOneClickComplete)
+    {
+        <div style="margin-left:0.5em;margin-right:0.5em; padding-top:0.6em">
+            <Checkbox @bind-IsChecked="@CompleteCountdown"></Checkbox>
+        </div>      }
+    <button ontouchstart="" @onclick="async _=>await OnClick.InvokeAsync(ItemQry.ItemId)" style="padding-right:0px;">
+        <CallbackOnCssAnimationEnd CssAnimationName="@_completedAnimationName" OnCssAnimationCompleted="@OnCompleteConfirmed">
+            <div @ref="_propertiesElement" class="properties @CompleteCountdownClass">
+                <div class="title">
+                    <ul>
+                        @foreach (var i in FormattedTextModule.spans(ItemQry.ItemName))
+                        {
+                            string highlightClass = i.Format.IsHighlight ? "highlight" : "";
+                            <li class="@highlightClass">@i.Text</li>
+                        }
+                        @if (ItemQry.PostponeUntil.AsNullable() is DateTimeOffset p)
+                        {
+                            var now = DateTimeOffset.Now;
+                            var estimate = TimeSpanEstimateModule.between(now, p);
+                            var isSoon = estimate.IsLessThanOrEqualTo(TimeSpan.FromDays(5));
+                            var description =
+                                isSoon
+                                ? "soon"
+                                : estimate.Format(d => $"{d}d", w => $"{w}w", m => $"{m}m");
+                            string iconName =
+                                isSoon
+                                ? "alarm-outline"
+                                : "calendar-outline";
+                            string badgeClass =
+                                isSoon
+                                ? "soonBadge"
+                                : estimate.IsDays ? "daysBadge"
+                                : estimate.IsWeeks ? "weeksBadge"
+                                : estimate.IsMonths ? "monthsBadge"
+                                : throw new NotImplementedException();
+                            <li @ref="_badgeElement" class="postponeBadge @badgeClass"><ion-icon name="@iconName" />@description</li>
+                        }
+                    </ul>
+                </div>
+                @if (ItemQry.Quantity.IsSome())
+                {
+                    <ul class="quantity">
+                        @foreach (var i in FormattedTextModule.spans(ItemQry.Quantity.Value))
+                        {
+                            string highlightClass = i.Format.IsHighlight ? "highlight" : "";
+                            <li class="@highlightClass">@i.Text</li>
+                        }
+                    </ul>
+                }
+                @if (ItemQry.Note.IsSome())
+                {
+                    <ion-icon class="noteIcon" name="newspaper-outline"></ion-icon>
+                    <ul class="noteContent">
+                        @foreach (var i in FormattedTextModule.spans(ItemQry.Note.Value))
+                        {
+                            string highlightClass = i.Format.IsHighlight ? "highlight" : "";
+                            <li class="@highlightClass">@i.Text</li>
+                        }
+                    </ul>}
+                @if (!HideStores && ItemQry.Availability.Any(i => i.IsSold == false))
+                {
+                    <ion-icon class="storesIcon" name="storefront-outline"></ion-icon>
+                    <ul class="storesContent">
+                        @foreach (var i in ItemQry.Availability.Where(j => j.IsSold == false).Select(j => j.Store.StoreName.AsText()))
+                        {
+                            <li>@i</li>
+                        }
+                    </ul>
+                }
+            </div>
+        </CallbackOnCssAnimationEnd>
+    </button>
+</div>
+
+@code {
+#nullable enable
+    ElementReference _badgeElement;
+    ElementReference _propertiesElement;
+    const string _completedAnimationName = "complete-countdown";
+
+    protected bool CompleteCountdown { get; set; }
+
+    protected string CompleteCountdownClass => CompleteCountdown ? _completedAnimationName : "";
+
+    protected async Task OnCompleteConfirmed(string animationName)
+    {
+        if (ItemQry != null && animationName == _completedAnimationName)
+        {
+            CompleteCountdown = false;
+            await OnClickCompleted.InvokeAsync(ItemQry.ItemId);
+        }
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (PostponeUntilChanged && ItemQry is ShoppingListModule.Item item)
+        {
+            if (item.PostponeUntil.IsSome())
+            {
+                await TryRunAnimation(_badgeElement, JSRuntime, "bounce-top", 1000);
+            }
+        }
+        await base.OnAfterRenderAsync(firstRender);
+    }
+
+    protected static async Task TryRunAnimation(
+        ElementReference element,
+        IJSRuntime? jsRuntime,
+        string animationClass,
+        int timeoutMilliseconds = 1000)
+    {
+        if (element.Id != null && jsRuntime != null)
+        {
+            await using var generalModule = await jsRuntime.InvokeAsync<IJSObjectReference>
+    ("import", "./js/general.js").AsTask();
+            await generalModule.InvokeVoidAsync("startAnimation", element, animationClass, timeoutMilliseconds);
+        }
+    }
+
+    [Inject]
+    public IJSRuntime? JSRuntime { get; set; }
+
+    [Parameter]
+    public bool EnableOneClickComplete { get; set; }
+
+    [Parameter]
+    public ShoppingListModule.Item? ItemQry { get; set; }
+
+    [Parameter]
+    public bool PostponeUntilChanged { get; set; }
+
+    [Parameter]
+    public bool HideStores { get; set; } = false;
+
+    [Parameter]
+    public EventCallback<CoreTypes.ItemId> OnClick { get; set; }
+
+    [Parameter]
+    public EventCallback<CoreTypes.ItemId> OnClickAddToShoppingList { get; set; }
+
+    [Parameter]
+    public EventCallback<CoreTypes.ItemId> OnClickCompleted { get; set; }
+
+    [Parameter]
+    public EventCallback<CoreTypes.ItemId> OnClickDue { get; set; }
+}
