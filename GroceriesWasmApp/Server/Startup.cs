@@ -11,6 +11,7 @@ using Microsoft.Extensions.Hosting;
 using System.Linq;
 using GroceriesWasmApp.Shared;
 using GroceriesWasmApp.Server.Services;
+using System.Security.Claims;
 
 namespace GroceriesWasmApp.Server
 {
@@ -36,6 +37,11 @@ namespace GroceriesWasmApp.Server
                 });
 
             services.AddSingleton<ICosmosConnector, CosmosConnector>(i => new CosmosConnector(Configuration.GetValue<string>("CosmosConnectionString")));
+
+            services.AddAuthorization(options =>
+            {
+                options.AddPolicy("Administrators", policy => policy.RequireClaim("emails", "jmagaram@outlook.com", "justin@magaram.com"));
+            });
 
 
             services.AddControllersWithViews();

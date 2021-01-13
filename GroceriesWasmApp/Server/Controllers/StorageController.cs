@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Security.Claims;
 using System.Threading.Tasks;
 using GroceriesWasmApp.Shared;
 using Microsoft.AspNetCore.Authorization;
@@ -35,6 +36,14 @@ namespace GroceriesWasmApp.Server.Controllers {
             HttpContext.VerifyUserHasAnyAcceptedScope(scopeRequiredByApi);
             var changes = await _connector.PullIncrementalAsync(familyId, after, before);
             return changes;
+        }
+
+        [HttpGet]
+        [Route("[action]")]
+        [Authorize(Policy = "Administrators")]
+        public string AdminOnly() {
+            HttpContext.VerifyUserHasAnyAcceptedScope(scopeRequiredByApi);
+            return $"Hello {DateTimeOffset.Now}";
         }
 
         [HttpPost]
