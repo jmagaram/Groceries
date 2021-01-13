@@ -6,6 +6,7 @@ using GroceriesWasmApp.Shared;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Identity.Web.Resource;
 using static Models.DtoTypes;
 
 namespace GroceriesWasmApp.Server.Controllers {
@@ -14,6 +15,7 @@ namespace GroceriesWasmApp.Server.Controllers {
     [ApiController]
     public class StorageController : ControllerBase {
         private readonly ICosmosConnector _connector;
+        static readonly string[] scopeRequiredByApi = new string[] { "API.Access" };
 
         public StorageController(ICosmosConnector connector) {
             this._connector = connector;
@@ -22,6 +24,7 @@ namespace GroceriesWasmApp.Server.Controllers {
         [HttpGet]
         [Route("[action]")]
         public async Task<Changes> GetEverything(string familyId) {
+            HttpContext.VerifyUserHasAnyAcceptedScope(scopeRequiredByApi);
             var changes = await _connector.PullEverythingAsync(familyId);
             return changes;
         }
@@ -29,6 +32,7 @@ namespace GroceriesWasmApp.Server.Controllers {
         [HttpGet]
         [Route("[action]")]
         public async Task<Changes> GetIncremental(string familyId, int after, int? before) {
+            HttpContext.VerifyUserHasAnyAcceptedScope(scopeRequiredByApi);
             var changes = await _connector.PullIncrementalAsync(familyId, after, before);
             return changes;
         }
@@ -36,6 +40,7 @@ namespace GroceriesWasmApp.Server.Controllers {
         [HttpPost]
         [Route("[action]")]
         public async Task<Changes> Push(string familyId, Changes changes) {
+            HttpContext.VerifyUserHasAnyAcceptedScope(scopeRequiredByApi);
             var result = await _connector.PushAsync(familyId, changes);
             return result;
         }
