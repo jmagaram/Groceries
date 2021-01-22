@@ -51,6 +51,11 @@ module Seq =
         |> Seq.takeWhile (fun (i, _) -> i < n)
         |> Seq.map (fun (_, j) -> j)
 
+    let removeAt index source =
+        source
+        |> Seq.indexed
+        |> Seq.choose (fun (i, j) -> if i = index then None else Some j)
+
 [<AutoOpen>]
 module Option =
 
