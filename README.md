@@ -3,6 +3,11 @@
 I'm experimenting with Blazor for web development. This is an app to track a
 grocery shopping list.
 
+## Status/Quality
+
+- The hosted Blazor version is usable but hardwired to one shopping list and has no security.
+- The WASM version supports social-login and multiple families/lists but has some bugs; not totally usable yet 
+
 ## Tech stack
 
 - F# is used for the core data and view models
@@ -10,7 +15,7 @@ grocery shopping list.
 - Azure Cosmos DB for storage
 - Azure Web App for hosting the site
 - Azure B2C for managing user accounts and passwords
-- Blazor Server with SignalR (but plan to switch to Web Assembly)
+- Original version uses Blazor Server with SignalR; ported to Web Assembly
 - Straight CSS (haven't tried SCSS yet)
 - Visual Studio Community
 
@@ -24,7 +29,7 @@ and it is difficult to get into a flow.
 
 I don't think F# breakpoints get hit when debugging in WASM. They did work in Blazor server however.
 
-There is no hot-reload which makes development of UI slow and tedious.
+There is no hot-reload which makes development of UI slow and tedious. Build times are pretty slow too.
 
 Javascript interop in Blazor works but is a hassle whenever I need to do it.
 
