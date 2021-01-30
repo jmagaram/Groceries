@@ -16,6 +16,7 @@ namespace GroceriesWasmApp.Client.Shared
     public partial class ItemEditFormSlick : ComponentBase
     {
 #pragma warning disable IDE0044 // Add readonly modifier
+        private ElementReference _titleInput;
         private CategoryDrawer _categoryDrawer;
         private PostponeDrawer _postponeDrawer;
         private StoresDrawer _storesDrawer;
@@ -35,6 +36,13 @@ namespace GroceriesWasmApp.Client.Shared
 
         [Parameter]
         public EventCallback<FormMessage> OnItemFormMessage { get; set; }
+
+        protected override async Task OnAfterRenderAsync(bool firstRender) {
+            if (firstRender) {
+                await Task.Delay(50);
+                await _titleInput.FocusAsync();
+            }
+        }
 
         private async ValueTask OnClickCategory() =>
             await _categoryDrawer.Open(
