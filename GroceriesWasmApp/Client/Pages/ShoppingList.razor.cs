@@ -47,6 +47,9 @@ namespace GroceriesWasmApp.Client.Pages {
                 Navigation.NavigateTo("families");
                 return;
             }
+            else {
+                ShoppingListView = StateService.State.ShoppingList(DateTimeOffset.Now);
+            }
             var state = Observable
                 .FromEvent(h => StateService.OnChange += h, h => StateService.OnChange -= h)
                 .Publish();
@@ -58,7 +61,10 @@ namespace GroceriesWasmApp.Client.Pages {
                     .Where(i => i.Count == 2)
                     .Select(i => ShoppingListModule.postponeChangedCore(i[0], i[1]))
                     .Subscribe(i=>PostponeUntilChanged=i),
-                state.Subscribe(_=>StateHasChanged()),
+                state.Subscribe(_=> {
+                    ShoppingListView = StateService.State.ShoppingList(DateTimeOffset.Now);
+                    StateHasChanged();
+                }),
                 state.Connect()
             };
         }
@@ -68,8 +74,7 @@ namespace GroceriesWasmApp.Client.Pages {
             PostponeUntilChanged = null;
         }
 
-        protected ShoppingListModule.ShoppingList ShoppingListView =>
-            CurrentState.ShoppingList(DateTimeOffset.Now);
+        protected ShoppingListModule.ShoppingList ShoppingListView { get; set; }
 
         public void Dispose() => _disposables?.Dispose();
 
@@ -288,7 +293,7 @@ namespace GroceriesWasmApp.Client.Pages {
                 var settingsMsg = ShoppingListSettingsMessage.NewTextFilter(textBoxMsg);
                 var stateMsg = StateMessage.NewUserSettingsMessage(UserSettingsModule.Message.NewShoppingListSettingsMessage(settingsMsg));
                 await StateService.UpdateAsync(stateMsg);
-                await InvokeAsync(() => StateHasChanged());
+                //await InvokeAsync(() => StateHasChanged());
             }
         }
 
@@ -298,7 +303,7 @@ namespace GroceriesWasmApp.Client.Pages {
                 var settingsMsg = ShoppingListSettingsMessage.NewTextFilter(textBoxMsg);
                 var stateMsg = StateMessage.NewUserSettingsMessage(UserSettingsModule.Message.NewShoppingListSettingsMessage(settingsMsg));
                 await StateService.UpdateAsync(stateMsg);
-                await InvokeAsync(() => StateHasChanged());
+                //await InvokeAsync(() => StateHasChanged());
             }
         }
 

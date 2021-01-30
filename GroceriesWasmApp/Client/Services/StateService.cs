@@ -78,7 +78,9 @@ namespace GroceriesWasmApp.Client.Services {
             ThrowIfServiceIsNotInitialized();
             State = StateModule.updateUsingStandardClock(message, State);
             OnChange?.Invoke();
-            await SyncCoreAsync(isIncremental: true, ignoreIfSynchronizing: false);
+            if (StateModule.hasChanges(State)) {
+                await SyncCoreAsync(isIncremental: true, ignoreIfSynchronizing: false);
+            }
         }
 
         public Task SyncEverythingAsync() {
@@ -123,27 +125,27 @@ namespace GroceriesWasmApp.Client.Services {
 
         private async Task SyncCoreAsync(bool isIncremental, bool ignoreIfSynchronizing) {
             ThrowIfServiceIsNotInitialized();
-            bool isSynchronizing = SynchronizationStatus == SynchronizationStatus.Synchronizing;
-            if (!isSynchronizing || ignoreIfSynchronizing) {
-                SynchronizationStatus = SynchronizationStatus.Synchronizing;
-                OnChange?.Invoke();
-                try {
-                    var earliestChange = await PushCoreAsync();
-                    if (!isIncremental || earliestChange != null) {
-                        await PullCoreAsync(isIncremental ? State!.LastCosmosTimestamp.AsNullable() : null, earliestChange);
-                        // When the changes above are applied, it is possible that
-                        // foreign keys will be broken, causing additional changes that
-                        // need to be pushed.
-                        await PushCoreAsync();
-                    }
-                }
-                catch (OperationCanceledException) {
-                }
-
-                SynchronizationStatus = HasChanges();
-                OnChange?.Invoke();
-                _hasSynchronized = true;
+            if (SynchronizationStatus == SynchronizationStatus.Synchronizing && !ignoreIfSynchronizing) {
+                return;
             }
+            SynchronizationStatus = SynchronizationStatus.Synchronizing;
+            OnChange?.Invoke();
+            try {
+                var earliestChange = await PushCoreAsync();
+                if (!isIncremental || earliestChange != null) {
+                    await PullCoreAsync(isIncremental ? State!.LastCosmosTimestamp.AsNullable() : null, earliestChange);
+                    // When the changes above are applied, it is possible that
+                    // foreign keys will be broken, causing additional changes that
+                    // need to be pushed.
+                    await PushCoreAsync();
+                }
+            }
+            catch (OperationCanceledException) {
+            }
+
+            SynchronizationStatus = HasChanges();
+            OnChange?.Invoke();
+            _hasSynchronized = true;
         }
 
         private SynchronizationStatus HasChanges() =>

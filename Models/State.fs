@@ -254,6 +254,32 @@ let isEmpty (s: State) =
     && s |> purchases |> Seq.isEmpty
     && s |> notSold |> Seq.isEmpty
 
+let insertRandomItems n (s: State) =
+    let random = new System.Random()
+
+    let randomCharacter =
+        let letters = "abcde "
+        let itemCount = letters.Length
+        fun () -> letters.[random.Next(0, itemCount)]
+
+    let randomWord minLength maxLength =
+        let len = random.Next(minLength, maxLength + 1)
+
+        Seq.init len (fun _ -> randomCharacter ())
+        |> String.fromChars
+
+    let randomItem () =
+        { Item.ItemId = ItemId.create ()
+          Item.ItemName = ItemName(randomWord 6 20)
+          Item.Etag = None
+          Item.CategoryId = None
+          Item.PostponeUntil = None
+          Item.Quantity = None
+          Item.Note = None }
+
+    Seq.init n (fun _ -> randomItem ())
+    |> Seq.fold (fun s i -> s |> insertItem i) s
+
 let insertDefaultCategories (s: State) =
     let defaultCategories =
         [ "Pantry / Dry Goods"
