@@ -214,11 +214,6 @@ namespace GroceriesWasmApp.Server.Services {
             return docs.ToArray();
         }
 
-        private async Task<bool> IsMemberOf(string userEmail, string familyId, CancellationToken token) {
-            var families = await MemberOf(userEmail);
-            return families.Any(family => Dto.isMember(userEmail, family));
-        }
-
         protected virtual void Dispose(bool disposing) {
             if (!_isDisposed) {
                 if (disposing) {

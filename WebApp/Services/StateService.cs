@@ -61,11 +61,13 @@ namespace WebApp.Services {
 
                 try {
                     var earliestChange = await PushCoreAsync();
-                    await PullCoreAsync(isIncremental ? State.LastCosmosTimestamp.AsNullable() : null, earliestChange);
-                    // When the changes above are applied, it is possible that
-                    // foreign keys will be broken, causing additional changes that
-                    // need to be pushed.
-                    await PushCoreAsync();
+                    if (!isIncremental || earliestChange != null) {
+                        await PullCoreAsync(isIncremental ? State.LastCosmosTimestamp.AsNullable() : null, earliestChange);
+                        // When the changes above are applied, it is possible that
+                        // foreign keys will be broken, causing additional changes that
+                        // need to be pushed.
+                        await PushCoreAsync();
+                    }
                 }
                 catch (CosmosOperationCanceledException) {
                 }
