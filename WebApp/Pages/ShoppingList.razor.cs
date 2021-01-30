@@ -60,6 +60,8 @@ namespace WebApp.Pages {
             PostponeUntilChanged = null;
         }
 
+        // Might be a major performance issue here, calculating too many times
+        // See WASM version
         protected ShoppingListModule.ShoppingList ShoppingListView =>
             CurrentState.ShoppingList(DateTimeOffset.Now);
 
