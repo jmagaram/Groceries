@@ -5,6 +5,14 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <None Remove="Pages\Families.razor.css" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="Pages\Families.razor.css" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="BlazorDeferredRemove" Version="0.2.5" />
     <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly" Version="5.0.1" />
     <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.DevServer" Version="5.0.1" PrivateAssets="all" />

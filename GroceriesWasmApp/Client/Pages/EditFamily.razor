@@ -1,0 +1,186 @@
+﻿@page "/editfamily"
+@page "/editfamily/{Id}"
+@attribute [Authorize]
+@using Models
+@using Common
+@using static Models.ViewTypes
+@using static Models.CoreTypes;
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.FSharp.Core
+@using Microsoft.FSharp.Collections;
+@using Services;
+
+@{
+    string title = (System.String.IsNullOrWhiteSpace(Id)) ? "Create shopping list" : "Customize shopping list";
+}
+<nav class="navbar navbar-dark bg-dark sticky-top">
+    <a class="btn btn-dark" href="/families"><ion-icon name="chevron-back-outline"></ion-icon>&nbsp;Back</a>
+    <span class="navbar-text">@title</span>
+    <div></div>
+</nav>
+<div class="col" style="margin-top:1rem">
+    @if (Form == null) {
+        <p>Please wait...</p>
+    }
+    else if (Submitting.IsSome()) {
+        <p>Saving changes to <strong>@(FamilyNameModule.asText(Submitting.Value.FamilyName))</strong>...</p>
+    }
+    else if (IsDeleting == true) {
+        <p>Deleting...</p>
+    }
+    else {
+        var familyName = EditFamilyFormModule.familyNameErrors(Form);
+        var invitees = EditFamilyFormModule.invitees(Form);
+        var trySubmit = EditFamilyFormModule.trySubmit(Form);
+        var canSubmit = trySubmit.IsSome();
+        <div class="form-group">
+            <label for="familyNameInput"><strong>Shopping list name</strong></label>
+            <input spellcheck="false" id="familyNameInput" class="form-control" type="text" @oninput="OnFamilyNameChange" @onfocusout="OnFamilyNameFocusOut" value="@Form.FamilyName.ValueCommitted" />
+            @if (familyName.IsError) {
+                <div class="errorMessage text-danger">@familyName.ErrorValue</div>
+            }
+            <small class="form-text text-muted">If more than one person will share this list, type a name like "The Robinson's Grocery List". If this is only for you, type something like "John's Grocery List".</small>
+        </div>
+        <div class="form-group">
+            <label><strong>Members</strong></label>
+            <small class="form-text text-muted">You can share this list with other people in your household. When they log on to this web site they'll be able to view this list too.</small>
+        </div>
+        @foreach (var m in invitees) {
+            <div class="email-group">
+                <div class="form-inline">
+                    <input type="email"
+                           class="form-control"
+                           placeholder="Email address"
+                           @oninput="e => OnEmailChange(m.Index, (string)e.Value)"
+                           @onfocusout="e => OnEmailFocusOut(m.Index)"
+                           disabled="@(m.CanEditOrDelete == false)"
+                           value="@m.TextBox.ValueCommitted" />@if (m.CanEditOrDelete) {<button class="btn btn-outline-secondary" @onclick="_ => OnEmailDelete(m.Index)"><ion-icon name="person-remove-outline"></ion-icon></button>}
+                    </div>
+                    @if (!m.IsValid) {
+                        <div class="errorMessage text-danger" style="margin-bottom:1rem"><small>That doesn't look like an email address.</small></div>
+                    }
+                </div>
+            }
+        <button class="btn btn-secondary" ontouchstart="" disabled="@(EditFamilyFormModule.canInsertInvitee(Form) == false)" @onclick="InsertEmail">Add another person</button>
+        <hr />
+        @if (EditFamilyFormModule.canDelete(Form)) {
+            <button ontouchstart="" class="btn btn-secondary" @onclick="OnDelete"><ion-icon name="trash-outline"></ion-icon></button>
+        }
+        <button class="btn btn-secondary" ontouchstart="" @onclick="OnCancel">Cancel</button>
+        <button class="btn btn-primary" ontouchstart="" disabled="@(!canSubmit)" @onclick="OnSubmit">Save</button>
+        @if (!System.String.IsNullOrWhiteSpace(SubmitError)) {
+            <div class="errorMessage text-danger">@SubmitError</div>
+        }
+    }
+</div>
+@code {
+    protected override async Task OnInitializedAsync() {
+        var authState = await AuthenticationStateTask;
+        var user = authState.User;
+        var emailsJson = user.Claims.First(i => i.Type == "emails").Value;
+        var emails = System.Text.Json.JsonSerializer.Deserialize<string[]>(emailsJson);
+        if (emails.Length != 1) {
+            throw new NotImplementedException("The current user has more than one email address; don't know how to handle this.");
+        }
+        FilledOutBy = EmailAddressModule.tryParse(emails[0]).Value;
+    }
+
+    [Parameter]
+    public string Id { get; set; }
+
+    public EmailAddress FilledOutBy { get; set; }
+
+    protected override async Task OnParametersSetAsync() {
+        if (System.String.IsNullOrWhiteSpace(Id)) {
+            Form = EditFamilyFormModule.create(FilledOutBy);
+        }
+        else {
+            var familyId = FamilyIdModule.deserialize(Id).Value;
+            var memberOf = await StateService.MemberOf();
+            var familyToEdit = memberOf.First(i => i.FamilyId.Equals(familyId));
+            Form = EditFamilyFormModule.edit(FilledOutBy, familyToEdit);
+        }
+    }
+
+    [Inject]
+    public StateService StateService { get; set; }
+
+    protected void OnCancel(MouseEventArgs _) => NavigationManager.NavigateTo("families");
+
+    protected async Task OnDelete(MouseEventArgs _) {
+        try {
+            IsDeleting = true;
+            await StateService.DeleteFamily(Form.FamilyId);
+        }
+        catch (Exception e) {
+            SubmitError = $"Could not delete: {e.Message}";
+        }
+        finally {
+            IsDeleting = false;
+            NavigationManager.NavigateTo("families");
+        }
+    }
+
+    protected async Task OnSubmit(MouseEventArgs _) {
+        try {
+            Submitting = EditFamilyFormModule.trySubmit(Form);
+            var family = await StateService.UpsertFamily(Submitting.Value);
+            if (family == null) {
+                throw new Exception("Unable to create/edit the family list; unexpected error.");
+            }
+            NavigationManager.NavigateTo("families");
+        }
+        catch (Exception e) {
+            SubmitError = e.Message;
+        }
+        finally {
+            Submitting = FSharpOption<CoreTypes.Family>.None;
+        }
+    }
+
+    [Inject]
+    public NavigationManager NavigationManager { get; set; }
+
+    public ViewTypes.EditFamilyForm Form { get; set; }
+
+    public string SubmitError { get; set; }
+
+    public FSharpOption<CoreTypes.Family> Submitting { get; set; }
+
+    public bool IsSavingChanges { get; }
+
+    public bool IsDeleting { get; set; }
+
+    [CascadingParameter]
+    private Task<AuthenticationState> AuthenticationStateTask { get; set; }
+
+    protected void OnFamilyNameFocusOut(FocusEventArgs f) {
+        Form = EditFamilyFormModule.updateFamilyListName(TextBoxMessage.LoseFocus, Form);
+        SubmitError = "";
+    }
+
+    protected void OnFamilyNameChange(ChangeEventArgs c) {
+        Form = EditFamilyFormModule.updateFamilyListName(TextBoxMessage.NewTypeText((string)c.Value), Form);
+        SubmitError = "";
+    }
+
+    protected void OnEmailFocusOut(int index) {
+        Form = EditFamilyFormModule.updateInvitee(index, TextBoxMessage.LoseFocus, Form);
+        SubmitError = "";
+    }
+
+    protected void OnEmailChange(int index, string value) {
+        Form = EditFamilyFormModule.updateInvitee(index, TextBoxMessage.NewTypeText(value), Form);
+        SubmitError = "";
+    }
+
+    protected void InsertEmail(MouseEventArgs m) {
+        Form = EditFamilyFormModule.insertInvitee(Form);
+        SubmitError = "";
+    }
+
+    protected void OnEmailDelete(int index) {
+        Form = EditFamilyFormModule.deleteInvitee(index, Form);
+        SubmitError = "";
+    }
+}

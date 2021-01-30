@@ -39,6 +39,58 @@ module UserId =
     let anonymous = Guid.Empty |> UserId
 
 [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
+module FamilyId =
+
+    let create () = newGuid () |> FamilyId
+
+    let serialize i =
+        match i with
+        | FamilyId g -> g |> Guid.serialize
+
+    let deserialize s =
+        s |> Guid.tryDeserialize |> Option.map FamilyId
+
+    let anonymous = Guid.Empty |> FamilyId
+
+[<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
+module FamilyName =
+
+    let rules = singleLine 3<chars> 50<chars>
+    let normalizer = String.trim
+
+    let validator =
+        rules |> StringValidation.createValidator
+
+    let tryParse =
+        StringValidation.createParser normalizer validator FamilyName List.head
+
+    let asText (FamilyName s) = s
+
+[<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
+module EmailAddress =
+
+    let normalizer (s: string) = s.Trim().ToLowerInvariant()
+
+    let asText (EmailAddress s) = s
+
+    // Based on, but not complete version of https://bit.ly/39OQGZC
+    let tryParse email =
+        match email with
+        | null -> None
+        | email ->
+            let email = email |> normalizer
+
+            try
+                let pattern = @"^[^@\s]+@[^@\s]+\.[^@\s]+$"
+                let options = RegexOptions.IgnoreCase
+                let timeout = TimeSpan.FromMilliseconds(250.0)
+
+                match Regex.IsMatch(email, pattern, options, timeout) with
+                | true -> Some(EmailAddress email)
+                | false -> None
+            with :? RegexMatchTimeoutException -> None
+
+[<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
 module ItemName =
 
     let rules = singleLine 3<chars> 50<chars>
@@ -90,6 +142,7 @@ module Item =
             |> Seq.sort
             |> Seq.takeAtMost 12
             |> List.ofSeq
+
         match purchases |> List.ofSeq with
         | [] -> TimeSpan.FromDays(14.0)
         | [ _ ] -> TimeSpan.FromDays(14.0)
@@ -467,7 +520,10 @@ module ShoppingListSettings =
     let setStoreFilter k s = { s with StoreFilter = Some k }
 
     let clearStoreFilterIf k s =
-        if s.StoreFilter = Some k then s |> clearStoreFilter else s
+        if s.StoreFilter = Some k then
+            s |> clearStoreFilter
+        else
+            s
 
     let private coerceSearchText s =
         s
@@ -660,7 +716,12 @@ module ItemForm =
         { f with
               ItemForm.Stores =
                   f.Stores
-                  |> List.map (fun a -> if a.Store.StoreId = id then { a with IsSold = isSold } else a) }
+                  |> List.map
+                      (fun a ->
+                          if a.Store.StoreId = id then
+                              { a with IsSold = isSold }
+                          else
+                              a) }
 
     let storesSetAllAvailability isSoldAt (f: ItemForm) =
         f.Stores
@@ -737,7 +798,7 @@ module ItemForm =
     type ItemFormResult =
         { Item: Item
           InsertCategory: Category option
-          RecordPurchase : bool
+          RecordPurchase: bool
           NotSold: StoreId list }
 
     let asItemFormResult (now: DateTimeOffset) (f: ItemForm) =
@@ -773,14 +834,18 @@ module ItemForm =
 
         let notSold =
             f.Stores
-            |> Seq.choose (fun i -> if i.IsSold = false then Some i.Store.StoreId else None)
+            |> Seq.choose
+                (fun i ->
+                    if i.IsSold = false then
+                        Some i.Store.StoreId
+                    else
+                        None)
             |> List.ofSeq
 
         { Item = item
           InsertCategory = insertCategory
-          NotSold = notSold 
-          RecordPurchase = f.IsComplete
-        }
+          NotSold = notSold
+          RecordPurchase = f.IsComplete }
 
     type Message =
         | ItemName of TextBoxMessage

@@ -12,6 +12,7 @@ type State =
       UserSettings : DataTable<UserId, UserSettings>
       Purchases : DataTable<Purchase, Purchase>
       LoggedInUser : UserId
+      FamilyId : FamilyId
       LastCosmosTimestamp: int option
       ItemEditPage: ItemForm option }
 
@@ -28,6 +29,7 @@ type ReorganizeStoresMessage =
 type StateMessage =
     | ItemEditPageMessage of ItemEditPageMessage
     | RecordPurchase of ItemId
+    | InitializeNewShoppingList
     | ReorganizeCategoriesMessage of ReorganizeCategoriesMessage
     | ReorganizeStoresMessage of ReorganizeStoresMessage
     | ItemMessage of ItemMessage

@@ -18,7 +18,11 @@ grocery shopping list.
 
 There is no way to navigate from C# to F# code definitions. Features like "Find
 All References" and "Go to Definition" do not work. Refactoring names in F# will
-not refactor the C# references, which causes builds to break.
+not refactor the C# references, which causes builds to break. Working with the code
+requires a lot of jumping around from project to project and language to language,
+and it is difficult to get into a flow.
+
+I don't think F# breakpoints get hit when debugging in WASM. They did work in Blazor server however.
 
 There is no hot-reload which makes development of UI slow and tedious.
 

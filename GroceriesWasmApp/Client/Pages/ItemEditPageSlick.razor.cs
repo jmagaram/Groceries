@@ -12,7 +12,7 @@ namespace GroceriesWasmApp.Client.Pages {
     public partial class ItemEditPageSlick : ComponentBase {
 
         protected override async Task OnInitializedAsync() {
-            await StateService.InitializeAsync("justin@magaram.com");
+            await StateService.InitializeAsync();
             if (!string.IsNullOrWhiteSpace(Id)) {
                 var pageMessage = PageMessage.NewBeginEditItem(Id);
                 var stateMessage = StateMessage.NewItemEditPageMessage(pageMessage);

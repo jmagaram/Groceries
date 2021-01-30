@@ -29,7 +29,6 @@ namespace GroceriesWasmApp.Client {
                 options.ProviderOptions.LoginMode = "redirect";
             });
 
-
             //builder.Services.AddApplicationInsightsTelemetry(Configuration["APPINSIGHTS_CONNECTIONSTRING"]);
             builder.Services.AddScoped<ICosmosConnector, ServerStorage>();
             builder.Services.AddScoped<StateService>();

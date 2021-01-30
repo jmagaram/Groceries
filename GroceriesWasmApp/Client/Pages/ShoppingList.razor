@@ -4,8 +4,8 @@
 @using Common
 @using static Models.CoreTypes;
 @using Microsoft.AspNetCore.Authorization
-@*@using static Models.ShoppingListSettingsModule;*@
 
+@if (StateService.State == null) return;
 @{
     string searchClass = IsSearchBarVisible ? "search" : "";
     string listItemsClass = IsSearchBarVisible ? "when-search-active" : "";
@@ -82,7 +82,7 @@
         }
     }
     else if (ShoppingListView.TotalItems == 0) {
-        <p style="margin-top:1rem">No items on your shopping list.</p>
+        <p style="margin-top:1rem">Nothing on your shopping list yet; tap the add/search button below.</p>
     }
 </div>
 @if (!IsSearchBarVisible) {

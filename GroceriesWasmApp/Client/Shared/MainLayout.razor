@@ -3,17 +3,13 @@
 @using static Models.StateExtensions
 @using GroceriesWasmApp.Client.Services
 
-@if (StateService.State.LoggedInUserSettings().FontSize.IsLargeFontSize) {
+@if (StateService.State!=null && StateService.State.LoggedInUserSettings().FontSize.IsLargeFontSize) {
     <style>
         body {
             font-size: larger;
         }
     </style>
 }
-<div class="top-row px-4 auth">
-    <LoginDisplay />
-    <a href="https://docs.microsoft.com/aspnet/" target="_blank">About</a>
-</div>
 <div class="container-fluid px-0">
     @Body
 </div>

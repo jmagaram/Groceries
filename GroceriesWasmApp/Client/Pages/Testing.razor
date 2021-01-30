@@ -16,7 +16,7 @@
     //}
 
     public async Task LoadGroceries() {
-        await StateService.InitializeAsync("justin@magaram.com");
+        await StateService.InitializeAsync();
         await StateService.SyncEverythingAsync();
     }
 }

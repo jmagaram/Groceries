@@ -209,15 +209,122 @@ module Dto =
             | false -> return id |> Change.Upsert
         }
 
+    let serializeFamily (i: CoreTypes.Family): DtoTypes.Document<DtoTypes.Family> =
+        { CustomerId = i.FamilyId |> FamilyId.serialize
+          Id = i.FamilyId |> FamilyId.serialize
+          DocumentKind = DtoTypes.DocumentKind.Family
+          Etag =
+              i.Etag
+              |> Option.map (Etag.tag)
+              |> Option.defaultValue null
+          IsDeleted = false
+          Timestamp = Nullable<int>()
+          Content =
+              { FamilyName = i.FamilyName |> FamilyName.asText
+                MemberEmails =
+                    i.Members
+                    |> Seq.map EmailAddress.asText
+                    |> Array.ofSeq } }
+
+    let deserializeFamily (i: DtoTypes.Document<DtoTypes.Family>) =
+        result {
+            let! verifyConsistentId =
+                match i.Id = i.CustomerId with
+                | true -> Ok()
+                | false -> Error "The document ID does not match the family ID."
+
+            let! verifyDocumentKind =
+                match i.DocumentKind with
+                | DtoTypes.DocumentKind.Family -> Ok()
+                | _ -> Error "The document kind was supposed to indicate a family but is incorrect."
+
+            let! familyName =
+                i.Content.FamilyName
+                |> FamilyName.tryParse
+                |> Result.mapError (fun e -> $"Could not deserialize family name {e}")
+
+            let! emails =
+                i.Content.MemberEmails
+                |> Seq.map EmailAddress.tryParse
+                |> Seq.onlySome
+                |> Option.map List.distinct
+                |> Option.asResult "Could not deserialize the member list."
+
+            let! verifyAtLeastOneMember =
+                match emails with
+                | [] -> Error "There must be at least one member of the family."
+                | _ -> Ok()
+
+            let! familyId =
+                i.CustomerId
+                |> FamilyId.deserialize
+                |> Option.asResult $"Could not deserialize the family ID: {i.CustomerId}"
+
+            let etag = CoreTypes.Etag i.Etag |> Some
+
+            return
+                { CoreTypes.FamilyId = familyId
+                  CoreTypes.Family.FamilyName = familyName
+                  CoreTypes.Family.Etag = etag
+                  CoreTypes.Family.Members = emails }
+        }
+
+    let isMember userEmail (i: DtoTypes.Document<DtoTypes.Family>) =
+        i.Content.MemberEmails
+        |> Array.exists
+            (fun j ->
+                userEmail
+                |> String.equalsInvariantCultureIgnoreCase j)
+
+    let removeMember userEmail (i: DtoTypes.Document<DtoTypes.Family>) =
+        { i with
+              Content =
+                  { i.Content with
+                        MemberEmails =
+                            i.Content.MemberEmails
+                            |> Array.filter
+                                (fun j ->
+                                    userEmail
+                                    |> String.equalsInvariantCultureIgnoreCase j
+                                    |> not) } }
+
     let private affixFamilyIdToDocument id (i: DtoTypes.Document<_>) =
-        if i.CustomerId = id then i else { i with CustomerId = id }
+        if i.CustomerId = id then
+            i
+        else
+            { i with CustomerId = id }
+
+    //let clearEtags (i:DtoTypes.Changes) =
+    //    { i with
+    //        Items = i.Items |> Array.map (fun j -> { j with Etag = "" })
+    //        Categories = i.Categories |> Array.map (fun j -> { j with Etag = "" })
+    //        Purchases = i.Purchases |> Array.map (fun j -> { j with Etag = "" })
+    //        Stores = i.Stores |> Array.map (fun j -> { j with Etag = "" })
+    //        NotSoldItems = i.NotSoldItems |> Array.map (fun j -> { j with Etag = "" })
+    //    }
+
+    //let replaceAllIds (i:DtoTypes.Changes) =
+    //    let allIds = 
+    //        i.Items |> Seq.map (fun j -> j.Id)
+    //        |> Seq.append (i.Categories |> Seq.map (fun j -> j.Id))
+    //        |> Seq.append (i.Purchases |> Seq.map (fun j->j.Id))
+    //        |> Seq.append (i.Stores |> Seq.map (fun j->j.Id ))
+    //        |> Seq.append (i.Purchases |> Seq.map (fun j->j.)
 
     let affixFamilyId familyId (i: DtoTypes.Changes) =
         { i with
-              Items = i.Items |> Array.map (affixFamilyIdToDocument familyId)
-              Categories = i.Categories |> Array.map (affixFamilyIdToDocument familyId)
-              Purchases = i.Purchases |> Array.map (affixFamilyIdToDocument familyId)
-              Stores = i.Stores |> Array.map (affixFamilyIdToDocument familyId)
+              Items =
+                  i.Items
+                  |> Array.map (affixFamilyIdToDocument familyId)
+              Categories =
+                  i.Categories
+                  |> Array.map (affixFamilyIdToDocument familyId)
+              Purchases =
+                  i.Purchases
+                  |> Array.map (affixFamilyIdToDocument familyId)
+              Stores =
+                  i.Stores
+                  |> Array.map (affixFamilyIdToDocument familyId)
               NotSoldItems =
                   i.NotSoldItems
                   |> Array.map (affixFamilyIdToDocument familyId) }

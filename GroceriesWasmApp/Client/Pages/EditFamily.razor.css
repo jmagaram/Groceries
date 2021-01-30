@@ -1,0 +1,15 @@
+﻿button {
+    margin-right:0.5rem;
+}
+
+input {
+    width:18em;
+}
+
+.email-group {
+    margin-bottom:0.5rem;
+}
+
+input:disabled {
+    background-color:white;
+}

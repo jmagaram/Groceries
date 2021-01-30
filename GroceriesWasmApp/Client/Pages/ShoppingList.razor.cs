@@ -34,11 +34,19 @@ namespace GroceriesWasmApp.Client.Pages {
         readonly Dictionary<CategoryId, ElementReference> _categoryReferences = new();
 
         protected override async Task OnInitializedAsync() {
-            await StateService.InitializeAsync("justin@magaram.com");
+            if (StateService.State == null) {
+                Navigation.NavigateTo("families");
+                return;
+            }
+            await StateService.InitializeAsync();
             await EndSearch();
         }
 
         protected override void OnInitialized() {
+            if (StateService.State == null) {
+                Navigation.NavigateTo("families");
+                return;
+            }
             var state = Observable
                 .FromEvent(h => StateService.OnChange += h, h => StateService.OnChange -= h)
                 .Publish();

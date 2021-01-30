@@ -154,6 +154,71 @@ namespace GroceriesWasmApp.Server.Services {
             return docs.ToArray();
         }
 
+        public async Task<Document<Family>> UpsertFamily(Document<Family> family) {
+            using CancellationTokenSource source = new(_timeout);
+            var result = await PushCoreAsync(family, i => new CosmosDocumentProperties(Id: family.Id, Etag: family.Etag, PartitionKey: family.CustomerId), source.Token);
+            return result.Map(i => i.UpdatedServerDocument, i => i.UnchangedServerDocument);
+        }
+
+        //private async Task DeleteFamilyMember(string familyId, string email) {
+        //    using CancellationTokenSource source = new(_timeout);
+        //    var container = _client.GetContainer(_databaseId, _containerId);
+        //    PartitionKey partitionKey = new PartitionKey(familyId);
+        //    var requestOptions = new QueryRequestOptions { PartitionKey = partitionKey };
+        //    var family = await container.ReadItemAsync<Document<Family>>(id: familyId, partitionKey, cancellationToken: source.Token);
+        //    if (family.Resource.Content.MemberEmails.Contains(email, StringComparer.InvariantCultureIgnoreCase)) {
+        //        var smallerFamily = Dto.removeMember(email, family);
+        //        if (smallerFamily.Content.MemberEmails.Length > 0) {
+        //            var itemRequestOptions = new ItemRequestOptions { IfMatchEtag = family.ETag };
+        //            await container.UpsertItemAsync(smallerFamily, partitionKey, requestOptions: itemRequestOptions, source.Token);
+        //        }
+        //        else {
+        //            await DeleteFamily(familyId);
+        //        }
+        //    }
+        //}
+
+        public async Task DeleteFamily(string familyId) {
+            using CancellationTokenSource source = new(_timeout);
+            var container = _client.GetContainer(_databaseId, _containerId);
+            PartitionKey partitionKey = new PartitionKey(familyId);
+            var requestOptions = new QueryRequestOptions { PartitionKey = partitionKey };
+            var query = container.GetItemLinqQueryable<Document<object>>(requestOptions: requestOptions).Where(i => i.CustomerId == familyId);
+            var documentIds = new List<string>();
+            using (var iterator = query.ToFeedIterator()) {
+                while (iterator.HasMoreResults) {
+                    foreach (var item in await iterator.ReadNextAsync(source.Token)) {
+                        documentIds.Add(item.Id);
+                    }
+                }
+            }
+            var tasks = documentIds.Select(i => container.DeleteItemStreamAsync(id: i, partitionKey: partitionKey, cancellationToken: source.Token)).ToArray();
+            await Task.WhenAll(tasks);
+            await container.DeleteItemStreamAsync(id: familyId, partitionKey: partitionKey, cancellationToken: source.Token);
+        }
+
+        public async Task<Document<Family>[]> MemberOf(string email) {
+            using CancellationTokenSource source = new(_timeout);
+            var container = _client.GetContainer(_databaseId, _containerId);
+            var query = container.GetItemLinqQueryable<Document<Family>>()
+                .Where(i => i.DocumentKind == DocumentKind.Family)
+                .Where(i => i.Content.MemberEmails.Contains(email));
+            var docs = new List<Document<Family>>();
+            using (var iterator = query.ToFeedIterator()) {
+                while (iterator.HasMoreResults) {
+                    foreach (var item in await iterator.ReadNextAsync(source.Token)) {
+                        docs.Add(item);
+                    }
+                }
+            }
+            return docs.ToArray();
+        }
+
+        private async Task<bool> IsMemberOf(string userEmail, string familyId, CancellationToken token) {
+            var families = await MemberOf(userEmail);
+            return families.Any(family => Dto.isMember(userEmail, family));
+        }
+
         protected virtual void Dispose(bool disposing) {
             if (!_isDisposed) {
                 if (disposing) {

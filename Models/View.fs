@@ -8,7 +8,10 @@ open CoreTypes
 module TextSpan =
 
     let private create f s =
-        if s = "" then failwith "The text span is empty." else { Format = f; Text = s }
+        if s = "" then
+            failwith "The text span is empty."
+        else
+            { Format = f; Text = s }
 
     let normal = create Normal
 
@@ -80,8 +83,10 @@ module Highlighter =
             seq {
                 let ms = regex.Matches(s)
 
-                if ms.Count = 0 then yield (TextSpan.normal s)
-                elif ms.[0].Index > 0 then yield TextSpan.normal (s.Substring(0, ms.[0].Index))
+                if ms.Count = 0 then
+                    yield (TextSpan.normal s)
+                elif ms.[0].Index > 0 then
+                    yield TextSpan.normal (s.Substring(0, ms.[0].Index))
 
                 for i in 0 .. ms.Count - 1 do
                     yield TextSpan.highlight ms.[i].Value
@@ -90,8 +95,8 @@ module Highlighter =
                     if i < ms.Count - 1 then
                         let len = ms.[i + 1].Index - regStart
 
-                        if len > 0
-                        then yield TextSpan.normal (s.Substring(regStart, len))
+                        if len > 0 then
+                            yield TextSpan.normal (s.Substring(regStart, len))
                     elif regStart < s.Length then
                         yield TextSpan.normal (s.Substring(regStart))
 
@@ -115,7 +120,12 @@ module Highlighter =
             |> FormattedText.spans
             |> Seq.collect (fun s -> Seq.replicate s.Text.Length s.Format)
             |> Seq.indexed
-            |> Seq.choose (fun (i, j) -> if j = TextFormat.Highlight then Some i else None)
+            |> Seq.choose
+                (fun (i, j) ->
+                    if j = TextFormat.Highlight then
+                        Some i
+                    else
+                        None)
             |> Set.ofSeq
 
         fun (s: String) ->
@@ -161,20 +171,25 @@ module TimeSpanEstimate =
 
     let fromTimeSpan (ts: TimeSpan) =
         let (ts, neg) =
-            if ts < TimeSpan.Zero then (-ts, -1.0) else (ts, 1.0)
+            if ts < TimeSpan.Zero then
+                (-ts, -1.0)
+            else
+                (ts, 1.0)
 
         let cutoff = 0.8
         let days = ts.TotalDays
         let months = ts.TotalDays / 30.0
         let weeks = ts.TotalDays / 7.0
 
-        if months > cutoff
-        then Convert.ToInt32(months * neg) |> int |> Months
-        elif (weeks > cutoff)
-        then Convert.ToInt32(weeks * neg) |> int |> Weeks
-        else Convert.ToInt32(days * neg) |> int |> Days
+        if months > cutoff then
+            Convert.ToInt32(months * neg) |> int |> Months
+        elif (weeks > cutoff) then
+            Convert.ToInt32(weeks * neg) |> int |> Weeks
+        else
+            Convert.ToInt32(days * neg) |> int |> Days
 
-    let fromDays d = TimeSpan.FromDays(d |> float) |> fromTimeSpan
+    let fromDays d =
+        TimeSpan.FromDays(d |> float) |> fromTimeSpan
 
     let between (a: DateTimeOffset) (b: DateTimeOffset) = (b - a) |> fromTimeSpan
 
@@ -192,26 +207,23 @@ module SelectZeroOrOne =
           CurrentChoice = choice
           OriginalChoice = choice }
 
-    let select i z = 
-        { z with CurrentChoice = Some i }
+    let select i z = { z with CurrentChoice = Some i }
 
-    let selectNone z = 
-        { z with CurrentChoice = None }
+    let selectNone z = { z with CurrentChoice = None }
 
     let hasChanges z = z.OriginalChoice <> z.CurrentChoice
 
 module SelectZeroOrOneCategory =
 
-    let createFromPickList current choices =
-        SelectZeroOrOne.create current choices
+    let createFromPickList current choices = SelectZeroOrOne.create current choices
 
     let create current state =
         createFromPickList current (state |> State.categories)
 
-    let asStateMessage item (s:SelectZeroOrOne<CoreTypes.Category>) =
+    let asStateMessage item (s: SelectZeroOrOne<CoreTypes.Category>) =
         match s.CurrentChoice with
-        | None -> StateTypes.ModifyItem (item, Item.Message.ClearCategory)
-        | Some c -> StateTypes.ModifyItem (item, Item.Message.UpdateCategory c.CategoryId)
+        | None -> StateTypes.ModifyItem(item, Item.Message.ClearCategory)
+        | Some c -> StateTypes.ModifyItem(item, Item.Message.UpdateCategory c.CategoryId)
         |> StateTypes.ItemMessage
 
 [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
@@ -223,7 +235,8 @@ module SelectMany =
           Selected = Set.empty }
 
     let assertItemInSet i s =
-        if s.Items |> Set.contains i |> not then failwith "The set does not contain that item."
+        if s.Items |> Set.contains i |> not then
+            failwith "The set does not contain that item."
 
     let withOriginalSelection items s =
         items
@@ -238,15 +251,20 @@ module SelectMany =
 
     let select item s =
         s |> assertItemInSet item
-        { s with Selected = s.Selected |> Set.add item }
 
-    let selectMany items s = items |> Seq.fold (fun t i -> t |> select i) s
+        { s with
+              Selected = s.Selected |> Set.add item }
+
+    let selectMany items s =
+        items |> Seq.fold (fun t i -> t |> select i) s
 
     let selectAll s = s |> selectMany s.Items
 
     let deselect item s =
         s |> assertItemInSet item
-        { s with Selected = s.Selected |> Set.remove item }
+
+        { s with
+              Selected = s.Selected |> Set.remove item }
 
     let deselectAll s = { s with Selected = Set.empty }
 
@@ -259,9 +277,11 @@ module SelectMany =
         | true -> s |> deselect i
         | false -> s |> select i
 
-    let added s = Set.difference s.Selected s.SelectedOriginal
+    let added s =
+        Set.difference s.Selected s.SelectedOriginal
 
-    let removed s = Set.difference s.SelectedOriginal s.Selected
+    let removed s =
+        Set.difference s.SelectedOriginal s.Selected
 
     let hasChanges s =
         (s |> added |> Set.isEmpty |> not)
@@ -269,11 +289,15 @@ module SelectMany =
 
     let selectionSummary s =
         s.Items
-        |> Seq.map (fun i -> {| Item = i; IsSelected = s.Selected |> Set.contains i |})
+        |> Seq.map
+            (fun i ->
+                {| Item = i
+                   IsSelected = s.Selected |> Set.contains i |})
 
     let allSelected s = s.Selected.Count = s.Items.Count
 
-    let revertToOriginalSelection s = { s with Selected = s.SelectedOriginal }
+    let revertToOriginalSelection s =
+        { s with Selected = s.SelectedOriginal }
 
 module SelectManyStores =
 
@@ -362,7 +386,8 @@ module SetBulkEditForm =
                   |> TextBox.create }
 
     let update normalize splitOn delimiter msg b =
-        let normalize = SetString.fromString normalize splitOn delimiter
+        let normalize =
+            SetString.fromString normalize splitOn delimiter
 
         { b with
               SetBulkEditForm.Proposed = b.Proposed |> TextBox.update normalize msg }
@@ -373,10 +398,11 @@ module SetBulkEditForm =
 
     let validationResults tryParse items =
         items
-        |> Seq.map (fun i ->
-            i
-            |> tryParse
-            |> Result.mapError (fun e -> {| Proposed = i; Error = e |}))
+        |> Seq.map
+            (fun i ->
+                i
+                |> tryParse
+                |> Result.mapError (fun e -> {| Proposed = i; Error = e |}))
 
     let tryFindIgnoreCase s items =
         items
@@ -384,12 +410,18 @@ module SetBulkEditForm =
 
     let summary normalize splitOn tryParse b =
         let items = b |> items normalize splitOn
-        let validationResults = items |> validationResults tryParse |> List.ofSeq
+
+        let validationResults =
+            items |> validationResults tryParse |> List.ofSeq
 
         match validationResults |> Seq.forall Result.isOk with
         | false -> None
         | true ->
-            let goal = validationResults |> Seq.choose Result.asOption |> Set.ofSeq
+            let goal =
+                validationResults
+                |> Seq.choose Result.asOption
+                |> Set.ofSeq
+
             let original = b.Original |> Set.ofSeq
             let unchanged = Set.intersect original goal
             let deleted = original - goal
@@ -397,9 +429,11 @@ module SetBulkEditForm =
 
             let moveOrDelete =
                 deleted
-                |> Seq.fold (fun total source ->
-                    let target = goal |> tryFindIgnoreCase source
-                    total |> Map.add source target) Map.empty
+                |> Seq.fold
+                    (fun total source ->
+                        let target = goal |> tryFindIgnoreCase source
+                        total |> Map.add source target)
+                    Map.empty
 
             { Create = created
               Unchanged = unchanged
@@ -410,7 +444,8 @@ module SetBulkEditForm =
 [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
 module SetMapChangesForm =
 
-    let targets s = s.Unchanged |> Seq.append s.Create |> Seq.sort
+    let targets s =
+        s.Unchanged |> Seq.append s.Create |> Seq.sort
 
     let original s =
         s.Unchanged
@@ -418,14 +453,16 @@ module SetMapChangesForm =
         |> Seq.sort
 
     let private edit x y s =
-        if s.MoveOrDelete |> Map.containsKey x |> not then failwith "Can not move or delete that item."
+        if s.MoveOrDelete |> Map.containsKey x |> not then
+            failwith "Can not move or delete that item."
 
         if y
            |> Option.map (fun y -> s |> targets |> Seq.contains y |> not)
            |> Option.defaultValue false then
             failwith "That is not a valid target for moving an item."
 
-        { s with MoveOrDelete = s.MoveOrDelete.Add(x, y) }
+        { s with
+              MoveOrDelete = s.MoveOrDelete.Add(x, y) }
 
     let delete x s = s |> edit x None
 
@@ -488,4 +525,101 @@ module SetEditWizardForm =
             |> SetMapChangesForm.delete x
             |> SetMapChangesMode
 
+[<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
+module EditFamilyForm =
 
+    let create filledOutBy =
+        { EditFamilyForm.FamilyName = TextBox.create ""
+          FilledOutBy = filledOutBy
+          Invitees = [ TextBox.create (filledOutBy |> EmailAddress.asText) ]
+          Etag = None
+          FamilyId = FamilyId.create () }
+
+    let edit filledOutBy (f: CoreTypes.Family) =
+        { EditFamilyForm.FamilyName =
+              f.FamilyName
+              |> FamilyName.asText
+              |> TextBox.create
+          FilledOutBy = filledOutBy
+          Invitees =
+              f.Members
+              |> List.map (EmailAddress.asText >> TextBox.create)
+          FamilyId = f.FamilyId
+          Etag = f.Etag }
+
+    let insertInvitee (f: EditFamilyForm) =
+        { f with
+              Invitees = TextBox.create "" :: f.Invitees }
+
+    let canInsertInvitee (f: EditFamilyForm) =
+        f.Invitees
+        |> List.forall (fun i -> i.ValueTyping |> String.isNullOrWhiteSpace |> not)
+
+    let deleteInvitee index (f: EditFamilyForm) =
+        { f with
+              Invitees = f.Invitees |> Seq.removeAt index |> List.ofSeq }
+
+    let updateFamilyListName msg (f: EditFamilyForm) =
+        { f with
+              FamilyName =
+                  f.FamilyName
+                  |> TextBox.update FamilyName.normalizer msg }
+
+    let updateInvitee index msg (f: EditFamilyForm) =
+        { f with
+              Invitees =
+                  f.Invitees
+                  |> Seq.indexed
+                  |> Seq.map
+                      (fun (i, j) ->
+                          if i <> index then
+                              j
+                          else
+                              j |> TextBox.update EmailAddress.normalizer msg)
+                  |> List.ofSeq }
+
+    let familyNameErrors (f: EditFamilyForm) =
+        f.FamilyName.ValueTyping |> FamilyName.tryParse
+
+    let canDelete (f: EditFamilyForm) = f.Etag.IsSome
+
+    let invitees (f: EditFamilyForm) =
+        f.Invitees
+        |> Seq.indexed
+        |> Seq.map
+            (fun (i, j) ->
+                {| TextBox = j
+                   Index = i
+                   CanEditOrDelete =
+                       let isSelf =
+                           j.ValueCommitted
+                           |> EmailAddress.tryParse
+                           |> Option.map (fun i -> i = f.FilledOutBy)
+                           |> Option.defaultValue false
+
+                       let isCreatingNew = f.Etag.IsNone
+                       not isSelf || not isCreatingNew
+                   IsValid =
+                       j.ValueTyping
+                       |> EmailAddress.tryParse
+                       |> Option.isSome |})
+
+    let trySubmit (form: EditFamilyForm) =
+        option {
+            let! familyName = form |> familyNameErrors |> Result.asOption
+
+            let! invitees =
+                form.Invitees
+                |> Seq.map (fun t -> t.ValueTyping |> EmailAddress.tryParse)
+                |> Seq.distinct
+                |> Seq.onlySome
+                |> Option.filter (List.isEmpty >> not)
+
+            let result =
+                { CoreTypes.Family.FamilyName = familyName
+                  CoreTypes.Family.Etag = form.Etag
+                  CoreTypes.FamilyId = form.FamilyId
+                  CoreTypes.Family.Members = invitees }
+
+            return result
+        }

@@ -56,6 +56,14 @@ module Seq =
         |> Seq.indexed
         |> Seq.choose (fun (i, j) -> if i = index then None else Some j)
 
+    let private prepend (source:'T list option) (item:'T option) =
+        Option.map2 (fun i j -> i :: j) item source 
+
+    let onlySome (source:'T option seq) =
+        source
+        |> Seq.fold prepend (Some [])
+        |> Option.map List.rev
+
 [<AutoOpen>]
 module Option =
 

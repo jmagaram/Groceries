@@ -15,6 +15,15 @@ type StoreId = StoreId of Guid
 type UserId = UserId of Guid
 
 [<Struct>]
+type FamilyId = FamilyId of Guid
+
+[<Struct>]
+type FamilyName = | FamilyName of string
+
+[<Struct>]
+type EmailAddress = | EmailAddress of string
+
+[<Struct>]
 type ItemName = ItemName of string
 
 type SerializedId = string
@@ -32,6 +41,12 @@ type CategoryName = CategoryName of string
 type StoreName = StoreName of string
 
 type Etag = Etag of string
+
+type Family =
+    { FamilyName : FamilyName
+      FamilyId : FamilyId
+      Etag : Etag option 
+      Members : EmailAddress list }
 
 type Item =
     { ItemId: ItemId

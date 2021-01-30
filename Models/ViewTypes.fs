@@ -34,7 +34,9 @@ type ItemQuickActionsView =
       PermitQuickNotSoldAt: Store option
       PermitStoresCustomization: bool }
 
-type SetBulkEditForm = { Original: Set<string>; Proposed: TextBox }
+type SetBulkEditForm =
+    { Original: Set<string>
+      Proposed: TextBox }
 
 type SetMapChangesForm =
     { Proposed: List<string>
@@ -52,3 +54,15 @@ type SetEditWizardMessage =
     | GoBackToBulkEdit
     | MoveRename of string * string
     | Delete of string
+
+//type EditFamilyFormMode =
+//    | NotYetSubmitted
+//    | Submitting
+//    | SubmitErrorOf of string
+
+type EditFamilyForm =
+    { FamilyName: TextBox
+      FamilyId: FamilyId
+      Invitees: TextBox list
+      FilledOutBy: EmailAddress
+      Etag: Etag option }

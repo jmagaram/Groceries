@@ -1,0 +1,28 @@
+﻿.familyDetails ul {
+    list-style-type:none;
+    padding-left:0;
+}
+
+.familyDetails {
+    margin-bottom:1rem;
+    margin-top:1rem;
+}
+
+ul.memberList {
+    font-size:smaller;
+    margin-bottom:0.5rem;
+}
+
+.create-new-button {
+    margin-top:1rem;
+}
+
+button {
+    margin-right:0.5rem;
+}
+
+.family-link {
+    padding-left:0;
+    padding-right:0;
+    padding-bottom:0;
+}

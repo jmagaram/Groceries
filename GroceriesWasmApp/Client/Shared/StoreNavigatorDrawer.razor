@@ -14,7 +14,7 @@
         .iconButtonMenu button {
             display: grid;
             grid-template-columns: 2em auto;
-            grid-column-gap:.25em;
+            grid-column-gap: .25em;
             justify-content: flex-start;
             border: none;
             padding: 0.5rem;
@@ -22,7 +22,7 @@
             padding-top: 0.75rem;
             padding-bottom: 0.75rem;
             outline: none;
-            align-items:center;
+            align-items: center;
             box-shadow: none !important;
         }
 
@@ -63,7 +63,10 @@
                 <span style="grid-column:2/3">@description</span>
             </button>
         }
-        <button class="separatorAbove" ontouchstart="" @onclick="async _=> await OnManageStoresCore()">
+        <button class="separatorAbove" ontouchstart="" @onclick="OnSwitchList">
+            <span style="grid-column:1/2"><ion-icon name="person-outline"></ion-icon></span><span style="grid-column:2/3">User account</span>
+        </button>
+        <button ontouchstart="" @onclick="async _=> await OnManageStoresCore()">
             <span style="grid-column:1/2"><ion-icon name="settings-outline"></ion-icon></span><span style="grid-column:2/3">Manage stores</span>
         </button>
     </div>
@@ -90,8 +93,15 @@
         await OnManageStores.InvokeAsync();
     }
 
+    private void OnSwitchList(MouseEventArgs _) {
+        NavigationManager.NavigateTo("families");
+    }
+
     [Parameter]
     public EventCallback<StoreId?> OnSelect { get; set; }
+
+    [Inject]
+    public NavigationManager NavigationManager { get; set; }
 
     [Parameter]
     public EventCallback OnManageStores { get; set; }

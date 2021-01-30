@@ -1,6 +1,12 @@
 @page "/authentication/{action}"
 @using Microsoft.AspNetCore.Components.WebAssembly.Authentication
-<RemoteAuthenticatorView Action="@Action" />
+<div class="col" style="margin-top:1rem">
+    <RemoteAuthenticatorView Action="@Action" />
+
+    <div>
+        <a class="btn btn-primary" href="/">Return to home page</a>
+    </div>
+</div>
 
 @code{
     [Parameter] public string Action { get; set; }

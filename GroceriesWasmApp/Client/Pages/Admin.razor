@@ -1,0 +1,19 @@
+﻿@page "/admin"
+@using Microsoft.AspNetCore.Authorization
+@attribute [Authorize]
+
+<h3>Administration</h3>
+
+<button @onclick="Migrate">Migrate to new family</button>
+<p></p>
+@code {
+    [Inject]
+    public HttpClient HttpClient { get; set; }
+
+    public async Task Migrate(MouseEventArgs _) {
+        var uri = $"api/storage/migratefamily";
+        Result = await HttpClient.GetStringAsync(uri);
+    }
+
+    public string Result { get; set; }
+}

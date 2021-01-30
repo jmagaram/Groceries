@@ -1,25 +1,29 @@
 ﻿using System;
+using System.ComponentModel.DataAnnotations;
+using System.Linq;
+using System.Reflection.Metadata;
 using System.Threading.Tasks;
 using GroceriesWasmApp.Shared;
+using Microsoft.FSharp.Control;
 using Models;
+using static Models.DtoTypes;
+using static Models.ViewTypes;
 
 #nullable enable
 
 namespace GroceriesWasmApp.Client.Services {
 
+    // Good chance there are bugs in here if methods are called while the service is synchronizing
     public class StateService {
         private readonly ICosmosConnector _cosmos;
-        private bool _hasSynchronized;
-        private string? _familyId;
+        private bool _hasSynchronized; // Not sure this is needed; use the last sync timestamp instead?
 
-        public StateService(StateTypes.State state, ICosmosConnector cosmos) {
+        public StateService(ICosmosConnector cosmos) {
             _cosmos = cosmos;
             _hasSynchronized = false;
-            State = state;
-            SynchronizationStatus = HasChanges();
+            State = null;
+            SynchronizationStatus = SynchronizationStatus.NoChanges;
         }
-
-        public StateService(ICosmosConnector cosmos) : this(StateModule.createDefault(UserIdModule.anonymous), cosmos) { }
 
         public SynchronizationStatus SynchronizationStatus { get; private set; }
 
@@ -29,37 +33,103 @@ namespace GroceriesWasmApp.Client.Services {
         /// </summary>
         public event Action? OnChange;
 
-        public StateTypes.State State { get; private set; }
+        public StateTypes.State? State { get; private set; }
 
-        /// <summary>
-        /// Performs and incremental synchronization but only if the service has
-        /// not synchronized yet.
-        /// </summary>
-        public async Task InitializeAsync(string familyId) {
-            if (!_hasSynchronized || familyId != _familyId) {
-                _familyId = familyId;
-                await SyncCoreAsync(isIncremental: true, ignoreIfSynchronizing: true);
+        public async Task InitializeAsync(CoreTypes.FamilyId? familyId = null) {
+            if (SynchronizationStatus == SynchronizationStatus.Synchronizing) {
+                return;
+            }
+            if (State == null) {
+                if (familyId == null) {
+                    throw new InvalidOperationException("Can't initialize the service without an existing familyId.");
+                }
+                else {
+                    State = StateModule.createDefault(familyId.Value, UserIdModule.anonymous);
+                    _hasSynchronized = false;
+                    SynchronizationStatus = HasChanges();
+                    await SyncEverythingAsync();
+                }
+            }
+            else {
+                if (familyId == null || State.FamilyId.Equals(familyId.Value)) {
+                    if (!_hasSynchronized) {
+                        await SyncEverythingAsync();
+                    }
+                }
+                else {
+                    switch (SynchronizationStatus) {
+                        case SynchronizationStatus.Synchronizing:
+                            break;
+                        case SynchronizationStatus.HasChanges:
+                            await SyncIncrementalAsync();
+                            _hasSynchronized = false;
+                            await InitializeAsync(familyId);
+                            break;
+                        case SynchronizationStatus.NoChanges:
+                            State = StateModule.createDefault(familyId.Value, UserIdModule.anonymous);
+                            await SyncEverythingAsync();
+                            break;
+                    }
+                }
             }
         }
 
         public async Task UpdateAsync(StateTypes.StateMessage message) {
+            ThrowIfServiceIsNotInitialized();
             State = StateModule.updateUsingStandardClock(message, State);
             OnChange?.Invoke();
             await SyncCoreAsync(isIncremental: true, ignoreIfSynchronizing: false);
         }
 
-        public Task SyncEverythingAsync() => SyncCoreAsync(isIncremental: false, ignoreIfSynchronizing: true);
+        public Task SyncEverythingAsync() {
+            ThrowIfServiceIsNotInitialized();
+            return SyncCoreAsync(isIncremental: false, ignoreIfSynchronizing: true);
+        }
 
-        public Task SyncIncrementalAsync() => SyncCoreAsync(isIncremental: true, ignoreIfSynchronizing: true);
+        public Task SyncIncrementalAsync() {
+            ThrowIfServiceIsNotInitialized();
+            return SyncCoreAsync(isIncremental: true, ignoreIfSynchronizing: true);
+        }
+
+        private void ThrowIfServiceIsNotInitialized() {
+            if (State == null) throw new InvalidOperationException("Can not start synchronizing until the service is initialized.");
+        }
+
+        public async Task<CoreTypes.Family?> UpsertFamily(CoreTypes.Family family) {
+            var familyDoc = Dto.serializeFamily(family);
+            var result = await _cosmos.UpsertFamily(familyDoc);
+            var resultFamily = Dto.deserializeFamily(result);
+            return resultFamily.IsOk ? resultFamily.ResultValue : null;
+        }
+
+        public async Task DeleteFamily(CoreTypes.FamilyId familyId) {
+            await _cosmos.DeleteFamily(FamilyIdModule.serialize(familyId));
+            if (State != null && State.FamilyId.Equals(familyId)) {
+                State = null;
+            }
+        }
+
+        public async Task<CoreTypes.Family[]> MemberOf() {
+            var result = await _cosmos.MemberOf("");
+            return result.Select(i => Dto.deserializeFamily(i)).Where(i => i.IsOk).Select(i => i.ResultValue).ToArray();
+        }
+
+        public async Task<CoreTypes.Family?> EditFamily(CoreTypes.Family family) {
+            var familyDoc = Dto.serializeFamily(family);
+            var result = await _cosmos.UpsertFamily(familyDoc);
+            var resultFamily = Dto.deserializeFamily(result);
+            return resultFamily.IsOk ? resultFamily.ResultValue : null;
+        }
 
         private async Task SyncCoreAsync(bool isIncremental, bool ignoreIfSynchronizing) {
+            ThrowIfServiceIsNotInitialized();
             bool isSynchronizing = SynchronizationStatus == SynchronizationStatus.Synchronizing;
             if (!isSynchronizing || ignoreIfSynchronizing) {
                 SynchronizationStatus = SynchronizationStatus.Synchronizing;
                 OnChange?.Invoke();
                 try {
                     var earliestChange = await PushCoreAsync();
-                    await PullCoreAsync(isIncremental ? State.LastCosmosTimestamp.AsNullable() : null, earliestChange);
+                    await PullCoreAsync(isIncremental ? State!.LastCosmosTimestamp.AsNullable() : null, earliestChange);
                     // When the changes above are applied, it is possible that
                     // foreign keys will be broken, causing additional changes that
                     // need to be pushed.
@@ -86,13 +156,11 @@ namespace GroceriesWasmApp.Client.Services {
         /// <param name="after">Modification timestamp in Unix seconds</param>
         /// <param name="before">Modification timestamp in Unix seconds</param>
         private async Task PullCoreAsync(int? after, int? before) {
-            if (_familyId == null) {
-                throw new InvalidOperationException("No familyId has been specified; the service must be initialized first with a valid familyId.");
-            }
+            ThrowIfServiceIsNotInitialized();
             var pullResponse =
                 (after is null && before is null)
-                ? await _cosmos.PullEverythingAsync(_familyId)
-                : await _cosmos.PullIncrementalAsync(_familyId, after ?? int.MinValue, before);
+                ? await _cosmos.PullEverythingAsync(FamilyIdModule.serialize(State!.FamilyId))
+                : await _cosmos.PullIncrementalAsync(FamilyIdModule.serialize(State!.FamilyId), after ?? int.MinValue, before);
             var import = Dto.changesAsImport(pullResponse);
             if (import.IsSome()) {
                 var message = StateTypes.StateMessage.NewImport(import.Value);
@@ -107,12 +175,10 @@ namespace GroceriesWasmApp.Client.Services {
         /// </summary>
         /// <returns>The earliest timestamp of the pushed documents.</returns>
         private async Task<int?> PushCoreAsync() {
-            if (_familyId == null) {
-                throw new InvalidOperationException("No familyId has been specified; the service must be initialized first with a valid familyId.");
-            }
+            ThrowIfServiceIsNotInitialized();
             var pushRequest = Dto.pushRequest(State);
             if (pushRequest.IsSome()) {
-                var pushResponse = await _cosmos.PushAsync(_familyId, pushRequest.Value);
+                var pushResponse = await _cosmos.PushAsync(FamilyIdModule.serialize(State!.FamilyId), pushRequest.Value);
                 var import = Dto.changesAsImport(pushResponse);
                 if (import.IsSome()) {
                     var message = StateTypes.StateMessage.NewImport(import.Value);

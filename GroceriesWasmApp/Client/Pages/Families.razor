@@ -1,0 +1,89 @@
+﻿@page "/families"
+@attribute [Authorize]
+@using Models;
+@using Common;
+@using static Models.ViewTypes;
+@using static Models.CoreTypes;
+@using Microsoft.AspNetCore.Authorization;
+@using Microsoft.FSharp.Core;
+@using Microsoft.FSharp.Collections;
+@using Services;
+
+<nav class="navbar navbar-dark bg-dark sticky-top">
+    <a class="btn btn-dark" href="/"><ion-icon name="chevron-back-outline"></ion-icon>&nbsp;Back</a>
+    <span class="navbar-text">&nbsp;</span>
+    <div style="display:inline-flex">
+        <LoginDisplay />
+    </div>
+</nav>
+<div class="col" style="margin-top:1rem">
+    <h5>Shopping lists</h5>
+    @if (MemberOf == null) {
+        <p>Checking which shopping lists you have access to...</p>
+    }
+    else if (MemberOf.Count == 0) {
+        <p>Could not find any shopping lists with <strong>@EmailAddress</strong> as a member. You'll need to create a new one.</p>
+        <button class="btn btn-primary" @onclick="CreateNewFamily">Create new shopping list</button>
+    }
+    else {
+        @foreach (var f in MemberOf) {
+            <div class="familyDetails">
+                <div><strong>@(FamilyNameModule.asText(f.FamilyName))</strong></div>
+                <ul class="memberList">
+                    @foreach (var m in f.Members) {
+                        <li>@(EmailAddressModule.asText(m))</li>
+                    }
+                </ul>
+                <div>
+                    <button class="btn btn-sm btn-outline-secondary" ontouchstart="" @onclick="_ => EditFamily(f.FamilyId)">Options...</button>
+                    <button class="btn btn-sm btn-primary" ontouchstart="" @onclick="_=>OnSelectShoppingList(f.FamilyId)">Go to List</button>
+                </div>
+            </div>}
+        <button class="btn btn-primary create-new-button" ontouchstart="" @onclick="CreateNewFamily">Create new shopping list</button>
+    }
+</div>
+@code {
+
+    [Inject]
+    public StateService StateService { get; set; }
+
+    [CascadingParameter]
+    private Task<AuthenticationState> AuthenticationStateTask { get; set; }
+
+    protected async override Task OnInitializedAsync() {
+        var authState = await AuthenticationStateTask;
+        var user = authState.User;
+        var emailsJson = user.Claims.First(i => i.Type == "emails").Value;
+        var emails = System.Text.Json.JsonSerializer.Deserialize<string[]>(emailsJson);
+        if (emails.Length != 1) {
+            throw new NotImplementedException("The current user has more than one email address; don't know how to handle this.");
+        }
+        else {
+            EmailAddress = emails[0];
+            MemberOf = (await StateService.MemberOf()).ToList();
+        }
+    }
+
+    protected string EmailAddress { get; set; }
+
+    [Inject]
+    public NavigationManager NavigationManager { get; set; }
+
+    protected void EditFamily(FamilyId familyId) {
+        NavigationManager.NavigateTo($"editfamily/{FamilyIdModule.serialize(familyId)}");
+    }
+
+    protected void CreateNewFamily(MouseEventArgs _) {
+        NavigationManager.NavigateTo($"editfamily");
+    }
+
+    protected async Task OnSelectShoppingList(FamilyId f) {
+        await StateService.InitializeAsync(f);
+        if (StateService.State != null && Models.StateModule.isEmpty(StateService.State)) {
+            await StateService.UpdateAsync(StateTypes.StateMessage.InitializeNewShoppingList);
+        }
+        NavigationManager.NavigateTo("shoppinglist");
+    }
+
+    public List<Family> MemberOf { get; private set; } = null;
+}

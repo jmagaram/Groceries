@@ -133,7 +133,7 @@ namespace WebAppTest {
             // Would be easier to test using F# since could compare the actual State variables
             // with the eTag values removed
             using var c = await CreateTargetAsync();
-            var stateA = StateModule.createSampleData(UserIdModule.anonymous);
+            var stateA = StateModule.createSampleData(FamilyIdModule.anonymous, UserIdModule.anonymous);
             await Dto.pushRequest(stateA).DoAsync(changes => c.PushAsync(_familyId, changes));
             var pulledChanges = await c.PullEverythingAsync(_familyId);
             var pulledChangesAsImport = Dto.changesAsImport(pulledChanges);

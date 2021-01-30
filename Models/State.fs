@@ -163,11 +163,12 @@ let (insertItem, updateItem, upsertItem) =
     (go DataTable.insert, go DataTable.update, go DataTable.upsert)
 
 let insertNotSoldItem (n: NotSoldItem) s =
-    if s |> notSoldHasInvalidItem n
-    then failwith "The notSoldItem has an invalid item foreign key."
-    elif s |> notSoldHasInvalidStore n
-    then failwith "The notSoldItem has an invalid store foreign key."
-    else s |> mapNotSoldItems (DataTable.insert n)
+    if s |> notSoldHasInvalidItem n then
+        failwith "The notSoldItem has an invalid item foreign key."
+    elif s |> notSoldHasInvalidStore n then
+        failwith "The notSoldItem has an invalid store foreign key."
+    else
+        s |> mapNotSoldItems (DataTable.insert n)
 
 let insertPurchase (p: Purchase) s =
     match s |> tryFindItem p.ItemId with
@@ -234,7 +235,7 @@ let acceptAllChanges s =
     |> mapPurchases DataTable.acceptChanges
     |> fixForeignKeys
 
-let createDefault loggedInUser =
+let createDefault familyId loggedInUser =
     { Categories = DataTable.empty
       Items = DataTable.empty
       Stores = DataTable.empty
@@ -242,10 +243,43 @@ let createDefault loggedInUser =
       Purchases = DataTable.empty
       UserSettings = DataTable.empty
       LoggedInUser = loggedInUser
+      FamilyId = familyId
       LastCosmosTimestamp = None
       ItemEditPage = None }
 
-let createSampleData loggedInUser =
+let isEmpty (s: State) =
+    s |> categories |> Seq.isEmpty
+    && s |> items |> Seq.isEmpty
+    && s |> stores |> Seq.isEmpty
+    && s |> purchases |> Seq.isEmpty
+    && s |> notSold |> Seq.isEmpty
+
+let insertDefaultCategories (s: State) =
+    let defaultCategories =
+        [ "Pantry / Dry Goods"
+          "Bakery"
+          "Dairy & Eggs"
+          "Frozen"
+          "Meat & Seafood"
+          "Deli & Prepared"
+          "Produce"
+          "Other" ]
+
+    let insert s n =
+        let cat =
+            { Category.CategoryId = CategoryId.create ()
+              Category.CategoryName =
+                  n
+                  |> CategoryName.tryParse
+                  |> Result.asOption
+                  |> Option.get
+              Category.Etag = None }
+
+        s |> insertCategory cat
+
+    defaultCategories |> Seq.fold insert s
+
+let createSampleData familyId loggedInUser =
 
     let newCategory n =
         insertCategory
@@ -289,7 +323,11 @@ let createSampleData loggedInUser =
                   |> tryParseOptional Note.tryParse
                   |> Result.okOrThrow
               Item.PostponeUntil = None
-              Item.CategoryId = if cat = "" then None else Some (findCategory cat s).CategoryId }
+              Item.CategoryId =
+                  if cat = "" then
+                      None
+                  else
+                      Some (findCategory cat s).CategoryId }
 
     let now = System.DateTimeOffset.Now
 
@@ -321,7 +359,7 @@ let createSampleData loggedInUser =
                 total |> insertPurchase purchase)
             s
 
-    createDefault loggedInUser
+    createDefault familyId loggedInUser
     |> newCategory "Meat and Seafood"
     |> newCategory "Dairy"
     |> newCategory "Frozen"
@@ -405,7 +443,12 @@ let handleItemEditPageMessage (now: DateTimeOffset) (msg: ItemEditPageMessage) (
         let nsCurrent =
             s
             |> notSold
-            |> Seq.choose (fun i -> if i.ItemId = r.Item.ItemId then Some i.StoreId else None)
+            |> Seq.choose
+                (fun i ->
+                    if i.ItemId = r.Item.ItemId then
+                        Some i.StoreId
+                    else
+                        None)
 
         let nsToRemove = nsCurrent |> Seq.except nsExpected
         let nsToAdd = nsExpected |> Seq.except nsCurrent
@@ -620,11 +663,86 @@ let handleRecordPurchase (now: DateTimeOffset) (id: ItemId) (s: State) =
     let purchases =
         s
         |> purchases
-        |> Seq.choose (fun p -> if p.ItemId = id then Some p.PurchasedOn else None)
+        |> Seq.choose
+            (fun p ->
+                if p.ItemId = id then
+                    Some p.PurchasedOn
+                else
+                    None)
 
     s
     |> insertPurchase { ItemId = id; PurchasedOn = now }
     |> handleItemMessage now (ModifyItem(id, Item.PostponeUsingPurchaseHistory(now, purchases)))
+
+let clone (target: FamilyId) (s: State) =
+    let mapCategoryId =
+        let map =
+            s
+            |> categories
+            |> Seq.map (fun i -> (i.CategoryId, CategoryId.create ()))
+            |> Map.ofSeq
+
+        fun id -> map |> Map.find id
+
+    let mapStoreId =
+        let map =
+            s
+            |> stores
+            |> Seq.map (fun i -> (i.StoreId, StoreId.create ()))
+            |> Map.ofSeq
+
+        fun id -> map |> Map.find id
+
+    let mapItemId =
+        let map =
+            s
+            |> items
+            |> Seq.map (fun i -> (i.ItemId, ItemId.create ()))
+            |> Map.ofSeq
+
+        fun id -> map |> Map.find id
+
+    let cloneItem (i: Item) =
+        { i with
+              ItemId = i.ItemId |> mapItemId
+              CategoryId = i.CategoryId |> Option.map mapCategoryId
+              Etag = None }
+
+    let cloneStore (i: Store) =
+        { i with
+              StoreId = i.StoreId |> mapStoreId
+              Etag = None }
+
+    let cloneCategory (i: Category) =
+        { i with
+              CategoryId = i.CategoryId |> mapCategoryId
+              Etag = None }
+
+    let clonePurchase (i: Purchase) =
+        { i with
+              ItemId = i.ItemId |> mapItemId }
+
+    let cloneNotSoldItem (i: NotSoldItem) =
+        { i with
+              ItemId = i.ItemId |> mapItemId
+              StoreId = i.StoreId |> mapStoreId }
+
+    let empty = createDefault target UserId.anonymous
+
+    let cloneInsert source f =
+        source
+        |> Seq.map f
+        |> Seq.fold (fun dt i -> dt |> DataTable.insert i) DataTable.empty
+
+    { empty with
+          Items = cloneInsert (s |> items) cloneItem
+          Categories = cloneInsert (s |> categories) cloneCategory
+          Stores = cloneInsert (s |> stores) cloneStore
+          Purchases = cloneInsert (s |> purchases) clonePurchase
+          NotSoldItems = cloneInsert (s |> notSold) cloneNotSoldItem
+          FamilyId = target }
+
+    |> fixForeignKeys
 
 let update: Update =
     fun clock msg s ->
@@ -637,13 +755,14 @@ let update: Update =
 
             match msg with
             | RecordPurchase msg -> s |> handleRecordPurchase now msg
+            | InitializeNewShoppingList -> s |> insertDefaultCategories
             | ItemMessage msg -> s |> handleItemMessage now msg
             | UserSettingsMessage msg -> s |> handleUserSettingsMessage msg
             | ReorganizeCategoriesMessage msg -> s |> reorganizeCategories msg
             | ReorganizeStoresMessage msg -> s |> reorganizeStores msg
             | AcceptAllChanges -> s |> acceptAllChanges
             | Import c -> s |> importChanges c
-            | ResetToSampleData -> createSampleData s.LoggedInUser
+            | ResetToSampleData -> createSampleData s.FamilyId s.LoggedInUser
             | ItemEditPageMessage msg -> s |> handleItemEditPageMessage now msg
             | ItemNotSoldAt (itemId, storeId) -> s |> handleItemNotSoldAt itemId storeId
             | ItemOnlySoldAt (itemId, stores) -> s |> handleItemOnlySoldAt itemId stores

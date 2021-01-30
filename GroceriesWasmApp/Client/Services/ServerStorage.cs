@@ -41,5 +41,22 @@ namespace GroceriesWasmApp.Client.Services {
             var result = await httpResponse.Content.ReadFromJsonAsync<Changes>();
             return result;
         }
+
+        public async Task<Document<Family>> UpsertFamily(Document<Family> family) {
+            var uri = $"api/storage/upsertfamily";
+            var httpResponse = await _httpClient.PostAsJsonAsync<Document<Family>>(uri, family);
+            var result = await httpResponse.Content.ReadFromJsonAsync<Document<Family>>();
+            return result;
+        }
+
+        public async Task<Document<Family>[]> MemberOf(string userEmail) {
+            var result = await _httpClient.GetFromJsonAsync<Document<Family>[]>($"api/storage/memberof");
+            return result;
+        }
+
+        public async Task DeleteFamily(string familyId) {
+            var uri = $"api/storage/deletefamily?familyId={familyId}";
+            var httpResponse = await _httpClient.PostAsync(requestUri: uri, null);
+        }
     }
 }

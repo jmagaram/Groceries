@@ -20,7 +20,7 @@ namespace WebApp.Services {
             SynchronizationStatus = HasChanges();
         }
 
-        public StateService(ICosmosConnector cosmos) : this(StateModule.createDefault(UserIdModule.anonymous), cosmos) { }
+        public StateService(ICosmosConnector cosmos) : this(StateModule.createDefault(FamilyIdModule.anonymous, UserIdModule.anonymous), cosmos) { }
 
         public SynchronizationStatus SynchronizationStatus { get; private set; }
 

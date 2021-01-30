@@ -15,6 +15,7 @@ type DocumentKind =
     | Category = 3
     | NotSoldItem = 4
     | Purchase = 5
+    | Family = 6
 
 type Document<'T> =
     { DocumentKind: DocumentKind
@@ -32,7 +33,7 @@ type Document<'T> =
 type Item =
     { ItemName: string
       Note: string
-      PostponeUntil : Nullable<DateTimeOffset>
+      PostponeUntil: Nullable<DateTimeOffset>
       Quantity: string
       CategoryId: string }
 
@@ -44,10 +45,13 @@ type NotSoldItem = unit
 
 type Purchase = unit
 
+type Family =
+    { FamilyName: string
+      MemberEmails: string [] }
+
 type Changes =
     { Items: Document<Item> []
       Categories: Document<Category> []
       Stores: Document<Store> []
-      NotSoldItems: Document<NotSoldItem> [] 
-      Purchases : Document<Purchase> []
-    }
+      NotSoldItems: Document<NotSoldItem> []
+      Purchases: Document<Purchase> [] }
