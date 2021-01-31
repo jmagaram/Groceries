@@ -3,21 +3,27 @@
 I'm experimenting with Blazor for web development. This is an app to track a
 grocery shopping list.
 
-## Status/Quality
-
-- The hosted Blazor version is usable but hardwired to one shopping list and has no security.
-- The WASM version supports social-login and multiple families/lists but has some bugs; not totally usable yet 
-
 ## Tech stack
 
+There are two versions of this app in the repository. The first one I developed used Blazor
+Server and SignalR. Once that seemed to work pretty well I ported it to Web Assembly.
+
+- Uses a homemade Elm-like architecture, with most state stored in a single variable. 
 - F# is used for the core data and view models
 - C# Blazor is used for the front-end and server
 - Azure Cosmos DB for storage
-- Azure Web App for hosting the site
+- Azure Web App
+  - For the WASM app it serves some data synchronization APIs and the app itself
+  - For Blazor Server, it hosts the whole thing
 - Azure B2C for managing user accounts and passwords
-- Original version uses Blazor Server with SignalR; ported to Web Assembly
 - Straight CSS (haven't tried SCSS yet)
 - Visual Studio Community
+
+## Status/Quality
+
+This is usable in 
+- The Blazor Server version is usable but hardwired to one shopping list and has no security.
+- The WASM version supports social-login and multiple families/lists. Works pretty well. 
 
 ## Hassles
 
@@ -55,8 +61,9 @@ inserted.
 
 ## Insights
 
-Designing an HTML-based UI that works really well and feels good on iPhone is very difficult. There is no
-room for error. Little UI glitches and inconveniences make the app almost
+Designing an HTML-based UI that works really well and feels good on iPhone is very difficult.
+
+There is no room for error. Little UI glitches and inconveniences make the app almost
 unusable. Animation is essential. Unlike a native app, it is difficult to work
 around/with the iPhone keyboard. For example, it is difficult to make an "Add"
 button that pops open a form, puts the focus in an input box, and automatically
