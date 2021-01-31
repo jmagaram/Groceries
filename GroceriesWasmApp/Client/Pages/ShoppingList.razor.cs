@@ -28,6 +28,7 @@ namespace GroceriesWasmApp.Client.Pages {
         CategoryNavigatorDrawer _categoryNavigationDrawer;
         StoreNavigatorDrawer _storesNavigatorDrawer;
         ViewOptionsDrawer _viewOptionsDrawer;
+        ElementReference _searchInput;
 #pragma warning restore IDE0044 // Add readonly modifier
         ItemId? _quickEditContext;
         IDisposable _disposables;
@@ -92,6 +93,7 @@ namespace GroceriesWasmApp.Client.Pages {
         public async Task StartSearch() {
             if (!IsSearchBarVisible) {
                 await JSRuntime.InvokeVoidAsync("HtmlElement.setPropertyById", "searchInput", "value", "");
+                await _searchInput.FocusAsync(JSRuntime);
                 var msg = StateMessage.NewUserSettingsMessage(UserSettingsModule.Message.NewShoppingListSettingsMessage(ShoppingListSettingsMessage.StartSearch));
                 await StateService.UpdateAsync(msg);
             }

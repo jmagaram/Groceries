@@ -18,6 +18,7 @@
            @onblur="@(e => OnTextFilterBlur())"
            value="@ShoppingListView.TextFilter.ValueCommitted"
            id="searchInput"
+           @ref="_searchInput"
            type="text"
            placeholder="Search or add item"
            autocomplete="off"
