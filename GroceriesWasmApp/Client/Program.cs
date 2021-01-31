@@ -27,6 +27,7 @@ namespace GroceriesWasmApp.Client {
                 builder.Configuration.Bind("AzureAdB2C", options.ProviderOptions.Authentication);
                 options.ProviderOptions.DefaultAccessTokenScopes.Add("https://groceriesb2c.onmicrosoft.com/1a9edbbe-db91-4b4d-9c56-80a52d60762c/API.Access");
                 options.ProviderOptions.LoginMode = "redirect";
+                options.ProviderOptions.Cache.CacheLocation = "localStorage";
             });
 
             //builder.Services.AddApplicationInsightsTelemetry(Configuration["APPINSIGHTS_CONNECTIONSTRING"]);
