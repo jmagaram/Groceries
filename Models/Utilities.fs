@@ -144,6 +144,8 @@ module String =
     let equalsInvariantCultureIgnoreCase x y =
         String.Equals(x, y, StringComparison.InvariantCultureIgnoreCase)
 
+    let toLowerInvariant (s:String) = s.ToLowerInvariant()
+
     let fromChars c = String(c |> Seq.toArray)
 
     let ellipsize n s =

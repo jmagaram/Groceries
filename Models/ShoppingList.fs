@@ -47,18 +47,30 @@ type CategorySummary with
 let postponeChangedCore (s1, s2) =
     s2
     |> State.items
-    |> Seq.choose (fun i2 ->
-        s1 
-        |> State.tryFindItem i2.ItemId
-        |> Option.bind (fun i1 -> 
-            match i1.PostponeUntil = i2.PostponeUntil with
-            | true -> None
-            | false -> Some i2.ItemId))
+    |> Seq.choose
+        (fun i2 ->
+            s1
+            |> State.tryFindItem i2.ItemId
+            |> Option.bind
+                (fun i1 ->
+                    match i1.PostponeUntil = i2.PostponeUntil with
+                    | true -> None
+                    | false -> Some i2.ItemId))
     |> Set.ofSeq
 
 let private deletedCore (s1, s2) =
-    let s1Items = s1 |> State.items |> Seq.map (fun i -> i.ItemId) |> Set.ofSeq
-    let s2Items = s2 |> State.items |> Seq.map (fun i -> i.ItemId) |> Set.ofSeq
+    let s1Items =
+        s1
+        |> State.items
+        |> Seq.map (fun i -> i.ItemId)
+        |> Set.ofSeq
+
+    let s2Items =
+        s2
+        |> State.items
+        |> Seq.map (fun i -> i.ItemId)
+        |> Set.ofSeq
+
     s1Items - s2Items
 
 let createItem find (item: CoreTypes.Item) state =
@@ -161,7 +173,10 @@ let create now state =
 
                         name || note || qty
 
-                if find.IsSome then isTextMatch else isStoreMatch && isPostponedMatch)
+                if find.IsSome then
+                    isTextMatch
+                else
+                    isStoreMatch && isPostponedMatch)
         |> Seq.toList
 
     let storeFilter =
@@ -177,7 +192,14 @@ let create now state =
     let items = items now
 
     let sortKey item =
-        ((if item.PostponeUntil.IsNone then 0 else 1), item.PostponeUntil, item.ItemName)
+        ((if item.PostponeUntil.IsNone then
+              0
+          else
+              1),
+         item.PostponeUntil,
+         item.ItemName
+         |> FormattedText.asString
+         |> String.toLowerInvariant)
 
     { StoreFilter = storeFilter
       TextFilter = settings.TextFilter
