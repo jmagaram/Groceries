@@ -142,6 +142,8 @@ namespace GroceriesWasmApp.Client.Services {
             }
             catch (OperationCanceledException) {
             }
+            catch (Exception) {
+            }
 
             SynchronizationStatus = HasChanges();
             OnChange?.Invoke();
