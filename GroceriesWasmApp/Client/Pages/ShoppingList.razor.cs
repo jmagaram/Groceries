@@ -36,21 +36,22 @@ namespace GroceriesWasmApp.Client.Pages {
 
         protected override async Task OnInitializedAsync() {
             if (StateService.State == null) {
-                Navigation.NavigateTo("families");
-                return;
-            }
-            await StateService.InitializeAsync();
-            await EndSearch();
-        }
-
-        protected override void OnInitialized() {
-            if (StateService.State == null) {
-                Navigation.NavigateTo("families");
-                return;
+                if (await LocalStorage.ContainKeyAsync("familyId")) {
+                    var familyId = FamilyIdModule.deserialize(await LocalStorage.GetItemAsync<string>("familyId"));
+                    if (familyId.IsSome()) {
+                        await StateService.InitializeAsync(familyId.Value);
+                    }
+                }
+                if (StateService.State == null) {
+                    Navigation.NavigateTo("families");
+                    return;
+                }
             }
             else {
-                ShoppingListView = StateService.State.ShoppingList(DateTimeOffset.Now);
+                await StateService.InitializeAsync();
+                await EndSearch();
             }
+            ShoppingListView = StateService.State.ShoppingList(DateTimeOffset.Now);
             var state = Observable
                 .FromEvent(h => StateService.OnChange += h, h => StateService.OnChange -= h)
                 .Publish();
@@ -61,14 +62,15 @@ namespace GroceriesWasmApp.Client.Pages {
                     .Buffer(2, 1)
                     .Where(i => i.Count == 2)
                     .Select(i => ShoppingListModule.postponeChangedCore(i[0], i[1]))
-                    .Subscribe(i=>PostponeUntilChanged=i),
+                    .Subscribe(i=>PostponeUntilChanged= i),
                 state.Subscribe(_=> {
                     ShoppingListView = StateService.State.ShoppingList(DateTimeOffset.Now);
-                    StateHasChanged();
-                }),
-                state.Connect()
-            };
+                    StateHasChanged(); }),
+                state.Connect() };
         }
+
+        [Inject]
+        Blazored.LocalStorage.ILocalStorageService LocalStorage { get; set; }
 
         protected override void OnAfterRender(bool firstRender) {
             base.OnAfterRender(firstRender);

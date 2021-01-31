@@ -79,11 +79,15 @@
 
     protected async Task OnSelectShoppingList(FamilyId f) {
         await StateService.InitializeAsync(f);
+        await LocalStorage.SetItemAsync("familyId", FamilyIdModule.serialize(f));
         if (StateService.State != null && Models.StateModule.isEmpty(StateService.State)) {
             await StateService.UpdateAsync(StateTypes.StateMessage.InitializeNewShoppingList);
         }
         NavigationManager.NavigateTo("shoppinglist");
     }
+
+    [Inject]
+    Blazored.LocalStorage.ILocalStorageService LocalStorage { get; set; }
 
     public List<Family> MemberOf { get; private set; } = null;
 }

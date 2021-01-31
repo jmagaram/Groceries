@@ -10,6 +10,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using GroceriesWasmApp.Client.Services;
 using GroceriesWasmApp.Shared;
+using Blazored.LocalStorage;
 
 namespace GroceriesWasmApp.Client {
     public class Program {
@@ -33,6 +34,9 @@ namespace GroceriesWasmApp.Client {
             //builder.Services.AddApplicationInsightsTelemetry(Configuration["APPINSIGHTS_CONNECTIONSTRING"]);
             builder.Services.AddScoped<ICosmosConnector, ServerStorage>();
             builder.Services.AddScoped<StateService>();
+
+            builder.Services.AddBlazoredLocalStorage(config =>
+                   config.JsonSerializerOptions.WriteIndented = true);
 
             await builder.Build().RunAsync();
         }
