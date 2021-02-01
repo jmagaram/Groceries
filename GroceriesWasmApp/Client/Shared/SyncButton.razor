@@ -16,7 +16,7 @@ else {
         throw new NotImplementedException("Unexpected synchronization status; can't choose color for it.");
     <button class="btn text-light @color" style="@Style" type="button"
             disabled="@(SyncStatus == SynchronizationStatus.Synchronizing)" @onclick:preventDefault
-            @onclick="Synchronize">
+            @onclick="Synchronize" ontouchstart="">
         <ion-icon name="cloud-upload-outline"></ion-icon>
     </button>
 }
