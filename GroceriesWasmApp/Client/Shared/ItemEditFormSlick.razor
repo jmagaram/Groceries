@@ -17,7 +17,7 @@
     <form class="form-inline">
         <div role="group">
             @if (Form.Postpone.IsSome()) {
-            <button type="button" class="btn btn-dark icon-button" disabled="@Form.HasErrors()" @onclick="OnSaveChanges" ontouchstart=""><ion-icon name="calendar-outline"/>&nbsp;Save</button>
+            <button type="button" class="btn btn-dark icon-button" disabled="@Form.HasErrors()" @onclick="OnSaveChanges" ontouchstart=""><ion-icon name="calendar-outline"/>&nbsp;Postpone</button>
                 <button type="button" class="btn btn-dark icon-button" disabled="@Form.HasErrors()" @onclick="OnAddToListAndSave" ontouchstart=""><ion-icon name="add-outline"/>&nbsp;Add to List</button>
             }
             else {
