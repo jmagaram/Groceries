@@ -5,26 +5,24 @@
 @using Models;
 @using GroceriesWasmApp.Client.Common;
 
-@if (Form == null)
-{
+@if (Form == null) {
     <span>Loading...</span>
     return;
 }
 <nav class="navbar navbar-dark bg-dark sticky-top">
-    <div class="enterLeft">
-        @if (Form.HasErrors())
-        {
-            <button class="btn btn-dark iconButton fadeIn" ontouchstart="" @onclick="OnCancel"><ion-icon name="arrow-undo-outline"></ion-icon></button>
-        }
-        else
-        {
-            <button class="btn btn-dark iconButton fadeIn" ontouchstart="" @onclick="OnSaveChanges"><ion-icon name="chevron-back-outline"></ion-icon></button>
-        }
+    <div>
+        <button class="btn btn-dark" ontouchstart="" @onclick="OnCancel">Cancel</button>
     </div>
-    <span class="navbar-text enterLeft">@(Form.ItemId.IsNone() ? "New" : "Edit")</span>
-    <form class="form-inline enterLeft">
+    <span></span>
+    <form class="form-inline">
         <div role="group">
-            <button type="button" class="btn btn-dark iconButton" disabled="@Form.HasErrors()" @onclick="OnSaveChanges">Save</button>
+            @if (Form.Postpone.IsSome()) {
+            <button type="button" class="btn btn-dark icon-button" disabled="@Form.HasErrors()" @onclick="OnSaveChanges" ontouchstart=""><ion-icon name="calendar-outline"/>&nbsp;Save</button>
+                <button type="button" class="btn btn-dark icon-button" disabled="@Form.HasErrors()" @onclick="OnAddToListAndSave" ontouchstart=""><ion-icon name="add-outline"/>&nbsp;Add to List</button>
+            }
+            else {
+                <button type="button" class="btn btn-dark" disabled="@Form.HasErrors()" @onclick="OnSaveChanges" ontouchstart="">Save</button>
+            }
         </div>
     </form>
 </nav>
@@ -41,7 +39,7 @@
     string hasNoteClass = !hasNote ? "text-secondary" : "";
     string hasQuantityClass = !hasQuantity ? "text-secondary" : "";
 }
-<div class="propertyGrid enterLeft" style="margin-top:1rem">
+<div class="propertyGrid" style="margin-top:1rem">
     <div style="margin-top:0.5rem; font-size:larger"><Checkbox IsChecked="@Form.IsComplete" IsCheckedChanged="_ => OnToggleComplete()" Title="" /></div>
     <div>
         @{
@@ -49,23 +47,21 @@
             string c = (isHardComplete ? "hardComplete" : "");
         }
         <input @ref="_titleInput" class="@c" style="font-size:larger; border:1px solid black" type="text" placeholder="Item name" @oninput="OnItemNameChange" @onfocusout="OnItemNameFocusOut" value="@Form.ItemName.ValueCommitted" />
-        @if (Form.ItemNameValidation().IsError)
-        {
+        @if (Form.ItemNameValidation().IsError) {
             <div class="errorMessage">@Form.ItemNameValidation().ErrorValue</div>
         }
     </div>
 </div>
-<div class="propertyGrid enterLeft @hasQuantityClass">
+<div class="propertyGrid @hasQuantityClass">
     <div><ion-icon name="bar-chart-outline"></ion-icon></div>
     <div>
         <input type="text" placeholder="Quantity" @oninput="e => OnQuantityChange((string)e.Value)" @onfocusout="OnQuantityFocusOut" value="@Form.Quantity.ValueCommitted" />
-        @if (Form.QuantityValidation().IsError)
-        {
+        @if (Form.QuantityValidation().IsError) {
             <div class="errorMessage text-danger">@Form.QuantityValidation().ErrorValue</div>
         }
     </div>
 </div>
-<button ontouchstart="" class="propertyGrid enterLeft @hasCategoryClass" @onclick="async _ => await OnClickCategory()">
+<button ontouchstart="" class="propertyGrid @hasCategoryClass" @onclick="async _ => await OnClickCategory()">
     <ion-icon name="color-palette"></ion-icon>
     <div>@(hasCategory ? Form.CategoryCommittedName() : "Category")</div>
 </button>
@@ -73,8 +69,7 @@
     string animateClass = HighlightPostpone ? "bounce-top" : "";
     HighlightPostpone = false;
     string postponeDescription;
-    if (Form.Postpone.AsNullable() is int d)
-    {
+    if (Form.Postpone.AsNullable() is int d) {
         var estimate = TimeSpanEstimateModule.fromDays(d);
         postponeDescription =
             estimate.IsZeroOrNegative()
@@ -88,46 +83,39 @@
                 "month from now",
                 "months from now");
     }
-    else
-    {
+    else {
         postponeDescription = "Postpone";
     }
 }
-<button ontouchstart="" class="propertyGrid enterLeft" @onclick="async _=>await OnClickPostpone()">
+<button ontouchstart="" class="propertyGrid" @onclick="async _=>await OnClickPostpone()">
     <div class="@animateClass @hasPostponeClass"><ion-icon name="calendar-outline"></ion-icon></div>
     <div class="@animateClass @hasPostponeClass">@postponeDescription</div>
 </button>
-@if (Form.Stores.Any())
-{
-    <button ontouchstart="" class="propertyGrid enterLeft @hasStoresClass" @onclick="async _ => await OnClickStores()">
+@if (Form.Stores.Any()) {
+    <button ontouchstart="" class="propertyGrid @hasStoresClass" @onclick="async _ => await OnClickStores()">
         <ion-icon name="storefront-outline"></ion-icon>
-        @if (Form.Stores.All(i => i.IsSold))
-        {
+        @if (Form.Stores.All(i => i.IsSold)) {
             <div>All stores</div>
         }
-        else
-        {
+        else {
             <ul class="store-list">
-                @foreach (var s in Form.Stores.Where(i => !i.IsSold))
-                {
+                @foreach (var s in Form.Stores.Where(i => !i.IsSold)) {
                     <li>@StoreNameModule.asText(s.Store.StoreName)</li>
                 }
             </ul>
         }
     </button>
 }
-<div class="propertyGrid enterLeft">
+<div class="propertyGrid">
     <div class="@hasNoteClass"><ion-icon name="newspaper-outline"></ion-icon></div>
     <div class="@hasNoteClass">
         <elix-auto-size-textarea rows="2" id="inputNote" placeholder="Notes" @oninput="e=>OnNoteChange((string)e.Value)" @onfocusout="OnNoteFocusOut" value="@Form.Note.ValueCommitted"></elix-auto-size-textarea>
-        @if (Form.NoteValidation().IsError)
-        {
+        @if (Form.NoteValidation().IsError) {
             <div class="errorMessage">@Form.NoteValidation().ErrorValue</div>
         }
     </div>
 </div>
-@if (Form.CanDelete())
-{
+@if (Form.CanDelete()) {
     <button style="margin-top:1.0rem; margin-left:0.5rem" type="button" class="btn btn-light" ontouchstart="" @onclick="OnDelete"><ion-icon name="trash-outline"></ion-icon>&nbsp;Delete</button>
 }
 <StoresDrawer @ref="_storesDrawer" Closed="OnStoresSelected"></StoresDrawer>

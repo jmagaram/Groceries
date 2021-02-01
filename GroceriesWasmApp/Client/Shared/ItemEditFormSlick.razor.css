@@ -1,50 +1,4 @@
-﻿.enterLeft {
-    animation: enterLeftAnimation;
-    animation-duration: 0.25s;
-    animation-fill-mode: forwards;
-    animation-timing-function: ease;
-    position: relative;
-}
-
-@keyframes enterLeftAnimation {
-    from {
-        right: 125px;
-    }
-
-    to {
-        right: 0px;
-    }
-}
-
-.fadeIn {
-    animation-name: fadeIn;
-    animation-fill-mode: forwards;
-    animation-duration: 0.25s;
-    animation-timing-function: ease;
-}
-
-@keyframes fadeIn {
-    from {
-        opacity: 0;
-    }
-
-    to {
-        opacity: 1;
-    }
-}
-
-.radioList {
-    list-style-type: none;
-    margin-top: 1rem;
-    padding-left: 0px;
-    margin-left: 1rem;
-}
-
-    .radioList li {
-        margin-bottom: 1.5rem
-    }
-
-.propertyGrid {
+﻿.propertyGrid {
     display: grid;
     grid-column-gap: 0.5em;
     grid-template-columns: 1.5em auto;
@@ -72,7 +26,7 @@ button.propertyGrid {
 
 .propertyGrid input[type=text] {
     width: 100%;
-    border: none !important ;
+    border: none !important;
     outline: none;
     padding-left: 0px;
 }
@@ -84,19 +38,19 @@ button.propertyGrid {
 
 .propertyGrid elix-auto-size-textarea {
     width: 100%;
-    outline:none;
+    outline: none;
 }
 
 elix-auto-size-textarea::part(textarea) {
     border: none;
     outline: none;
-    padding-left:0px;
+    padding-left: 0px;
 }
 
-elix-auto-size-textarea::part(textarea):focus {
-    border: none;
-    outline: none;
-}
+    elix-auto-size-textarea::part(textarea):focus {
+        border: none;
+        outline: none;
+    }
 
 input.hardComplete {
     text-decoration: line-through;
@@ -118,10 +72,10 @@ ul.store-list {
 }
 
     ul.store-list li {
-        margin-right:0.5rem; 
-        text-decoration:line-through; 
-        text-decoration-color:#808080; 
-        display:inline-flex;
+        margin-right: 0.5rem;
+        text-decoration: line-through;
+        text-decoration-color: #808080;
+        display: inline-flex;
     }
 
 .errorMessage {
@@ -130,12 +84,8 @@ ul.store-list {
     margin-top: .25rem;
 }
 
-.iconButton {
+.icon-button > *:first-child {
+    vertical-align: bottom;
+    height: 1.4em;
+    font-size: 1.1em;
 }
-
-    .iconButton ion-icon {
-        display: inline-block;
-        vertical-align: bottom;
-        height: 1.4em;
-        font-size: 1.1em;
-    }

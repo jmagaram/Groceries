@@ -110,6 +110,11 @@ namespace GroceriesWasmApp.Client.Shared
 
         protected void OnSaveChanges() => OnSaveChangesCallback.InvokeAsync(null);
 
+        protected void OnAddToListAndSave() {
+            Process(FormMessage.PostponeClear);
+            OnSaveChangesCallback.InvokeAsync(null);
+        }
+
         private void Process(FormMessage msg) =>
             OnItemFormMessage.InvokeAsync(msg);
 
