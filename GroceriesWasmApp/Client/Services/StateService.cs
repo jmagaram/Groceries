@@ -13,10 +13,9 @@ using static Models.ViewTypes;
 
 namespace GroceriesWasmApp.Client.Services {
 
-    // Good chance there are bugs in here if methods are called while the service is synchronizing
     public class StateService {
         private readonly ICosmosConnector _cosmos;
-        private bool _hasSynchronized; // Not sure this is needed; use the last sync timestamp instead?
+        private bool _hasSynchronized;
 
         public StateService(ICosmosConnector cosmos) {
             _cosmos = cosmos;
@@ -28,8 +27,7 @@ namespace GroceriesWasmApp.Client.Services {
         public SynchronizationStatus SynchronizationStatus { get; private set; }
 
         /// <summary>
-        /// Raised when <see cref="State"/> or <see
-        /// cref="SynchronizationStatus"/> changes.
+        /// Raised when <see cref="State"/> or <see cref="SynchronizationStatus"/> changes.
         /// </summary>
         public event Action? OnChange;
 
@@ -75,7 +73,9 @@ namespace GroceriesWasmApp.Client.Services {
         }
 
         public async Task UpdateAsync(StateTypes.StateMessage message) {
-            ThrowIfServiceIsNotInitialized();
+            if (State == null) {
+                throw new InvalidOperationException("Can not start synchronizing until the service is initialized.");
+            }
             State = StateModule.updateUsingStandardClock(message, State);
             OnChange?.Invoke();
             if (StateModule.hasChanges(State)) {
@@ -83,19 +83,11 @@ namespace GroceriesWasmApp.Client.Services {
             }
         }
 
-        public Task SyncEverythingAsync() {
-            ThrowIfServiceIsNotInitialized();
-            return SyncCoreAsync(isIncremental: false, ignoreIfSynchronizing: true);
-        }
+        public Task SyncEverythingAsync() => 
+            SyncCoreAsync(isIncremental: false, ignoreIfSynchronizing: true);
 
-        public Task SyncIncrementalAsync() {
-            ThrowIfServiceIsNotInitialized();
-            return SyncCoreAsync(isIncremental: true, ignoreIfSynchronizing: true);
-        }
-
-        private void ThrowIfServiceIsNotInitialized() {
-            if (State == null) throw new InvalidOperationException("Can not start synchronizing until the service is initialized.");
-        }
+        public Task SyncIncrementalAsync() => 
+            SyncCoreAsync(isIncremental: true, ignoreIfSynchronizing: true);
 
         public async Task<CoreTypes.Family?> UpsertFamily(CoreTypes.Family family) {
             var familyDoc = Dto.serializeFamily(family);
@@ -124,27 +116,24 @@ namespace GroceriesWasmApp.Client.Services {
         }
 
         private async Task SyncCoreAsync(bool isIncremental, bool ignoreIfSynchronizing) {
-            ThrowIfServiceIsNotInitialized();
+            if (State == null) {
+                throw new InvalidOperationException("Can not start synchronizing until the service is initialized.");
+            }
             if (SynchronizationStatus == SynchronizationStatus.Synchronizing && !ignoreIfSynchronizing) {
                 return;
             }
             SynchronizationStatus = SynchronizationStatus.Synchronizing;
             OnChange?.Invoke();
             try {
-                var earliestChange = await PushCoreAsync();
-                if (!isIncremental || earliestChange != null) {
-                    await PullCoreAsync(isIncremental ? State!.LastCosmosTimestamp.AsNullable() : null, earliestChange);
-                    // When the changes above are applied, it is possible that
-                    // foreign keys will be broken, causing additional changes that
-                    // need to be pushed.
-                    await PushCoreAsync();
-                }
-            }
-            catch (OperationCanceledException) {
+                int? after = isIncremental ? State!.LastCosmosTimestamp.AsNullable() : null;
+                int? before = await PushCoreAsync();
+                await PullCoreAsync(after, before);
+                // When the pull completes it is possible that foreign keys will
+                // be broken, causing additional changes that need to be pushed.
+                await PushCoreAsync();
             }
             catch (Exception) {
             }
-
             SynchronizationStatus = HasChanges();
             OnChange?.Invoke();
             _hasSynchronized = true;
@@ -157,12 +146,11 @@ namespace GroceriesWasmApp.Client.Services {
 
         /// <summary>
         /// Pulls documents from Cosmos matching the timestamp filter and merges
-        /// the results into the current State.
+        /// the results into the current State. 
         /// </summary>
         /// <param name="after">Modification timestamp in Unix seconds</param>
         /// <param name="before">Modification timestamp in Unix seconds</param>
         private async Task PullCoreAsync(int? after, int? before) {
-            ThrowIfServiceIsNotInitialized();
             var pullResponse =
                 (after is null && before is null)
                 ? await _cosmos.PullEverythingAsync(FamilyIdModule.serialize(State!.FamilyId))
@@ -177,11 +165,11 @@ namespace GroceriesWasmApp.Client.Services {
 
         /// <summary>
         /// Pushes the current state changes, if any, to Cosmos and merges the results
-        /// into the current State.
+        /// into the current State. The LastCosmosTimestamp set
         /// </summary>
         /// <returns>The earliest timestamp of the pushed documents.</returns>
+        /// <remarks>The LastCosmosTimestamp </remarks>
         private async Task<int?> PushCoreAsync() {
-            ThrowIfServiceIsNotInitialized();
             var pushRequest = Dto.pushRequest(State);
             if (pushRequest.IsSome()) {
                 var pushResponse = await _cosmos.PushAsync(FamilyIdModule.serialize(State!.FamilyId), pushRequest.Value);

@@ -54,28 +54,27 @@ namespace WebApp.Services {
         public Task SyncIncrementalAsync() => SyncCoreAsync(isIncremental: true, ignoreIfSynchronizing: true);
 
         private async Task SyncCoreAsync(bool isIncremental, bool ignoreIfSynchronizing) {
-            bool isSynchronizing = SynchronizationStatus == SynchronizationStatus.Synchronizing;
-            if (!isSynchronizing || ignoreIfSynchronizing) {
-                SynchronizationStatus = SynchronizationStatus.Synchronizing;
-                OnChange?.Invoke();
-
-                try {
-                    var earliestChange = await PushCoreAsync();
-                    if (!isIncremental || earliestChange != null) {
-                        await PullCoreAsync(isIncremental ? State.LastCosmosTimestamp.AsNullable() : null, earliestChange);
-                        // When the changes above are applied, it is possible that
-                        // foreign keys will be broken, causing additional changes that
-                        // need to be pushed.
-                        await PushCoreAsync();
-                    }
-                }
-                catch (CosmosOperationCanceledException) {
-                }
-
-                SynchronizationStatus = HasChanges();
-                OnChange?.Invoke();
-                _hasSynchronized = true;
+            if (State == null) {
+                throw new InvalidOperationException("Can not start synchronizing until the service is initialized.");
             }
+            if (SynchronizationStatus == SynchronizationStatus.Synchronizing && !ignoreIfSynchronizing) {
+                return;
+            }
+            SynchronizationStatus = SynchronizationStatus.Synchronizing;
+            OnChange?.Invoke();
+            try {
+                int? after = isIncremental ? State!.LastCosmosTimestamp.AsNullable() : null;
+                int? before = await PushCoreAsync();
+                await PullCoreAsync(after, before);
+                // When the pull completes it is possible that foreign keys will
+                // be broken, causing additional changes that need to be pushed.
+                await PushCoreAsync();
+            }
+            catch (Exception) {
+            }
+            SynchronizationStatus = HasChanges();
+            OnChange?.Invoke();
+            _hasSynchronized = true;
         }
 
         private SynchronizationStatus HasChanges() =>
